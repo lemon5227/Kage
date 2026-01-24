@@ -41,6 +41,7 @@ class KageTools:
         "时钟": "Clock",
         "app store": "App Store",
         "应用商店": "App Store",
+        "appstore": "App Store",
         "vscode": "Visual Studio Code",
         "vs code": "Visual Studio Code",
         "代码": "Visual Studio Code",
@@ -50,125 +51,147 @@ class KageTools:
         self.os_type = platform.system()
         self.skills = {}
         self._load_skills()
-    
-    def _load_skills(self):
-        """加载 skills 目录下的所有技能"""
-        skills_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "skills")
-        if not os.path.exists(skills_dir):
-            return
         
-        for skill_file in glob.glob(os.path.join(skills_dir, "*.py")):
-            if os.path.basename(skill_file).startswith("_"):
+        # Auto-Discovery: Scan for installed apps
+        self.installed_apps = {} # { "lowercase_name": "Full App Name.app" }
+        if self.os_type == "Darwin":
+            self._scan_installed_apps()
+
+    def _scan_installed_apps(self):
+        """Scans /Applications and ~/Applications to build an app registry"""
+        print("  🔍 Scanning for installed applications...")
+        search_paths = ["/Applications", "/System/Applications", os.path.expanduser("~/Applications")]
+        
+        count = 0
+        for path in search_paths:
+            if not os.path.exists(path):
                 continue
             try:
-                spec = importlib.util.spec_from_file_location("skill", skill_file)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                
-                if hasattr(module, "SKILL_INFO") and hasattr(module, "execute"):
-                    skill_name = module.SKILL_INFO.get("name", os.path.basename(skill_file))
-                    self.skills[skill_name] = {
-                        "info": module.SKILL_INFO,
-                        "execute": module.execute
-                    }
-                    print(f"  ✅ Skill 加载: {skill_name}")
+                # Only look at top-level apps to accept speed (depth=2 max)
+                # Actually os.listdir is safer than walk for depth control
+                for item in os.listdir(path):
+                    if item.endswith(".app"):
+                        app_name = item[:-4] # Remove .app
+                        # Store multiple keys for better matching
+                        # 1. Exact lower: "safari" -> "Safari.app"
+                        self.installed_apps[app_name.lower()] = item
+                        # 2. Chinese mapping (Manual + Common)
+                        # TODO: Maybe read Info.plist for CFBundleDisplayName later
+                        count += 1
             except Exception as e:
-                print(f"  ❌ Skill 加载失败 ({skill_file}): {e}")
-    
-    def execute(self, command: str):
-        """Execute a command and return the output"""
-        try:
-            if "open_app" in command:
-                app_name = command.split('("')[1].split('")')[0]
-                return self.open_app(app_name)
-            elif "open_url" in command:
-                url = command.split('("')[1].split('")')[0]
-                return self.open_url(url)
-            elif "get_time" in command:
-                return self.get_time()
-            elif "control_volume" in command:
-                action = command.split('("')[1].split('")')[0]
-                return self.control_volume(action)
-            elif "take_screenshot" in command:
-                return self.take_screenshot()
-            elif "brew_install" in command:
-                app = command.split('("')[1].split('")')[0]
-                return self.brew_install(app)
-            elif "run_cmd" in command:
-                cmd = command.split('("')[1].split('")')[0]
-                return self.run_terminal_cmd(cmd)
-            elif "create_file" in command:
-                # create_file("filename", "content")
-                # Need to parse carefully as content might contain brackets/quotes
-                # Simple extraction assuming the format is correct: create_file("name", "content")
-                # This regex/split is fragile for complex code content, but let's try a best effort split
-                try:
-                    # Remove 'create_file(' prefix and trailing ')'
-                    args_part = command[len("create_file("):-1]
-                    # Split by first comma
-                    parts = args_part.split(',', 1)
-                    if len(parts) >= 2:
-                        filename = parts[0].strip().strip('"').strip("'")
-                        content = parts[1].strip()
-                        # Content might be quoted with " or """ or '
-                        if content.startswith('"""') and content.endswith('"""'):
-                            content = content[3:-3]
-                        elif content.startswith('"') and content.endswith('"'):
-                            content = content[1:-1]
-                        elif content.startswith("'") and content.endswith("'"):
-                            content = content[1:-1]
-                        
-                        # Unescape basic things if needed (like \n)
-                        # content = content.encode('utf-8').decode('unicode_escape') 
-                        # actually Python string literal might already be handled if passed raw
-                        
-                        return self.create_file(filename, content)
-                except Exception as e:
-                    return f"解析 create_file 失败: {e}"
-
-            elif "open_file" in command or "open_screenshot" in command:
-                # 调用 open_file skill
-                params = ""
-                if '("' in command:
-                    params = command.split('("')[1].split('")')[0]
-                return self.call_skill("open_file", params)
-            elif "skill" in command:
-                # 通用 skill 调用: skill("skill_name", "params")
-                parts = command.split('("')[1].split('")')[0]
-                skill_name = parts.split('","')[0] if '","' in parts else parts
-                params = parts.split('","')[1] if '","' in parts else ""
-                return self.call_skill(skill_name, params)
+                print(f"  ❌ Error scanning {path}: {e}")
+        
+        # Manual Aliases (Hardcoded fixes for common apps)
+        aliases = {
+            "网易云": "NeteaseMusic",
+            "网易云音乐": "NeteaseMusic", 
+            "music": "Music",
+            "音乐": "Music",
+            "apple music": "Music",
+            "chrome": "Google Chrome",
+            "谷歌浏览器": "Google Chrome",
+            "vscode": "Visual Studio Code",
+            "code": "Visual Studio Code",
+            "微信": "WeChat",
+            "wechat": "WeChat",
+            "qq": "QQ",
+        }
+        for alias, real_name in aliases.items():
+            # Check if we have the real app found? Or just trust the alias?
+            # Let's just map alias -> RealName.app (assuming the standard naming)
+            # Find the real .app file from our scan if possible
+            found_real = None
+            for stored_key, stored_val in self.installed_apps.items():
+                 if real_name.lower() in stored_val.lower():
+                     found_real = stored_val
+                     break
+            
+            if found_real:
+                self.installed_apps[alias.lower()] = found_real
             else:
-                return "Kage 不知道怎么做这个哦~"
+                 # Fallback: Just assume standard name
+                 self.installed_apps[alias.lower()] = f"{real_name}.app"
+
+        print(f"  ✅ Found {count} apps. Registry ready.")
+
+    def _load_skills(self):
+        """动态加载 skills 目录下的技能"""
+        try:
+            # Assuming skills is at the project root, and tools.py is in core/
+            skills_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills")
+            
+            if not os.path.exists(skills_dir):
+                print(f"  ⚠️ Skills directory not found at: {skills_dir}")
+                return
+
+            for filename in os.listdir(skills_dir):
+                if filename.endswith(".py") and not filename.startswith("__"):
+                    try:
+                        module_name = filename[:-3]
+                        filepath = os.path.join(skills_dir, filename)
+                        
+                        spec = importlib.util.spec_from_file_location(module_name, filepath)
+                        if spec and spec.loader:
+                            module = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(module)
+                            
+                            if hasattr(module, "SKILL_INFO"):
+                                self.skills[module.SKILL_INFO["name"]] = module
+                                print(f"  + 加载技能: {module.SKILL_INFO['name']}")
+                    except Exception as e:
+                        print(f"  ❌ 加载技能 {filename} 失败: {e}")
         except Exception as e:
-            return f"出错了: {e}"
-    
-    def call_skill(self, skill_name: str, params: str) -> str:
-        """调用已加载的 skill"""
-        if skill_name in self.skills:
-            try:
-                return self.skills[skill_name]["execute"](params)
-            except Exception as e:
-                return f"Skill {skill_name} 执行失败: {e}"
-        return f"找不到技能: {skill_name}"   
+            print(f"  ❌ Error loading skills: {e}")
 
     def open_app(self, app_name):
-        # 尝试将中文名转换为英文名
-        english_name = self.APP_NAME_MAP.get(app_name, app_name)
-        print(f"正在打开: {app_name} -> {english_name}")
+        print(f"正在尝试打开: {app_name}")
         
+        # 1. Cleaning
+        clean_name = app_name.strip().lower()
+        
+        # 2. Fuzzy / Registry Match
+        target_app = app_name # Default to what user said
+        
+        # Direct lookup
+        if clean_name in self.installed_apps:
+            target_app = self.installed_apps[clean_name]
+            # Strip .app for the 'open -a' command usually, but full path is safer if we knew it.
+            # 'open -a "Full Name.app"' works.
+            print(f"  -> Match found in registry: {target_app}")
+        else:
+            # Partial match (e.g. "网易" -> "NeteaseMusic")
+            # This is risky but useful. Let's try simple inclusion.
+            for key, val in self.installed_apps.items():
+                if clean_name in key or key in clean_name:
+                    # Don't match super short keys to avoid false positives
+                    if len(key) > 2:
+                        target_app = val
+                        print(f"  -> Fuzzy match: {clean_name} ~= {val}")
+                        break
+        
+        # Remove .app suffix for display goodness, but keep it for command if needed
+        if target_app.endswith(".app"):
+            run_name = target_app
+        else:
+            run_name = target_app
+
         try:
             if self.os_type == "Darwin":
-                result = subprocess.run(["open", "-a", english_name], capture_output=True, text=True)
+                # Try 1: Registry Name
+                result = subprocess.run(["open", "-a", run_name], capture_output=True, text=True)
                 if result.returncode == 0:
-                    return f"已打开 {app_name} ✨"
-                else:
-                    if "Unable to find application" in result.stderr:
-                        return f"找不到 {app_name} 这个软件诶~ 你确定安装了吗？"
-                    else:
-                        return f"打开 {app_name} 失败了..."
+                    return f"已打开 {target_app} ✨"
+                
+                # Try 2: Raw Name (maybe Spotlight finds it)
+                if run_name != app_name:
+                    result = subprocess.run(["open", "-a", app_name], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        return f"已打开 {app_name} ✨"
+
+                return f"找不到应用 '{app_name}' (尝试了 '{run_name}')。请确认它已安装在 /Applications 下。"
+                
             elif self.os_type == "Windows":
-                subprocess.run(["start", "", english_name], shell=True, check=True)
+                subprocess.run(["start", "", app_name], shell=True, check=True)
                 return f"已打开 {app_name} ✨"
             else:
                 return f"不支持的操作系统: {self.os_type}"
@@ -194,20 +217,80 @@ class KageTools:
         now = datetime.datetime.now()
         return f"现在是 {now.strftime('%Y年%m月%d日 %H:%M:%S')} ⏰"
     
-    def control_volume(self, action):
+    # =========================================
+    # 统一系统控制入口 (Unified System Control)
+    # =========================================
+    def system_control(self, target, action, value=None):
+        """
+        统一的系统控制入口。
+        
+        Args:
+            target: 控制目标 - "volume", "brightness", "wifi", "bluetooth", "app"
+            action: 动作 - "up", "down", "on", "off", "open", "close", "mute", "unmute"
+            value: 可选值 - 具体数值或应用名称
+        
+        Examples:
+            system_control("volume", "up")
+            system_control("brightness", "down")
+            system_control("wifi", "off")
+            system_control("app", "open", "Safari")
+        """
+        target = target.lower().strip()
+        action = action.lower().strip() if action else ""
+        
+        # 路由到具体实现
+        if target == "volume" or target == "音量":
+            return self._control_volume_internal(action)
+        
+        elif target == "brightness" or target == "亮度":
+            return self._control_brightness_internal(action)
+        
+        elif target == "wifi" or target == "网络":
+            return self._control_wifi_internal(action)
+        
+        elif target == "bluetooth" or target == "蓝牙":
+            return self._control_bluetooth_internal(action)
+        
+        elif target == "app" or target == "应用":
+            if action == "open" or action == "打开":
+                return self.open_app(value) if value else "需要指定应用名称"
+            elif action == "close" or action == "关闭":
+                return self._close_app_internal(value) if value else "需要指定应用名称"
+            else:
+                return f"不支持的应用操作: {action}"
+        
+        else:
+            return f"不支持的控制目标: {target}"
+    
+    # =========================================
+    # 内部实现方法 (Internal Implementations)
+    # =========================================
+    def _control_volume_internal(self, action):
         """控制音量: up, down, mute"""
         try:
             if self.os_type == "Darwin":
-                if action == "up" or action == "加大" or action == "大":
-                    subprocess.run(["osascript", "-e", "set volume output volume ((output volume of (get volume settings)) + 10)"], check=True)
+                if action in ["up", "加大", "大"]:
+                    script = '''
+                    set curVolume to output volume of (get volume settings)
+                    set newVolume to curVolume + 12
+                    if newVolume > 100 then set newVolume to 100
+                    set volume output volume newVolume
+                    '''
+                    subprocess.run(["osascript", "-e", script], check=True)
                     return "音量已调大 🔊"
-                elif action == "down" or action == "减小" or action == "小":
-                    subprocess.run(["osascript", "-e", "set volume output volume ((output volume of (get volume settings)) - 10)"], check=True)
+                elif action in ["down", "减小", "小"]:
+                    script = '''
+                    set curVolume to output volume of (get volume settings)
+                    set newVolume to curVolume - 12
+                    if newVolume < 0 then set newVolume to 0
+                    set volume output volume newVolume
+                    '''
+                    subprocess.run(["osascript", "-e", script], check=True)
                     return "音量已调小 🔉"
-                elif action == "mute" or action == "静音":
+                elif action in ["mute", "muted", "静音"]:
                     subprocess.run(["osascript", "-e", "set volume with output muted"], check=True)
                     return "已静音 🔇"
-                elif action == "unmute" or action == "取消静音":
+                elif action in ["unmute", "取消静音"]:
                     subprocess.run(["osascript", "-e", "set volume without output muted"], check=True)
                     return "已取消静音 🔊"
                 else:
@@ -215,6 +298,82 @@ class KageTools:
             return "此功能仅支持 Mac"
         except Exception as e:
             return f"音量控制失败: {e}"
+    
+    def _control_brightness_internal(self, action):
+        """控制屏幕亮度: up, down (使用原生模拟按键)"""
+        try:
+            if self.os_type == "Darwin":
+                # 使用 AppleScript 模拟亮度功能键
+                # Key Code 144: Brightness Up
+                # Key Code 145: Brightness Down
+                
+                repeat_times = 2
+                
+                if action == "up" or "大" in action or "高" in action:
+                    script = f'tell application "System Events" to repeat {repeat_times} times\n key code 144\n end repeat'
+                    msg = "亮度已调高 ☀️"
+                elif action == "down" or "小" in action or "低" in action:
+                    script = f'tell application "System Events" to repeat {repeat_times} times\n key code 145\n end repeat'
+                    msg = "亮度已调低 🌙"
+                else:
+                    return f"不认识的亮度操作: {action}"
+                
+                subprocess.run(["osascript", "-e", script], check=True)
+                return msg
+
+            return "此功能仅支持 Mac"
+        except Exception as e:
+            return f"亮度控制失败: {e}"
+    
+    def _control_wifi_internal(self, action):
+        """控制 WiFi: on, off"""
+        try:
+            if self.os_type == "Darwin":
+                # 使用 networksetup 控制 WiFi
+                # 注意: en0 是常见的 WiFi 接口名，但可能因机器而异
+                if action == "on" or action == "开" or action == "打开":
+                    subprocess.run(["networksetup", "-setairportpower", "en0", "on"], check=True)
+                    return "WiFi 已开启 📶"
+                elif action == "off" or action == "关" or action == "关闭":
+                    subprocess.run(["networksetup", "-setairportpower", "en0", "off"], check=True)
+                    return "WiFi 已关闭 📴"
+                else:
+                    return f"不认识的 WiFi 操作: {action}"
+            return "此功能仅支持 Mac"
+        except Exception as e:
+            return f"WiFi 控制失败: {e}"
+    
+    def _control_bluetooth_internal(self, action):
+        """控制蓝牙: on, off (需要 blueutil)"""
+        try:
+            if self.os_type == "Darwin":
+                # 检查 blueutil 是否安装
+                check = subprocess.run(["which", "blueutil"], capture_output=True)
+                if check.returncode != 0:
+                    return "蓝牙控制需要安装 blueutil (brew install blueutil) 🔧"
+                
+                if action == "on" or action == "开" or action == "打开":
+                    subprocess.run(["blueutil", "-p", "1"], check=True)
+                    return "蓝牙已开启 🔵"
+                elif action == "off" or action == "关" or action == "关闭":
+                    subprocess.run(["blueutil", "-p", "0"], check=True)
+                    return "蓝牙已关闭 ⚫"
+                else:
+                    return f"不认识的蓝牙操作: {action}"
+            return "此功能仅支持 Mac"
+        except Exception as e:
+            return f"蓝牙控制失败: {e}"
+    
+    def _close_app_internal(self, app_name):
+        """关闭应用"""
+        try:
+            if self.os_type == "Darwin":
+                script = f'tell application "{app_name}" to quit'
+                subprocess.run(["osascript", "-e", script], check=True)
+                return f"已关闭 {app_name} 👋"
+            return "此功能仅支持 Mac"
+        except Exception as e:
+            return f"关闭应用失败: {e}"
     
     def take_screenshot(self):
         """截图保存到桌面"""
@@ -253,6 +412,15 @@ class KageTools:
     
     def run_terminal_cmd(self, cmd):
         """执行终端命令（⚠️ 危险操作，需谨慎）"""
+        # HACK: 修复 LLM 常见幻觉
+        if "wttr.ina" in cmd:
+            cmd = cmd.replace("wttr.ina", "wttr.in")
+        if "ipeps.com" in cmd or "ipequip.net" in cmd:
+            if "curl" in cmd:
+                # 简单替换为可靠的源
+                import re
+                cmd = re.sub(r'https?://[^\s"\']+', 'https://api.ipify.org', cmd)
+
         # 安全检查：禁止危险命令
         dangerous_patterns = ["rm -rf", "sudo rm", "mkfs", "dd if=", "> /dev/"]
         for pattern in dangerous_patterns:
@@ -315,3 +483,70 @@ class KageTools:
             
         except Exception as e:
             return f"创建脚本失败: {e}"
+
+    def execute(self, cmd_str):
+        """Unified Command Dispatcher - 支持多参数解析"""
+        try:
+            cmd_str = cmd_str.strip()
+            
+            # HACK: 修复常见 LLM 幻觉
+            if "system_-control" in cmd_str:
+                cmd_str = cmd_str.replace("system_-control", "system_control")
+            if "open_apple" in cmd_str:
+                cmd_str = cmd_str.replace("open_apple", "open_app")
+            
+            if "(" not in cmd_str or not cmd_str.endswith(")"):
+                return f"❌ Command format error: {cmd_str}"
+            
+            func_name = cmd_str.split("(")[0].strip()
+            args_str = cmd_str[len(func_name)+1:-1].strip()
+            
+            # 解析参数列表 (简单版本，处理逗号分隔的带引号参数)
+            args = []
+            if args_str:
+                # 简单分割：按逗号分割，去除引号
+                import re
+                # 匹配 "xxx" 或 'xxx' 或无引号的参数
+                pattern = r'"([^"]*)"|\'([^\']*)\'|([^,\s]+)'
+                matches = re.findall(pattern, args_str)
+                for m in matches:
+                    # 取第一个非空的捕获组
+                    arg = m[0] or m[1] or m[2]
+                    if arg:
+                        args.append(arg.strip())
+            
+            # --- 特殊处理 system_control ---
+            if func_name == "system_control":
+                if len(args) >= 2:
+                    target = args[0]
+                    action = args[1]
+                    value = args[2] if len(args) > 2 else None
+                    return self.system_control(target, action, value)
+                else:
+                    return "❌ system_control 需要至少 2 个参数: (target, action)"
+            
+            # --- Tier 1: Built-in Methods ---
+            if hasattr(self, func_name):
+                method = getattr(self, func_name)
+                if not args:
+                    return method()
+                elif len(args) == 1:
+                    return method(args[0])
+                else:
+                    return method(*args)
+            
+            # --- Tier 2: Mapped Aliases ---
+            if func_name == "run_cmd":
+                return self.run_terminal_cmd(args[0] if args else "")
+                
+            # --- Tier 3: Skills ---
+            if func_name in self.skills:
+                skill = self.skills[func_name]
+                if hasattr(skill, "execute"):
+                    return skill.execute(args[0] if args else "")
+            
+            return f"❌ Unknown tool or command: {func_name}"
+            
+        except Exception as e:
+            return f"❌ Execution Exception: {e}"
+            return f"❌ Execution Exception: {e}"

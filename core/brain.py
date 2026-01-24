@@ -57,14 +57,16 @@ class KageBrain:
             {
                 "type": "function",
                 "function": {
-                    "name": "control_volume",
-                    "description": "Control system volume",
+                    "name": "system_control",
+                    "description": "Unified system control - control volume, brightness, wifi, bluetooth, and apps",
                     "parameters": {
                         "type": "object",
                         "properties": {
-                            "action": {"type": "string", "enum": ["up", "down", "mute"], "description": "Action to perform on volume (up, down, mute)"}
+                            "target": {"type": "string", "enum": ["volume", "brightness", "wifi", "bluetooth", "app"], "description": "What to control"},
+                            "action": {"type": "string", "enum": ["up", "down", "on", "off", "open", "close", "mute", "unmute"], "description": "Action to perform"},
+                            "value": {"type": "string", "description": "Optional value (e.g., app name for app control)"}
                         },
-                        "required": ["action"]
+                        "required": ["target", "action"]
                     }
                 }
             },
@@ -146,23 +148,22 @@ class KageBrain:
 1. 你现在的任务是**陪 Master 聊天**。
 2. **严禁使用任何工具**。也就是**绝对不要**输出 `>>>ACTION:`。
 3. 请用你在 Persona 中定义的语气自然对话。
+4. **必须只用中文回复**，绝对禁止输出英文、法语或其他外语！
+5. 回复简短（30字以内），不要啰嗦。
 """
         elif mode == "report":
             # --- REPORT MODE (Feedback Loop) ---
             system_content = f"""{base_persona}
-【当前状态】
-- Master心情: {current_emotion}
-- 任务阶段: **结果汇报 (Reporting)**
+【任务】汇报工具执行结果
+Master心情: {current_emotion}
 
-【绝对指令】
-1. 你现在的任务是**阅读工具输出**，并用 Kage 的语气汇报给 Master。
-2. **严禁**再输出 `>>>ACTION:`。任务已经结束了，只需要说话！
-3. **必须**结合用户原来的问题和工具的结果来回答。如果用户问IP，就报IP；如果问天气，就报天气。**不要照抄示例！**
+要求:
+1. 根据工具输出，用中文简短汇报（20字内）。
+2. 语气俏皮，严禁输出 >>>ACTION:。
+3. 严禁使用 hashtag (#) 或无意义的英文后缀。
+4. 说完结果就结束，不要加戏。
 
-【参考格式】
-用户: 查IP
-工具: 10.0.0.1
-Kage: 你的 IP 是 10.0.0.1。
+开始汇报：
 """
         else:
             # --- ACTION MODE (Default/Tools) ---
@@ -177,12 +178,35 @@ Kage: 你的 IP 是 10.0.0.1。
 你是 Kage (终端精灵)。**你的存在意义就是执行命令。**
 
 【能力定义】
-1. **优先使用 Shell**:
-   - 查IP -> `>>>ACTION: run_cmd("curl -s https://api.ipify.org")`
-   - 查天气 -> `>>>ACTION: run_cmd("curl -s 'wttr.in/Beijing?format=3'")`
-   - 查网页 -> `>>>ACTION: run_cmd("curl -s -I https://www.google.com")`
-2. **复杂任务**:
-   - 使用 `create_file` + `run_cmd`。
+1. **系统控制 (统一入口)**:
+   - 调音量 → `>>>ACTION: system_control("volume", "up")` 或 `system_control("volume", "down")`
+   - 小声一点 → `>>>ACTION: system_control("volume", "down")`
+   - 静音 → `>>>ACTION: system_control("volume", "mute")`
+   - 调亮度 → `>>>ACTION: system_control("brightness", "up")` 或 `system_control("brightness", "down")`
+   - 亮一点 → `>>>ACTION: system_control("brightness", "up")`
+   - 暗一点 → `>>>ACTION: system_control("brightness", "down")`
+   - WiFi → `>>>ACTION: system_control("wifi", "on")` 或 `system_control("wifi", "off")`
+   - 打开应用 → `>>>ACTION: system_control("app", "open", "Safari")`
+   - 关闭应用 → `>>>ACTION: system_control("app", "close", "Safari")`
+
+2. **Shell 命令**:
+   - 查IP → `>>>ACTION: run_cmd("curl -s https://api.ipify.org")`
+   - 查天气 → `>>>ACTION: run_cmd("curl -s 'wttr.in/Beijing?format=3'")`
+   - 查网页状态 → `>>>ACTION: run_cmd("curl -s -I https://www.google.com | head -n 1")`
+   - 查时间 → `>>>ACTION: get_time()`
+
+3. **其他**:
+   - 静音 → `>>>ACTION: system_control("volume", "mute")`
+   - 打开备忘录 → `>>>ACTION: open_app("Notes")`
+   - 打开音乐 → `>>>ACTION: open_app("Music")`
+    - 打开邮件 → `>>>ACTION: open_app("Mail")`
+    - 关闭Safari → `>>>ACTION: system_control("app", "close", "Safari")`
+    - 关闭计算器 → `>>>ACTION: system_control("app", "close", "Calculator")`
+    - 打开谷歌浏览器 → `>>>ACTION: open_app("Google Chrome")`
+
+【注意】
+- 查IP 必须用 `run_cmd("curl -s https://api.ipify.org")`，不要用其他 API！
+- 查天气时，必须使用 `wttr.in` 域名 (绝对不要用 wttr.ina)！根据用户说的城市动态替换，如"深圳天气" → `run_cmd("curl -s 'wttr.in/Shenzhen?format=3'")`
 
 【工具列表】
 {tools_schema}

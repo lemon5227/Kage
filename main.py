@@ -167,13 +167,23 @@ def main():
 
                     # Simple parser (same as before)
                     cmd_str = ""
-                    valid_tools = ["open_app", "open_url", "get_time", "control_volume", "take_screenshot", "brew_install", "run_cmd", "create_file"]
+                    valid_tools = ["system_control", "open_app", "open_url", "get_time", "take_screenshot", "brew_install", "run_cmd", "create_file"]
+                    # Simple parser: Find which tool name starts the command
                     for t in valid_tools:
-                        if raw_cmd.startswith(t + "("):
+                        # Case-insensitive check (e.g., open_Url -> open_url)
+                        if raw_cmd.lower().startswith(t.lower() + "("):
+                            tool_name = t
+                            # Find the content inside the outer parentheses
+                            # We assume the command ends with ')'
+                            # But sometimes model might output "run_cmd(...) some explanation"
+                            # So we look for the LAST ')' 
                             start_idx = len(t) + 1
                             end_idx = raw_cmd.rfind(")")
+                            
                             if end_idx > start_idx:
-                                cmd_str = raw_cmd[:end_idx+1]
+                                # Reconstruct using the CORRECT tool name casing
+                                params = raw_cmd[start_idx:end_idx]
+                                cmd_str = f"{tool_name}({params})"
                             break
                     
                     if cmd_str:
@@ -192,25 +202,25 @@ def main():
 工具输出: {tool_result}
 
 【你的任务】
-请结合"用户指令"和"工具输出"，将结果汇报给 Master。
-**注意**: 如果用户问的是谷歌，你就说谷歌；问的是推特，就说推特。不要搞混了！
+请以 Kage (傲娇终端精灵) 的身份，将工具执行的结果告诉 Master。
 
-【绝对禁止 (Forbidden)】
-1. **禁止**再次输出 `>>>ACTION:`。
-2. **禁止**提及无关信息。
-3. **禁止**复述代码。
+【关键要求】
+1. **关联性**: 必须根据"工具输出"来回答。如果工具报错，就必须汇报错误；如果工具成功，就汇报成功。
+2. **人设感**: 语气要俏皮、傲娇或元气。不要像个机器人一样只报数据。
+   - 比如调音量，可以说 "好啦，声音大一点 Master 听得更清楚！🔊"
+   - 比如查天气，可以说 "北京冻死了，Master 多穿点衣服！❄️"
+3. **禁止**: 
+   - 绝对不要输出 `>>>ACTION:`。
+   - 不要编造工具没有输出的信息 (比如没查IP就不要报IP)。
 
-【正确示范】
-用户指令: 查一下谷歌状态码
-工具输出: 200...
-Kage: 谷歌的状态码是 200，一切正常！
+【现在开始汇报】
 """
                         print(f"👻 Kage (Result): ", end="", flush=True)
                         final_stream = kage_brain.think(
                             observation_input, 
                             memories=[], 
                             current_emotion=current_emotion,
-                            temp=0.1,
+                            temp=0.7, # Higher temp for creative/witty reporting
                             mode="report" # CRITICAL: Report mode prevents loop
                         )
                         
