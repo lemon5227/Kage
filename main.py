@@ -1,8 +1,15 @@
 import sys
 import os
+
+# Debug Print for Bootloader
+print("🦖 Kage Bootloader: Initializing...", flush=True)
+
 import uvicorn
 import asyncio
+
+print("🦖 Kage Bootloader: Importing Core Server...", flush=True)
 from core.server import app, kage_server
+print("🦖 Kage Bootloader: Core Server Imported.", flush=True)
 
 # --- Path Setup ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,4 +31,8 @@ def main():
         print("\n⚠️ Server Stopped.")
 
 if __name__ == "__main__":
+    # Fix for PyInstaller multiprocessing on macOS/Windows
+    import multiprocessing
+    multiprocessing.freeze_support()
+    
     main()

@@ -28,4 +28,9 @@
 - [ ] **Personality Training**: Fine-tune LoRA for a specific character persona (Tsundere/Maid).
 - [ ] **Vision Capability**: Integrate `Llava` or Screenshot Analysis (Kage can "see" your screen).
 - [ ] **Music/Media**: A dedicated Music Player UI inside the Tauri window.
+
+## Phase 6: Deployment (Future 📦)
+- [ ] **Python Freeze**: Use `PyInstaller` to bundle `kage-server` binary.
+- [ ] **Sidecar Setup**: Configure Tauri to manage the Python process.
+- [ ] **Installer**: Build signed `.dmg` for macOS distribution.
 **: 支持摄像头输入，甚至能“看”到 Master 的表情。

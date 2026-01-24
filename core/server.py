@@ -25,7 +25,25 @@ from core.ears import KageEars
 from core.tools import KageTools
 from core.router import KageRouter
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+# Global Instance (Lazy Load)
+kage_server = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Load Models (ONLY in Main Process)
+    global kage_server
+    if kage_server is None:
+        print("🚦 Lifespan Startup: initializing KageServer...")
+        kage_server = KageServer()
+    yield
+    # Shutdown
+    if kage_server:
+        kage_server.is_running = False
+        print("🛑 Lifespan Shutdown: stopping KageServer...")
+
+app = FastAPI(lifespan=lifespan)
 
 # Enable CORS
 app.add_middleware(
@@ -38,7 +56,7 @@ app.add_middleware(
 
 class KageServer:
     def __init__(self):
-        print("⚙️ Initializing Kage Server...")
+        print("⚙️ Initializing Kage Server (Heavy Load)...")
         self.memory = MemorySystem()
         self.brain = KageBrain()
         self.mouth = KageMouth(voice="zh-CN-XiaoyiNeural")
@@ -50,6 +68,7 @@ class KageServer:
         self.is_running = True
         print("✅ Kage Server Ready!")
 
+    # ... (Rest of KageServer methods - same as before) ...
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_websocket = websocket
@@ -117,8 +136,6 @@ class KageServer:
 
                 # Generate Response
                 full_response = ""
-                # We can stream tokens to the frontend if we want 'typing' effect
-                # For now, let's gather full text for simplicity or stream chunks
                 
                 is_command = (intent == "COMMAND")
                 memories = []
@@ -148,8 +165,6 @@ class KageServer:
                 final_speech = full_response
 
                 if is_command:
-                     # Handle Command Execution (Logic from main.py)
-                     # Simplified for brevity - copy existing logic
                      if ">>>ACTION:" in full_response:
                         parts = full_response.split(">>>ACTION:")
                         final_speech = parts[0].strip()
@@ -169,9 +184,9 @@ class KageServer:
                              final_speech += t
 
                 # TTS & LipSync
-                print(f"👻 Kage: {final_speech}") # Debug Output
+                print(f"👻 Kage: {final_speech}") 
                 await self.mouth_speak(final_speech, current_emotion)
-
+                
                 # Save Memory
                 if not is_command:
                      self.memory.add_memory(content=user_input, emotion=current_emotion, type="chat")
@@ -199,42 +214,31 @@ class KageServer:
         await self.send_message("speech", {"text": text})
         
         # 3. Audio Generation (Generating... not speaking yet)
-        # We manually call generate first so we don't block the 'SPEAKING' state
         audio_path = await self.mouth.generate_speech_file(text, emotion)
         
         if audio_path:
             # 4. Now we are ready to play. Signal Frontend!
             await self.send_state("SPEAKING")
-            
             # Blocking Playback
             await asyncio.to_thread(self.mouth.play_audio_file, audio_path)
-            
             # Done
             await self.send_state("IDLE")
 
-# Singleton Instance
-kage_server = KageServer()
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    global kage_server
+    if not kage_server:
+        # Fallback if accessed via direct uvicorn without lifespan
+        print("⚠️ Lazy Init triggered via Websocket (Fallback)")
+        kage_server = KageServer()
+
     await kage_server.connect(websocket)
     try:
-        # Start the main agent loop as a background task when client connects
-        # Or we can just run it. Ideally, the loop runs independently.
-        # But we want the loop to react to the 'ears'.
-        # Let's run the loop task
         loop_task = asyncio.create_task(kage_server.run_loop())
-        
         while True:
-            # Keep connection alive, maybe listen for client events (e.g. clicks)
             data = await websocket.receive_text()
-            # print(f"Client sent: {data}")
-            
     except WebSocketDisconnect:
         await kage_server.disconnect()
-        # Cancel loop if client leaves? Or keep running?
-        # For a desktop pet, if UI closes, maybe we pause.
-        # loop_task.cancel() 
         pass
 
 if __name__ == "__main__":

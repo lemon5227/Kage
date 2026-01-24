@@ -4,6 +4,7 @@ import datetime
 import platform
 import importlib.util
 import glob
+import sys
 
 class KageTools:
     # 常用应用中英文映射 (可扩展)
@@ -117,8 +118,13 @@ class KageTools:
     def _load_skills(self):
         """动态加载 skills 目录下的技能"""
         try:
-            # Assuming skills is at the project root, and tools.py is in core/
-            skills_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills")
+            # Determine Project Root safely (Freeze-aware)
+            if getattr(sys, 'frozen', False):
+                 # dist/kage-server/skills
+                 skills_dir = os.path.join(os.path.dirname(sys.executable), "skills")
+            else:
+                 # Standard Dev Path
+                 skills_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills")
             
             if not os.path.exists(skills_dir):
                 print(f"  ⚠️ Skills directory not found at: {skills_dir}")
@@ -454,8 +460,11 @@ class KageTools:
         """创建脚本文件 (用于 Self-Programming/Ability)"""
         try:
             # Fix pathing: allow 'scripts/' or 'abilities/' or just filename
-            # Base dir is the project root (where main.py is likely located, parent of core)
-            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+            if getattr(sys, 'frozen', False):
+                 root_dir = os.path.dirname(sys.executable)
+            else:
+                 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             
             # If filename contains a directory part like "abilities/foo.py", respect it if safe
             # Otherwise default to "abilities"

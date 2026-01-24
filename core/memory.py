@@ -4,13 +4,24 @@ import os
 import json
 import chromadb
 import datetime
+import sys
 
 class MemorySystem:
     def __init__(self):
-        current_file_path = os.path.abspath(__file__)
-        core_dir = os.path.dirname(current_file_path)
-        project_dir = os.path.dirname(core_dir)
+        # Determine Project Root safely (Freeze-aware)
+        if getattr(sys, 'frozen', False):
+            # If running as compiled exe, root is where the exe lives
+            project_dir = os.path.dirname(sys.executable)
+            # BUT, in OneDir mode on Mac, sys.executable might be inside the .app bundle or folder.
+            # Typical structure: dist/kage-server/kage-server(exe)
+            # So project_dir = dist/kage-server
+        else:
+            # Dev mode
+            current_file_path = os.path.abspath(__file__)
+            core_dir = os.path.dirname(current_file_path)
+            project_dir = os.path.dirname(core_dir)
 
+        # Standardize Data Directory
         data_dir  = os.path.join(project_dir,"data")
 
         if not os.path.exists(data_dir):
