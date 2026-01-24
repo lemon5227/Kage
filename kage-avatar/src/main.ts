@@ -53,23 +53,82 @@ async function main() {
 
     // --- 5. LipSync Animation Loop ---
     let mouthValue = 0;
-    app.ticker.add(() => {
+
+    // Debug flag to print API structure once
+    let hasLoggedApi = false;
+
+    app.ticker.add((delta) => {
       if (!model || !model.internalModel) return;
 
-      if (isSpeaking) {
-        // Simulate talking with sine wave
-        const t = Date.now() / 100;
-        mouthValue = (Math.sin(t) + 1) / 2; // 0 to 1
-      } else {
-        // Close mouth gently
-        mouthValue = Math.max(0, mouthValue - 0.1);
+      // DEBUG: Check what APIs are available
+      if (!hasLoggedApi) {
+        console.log("Model Type:", model.constructor.name);
+        console.log("Internal Model:", model.internalModel);
+        // @ts-ignore
+        if (model.internalModel.coreModel) {
+          const core = model.internalModel.coreModel;
+          console.log("Core Model:", core);
+          // @ts-ignore
+          if (core._parameterIds) console.log("Core Indices:", core._parameterIds);
+          // @ts-ignore
+          if (core.parameters) console.log("Core Parameters:", core.parameters);
+        }
+        // @ts-ignore
+        if (model.internalModel.parameters) console.log("High-level Params:", model.internalModel.parameters);
+
+        hasLoggedApi = true;
       }
 
+      if (isSpeaking) {
+        const t = Date.now() / 150; // Slower sine wave
+        mouthValue = (Math.sin(t) + 1) / 2 * 0.8; // 0 to 0.8
+        // DEBUG: Visual Signal
+        document.body.style.border = "4px solid red";
+      } else {
+        mouthValue = Math.max(0, mouthValue - 0.1 * delta);
+        document.body.style.border = "none";
+      }
+
+      // --- UNIVERSAL PARAMETER SETTER ---
+      // Try all known ways to set ParamMouthOpenY for Pixi-Live2D v0.4 / Cubism 4
+
       try {
-        // PixiLive2DDisplay v0.4.0 Core Model Access
-        model.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', mouthValue);
+        const im = model.internalModel;
+        const core = im.coreModel;
+        const paramId = 'ParamMouthOpenY';
+
+        // Method 1: High Level .parameters (If exists)
+        // @ts-ignore
+        if (im.parameters && im.parameters.ids) {
+          // @ts-ignore
+          const idx = im.parameters.ids.indexOf(paramId);
+          if (idx >= 0) {
+            // @ts-ignore
+            im.parameters.values[idx] = mouthValue;
+            // Note: Some versions require .setValue(id, val)
+          }
+        }
+
+        // Method 2: Core Model Index (Standard Cubism 4)
+        // @ts-ignore
+        if (core && core._parameterIds) {
+          // @ts-ignore
+          const idx = core._parameterIds.indexOf(paramId);
+          if (idx >= 0) {
+            // @ts-ignore
+            core.setParameterValueByIndex(idx, mouthValue, 1.0);
+          }
+        }
+
+        // Method 3: Core Model Direct ID (Cubism 2/3 Legacy or Wrapper)
+        // @ts-ignore
+        if (core && core.setParameterValueById) {
+          // @ts-ignore
+          core.setParameterValueById(paramId, mouthValue);
+        }
+
       } catch (e) {
-        // Ignore safe errors
+        // Suppress errors to avoid console flood
       }
     });
 
@@ -102,6 +161,22 @@ function setupWebSocket(model: Live2DModel) {
       // Handle Speech Text
       if (data.type === "speech") {
         console.log("Kage Says: " + data.text);
+      }
+
+      // Handle Expression Change
+      if (data.type === "expression") {
+        console.log("Expression:", data.name);
+        try {
+          model.expression(data.name);
+        } catch (e) { console.error("Expr Error", e); }
+      }
+
+      // Handle Motion Trigger
+      if (data.type === "motion") {
+        console.log("Motion:", data.group, data.index);
+        try {
+          model.motion(data.group, data.index);
+        } catch (e) { console.error("Motion Error", e); }
       }
 
     } catch (e) {

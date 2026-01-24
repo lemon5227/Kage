@@ -110,6 +110,7 @@ class KageServer:
                 
                 # Determine Intent
                 intent = self.router.classify(user_input)
+                print(f"🤔 Intent: {intent}") # Debug Output
                 
                 # Determine Emotion
                 current_emotion = voice_emotion if voice_emotion != "neutral" else "neutral"
@@ -168,7 +169,8 @@ class KageServer:
                              final_speech += t
 
                 # TTS & LipSync
-                await self.mouth_speak(final_speech)
+                print(f"👻 Kage: {final_speech}") # Debug Output
+                await self.mouth_speak(final_speech, current_emotion)
 
                 # Save Memory
                 if not is_command:
@@ -181,22 +183,34 @@ class KageServer:
                 traceback.print_exc()
                 await asyncio.sleep(1)
 
-    async def mouth_speak(self, text):
-        """Speak and allow Frontend to sync lips"""
+    async def mouth_speak(self, text, emotion="neutral"):
+        """Speak and allow Frontend to sync lips and expression"""
         if not text: return
         
-        # 1. Send text to frontend (for speech bubble)
+        # 1. Send Expression (Emotion)
+        emo_map = {
+            "neutral": "f00", "happy": "f01", "sad": "f02",
+            "angry": "f03", "fear": "f04", "surprised": "f05"
+        }
+        exp_name = emo_map.get(emotion, "f00")
+        await self.send_message("expression", {"name": exp_name})
+
+        # 2. Send text to frontend (for speech bubble)
         await self.send_message("speech", {"text": text})
         
-        # 2. Audio Generation (Blocking)
-        # In a perfect world, we generate a .wav file, send the path to Frontend, 
-        # and let Frontend play it + analyze amplitude for LipSync.
-        # For now, KageMouth plays audio locally via PyAudio/Playsound.
-        # We need to tell Frontend "Start talking" and "Stop talking".
+        # 3. Audio Generation (Generating... not speaking yet)
+        # We manually call generate first so we don't block the 'SPEAKING' state
+        audio_path = await self.mouth.generate_speech_file(text, emotion)
         
-        await self.send_state("SPEAKING")
-        await asyncio.to_thread(self.mouth.speak, text)
-        await self.send_state("IDLE")
+        if audio_path:
+            # 4. Now we are ready to play. Signal Frontend!
+            await self.send_state("SPEAKING")
+            
+            # Blocking Playback
+            await asyncio.to_thread(self.mouth.play_audio_file, audio_path)
+            
+            # Done
+            await self.send_state("IDLE")
 
 # Singleton Instance
 kage_server = KageServer()

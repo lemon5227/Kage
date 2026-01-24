@@ -16,37 +16,56 @@ class KageMouth:
         # init speaker
         pygame.mixer.init()
     
-    async def _generate_audio(self, text, emotion="neutral"):
-        # Adjust parameters based on emotion
-        # EdgeTTS supports rate (speed), pitch (tone), and volume
-        rate = "+0%"
-        pitch = "+0Hz"
-        volume = "+0%"
-
-        if emotion == "happy":
-            rate = "+10%"   # Speak a bit faster
-            pitch = "+20Hz" # Higher pitch
-            volume = "+10%" # Louder
-        elif emotion == "sad":
-            rate = "-10%"   # Slower
-            pitch = "-10Hz" # Lower pitch
-            volume = "-20%" # Softer
-        elif emotion == "angry":
-            rate = "+20%"   # Fast
-            pitch = "+0Hz"  # Normal pitch but aggressive
-            volume = "+30%" # Very loud
-        elif emotion == "fearful":
-             rate = "+10%"
-             pitch = "+30Hz" # Trembling high pitch
-             volume = "-10%"
-
-        # Construct SSML-like adjustment by passing options to communicate if supported, 
-        # but standard edge_tts python lib is simpler. 
-        # Actually edge_tts Communicate accepts `rate`, `volume`, `pitch` arguments directly in recent versions
-        # Let's try passing them.
+    async def generate_speech_file(self, text, emotion="neutral"):
+        """Generates audio file and returns the path. Does NOT play it."""
+        if not text: return None
         
-        communicate = edge_tts.Communicate(text, self.voice, rate=rate, volume=volume, pitch=pitch)
-        await communicate.save(self.temp_audio_file)
+        try:
+            cleaned_text = self._clean_text(text)
+            
+            # Parameters logic (Rate/Pitch/Volume)
+            rate = "+0%"
+            pitch = "+0Hz"
+            volume = "+0%"
+    
+            if emotion == "happy":
+                rate = "+10%"; pitch = "+20Hz"; volume = "+10%"
+            elif emotion == "sad":
+                rate = "-10%"; pitch = "-10Hz"; volume = "-20%"
+            elif emotion == "angry":
+                rate = "+20%"; pitch = "+0Hz"; volume = "+30%"
+            elif emotion == "fearful":
+                 rate = "+10%"; pitch = "+30Hz"; volume = "-10%"
+    
+            communicate = edge_tts.Communicate(cleaned_text, self.voice, rate=rate, volume=volume, pitch=pitch)
+            await communicate.save(self.temp_audio_file)
+            return self.temp_audio_file
+            
+        except Exception as e:
+            print(f"Error generating audio: {e}")
+            return None
+
+    def play_audio_file(self, file_path):
+        """Plays the given audio file (Blocking)"""
+        if not file_path or not os.path.exists(file_path): return
+
+        try:
+            pygame.mixer.music.load(file_path)
+            pygame.mixer.music.play()
+
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(10)
+            
+            pygame.mixer.music.unload()
+            
+            # Clean up immediately? Or later? 
+            # Safe to clean up here as we are blocking.
+            try:
+                os.remove(file_path)
+            except: pass
+            
+        except Exception as e:
+            print(f"Error playing audio: {e}")
     
     def _clean_text(self, text):
         # 1. Replace symbols for better pronunciation
@@ -70,37 +89,8 @@ class KageMouth:
             
         return cleaned
 
+    # Legacy wrapper
     def speak(self, text, emotion="neutral"):
-        if not text:
-            return 
-
-        # due to main.py is sync, we need to run async function in sync way
-        
-        try:
-            cleaned_text = self._clean_text(text)
-            # print(f"(TTS Debug: {cleaned_text} [Emo:{emotion}])") 
-            asyncio.run(self._generate_audio(cleaned_text, emotion))
-
-        except Exception as e:
-            print(f"Error generating audio:{e}")
-            return
-        
-        # play logic
-        try:
-            pygame.mixer.music.load(self.temp_audio_file)
-            pygame.mixer.music.play()
-
-            # wait until the audio is played
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(10) # check 10 times per second
-            
-            # Unload to release file lock
-            pygame.mixer.music.unload()
-
-            # Clean up
-            if os.path.exists(self.temp_audio_file):
-                os.remove(self.temp_audio_file)
-        
-        except Exception as e:
-            print(f"Error playing audio:{e}")
-        
+        path = asyncio.run(self.generate_speech_file(text, emotion))
+        if path:
+            self.play_audio_file(path)

@@ -235,21 +235,41 @@ Master心情: {current_emotion}
                 add_generation_prompt=True
             )
         except Exception as e:
-            # Fallback
             prompt = f"<|system|>\n{messages[0]['content']}<|end|>\n<|user|>\n{user_input}<|end|>\n<|assistant|>\n"
 
         # 3. Create Generator (Streaming)
         sampler = make_sampler(temp=temp)
-        
-        # We need to import stream_generate inside to avoid global import issues if strict
         from mlx_lm import stream_generate
 
-        # Return the generator directly
-        # The consumer (main.py) will iterate over this
-        return stream_generate(
+        # 4. Manual Stop Logic (Prevents Hallucination)
+        stop_words = ["User:", "Tool Result:", "Master:", "\n\n\n"]
+        current_text = ""
+        
+        generation_stream = stream_generate(
             self.model,
             self.tokenizer,
             prompt=prompt,
             max_tokens=200,
             sampler=sampler
         )
+
+        for chunk_obj in generation_stream:
+            # Extract text from chunk
+            text_chunk = chunk_obj.text if hasattr(chunk_obj, 'text') else str(chunk_obj)
+            current_text += text_chunk
+            
+            # Check for stop words
+            should_stop = False
+            for sw in stop_words:
+                if sw in current_text:
+                    # Truncate and stop
+                    # Remove the stop word part
+                    current_text = current_text.split(sw)[0]
+                    should_stop = True
+                    break
+            
+            # Yield the chunk (or cleaned part)
+            yield text_chunk 
+            
+            if should_stop:
+                break
