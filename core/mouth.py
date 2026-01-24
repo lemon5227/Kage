@@ -49,9 +49,25 @@ class KageMouth:
         await communicate.save(self.temp_audio_file)
     
     def _clean_text(self, text):
-        # Whitelist: Chinese, English, Numbers, Basic Punctuation
+        # 1. Replace symbols for better pronunciation
+        text = text.replace("°C", "摄氏度").replace("℃", "摄氏度")
+        text = text.replace("°", "度")
+        
+        # 2. Whitelist: Chinese, English, Numbers, Basic Punctuation
         # Filter out emojis (like 😄, ✨) which sound weird in TTS
-        cleaned = re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9\s,。.?!，。？！:：;；"\'\-\(\)（）]', '', text)
+        # But wait, sometimes we want to keep text structure.
+        # Let's just remove specific emoji ranges or non-text content.
+        cleaned = re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9\s,。.?!，。？！:：;；"\'\-\(\)（）摄氏度]', '', text)
+        
+        # 3. Remove repetitive characters (like 🌡️🌡️🌡️ or .......)
+        # Collapse 3 or more repeated chars to 1
+        cleaned = re.sub(r'(.)\1{2,}', r'\1', cleaned)
+        
+        # 4. Strictly limit ANY repeated sequence at the end of the string (Emoji spam killer)
+        # If the last 5 chars contain repeated chars, chop them
+        if len(cleaned) > 20 and cleaned[-1] == cleaned[-2]:
+            cleaned = cleaned.rstrip(cleaned[-1]) + cleaned[-1] # Keep only one
+            
         return cleaned
 
     def speak(self, text, emotion="neutral"):

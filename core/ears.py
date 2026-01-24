@@ -187,7 +187,10 @@ class KageEars:
                 print(f"You said: {full_text}")
                 
                 # Clean up temp file
+                # Clean up temp file
                 if os.path.exists(self.temp_audio_file):
+                    os.remove(self.temp_audio_file)
+
                 # Return tuple (text, emotion_label)
                 # emotion_label is now a simple string, e.g., "happy", "angry"
                 return full_text.strip(), detected_emotion
@@ -205,5 +208,4 @@ class KageEars:
             return "", None
 
 
-        
-```
+

@@ -5,40 +5,43 @@
 ## 1. 核心架构 (The Core)
 * **硬件平台**: Mac M4 (16GB RAM)
 * **开发语言**: Python 3.10+
-* **大脑 (Inference)**: Apple MLX 框架 + `Phi-3.5-mini-instruct-4bit` (3.8B 参数)
-* **记忆 (Memory)**: 双层存储策略
-    * L1: `JSONL` 原始日志 (Source of Truth, 用于迁移)
-    * L2: `ChromaDB` 向量索引 (Vector Index, 用于 RAG 检索)
+* **大脑 (Inference)**: Apple MLX 框架 + `Phi-4-mini-instruct-4bit` (原生 Tool Use 支持)
+* **双层思考 (Dual-Layer Thinking)**:
+    *   **Layer 1 (Router)**: 极速意图判断 (Chat vs Command)
+    *   **Layer 2 (Brain)**: 深度思考与执行
+* **记忆 (Memory)**: 双层存储策略 (L1 JSONL + L2 ChromaDB)
 
 ## 2. 交互层 (Interaction)
-* **听觉**: `Faster-Whisper` (Local ASR)
-* **视觉**: `Electron` + `PixiJS` (渲染 Live2D 模型)
-* **通信**: `FastAPI` + `WebSocket` (实现前后端实时状态同步)
+* **听觉**: `FunASR` (Paraformer) - 高精度中文识别
+* **视觉**: (Future) `Electron` + `PixiJS` (渲染 Live2D 模型)
+* **嘴巴**: `Edge-TTS` (Azure Speech)
 
 ## 3. 扩展机制 (The "Limbs")
-* **插件系统**: 基于 `Pydantic` 定义标准接口。
-* **热重载**: `Watchdog` 监控 `/skills` 目录，实现 Python 脚本拖入即用。
+* **Self-Programming**: 通过 `create_file` 能力，Kage 可以编写 Python 脚本来扩展自己的技能树 (`abilities/` 目录)。
+* **Native Tools**: 内置 `curl`, `grep`, `open_app` 等系统级工具。
 
 ## 4. 目录结构规范
+```
 /kage_project
-├── /core           # 大脑核心 (LLM, RAG, Router)
-├── /skills         # 插件目录 (用户自定义脚本)
-├── /data           # 记忆存储 (JSONL + ChromaDB)
-├── /interface      # 前端代码 (Electron/Vue)
-└── main.py         # 启动入口
+├── /core           # 大脑核心 (Brain, Memory, Router, Tools)
+├── /config         # 配置文件 (Persona)
+├── /abilities      # Kage 自我编写的技能脚本
+├── /data           # 记忆存储
+└── main.py         # 启动入口 (双层循环逻辑)
+```
 
-## 5. Prompt Engineering (针对 Phi-3.5 小模型优化)
-由于我们使用的是 3.8B 参数量的小模型，为了解决“人称混淆”和“金鱼记忆”问题，采用了以下特殊架构：
+## 5. 关键技术突破 (v2.0 Updates)
+### 5.1 Dual-Layer Router (双层脑)
+为了解决 LLM 容易混淆“聊天”与“指令”的问题，我们引入了轻量级路由层。
+- **Chat Mode**: 纯对话，载入记忆，**严禁使用工具**。
+- **Command Mode**: 纯执行，不载入杂乱记忆，**能够使用工具**。
 
-### 5.1 Chain-of-Thought (思维链)
-引入 `<think>` 标签，强制模型在输出回复前进行内部推理。
-- **作用**: 提高对上下文的理解力，大幅减少幻觉。
-- **流程**: `Input -> <think>Analyze Context...</think> -> Final Output`
+### 5.2 Feedback Loop (反馈闭环)
+Kage 拥有自我纠错能力：
+1. **Action**: 执行 Shell 命令。
+2. **Observation**: 读取命令输出结果。
+3. **Report**: 结合用户问题，用自然语言汇报结果 (Prompt 强力约束，防止幻觉)。
 
-### 5.2 Dialogue Transcript (剧本模式)
-将历史对话格式化为标准剧本模式 (`Master: ... \n Kage: ...`)。
-- **作用**: 根除“人称代词混淆”问题（例如把“我”理解成模型自己）。
-
-### 5.3 Short-term Context Buffer
-在 Prompt 中直接拼入最近 10 轮对话历史。
-- **作用**: 弥补 RAG (检索增强生成) 在回顾最近对话时的不准确性（Recall Contamination）。
+### 5.3 Streaming & Latency
+- 迁移至 `MLX` 框架，在 M4 芯片上实现 Token 秒出。
+- Router 耗时 <20ms，用户无感切换模式。
