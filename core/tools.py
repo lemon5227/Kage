@@ -5,6 +5,10 @@ import platform
 import importlib.util
 import glob
 import sys
+import json
+import re
+import ast
+import time
 
 class KageTools:
     # 常用应用中英文映射 (可扩展)
@@ -51,6 +55,9 @@ class KageTools:
     def __init__(self):
         self.os_type = platform.system()
         self.skills = {}
+        self.skill_triggers = []
+        self.cache = {}
+        self.cache_ttl = 30
         self._load_skills()
         
         # Auto-Discovery: Scan for installed apps
@@ -142,12 +149,167 @@ class KageTools:
                             spec.loader.exec_module(module)
                             
                             if hasattr(module, "SKILL_INFO"):
-                                self.skills[module.SKILL_INFO["name"]] = module
-                                print(f"  + 加载技能: {module.SKILL_INFO['name']}")
+                                skill_name = module.SKILL_INFO["name"]
+                                self.skills[skill_name] = module
+                                triggers = module.SKILL_INFO.get("triggers", [])
+                                for trigger in triggers:
+                                    if trigger:
+                                        self.skill_triggers.append((trigger.lower(), skill_name))
+                                print(f"  + 加载技能: {skill_name}")
                     except Exception as e:
                         print(f"  ❌ 加载技能 {filename} 失败: {e}")
         except Exception as e:
             print(f"  ❌ Error loading skills: {e}")
+
+    def _find_skill_trigger(self, user_input: str):
+        if not user_input:
+            return None
+        text = user_input.lower()
+        for trigger, skill_name in self.skill_triggers:
+            if trigger in text:
+                return skill_name
+        return None
+
+    def _cache_key(self, name: str, arguments: dict):
+        payload = json.dumps(arguments, sort_keys=True, ensure_ascii=False)
+        return f"{name}:{payload}"
+
+    def _get_cache(self, key: str):
+        if key not in self.cache:
+            return None
+        entry = self.cache[key]
+        if time.time() - entry["timestamp"] > self.cache_ttl:
+            del self.cache[key]
+            return None
+        return entry["value"]
+
+    def _set_cache(self, key: str, value: str):
+        self.cache[key] = {"timestamp": time.time(), "value": value}
+
+    def _is_cacheable(self, name: str, arguments: dict):
+        if name == "mcp_fs_list":
+            return True
+        if name == "run_cmd":
+            command = str(arguments.get("command", ""))
+            return "wttr.in" in command or "api.ipify.org" in command
+        return False
+
+    def execute_trigger(self, user_input: str):
+        skill_name = self._find_skill_trigger(user_input)
+        if not skill_name:
+            return None
+        skill = self.skills.get(skill_name)
+        if not skill or not hasattr(skill, "execute"):
+            return None
+        return skill.execute(user_input)
+
+    def parse_tool_calls(self, text: str):
+        if not text:
+            return []
+
+        tool_call_pattern = r"<\|tool_call\|>\s*(\[.*?\])\s*<\|/tool_call\|>"
+        match = re.search(tool_call_pattern, text, re.DOTALL)
+        if match:
+            content = match.group(1)
+            parsed = self._parse_json_payload(content)
+            return parsed if isinstance(parsed, list) else []
+
+        stripped = text.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            parsed = self._parse_json_payload(stripped)
+            return parsed if isinstance(parsed, list) else []
+
+        fallback_match = re.search(r"(\[.*\])", text, re.DOTALL)
+        if fallback_match:
+            parsed = self._parse_json_payload(fallback_match.group(1))
+            return parsed if isinstance(parsed, list) else []
+
+        return []
+
+    def _parse_json_payload(self, content: str):
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            try:
+                parsed = ast.literal_eval(content)
+                return parsed
+            except Exception:
+                return None
+
+    def execute_tool_call(self, name: str, arguments=None):
+        if not name:
+            return "❌ Tool name missing"
+
+        normalized_args = self._normalize_arguments(arguments)
+
+        if self._is_cacheable(name, normalized_args):
+            cache_key = self._cache_key(name, normalized_args)
+            cached = self._get_cache(cache_key)
+            if cached is not None:
+                return cached
+
+        if name == "run_cmd":
+            result = self.run_terminal_cmd(normalized_args.get("command", ""))
+            if self._is_cacheable(name, normalized_args):
+                self._set_cache(self._cache_key(name, normalized_args), result)
+            return result
+
+        if hasattr(self, name):
+            method = getattr(self, name)
+            try:
+                if not normalized_args:
+                    result = method()
+                else:
+                    result = method(**normalized_args)
+                if self._is_cacheable(name, normalized_args):
+                    self._set_cache(self._cache_key(name, normalized_args), result)
+                return result
+            except TypeError:
+                return self.execute(self._format_command(name, normalized_args))
+
+        if name in self.skills:
+            skill = self.skills[name]
+            params = self._skill_params_from_args(normalized_args)
+            result = skill.execute(params)
+            if self._is_cacheable(name, normalized_args):
+                self._set_cache(self._cache_key(name, normalized_args), result)
+            return result
+
+        return f"❌ Unknown tool or command: {name}"
+
+    def _normalize_arguments(self, arguments):
+        if arguments is None:
+            return {}
+        if isinstance(arguments, dict):
+            return arguments
+        if isinstance(arguments, str):
+            arguments = arguments.strip()
+            if not arguments:
+                return {}
+            try:
+                parsed = json.loads(arguments)
+                return parsed if isinstance(parsed, dict) else {"value": parsed}
+            except json.JSONDecodeError:
+                return {"value": arguments}
+        return {"value": arguments}
+
+    def _skill_params_from_args(self, arguments: dict):
+        if not arguments:
+            return ""
+        if "params" in arguments:
+            return arguments.get("params") or ""
+        if len(arguments) == 1:
+            return next(iter(arguments.values()))
+        return json.dumps(arguments, ensure_ascii=False)
+
+    def _format_command(self, name: str, arguments: dict):
+        args = []
+        for value in arguments.values():
+            if isinstance(value, str):
+                args.append(f'"{value}"')
+            else:
+                args.append(str(value))
+        return f"{name}({', '.join(args)})"
 
     def open_app(self, app_name):
         print(f"正在尝试打开: {app_name}")
@@ -466,15 +628,11 @@ class KageTools:
             else:
                  root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             
-            # If filename contains a directory part like "abilities/foo.py", respect it if safe
-            # Otherwise default to "abilities"
-            
-            target_dir = os.path.join(root_dir, "abilities") # Default folder
+            # Default to skills folder for reusable abilities
+            target_dir = os.path.join(root_dir, "skills")
             target_filename = os.path.basename(filename)
             
-            if "abilities/" in filename or "scripts/" in filename:
-                # User specified a folder, let's try to verify but for now just use the basename to force into abilities
-                # Actually user wants "ability" folder. Let's force everything into "abilities" for organization.
+            if "skills/" in filename or "scripts/" in filename:
                 pass
 
             if not os.path.exists(target_dir):
@@ -488,7 +646,7 @@ class KageTools:
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
                 
-            return f"已创建技能: abilities/{target_filename} 📝 (运行: run_cmd('python3 abilities/{target_filename}'))"
+            return f"已创建技能: skills/{target_filename} 📝 (重启后即可使用)"
             
         except Exception as e:
             return f"创建脚本失败: {e}"

@@ -1,0 +1,8 @@
+{
+  "command": [
+    "npx",
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "/Users/wenbo/Kage"
+  ]
+}

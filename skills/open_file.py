@@ -7,7 +7,13 @@ SKILL_INFO = {
     "name": "open_file",
     "description": "打开文件或最近的截图",
     "triggers": ["打开文件", "打开截图", "打开图片", "那个截图", "刚才的截图"],
-    "action": "open_file"
+    "action": "open_file",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "文件路径或关键词(如最新截图)"}
+        }
+    }
 }
 
 def execute(params: str) -> str:
@@ -17,6 +23,7 @@ def execute(params: str) -> str:
     """
     desktop = os.path.expanduser("~/Desktop")
     
+    params = params or ""
     # 特殊处理：最新截图
     if "截图" in params or "screenshot" in params.lower() or not params:
         # 查找桌面上最新的 Kage 截图

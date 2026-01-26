@@ -1,7 +1,11 @@
+# type: ignore
+from typing import Any
 from mlx_lm import load, generate
 from mlx_lm.sample_utils import make_sampler
 import os
 import json
+import importlib.util
+import sys
 
 class KageBrain:
     def __init__(self, model_path="mlx-community/Phi-4-mini-instruct-4bit"):
@@ -14,7 +18,9 @@ class KageBrain:
         print(f"Loading Brain Model: {model_path} ...")
         
         # Load model and tokenizer
-        self.model, self.tokenizer = load(model_path)
+        model_bundle: Any = load(model_path)  # type: ignore[assignment]
+        self.model = model_bundle[0]
+        self.tokenizer = model_bundle[1]
         
         # Define Tools Schema (Native Function Calling)
         self.tools = [
@@ -122,6 +128,7 @@ class KageBrain:
                 }
             }
         ]
+        self.tools.extend(self._load_skill_tools())
         print("The Soul has been awakened (Phi-4 Supercharged)")
 
     def _load_persona(self):
@@ -130,6 +137,46 @@ class KageBrain:
                 return json.load(f)
         else:
             return {"name": "Kage", "system_prompt": "你是一个助手。", "description": "默认模式"}
+
+
+    def _load_skill_tools(self):
+        tools = []
+        try:
+            if getattr(sys, 'frozen', False):
+                skills_dir = os.path.join(os.path.dirname(sys.executable), "skills")
+            else:
+                skills_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "skills")
+
+            if not os.path.exists(skills_dir):
+                return tools
+
+            for filename in os.listdir(skills_dir):
+                if not filename.endswith(".py") or filename.startswith("__"):
+                    continue
+                filepath = os.path.join(skills_dir, filename)
+                module_name = f"skill_{filename[:-3]}"
+                spec = importlib.util.spec_from_file_location(module_name, filepath)
+                if not spec or not spec.loader:
+                    continue
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                if not hasattr(module, "SKILL_INFO"):
+                    continue
+                info = module.SKILL_INFO
+                params = info.get("parameters") or {"type": "object", "properties": {}}
+                tools.append(
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": info.get("name"),
+                            "description": info.get("description", ""),
+                            "parameters": params,
+                        },
+                    }
+                )
+        except Exception:
+            return tools
+        return tools
 
     def _format_history_for_chatml(self, history, user_input, memory_text, current_emotion, mode="action"):
         messages = []
@@ -169,6 +216,18 @@ Master心情: {current_emotion}
             # --- ACTION MODE (Default/Tools) ---
             import json
             tools_schema = json.dumps(self.tools, ensure_ascii=False, indent=2)
+            tool_list_simple = []
+            for tool in self.tools:
+                if tool.get("type") == "function":
+                    func = tool.get("function", {})
+                    tool_list_simple.append({
+                        "name": func.get("name"),
+                        "description": func.get("description", ""),
+                        "parameters": func.get("parameters", {}),
+                    })
+                else:
+                    tool_list_simple.append(tool)
+            tools_tag = f"<|tool|>{json.dumps(tool_list_simple, ensure_ascii=False)}<|/tool|>"
             
             system_content = f"""{base_persona}
 【当前状态】
@@ -179,40 +238,26 @@ Master心情: {current_emotion}
 
 【能力定义】
 1. **系统控制 (统一入口)**:
-   - 调音量 → `>>>ACTION: system_control("volume", "up")` 或 `system_control("volume", "down")`
-   - 小声一点 → `>>>ACTION: system_control("volume", "down")`
-   - 静音 → `>>>ACTION: system_control("volume", "mute")`
-   - 调亮度 → `>>>ACTION: system_control("brightness", "up")` 或 `system_control("brightness", "down")`
-   - 亮一点 → `>>>ACTION: system_control("brightness", "up")`
-   - 暗一点 → `>>>ACTION: system_control("brightness", "down")`
-   - WiFi → `>>>ACTION: system_control("wifi", "on")` 或 `system_control("wifi", "off")`
+   - 调音量 → `>>>ACTION: system_control("volume", "up")`
+   - 调亮度 → `>>>ACTION: system_control("brightness", "up")`
    - 打开应用 → `>>>ACTION: system_control("app", "open", "Safari")`
-   - 关闭应用 → `>>>ACTION: system_control("app", "close", "Safari")`
 
 2. **Shell 命令**:
    - 查IP → `>>>ACTION: run_cmd("curl -s https://api.ipify.org")`
    - 查天气 → `>>>ACTION: run_cmd("curl -s 'wttr.in/Beijing?format=3'")`
-   - 查网页状态 → `>>>ACTION: run_cmd("curl -s -I https://www.google.com | head -n 1")`
    - 查时间 → `>>>ACTION: get_time()`
 
-3. **其他**:
-   - 静音 → `>>>ACTION: system_control("volume", "mute")`
-   - 打开备忘录 → `>>>ACTION: open_app("Notes")`
-   - 打开音乐 → `>>>ACTION: open_app("Music")`
-    - 打开邮件 → `>>>ACTION: open_app("Mail")`
-    - 关闭Safari → `>>>ACTION: system_control("app", "close", "Safari")`
-    - 关闭计算器 → `>>>ACTION: system_control("app", "close", "Calculator")`
-    - 打开谷歌浏览器 → `>>>ACTION: open_app("Google Chrome")`
-
 【注意】
-- 查IP 必须用 `run_cmd("curl -s https://api.ipify.org")`，不要用其他 API！
-- 查天气时，必须使用 `wttr.in` 域名 (绝对不要用 wttr.ina)！根据用户说的城市动态替换，如"深圳天气" → `run_cmd("curl -s 'wttr.in/Shenzhen?format=3'")`
+- 查IP 只用 `api.ipify.org`；查天气只用 `wttr.in/<城市>?format=3`
 
 【工具列表】
 {tools_schema}
 
+{tools_tag}
+
 【强制回复格式】
-- **不要废话**，直接输出 `>>>ACTION:` 代码。
+- 优先输出 `<|tool_call|>[{"name": "tool_name", "arguments": {"param": "value"}}]<|/tool_call|>`
+- 如果无法输出 tool_call，则回退 `>>>ACTION: tool_name("param")`
 """
         messages.append({"role": "system", "content": system_content})
 
@@ -238,6 +283,8 @@ Master心情: {current_emotion}
             prompt = f"<|system|>\n{messages[0]['content']}<|end|>\n<|user|>\n{user_input}<|end|>\n<|assistant|>\n"
 
         # 3. Create Generator (Streaming)
+        if mode == "chat":
+            temp = min(temp, 0.5)
         sampler = make_sampler(temp=temp)
         from mlx_lm import stream_generate
 
@@ -245,11 +292,12 @@ Master心情: {current_emotion}
         stop_words = ["User:", "Tool Result:", "Master:", "\n\n\n"]
         current_text = ""
         
+        max_tokens = 120 if mode == "action" else 220
         generation_stream = stream_generate(
             self.model,
             self.tokenizer,
             prompt=prompt,
-            max_tokens=200,
+            max_tokens=max_tokens,
             sampler=sampler
         )
 

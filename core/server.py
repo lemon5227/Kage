@@ -1,6 +1,8 @@
+# pyright: reportGeneralTypeIssues=false
 import asyncio
 import json
 import traceback
+import random
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -132,7 +134,10 @@ class KageServer:
                 print(f"🤔 Intent: {intent}") # Debug Output
                 
                 # Determine Emotion
-                current_emotion = voice_emotion if voice_emotion != "neutral" else "neutral"
+                current_emotion: str = "neutral"
+                if voice_emotion and voice_emotion != "neutral":
+                    current_emotion = str(voice_emotion)
+                current_emotion_str = str(current_emotion)
 
                 # Generate Response
                 full_response = ""
@@ -141,22 +146,38 @@ class KageServer:
                 memories = []
                 if not is_command:
                      memories = self.memory.recall(user_input, n_result=3)
+                     quick_reply = self._quick_chat_response(user_input)
+                     if quick_reply:
+                         final_speech = quick_reply
+                         print(f"👻 Kage: {final_speech}")
+                         await self.mouth_speak(final_speech, current_emotion_str)
+                         self.memory.add_memory(content=user_input, emotion=current_emotion_str, type="chat")
+                         await self.send_state("IDLE")
+                         continue
 
                 mode = "action" if is_command else "chat"
+
+                if is_command:
+                    trigger_result = await asyncio.to_thread(self.tools.execute_trigger, user_input)
+                    if trigger_result is not None:
+                        final_speech = str(trigger_result)
+                        print(f"👻 Kage: {final_speech}")
+                        await self.mouth_speak(final_speech, current_emotion_str)  # type: ignore[arg-type]
+                        await self.send_state("IDLE")
+                        continue
                 
                 # Run Thinking in thread
-                response_stream = await asyncio.to_thread(
-                    self.brain.think, 
-                    user_input, 
-                    memories, 
-                    current_emotion, 
-                    mode=mode
+                response_stream = await asyncio.to_thread(  # type: ignore[arg-type]
+                    self._think_action,
+                    user_input,
+                    memories,
+                    current_emotion_str,
+                    mode,
                 )
 
                 # Collect response
                 for chunk in response_stream:
-                    if hasattr(chunk, 'text'): text = chunk.text
-                    else: text = str(chunk)
+                    text = getattr(chunk, "text", str(chunk))
                     full_response += text
                 
                 # 3. Action / Speech Phase
@@ -165,31 +186,33 @@ class KageServer:
                 final_speech = full_response
 
                 if is_command:
-                     if ">>>ACTION:" in full_response:
+                     tool_calls = self.tools.parse_tool_calls(full_response)
+                     if tool_calls:
+                        await self._send_quick_ack(current_emotion_str)
+                        results = []
+                        for call in tool_calls:
+                            name = call.get("name")
+                            arguments = call.get("arguments") or call.get("parameters")
+                            result = await asyncio.to_thread(self.tools.execute_tool_call, name, arguments)
+                            results.append(f"{name}: {result}")
+
+                        tool_result = "\n".join(results)
+                        final_speech = tool_result
+                     elif ">>>ACTION:" in full_response:
                         parts = full_response.split(">>>ACTION:")
                         final_speech = parts[0].strip()
                         raw_cmd = parts[1].strip()
-                        
+                        await self._send_quick_ack(current_emotion_str)
                         tool_result = await asyncio.to_thread(self.tools.execute, raw_cmd)
-                        
-                        # Report back
-                        report_input = f"User: {user_input}\nTool Result: {tool_result}\nReport back to user."
-                        report_stream = await asyncio.to_thread(
-                            self.brain.think, report_input, [], current_emotion, temp=0.7, mode="report"
-                        )
-                        final_speech = ""
-                        for chunk in report_stream:
-                             if hasattr(chunk, 'text'): t = chunk.text
-                             else: t = str(chunk)
-                             final_speech += t
+                        final_speech = str(tool_result)
 
                 # TTS & LipSync
                 print(f"👻 Kage: {final_speech}") 
-                await self.mouth_speak(final_speech, current_emotion)
+                await self.mouth_speak(final_speech, current_emotion_str)  # type: ignore[arg-type]
                 
                 # Save Memory
                 if not is_command:
-                     self.memory.add_memory(content=user_input, emotion=current_emotion, type="chat")
+                     self.memory.add_memory(content=user_input, emotion=current_emotion_str, type="chat")  # type: ignore[arg-type]
 
                 await self.send_state("IDLE")
 
@@ -197,6 +220,26 @@ class KageServer:
                 print(f"❌ Error in loop: {e}")
                 traceback.print_exc()
                 await asyncio.sleep(1)
+
+    def _think_action(self, user_input: str, memories: list, current_emotion: str, mode: str):
+        return self.brain.think(
+            user_input=user_input,
+            memories=memories,
+            current_emotion=current_emotion,
+            mode=mode,
+        )
+
+    def _think_report(self, report_input: str, current_emotion: str):
+        return self.brain.think(
+            user_input=report_input,
+            memories=[],
+            current_emotion=current_emotion,
+            temp=0.7,
+            mode="report",
+        )
+
+    async def _send_quick_ack(self, current_emotion: str):
+        await self.mouth_speak("我马上处理~", current_emotion)
 
     async def mouth_speak(self, text, emotion="neutral"):
         """Speak and allow Frontend to sync lips and expression"""
@@ -223,6 +266,101 @@ class KageServer:
             await asyncio.to_thread(self.mouth.play_audio_file, audio_path)
             # Done
             await self.send_state("IDLE")
+
+    def _quick_chat_response(self, user_input: str):
+        text = (user_input or "").strip()
+        if not text:
+            return None
+
+        if "你是谁" in text:
+            return "我是Kage，终端精灵哒💖"
+        if "你能做什么" in text:
+            return "系统控制/计算/文件工具哒💖"
+        if "冷笑话" in text or "笑话" in text:
+            return self.tools.execute_tool_call("joke")
+        return None
+
+    def _polish_chat_response(self, text: str):
+        if not text:
+            return text
+        cleaned = " ".join(text.split())
+        cleaned = cleaned.replace("Master心情:", "")
+        cleaned = cleaned.replace("Master心情", "")
+        cleaned = cleaned.replace("Master 心情:", "")
+        cleaned = cleaned.replace("Master 心情", "")
+        cleaned = cleaned.replace("@@@", "")
+        cleaned = self._filter_chat_text(cleaned)
+        cleaned = self._collapse_repeats(cleaned)
+        cleaned = cleaned.strip()
+        if not cleaned:
+            cleaned = "嗯嗯"
+        if len(cleaned) < 6:
+            cleaned = f"{cleaned} {self._short_care_phrase()}"
+        max_len = 30
+        if len(cleaned) > max_len:
+            cleaned = cleaned[:max_len]
+        if not any(mark in cleaned for mark in ("✨", "😤", "💖")):
+            cleaned += "💖"
+        if not cleaned.endswith(("哒", "捏", "哇")):
+            cleaned += "哒"
+        return cleaned
+
+    def _filter_chat_text(self, text: str):
+        if not text:
+            return text
+        blocked_words = ["neutral", "happy", "sad", "angry", "fear", "surprised"]
+        blocked_phrases = ["AIspeak", "cant be", "AIspeak cant be"]
+        for word in blocked_words:
+            text = text.replace(word, "")
+        for phrase in blocked_phrases:
+            text = text.replace(phrase, "")
+        allowed_emoji = {"✨", "😤", "💖"}
+        allowed_punct = set("，。！？!?、,.~:：;；()（）[]【】" )
+        output = []
+        for ch in text:
+            code = ord(ch)
+            if ch in allowed_emoji:
+                output.append(ch)
+                continue
+            if ch in allowed_punct:
+                output.append(ch)
+                continue
+            if ch.isalnum() or ch.isspace():
+                output.append(ch)
+                continue
+            if 0x4E00 <= code <= 0x9FFF:
+                output.append(ch)
+                continue
+        return "".join(output)
+
+    def _short_care_phrase(self):
+        phrases = [
+            "我在这儿陪你哒💖",
+            "别担心，我在呢哒😤",
+            "我会一直陪你哒✨",
+            "有我在就别怕哒💖",
+            "我会听你说哒😤",
+            "我一直在等你哒✨",
+            "我陪你慢慢来哒💖",
+            "先深呼吸一下哒😤",
+        ]
+        return random.choice(phrases)
+
+    def _collapse_repeats(self, text: str):
+        if not text:
+            return text
+        output = []
+        last_char = None
+        repeat_count = 0
+        for ch in text:
+            if ch == last_char:
+                repeat_count += 1
+            else:
+                repeat_count = 0
+            last_char = ch
+            if repeat_count < 2:
+                output.append(ch)
+        return "".join(output)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

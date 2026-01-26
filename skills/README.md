@@ -17,7 +17,14 @@ SKILL_INFO = {
     "name": "example",           # Skill 名称
     "description": "示例技能",    # 描述
     "triggers": ["示例", "example"],  # 触发词
-    "action": "example_action"   # 动作名称
+    "action": "example_action",   # 动作名称
+    "parameters": {              # 参数定义
+        "type": "object",
+        "properties": {
+            "param": {"type": "string", "description": "参数说明"}
+        },
+        "required": ["param"]
+    }
 }
 
 def execute(params: str) -> str:
@@ -28,4 +35,13 @@ def execute(params: str) -> str:
 ## 内置 Skills
 
 - `open_file.py` - 打开文件/图片
-- (更多待添加...)
+- `quick_note.py` - 快速记笔记
+- `calc.py` - 安全计算表达式
+- `search_in_repo.py` - 项目内搜索
+- `open_recent.py` - 打开最近修改文件
+- `clipboard_read.py` - 读取剪贴板
+- `mcp_client.py` - MCP 工具调用
+- `mcp_fs_list.py` - MCP 列目录
+- `mcp_fs_read.py` - MCP 读文件
+- `mcp_fs_write.py` - MCP 写文件
+- `joke.py` - 冷笑话随机回复
