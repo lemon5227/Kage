@@ -256,7 +256,7 @@ Master心情: {current_emotion}
 {tools_tag}
 
 【强制回复格式】
-- 优先输出 `<|tool_call|>[{"name": "tool_name", "arguments": {"param": "value"}}]<|/tool_call|>`
+- 优先输出 `<|tool_call|>[{{"name": "tool_name", "arguments": {{"param": "value"}}}}]<|/tool_call|>`
 - 如果无法输出 tool_call，则回退 `>>>ACTION: tool_name("param")`
 """
         messages.append({"role": "system", "content": system_content})

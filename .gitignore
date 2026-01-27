@@ -36,3 +36,5 @@ ENV/
 .vscode/
 .idea/
 
+# External skills
+outer_skills/

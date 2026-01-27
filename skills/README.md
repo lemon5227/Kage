@@ -45,3 +45,15 @@ def execute(params: str) -> str:
 - `mcp_fs_read.py` - MCP 读文件
 - `mcp_fs_write.py` - MCP 写文件
 - `joke.py` - 冷笑话随机回复
+- `battery_status.py` - 电池状态查询
+- `system_uptime.py` - 系统运行时间
+- `weather_brief.py` - 天气简报查询
+- `today_date.py` - 日期/星期查询
+- `open_notes.py` - 打开备忘录
+- `find_skills.py` - Skills 检索提示
+- `social_content.py` - 社媒内容辅助
+- `pptx.py` - 演示文稿技能
+- `docx.py` - 文档技能
+- `xlsx.py` - 表格技能
+- `pdf.py` - PDF 技能
+- `playwright_skill.py` - 浏览器自动化

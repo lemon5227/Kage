@@ -69,6 +69,13 @@ def run():
         "列目录 /Users/wenbo/Kage",
         "读文件 /Users/wenbo/Kage/readme.md",
         "搜索代码 KageTools",
+        "帮我写社媒内容",
+        "帮我找技能",
+        "做一个PPT",
+        "写文档",
+        "做个表格",
+        "处理PDF",
+        "用playwright测试网页 https://example.com",
     ]
 
     for user_input in cases:
