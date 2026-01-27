@@ -1,6 +1,11 @@
 # Project Kage (影) - Intelligent Desktop Assistant
 
-**核心定义**：Kage 是一个运行在 Apple Silicon (Mac M4) 上的本地化智能助手。它采用微内核架构，强调隐私、记忆迁移能力，并拥有生动的 Live2D 形象。
+**核心定义**：Kage 是一个运行在 Apple Silicon (Mac M4) 上的本地化智能助手。它采用微内核架构，强调极速响应、隐私安全，并拥有生动的 Live2D 形象。
+
+🚀 **v4.0 性能飞跃 (2026.01)**: 
+- 意图识别从 1400ms 降至 **<1ms**
+- 工具调用从 17s 降至 **1.4s**
+- 常用命令（时间/音量/截图）响应 **<500ms**
 
 ## 📥 如何启动 (How to Run)
 
@@ -26,42 +31,41 @@ npm run tauri dev
 ## 1. 核心架构 (The Core)
 * **硬件平台**: Mac M4 (16GB RAM)
 * **开发语言**: Python 3.10+ (Backend) / TypeScript + Rust (Frontend)
-* **大脑 (Inference)**: Apple MLX 框架 + `Phi-4-mini-instruct-4bit` (原生 Tool Use 支持)
-* **双层思考 (Dual-Layer Thinking)**:
-    *   **Layer 1 (Router)**: 极速意图判断 (Chat vs Command)
-    *   **Layer 2 (Brain)**: 深度思考与执行
-* **记忆 (Memory)**: 双层存储策略 (L1 JSONL + L2 ChromaDB)
+* **大脑 (Inference)**: Apple MLX 框架 + `Phi-4-mini-instruct-4bit`
+* **三层思考架构 (Three-Layer Thinking)**:
+    1.  **Fast Path (<50ms)**: 规则匹配常用命令 (打开App/静音/截图/时间/亮度)，绕过 LLM 直接执行。
+    2.  **Skill Trigger (<100ms)**: 关键词触发 Python 技能脚本 (计算/笑话/剪贴板/文件操作)。
+    3.  **Brain Inference (1.4s)**: LLM 深度思考，处理复杂意图和模糊指令。
 
-## 2. 交互层 (Interaction) - v3.0 Update
-* **听觉**: `FunASR` (Paraformer) - 高精度中文识别 + 情绪检测 (Emotion2Vec)
+## 2. 交互层 (Interaction)
+* **听觉**: `OpenWakeWord` (唤醒词 "Hey Kage") + `FunASR` (高精度中文识别 + 情绪检测)。
 * **躯体**: `Tauri v2` + `PixiJS Live2D` (Haru 模型)
-    *   **透明窗口**: 无边框，支持拖拽 (Drag Region)。
-    *   **高清渲染**: 适配 Retina 屏幕 (DevicePixelRatio)。
+    *   **透明窗口**: 无边框，支持拖拽。
     *   **LipSync**: 音画同步算法 (Sine Wave + WebSocket Signal)。
 * **嘴巴**: `Edge-TTS` (Azure Speech)
+* **系统控制**: 基于 `Quartz` 的底层控制 (音量/媒体键/截图)，支持原生系统 HUD。
 
-## 3. 扩展机制 (The "Limbs")
-* **Self-Programming**: 通过 `create_file` 能力，Kage 可以编写 Python 脚本来扩展自己的技能树 (`abilities/` 目录)。
-* **Native Tools**: 内置 `curl`, `grep`, `open_app` 等系统级工具。
+## 3. 扩展机制
+* **Skills**: 在 `skills/` 目录下添加 Python 脚本即可扩展能力。自动注册，无需配置。
+* **Persona**: 快速命令注入了 Kage 的傲娇人设回复，不再是冷冰冰的机器。
 
-## 4. 目录结构规范
+## 4. 目录结构
 ```
 /kage_project
 ├── /core           # 大脑核心 (Brain, Memory, Router, Tools, Mouth, Ears)
 ├── /config         # 配置文件 (Persona)
-├── /abilities      # Kage 自我编写的技能脚本
+├── /skills         # 技能脚本 (自动加载)
 ├── /data           # 记忆存储
 ├── /kage-avatar    # 前端工程 (Tauri + Vue/Vanilla TS)
-└── main.py         # 启动入口 (双层循环逻辑)
+└── main.py         # 启动入口
 ```
 
-## 5. 关键技术突破 (v3.0 Updates)
-### 5.1 Dual-Layer Router (双层脑)
-为了解决 LLM 容易混淆“聊天”与“指令”的问题，我们引入了轻量级路由层。
-- **Chat Mode**: 纯对话，载入记忆，**严禁使用工具**。
-- **Command Mode**: 纯执行，不载入杂乱记忆，**能够使用工具**。
+## 5. 关键技术突破 (v4.0 Updates)
+### 5.1 极速意图路由 (Zero-Latency Router)
+移除了基于 LLM 的意图分类，改用高效的规则匹配引擎。将 Router 延迟从 1.4s 降至 0ms，同时保持了闲聊和命令的准确区分。
 
-### 5.2 LipSync & Visual Feedback (音画同步)
-- **后端生成**: Edge-TTS 生成音频文件 -> 发送 WebSocket 信号 -> 播放音频。
-- **前端响应**: 收到信号 -> 闪红框 (Debug) -> 驱动 Live2D 嘴部参数 (`ParamMouthOpenY`) -> 模型开口。
-- **情绪映射**: 语音情绪 (Sad/Happy) -> WebSocket -> Live2D 表情切换 (`f01`, `f02`)。
+### 5.2 智能 Action Prompt
+大幅精简了传给 LLM 的工具描述，将 Prompt Token 数虽然减少但保留了核心语义。配合 Fast Path，使得复杂工具调用的端到端延迟降低了 12 倍 (17s -> 1.4s)。
+
+### 5.3 统一系统控制 (Unified Control)
+重构了所有系统控制命令（音量、亮度、媒体），统一使用 macOS `Quartz` 事件服务。这不仅大大提高了响应速度，还使得 Kage 的操作能触发系统的原生屏幕指示器 (HUD)。
