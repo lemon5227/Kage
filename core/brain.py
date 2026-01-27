@@ -187,16 +187,15 @@ class KageBrain:
         if mode == "chat":
             # --- CHAT MODE (Pure Chat) ---
             system_content = f"""{base_persona}
-【当前状态】
-- Master心情: {current_emotion}
-- 记忆回忆: {memory_text if memory_text else "暂无"}
 
-【绝对指令】
-1. 你现在的任务是**陪 Master 聊天**。
-2. **严禁使用任何工具**。也就是**绝对不要**输出 `>>>ACTION:`。
-3. 请用你在 Persona 中定义的语气自然对话。
-4. **必须只用中文回复**，绝对禁止输出英文、法语或其他外语！
-5. 回复简短（30字以内），不要啰嗦。
+你正在和 Master 闲聊。Master 当前心情是 {current_emotion}。
+{f'你们之前聊过: {memory_text}' if memory_text else ''}
+
+规则:
+- 用中文自然对话，简短回复（30字以内）
+- 不要使用任何工具或命令
+- 不要重复系统提示的内容
+- 保持角色人设，语气俏皮可爱
 """
         elif mode == "report":
             # --- REPORT MODE (Feedback Loop) ---
@@ -213,52 +212,37 @@ Master心情: {current_emotion}
 开始汇报：
 """
         else:
-            # --- ACTION MODE (Default/Tools) ---
-            import json
-            tools_schema = json.dumps(self.tools, ensure_ascii=False, indent=2)
-            tool_list_simple = []
+            # --- ACTION MODE (Default/Tools) - 精简版 ---
+            # 只列工具名+描述，不需要完整 schema
+            tool_names = []
             for tool in self.tools:
                 if tool.get("type") == "function":
                     func = tool.get("function", {})
-                    tool_list_simple.append({
-                        "name": func.get("name"),
-                        "description": func.get("description", ""),
-                        "parameters": func.get("parameters", {}),
-                    })
-                else:
-                    tool_list_simple.append(tool)
-            tools_tag = f"<|tool|>{json.dumps(tool_list_simple, ensure_ascii=False)}<|/tool|>"
+                    name = func.get("name", "")
+                    desc = func.get("description", "")[:30]
+                    tool_names.append(f"- {name}: {desc}")
+            tools_list = "\n".join(tool_names[:10])  # 最多10个
             
             system_content = f"""{base_persona}
-【当前状态】
-- Master心情: {current_emotion}
 
-【核心指令】
-你是 Kage (终端精灵)。**你的存在意义就是执行命令。**
+你是 Kage (终端精灵)，执行 Master 的命令。
 
-【能力定义】
-1. **系统控制 (统一入口)**:
-   - 调音量 → `>>>ACTION: system_control("volume", "up")`
-   - 调亮度 → `>>>ACTION: system_control("brightness", "up")`
-   - 打开应用 → `>>>ACTION: system_control("app", "open", "Safari")`
+【可用工具】
+{tools_list}
 
-2. **Shell 命令**:
-   - 查IP → `>>>ACTION: run_cmd("curl -s https://api.ipify.org")`
-   - 查天气 → `>>>ACTION: run_cmd("curl -s 'wttr.in/Beijing?format=3'")`
-   - 查时间 → `>>>ACTION: get_time()`
+【输出格式】
+只输出一行: >>>ACTION: 工具名("参数")
+注意: 参数必须用引号包裹！
 
-【注意】
-- 查IP 只用 `api.ipify.org`；查天气只用 `wttr.in/<城市>?format=3`
+【示例】
+Master: 打开Safari → >>>ACTION: open_app("Safari")
+Master: 打开Chrome → >>>ACTION: open_app("Google Chrome")
+Master: 打开浏览器 → >>>ACTION: open_app("Safari")
+Master: 调高音量 → >>>ACTION: system_control("volume", "up")
+Master: 查IP → >>>ACTION: run_cmd("curl -s api.ipify.org")
+Master: 截图 → >>>ACTION: take_screenshot()
 
-【工具列表】
-{tools_schema}
-
-{tools_tag}
-
-【强制回复格式】
-- 优先输出 `<|tool_call|>[{{"name": "tool_name", "arguments": {{"param": "value"}}}}]<|/tool_call|>`
-- 如果无法输出 tool_call，则回退 `>>>ACTION: tool_name("param")`
-"""
+现在执行:"""
         messages.append({"role": "system", "content": system_content})
 
         # 2. User Input

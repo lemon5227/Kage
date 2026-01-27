@@ -2,10 +2,20 @@ import pyaudio
 import wave
 import audioop
 import os
+import numpy as np
 from funasr import AutoModel
 # Suppress heavy logging from FunASR/ModelScope
 import logging
 logging.getLogger('modelscope').setLevel(logging.CRITICAL)
+
+# Vosk for lightweight wake word detection
+try:
+    from vosk import Model as VoskModel, KaldiRecognizer
+    import json as vosk_json
+    VOSK_AVAILABLE = True
+except ImportError:
+    VOSK_AVAILABLE = False
+    print("⚠️ Vosk not installed, wake word detection disabled")
 
 class KageEars:
     def __init__(self, model_id="paraformer-zh"):
@@ -35,9 +45,32 @@ class KageEars:
         self.temp_audio_file="temp_kage_listening.wav"
 
         # parameters for listening threshold
-        # parameters for listening threshold
-        self.THRESHOLD=500
+        # 阈值调高可减少环境噪音干扰 (默认 500，建议 1000-1500)
+        self.THRESHOLD=1200
         self.SILENCE_DURATION=1.5 # stop recording after silence
+        
+        # Wake Word Detection (using Vosk English model)
+        self.wakeword_enabled = VOSK_AVAILABLE
+        self.wakeword_keywords = ["hey kage", "kage"]  # 英文唤醒词
+        self.vosk_model = None
+        if self.wakeword_enabled:
+            try:
+                print("Loading Vosk model for wake word...")
+                # 使用英文小模型，更准确识别 "Hey Kage"
+                vosk_model_path = os.path.expanduser("~/.vosk/vosk-model-small-en-us-0.15")
+                if os.path.exists(vosk_model_path):
+                    self.vosk_model = VoskModel(vosk_model_path)
+                else:
+                    # 尝试下载模型
+                    print("ℹ️ Vosk model not found. Please download:")
+                    print("ℹ️ https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip")
+                    print("ℹ️ Extract to: ~/.vosk/vosk-model-small-en-us-0.15")
+                    self.wakeword_enabled = False
+                if self.vosk_model:
+                    print("✅ Vosk loaded! Say 'Hey Kage' to wake up.")
+            except Exception as e:
+                print(f"❌ Failed to load Vosk: {e}")
+                self.wakeword_enabled = False
     
     def _parse_emotion(self, emo_res):
         """
@@ -85,6 +118,80 @@ class KageEars:
             print(f"Error parsing emotion: {e}")
             return "neutral"
     
+    def wait_for_wakeword(self, timeout_sec: float = 300) -> bool:
+        """
+        使用 Vosk 低功耗等待唤醒词。
+        返回 True 表示检测到唤醒词，False 表示超时或唤醒词功能未启用。
+        """
+        if not self.wakeword_enabled or not self.vosk_model:
+            # 唤醒词未启用，直接返回 True 跳过等待
+            return True
+        
+        print("\n💤 Kage is sleeping... Say 'Hey Kage' to wake up!")
+        
+        p = pyaudio.PyAudio()
+        CHUNK_SIZE = 4000  # 250ms at 16kHz
+        
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=16000,
+            input=True,
+            frames_per_buffer=CHUNK_SIZE
+        )
+        
+        # 创建 Vosk 识别器
+        recognizer = KaldiRecognizer(self.vosk_model, 16000)
+        
+        chunks_per_second = 16000 / CHUNK_SIZE
+        max_chunks = int(timeout_sec * chunks_per_second)
+        chunk_count = 0
+        
+        detected = False
+        
+        try:
+            while chunk_count < max_chunks:
+                audio_data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
+                
+                # Vosk 实时识别
+                if recognizer.AcceptWaveform(audio_data):
+                    result = vosk_json.loads(recognizer.Result())
+                    text = result.get("text", "").lower()
+                    
+                    # 检查是否包含唤醒词
+                    for keyword in self.wakeword_keywords:
+                        if keyword.lower() in text:
+                            print(f"\n🎯 Wake word detected: '{keyword}' in '{text}'")
+                            detected = True
+                            break
+                
+                # 也检查部分结果（更快响应）
+                partial = vosk_json.loads(recognizer.PartialResult())
+                partial_text = partial.get("partial", "").lower()
+                for keyword in self.wakeword_keywords:
+                    if keyword.lower() in partial_text:
+                        print(f"\n🎯 Wake word detected: '{keyword}' in '{partial_text}'")
+                        detected = True
+                        break
+                
+                if detected:
+                    break
+                    
+                chunk_count += 1
+                
+                # 每 10 秒打印一次状态
+                if chunk_count % (int(chunks_per_second) * 10) == 0:
+                    print(".", end="", flush=True)
+                    
+        except KeyboardInterrupt:
+            print("\n⚠️ Wake word detection interrupted")
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+        
+        return detected
+
     def listen(self):
         # auto stop when long time no sound
         p = pyaudio.PyAudio() # boot up audio driver

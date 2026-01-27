@@ -3,6 +3,11 @@ import asyncio
 import json
 import traceback
 import random
+import time
+import re
+import threading
+import subprocess
+from urllib.parse import quote
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -68,10 +73,50 @@ class KageServer:
         
         self.active_websocket: WebSocket | None = None
         self.is_running = True
+        self.motion_groups = {
+            "Idle": 3,
+            "Tap": 2,
+        }
+        self.motion_group_weights = {
+            "Idle": 1,
+            "Tap": 3,
+        }
+        self.motion_emotion_weights = {
+            "happy": {"Idle": 1, "Tap": 5},
+            "surprised": {"Idle": 1, "Tap": 4},
+            "sad": {"Idle": 4, "Tap": 1},
+            "angry": {"Idle": 2, "Tap": 3},
+        }
+        self.motion_cooldown_sec = 4.0
+        self.motion_cooldown_min_sec = 2.5
+        self.motion_cooldown_max_sec = 6.0
+        self._last_motion_time = 0.0
+        self.expression_duration_base_sec = 2.5
+        self.expression_duration_per_char = 0.04
+        self.expression_duration_min_sec = 2.0
+        self.expression_duration_max_sec = 6.0
+        self.expression_map = {
+            "neutral": "f05",
+            "happy": {
+                "choices": ["f00", "f01"],
+                "weights": [3, 1],
+            },
+            "sad": "f03",
+            "angry": "f07",
+            "fear": "f06",
+            "surprised": "f02",
+        }
+        self._fast_cache = {}
+        threading.Thread(target=self._prefetch_local_city, daemon=True).start()
         print("✅ Kage Server Ready!")
 
     # ... (Rest of KageServer methods - same as before) ...
     async def connect(self, websocket: WebSocket):
+        if self.active_websocket and self.active_websocket is not websocket:
+            try:
+                await self.active_websocket.close()
+            except Exception:
+                pass
         await websocket.accept()
         self.active_websocket = websocket
         print("🔌 Client connected!")
@@ -101,13 +146,33 @@ class KageServer:
         greeting = "Master，Kage 在这！"
         await self.mouth_speak(greeting)
 
+        # 会话状态
+        in_conversation = False  # 是否在对话中
+        conversation_timeout = 30  # 对话超时秒数
+        last_interaction_time = 0
+        
         while self.is_running:
             try:
-                # 1. Listening Phase
+                # 检查是否需要等待唤醒词
+                if not in_conversation:
+                    # 0. Wake Word Phase (待机模式)
+                    await self.send_state("IDLE")
+                    wakeword_detected = await asyncio.to_thread(self.ears.wait_for_wakeword, 300)
+                    
+                    if not wakeword_detected:
+                        # 超时，继续等待
+                        continue
+                    
+                    # 唤醒成功，播放提示音 (只在首次唤醒时)
+                    await self.send_message("expression", {"name": "f02", "duration": 1.5})  # surprised
+                    await self.mouth_speak("嘣？主人叫我？", "surprised")
+                    in_conversation = True
+                    last_interaction_time = asyncio.get_event_loop().time()
+                
+                # 1. Listening Phase (已在对话中)
                 await self.send_state("LISTENING")
                 
                 # Run blocking Listen in thread
-                # We need to run ears.listen() in a thread because it's blocking PyAudio
                 listen_result = await asyncio.to_thread(self.ears.listen)
                 
                 user_input = ""
@@ -119,16 +184,44 @@ class KageServer:
                     user_input = listen_result
                 
                 if not user_input:
+                    # 检查会话是否超时
+                    current_time = asyncio.get_event_loop().time()
+                    if in_conversation and (current_time - last_interaction_time) > conversation_timeout:
+                        print("⌛ Conversation timeout, returning to sleep mode")
+                        in_conversation = False
                     await self.send_state("IDLE")
                     await asyncio.sleep(0.1)
                     continue
+                
+                # 更新最后交互时间
+                last_interaction_time = asyncio.get_event_loop().time()
 
                 print(f"👤 Master: {user_input}")
                 await self.send_message("transcription", {"text": user_input})
 
                 # 2. Thinking Phase
                 await self.send_state("THINKING")
-                
+
+                # 1️⃣ 最高优先级: 直接命令匹配 (最快)
+                fast_response = await asyncio.to_thread(self._fast_command, user_input)
+                if fast_response:
+                    print("⚡ Fast path: direct command")
+                    final_speech = str(fast_response)
+                    print(f"👻 Kage: {final_speech}")
+                    await self.mouth_speak(final_speech, "neutral")
+                    # 保持在对话中，不回到待机
+                    continue
+
+                # 2️⃣ 次优先级: 技能触发器 (复杂功能)
+                quick_trigger = await asyncio.to_thread(self.tools.execute_trigger, user_input)
+                if quick_trigger is not None:
+                    print("⚡ Fast path: skill trigger")
+                    final_speech = str(quick_trigger)
+                    print(f"👻 Kage: {final_speech}")
+                    await self.mouth_speak(final_speech, "neutral")
+                    await self.send_state("IDLE")
+                    continue
+
                 # Determine Intent
                 intent = self.router.classify(user_input)
                 print(f"🤔 Intent: {intent}") # Debug Output
@@ -152,19 +245,11 @@ class KageServer:
                          print(f"👻 Kage: {final_speech}")
                          await self.mouth_speak(final_speech, current_emotion_str)
                          self.memory.add_memory(content=user_input, emotion=current_emotion_str, type="chat")
-                         await self.send_state("IDLE")
                          continue
 
                 mode = "action" if is_command else "chat"
 
-                if is_command:
-                    trigger_result = await asyncio.to_thread(self.tools.execute_trigger, user_input)
-                    if trigger_result is not None:
-                        final_speech = str(trigger_result)
-                        print(f"👻 Kage: {final_speech}")
-                        await self.mouth_speak(final_speech, current_emotion_str)  # type: ignore[arg-type]
-                        await self.send_state("IDLE")
-                        continue
+                # 注意：trigger 已在上面第2优先级检查过，这里不再重复调用
                 
                 # Run Thinking in thread
                 response_stream = await asyncio.to_thread(  # type: ignore[arg-type]
@@ -181,8 +266,6 @@ class KageServer:
                     full_response += text
                 
                 # 3. Action / Speech Phase
-                await self.send_state("SPEAKING")
-                
                 final_speech = full_response
 
                 if is_command:
@@ -214,8 +297,6 @@ class KageServer:
                 if not is_command:
                      self.memory.add_memory(content=user_input, emotion=current_emotion_str, type="chat")  # type: ignore[arg-type]
 
-                await self.send_state("IDLE")
-
             except Exception as e:
                 print(f"❌ Error in loop: {e}")
                 traceback.print_exc()
@@ -244,14 +325,30 @@ class KageServer:
     async def mouth_speak(self, text, emotion="neutral"):
         """Speak and allow Frontend to sync lips and expression"""
         if not text: return
+
+        self._update_motion_cooldown(text)
+        await self._send_random_motion(emotion)
         
         # 1. Send Expression (Emotion)
-        emo_map = {
-            "neutral": "f00", "happy": "f01", "sad": "f02",
-            "angry": "f03", "fear": "f04", "surprised": "f05"
-        }
-        exp_name = emo_map.get(emotion, "f00")
-        await self.send_message("expression", {"name": exp_name})
+        exp_value = self.expression_map.get(emotion, "f05")
+        if isinstance(exp_value, dict):
+            choices = exp_value.get("choices") or []
+            weights = exp_value.get("weights")
+            if choices:
+                if weights and len(weights) == len(choices):
+                    exp_name = random.choices(choices, weights=weights, k=1)[0]
+                else:
+                    exp_name = random.choice(choices)
+            else:
+                exp_name = "f05"
+        elif isinstance(exp_value, list):
+            exp_name = random.choice(exp_value) if exp_value else "f05"
+        else:
+            exp_name = exp_value
+        await self.send_message("expression", {
+            "name": exp_name,
+            "duration": self._compute_expression_duration(text),
+        })
 
         # 2. Send text to frontend (for speech bubble)
         await self.send_message("speech", {"text": text})
@@ -266,6 +363,44 @@ class KageServer:
             await asyncio.to_thread(self.mouth.play_audio_file, audio_path)
             # Done
             await self.send_state("IDLE")
+        else:
+            await self.send_state("IDLE")
+
+    async def _send_random_motion(self, emotion: str | None = None):
+        if not self.motion_groups:
+            return
+        now = time.monotonic()
+        if now - self._last_motion_time < self.motion_cooldown_sec:
+            return
+        self._last_motion_time = now
+        emotion_key = emotion or ""
+        weights_map = self.motion_emotion_weights.get(emotion_key, self.motion_group_weights)
+        groups = list(weights_map.keys())
+        weights = list(weights_map.values())
+        group = random.choices(groups, weights=weights, k=1)[0]
+        max_index = self.motion_groups.get(group, 0)
+        if max_index <= 0:
+            return
+        index = random.randrange(max_index)
+        await self.send_message("motion", {"group": group, "index": index})
+
+    def _update_motion_cooldown(self, text: str):
+        if not text:
+            return
+        duration = self.expression_duration_base_sec + len(text) * 0.06
+        self.motion_cooldown_sec = max(
+            self.motion_cooldown_min_sec,
+            min(duration, self.motion_cooldown_max_sec),
+        )
+
+    def _compute_expression_duration(self, text: str) -> float:
+        if not text:
+            return self.expression_duration_base_sec
+        duration = self.expression_duration_base_sec + len(text) * self.expression_duration_per_char
+        return max(
+            self.expression_duration_min_sec,
+            min(duration, self.expression_duration_max_sec),
+        )
 
     def _quick_chat_response(self, user_input: str):
         text = (user_input or "").strip()
@@ -304,6 +439,350 @@ class KageServer:
         if not cleaned.endswith(("哒", "捏", "哇")):
             cleaned += "哒"
         return cleaned
+
+    def _fast_command(self, user_input: str):
+        text = (user_input or "").strip()
+        if not text:
+            return None
+
+        lower_text = text.lower()
+        if "打开浏览器" in text or "打开chrome" in lower_text or "打开safari" in lower_text or "打开谷歌浏览器" in text:
+            print("🧭 Direct: open_app -> browser")
+            if "chrome" in lower_text or "谷歌" in text:
+                return self.tools.open_app("Google Chrome")
+            return self.tools.open_app("Safari")
+
+        if "亮度" in text:
+            action = "up"
+            if any(token in text for token in ["低", "暗", "小", "降低", "调低", "调暗"]):
+                action = "down"
+            print("🧭 Direct: system_control -> brightness")
+            return self.tools.system_control("brightness", action)
+
+        # 独立的静音命令
+        if "静音" in text or "mute" in lower_text:
+            action = "unmute" if "取消" in text or "un" in lower_text else "mute"
+            print("🧭 Direct: system_control -> mute")
+            return self.tools.system_control("volume", action)
+
+        if "音量" in text or "声音" in text:
+            action = "up"
+            if any(token in text for token in ["小", "低", "降低", "调低"]):
+                action = "down"
+            print("🧭 Direct: system_control -> volume")
+            return self.tools.system_control("volume", action)
+
+        # 媒体控制 - 扩展关键词匹配
+        media_keywords = ["播放", "暂停", "继续", "下一首", "下一曲", "上一首", "上一曲", 
+                          "放音乐", "放歌", "听歌", "听音乐", "停止播放", "停止音乐"]
+        if any(token in text for token in media_keywords):
+            action = "playpause"
+            if "下一" in text:
+                action = "next"
+            elif "上一" in text:
+                action = "previous"
+            elif "暂停" in text:
+                action = "pause"
+            elif "继续" in text or "播放" in text:
+                action = "play"
+            print("🧭 Direct: media_control")
+            preferred_apps = []
+            if "网易云" in text or "云音乐" in text:
+                preferred_apps = ["NeteaseMusic", "网易云音乐"]
+            elif "spotify" in lower_text:
+                preferred_apps = ["Spotify"]
+            return self._media_control(action, preferred_apps)
+
+        if "蓝牙" in text:
+            action = "off" if any(token in text for token in ["关", "关闭", "关掉"] ) else "on"
+            print("🧭 Direct: system_control -> bluetooth")
+            return self.tools.system_control("bluetooth", action)
+
+        if "wifi" in lower_text or "无线" in text or "网络" in text:
+            action = "off" if any(token in text for token in ["关", "关闭", "关掉"] ) else "on"
+            print("🧭 Direct: system_control -> wifi")
+            return self.tools.system_control("wifi", action)
+
+        if "打开百度" in text or "百度一下" in text:
+            print("🧭 Direct: open_url -> baidu")
+            return self.tools.open_url("https://www.baidu.com")
+
+        if "打开知乎" in text or "知乎" in text:
+            print("🧭 Direct: open_url -> zhihu")
+            return self.tools.open_url("https://www.zhihu.com")
+
+        if "打开b站" in lower_text or "b站" in text or "哔哩哔哩" in text:
+            print("🧭 Direct: open_url -> bilibili")
+            return self.tools.open_url("https://www.bilibili.com")
+
+        url_match = re.search(r"https?://\S+", text)
+        if "打开" in text and url_match:
+            print("🧭 Direct: open_url -> explicit url")
+            return self.tools.open_url(url_match.group(0))
+
+        app_match = re.search(r"(?:打开|启动|开启)(.+)", text)
+        if app_match:
+            app_name = app_match.group(1)
+            for token in ["应用", "程序", "软件", "一下", "吧", "请"]:
+                app_name = app_name.replace(token, "")
+            app_name = app_name.strip(" ：:，,。\n\t")
+            if app_name and all(key not in app_name for key in ["网页", "网址", "链接"]):
+                print(f"🧭 Direct: open_app -> {app_name}")
+                return self.tools.open_app(app_name)
+
+        if "天气" in text:
+            city = self._extract_city(text)
+            if not city:
+                city = self._get_local_city() or "Beijing"
+                cached_weather = self._get_fast_cache("weather:local", ttl=600)
+                if cached_weather:
+                    return cached_weather
+            city_map = {"尼斯": "Nice"}
+            city = city_map.get(city, city)
+            print("🧭 Direct: run_cmd -> wttr.in")
+            return self._fetch_weather(city)
+
+        if "几点" in text or "时间" in text:
+            print("🧭 Direct: get_time")
+            return self._persona_wrap(self.tools.get_time(), "time")
+
+        if "截图" in text or "截屏" in text:
+            print("🧭 Direct: take_screenshot")
+            return self._persona_wrap(self.tools.take_screenshot(), "screenshot")
+
+        if "电量" in text or "电池" in text:
+            print("🧭 Direct: battery_status")
+            result = self.tools.run_terminal_cmd("pmset -g batt | grep -Eo '[0-9]+%'")
+            battery = self._strip_cmd_output(result)
+            return self._persona_wrap(f"电量 {battery}", "battery")
+
+        return None
+
+    def _persona_wrap(self, result: str, cmd_type: str = "default") -> str:
+        """给快速命令结果添加 persona 风格"""
+        import random
+        
+        # 根据命令类型选择回复风格
+        templates = {
+            "time": ["现在是 {r} 哒～", "{r} 了哦✨", "时间是 {r} 💖"],
+            "weather": ["天气: {r} 捏～", "{r} ☀️", "查到了: {r} 哒"],
+            "screenshot": ["截好啦 {r} ✨", "咔嚓！{r} 💖", "截图完成 {r} 哒"],
+            "battery": ["{r} 还有电哦～", "{r} 💖", "电量 {r} 哒"],
+            "volume": ["{r}", "好嘞～{r}", "{r} 💖"],
+            "brightness": ["{r}", "调好啦～{r}", "{r} ✨"],
+            "media": ["{r} 🎵", "好嘞～{r}", "{r} 哒"],
+            "app": ["{r}", "打开啦～{r}", "{r} ✨"],
+            "default": ["{r}", "{r} 哒", "{r} ✨"],
+        }
+        
+        # 获取模板并格式化
+        template_list = templates.get(cmd_type, templates["default"])
+        template = random.choice(template_list)
+        return template.format(r=str(result).strip())
+
+    def _get_local_city(self):
+        cached = self._get_fast_cache("local_city", ttl=86400)
+        if cached:
+            return cached
+        result = self.tools.run_terminal_cmd("curl -s --max-time 4 https://ipinfo.io/city")
+        city = self._strip_cmd_output(result).strip()
+        if city:
+            self._set_fast_cache("local_city", city)
+            return city
+        return ""
+
+    def _prefetch_local_city(self):
+        try:
+            self._get_local_city()
+        except Exception:
+            pass
+
+    def _get_fast_cache(self, key: str, ttl: int):
+        entry = self._fast_cache.get(key)
+        if not entry:
+            return ""
+        if time.time() - entry["timestamp"] > ttl:
+            self._fast_cache.pop(key, None)
+            return ""
+        return entry["value"]
+
+    def _set_fast_cache(self, key: str, value: str):
+        self._fast_cache[key] = {"timestamp": time.time(), "value": value}
+
+    def _strip_cmd_output(self, result) -> str:
+        text = str(result).strip()
+        if text.startswith("命令执行成功"):
+            parts = text.splitlines()
+            return parts[-1] if parts else ""
+        return text
+
+    def _fetch_weather(self, city: str) -> str:
+        local_city = self._get_local_city() or ""
+        cache_key = "weather:local" if city == local_city else f"weather:{city.lower()}"
+        cached_weather = self._get_fast_cache(cache_key, ttl=600)
+        if cached_weather:
+            return cached_weather
+        result = self.tools.run_terminal_cmd(
+            f"curl -s --max-time 5 'wttr.in/{quote(city)}?format=3'"
+        )
+        weather = self._strip_cmd_output(result)
+        if weather:
+            self._set_fast_cache(cache_key, weather)
+            return weather
+        fallback = self._get_fast_cache(cache_key, ttl=86400)
+        return fallback or "天气查询失败，请稍后再试"
+
+    def _extract_city(self, text: str) -> str:
+        cleaned = text
+        stopwords = [
+            "天气", "怎么样", "如何", "今天", "现在", "查询", "查", "一下", "看看", "帮我",
+            "的", "吗", "么", "呀", "啊", "呢", "是不是", "想", "告诉我",
+        ]
+        for word in stopwords:
+            cleaned = cleaned.replace(word, "")
+        cleaned = cleaned.strip(" ：:，,。\n\t")
+        if not cleaned:
+            return ""
+        matches = re.findall(r"[A-Za-z\u4e00-\u9fff]+", cleaned)
+        if not matches:
+            return ""
+        return max(matches, key=len)
+
+    def _get_running_music_app(self) -> str | None:
+        """检测正在运行的音乐应用"""
+        # 常见音乐应用列表（按优先级排序）
+        music_apps = [
+            ("NeteaseMusic", "网易云音乐"),
+            ("Spotify", "Spotify"),
+            ("Music", "Apple Music"),
+            ("QQMusic", "QQ音乐"),
+            ("Kugou", "酷狗音乐"),
+            ("VLC", "VLC"),
+        ]
+        
+        for app_name, _ in music_apps:
+            try:
+                result = subprocess.run(
+                    ["pgrep", "-x", app_name], 
+                    capture_output=True, 
+                    timeout=1
+                )
+                if result.returncode == 0:
+                    return app_name
+            except Exception:
+                continue
+        return None
+
+    def _media_control(self, action: str, preferred_apps: list[str]) -> str:
+        """
+        智能媒体控制：
+        1. 如果有正在运行的播放器 -> 控制它
+        2. 如果是播放命令且没有播放器 -> 打开默认播放器并播放
+        3. 优先使用系统媒体键
+        """
+        # 检测正在运行的播放器
+        running_app = self._get_running_music_app()
+        
+        # 如果是 "播放" 命令且没有播放器运行 -> 打开默认播放器
+        if action in ["play", "playpause"] and not running_app:
+            # 优先使用用户偏好的 app，否则用 Apple Music
+            default_app = preferred_apps[0] if preferred_apps else "Music"
+            print(f"🎵 No music app running, opening {default_app}...")
+            self.tools.open_app(default_app)
+            import time
+            time.sleep(1)  # 等待 app 启动
+        
+        # 使用系统媒体键控制（适用于所有播放器）
+        result = self._send_system_media_key(action)
+        if result:
+            return result
+        
+        # 回退：尝试 AppleScript 直接控制特定 app
+        command_map = {
+            "playpause": "playpause",
+            "play": "play",
+            "pause": "pause",
+            "next": "next track",
+            "previous": "previous track",
+        }
+        osascript_cmd = command_map.get(action, "playpause")
+        
+        # 构建候选列表：运行中的 app > 用户偏好 > 默认
+        app_candidates = []
+        if running_app:
+            app_candidates.append(running_app)
+        app_candidates.extend(preferred_apps)
+        app_candidates.extend(["Music", "Spotify"])
+        
+        for app in app_candidates:
+            script = f'tell application "{app}" to {osascript_cmd}'
+            try:
+                subprocess.run(["osascript", "-e", script], check=True)
+                return f"已控制 {app} 播放 {action}"
+            except Exception:
+                continue
+        return "未找到可控制的播放器"
+
+    def _send_system_media_key(self, action: str) -> str:
+        """
+        使用 macOS 系统级媒体键事件，适用于任意播放器（网易云、Spotify、Music 等）
+        通过 Quartz 框架发送 NX_KEYTYPE 事件
+        """
+        # macOS 媒体键 key code (NX_KEYTYPE_*)
+        # NX_KEYTYPE_PLAY = 16, NX_KEYTYPE_NEXT = 17, NX_KEYTYPE_PREVIOUS = 18
+        keytype_map = {
+            "playpause": 16,  # NX_KEYTYPE_PLAY
+            "play": 16,
+            "pause": 16,
+            "next": 17,       # NX_KEYTYPE_NEXT
+            "previous": 18,   # NX_KEYTYPE_PREVIOUS
+        }
+        keytype = keytype_map.get(action)
+        if keytype is None:
+            return ""
+        
+        # 使用 Python Quartz 绑定发送媒体键事件
+        try:
+            import Quartz
+            
+            def send_media_key(key):
+                # Key down
+                ev = Quartz.NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                    Quartz.NSEventTypeSystemDefined,  # 14
+                    (0, 0),
+                    0xa00,  # NX_KEYDOWN << 8
+                    0,
+                    0,
+                    0,
+                    8,  # NX_SUBTYPE_AUX_CONTROL_BUTTONS
+                    (key << 16) | (0xa << 8),  # key << 16 | NX_KEYDOWN << 8
+                    -1
+                )
+                Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev.CGEvent())
+                
+                # Key up
+                ev = Quartz.NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                    Quartz.NSEventTypeSystemDefined,
+                    (0, 0),
+                    0xb00,  # NX_KEYUP << 8
+                    0,
+                    0,
+                    0,
+                    8,
+                    (key << 16) | (0xb << 8),  # key << 16 | NX_KEYUP << 8
+                    -1
+                )
+                Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev.CGEvent())
+            
+            send_media_key(keytype)
+            action_name = {"playpause": "播放/暂停", "play": "播放", "pause": "暂停", "next": "下一曲", "previous": "上一曲"}
+            return f"{action_name.get(action, action)} 🎵"
+        except ImportError:
+            # Quartz 未安装，回退到 osascript 方式
+            return ""
+        except Exception as e:
+            print(f"Media key error: {e}")
+            return ""
 
     def _filter_chat_text(self, text: str):
         if not text:

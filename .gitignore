@@ -38,3 +38,6 @@ ENV/
 
 # External skills
 outer_skills/
+tests/
+*.wav
+scripts/

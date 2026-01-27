@@ -35,3 +35,16 @@
 ## Notes
 - External skills are stored under `outer_skills/` and ignored by git.
 - Playwright skill requires `npm run setup` in `outer_skills/playwright-skill`.
+
+## Follow-up Updates
+- Added `brightness_control` and `open_browser` skills to bypass LLM latency for common commands.
+- Added Playwright auto-detect flow to run browser automation when URL is omitted.
+- Added pre-router trigger shortcut to execute fast skills before intent classification.
+- Added pre-router fast commands for weather/time and quick URL opens (baidu/https links).
+- Added pre-router direct app open using installed-app registry for "打开/启动" commands.
+- Added app alias mapping in `open_app` for common Chinese names (WeChat, QQ, Lark, etc.).
+- Added `scripts/fast_command_benchmark.py` to measure fast-path latency.
+- Weather: cache results 10 minutes, cache local city 24h, background prefetch local city at startup.
+- Direct system controls: volume, brightness, bluetooth, wifi now bypass router.
+- Media control prefers app-level AppleScript; NetEase uses activate + media key fallback.
+- Weather fast path uses curl --max-time with cache fallback; IP city lookup now 4s timeout.

@@ -50,6 +50,8 @@ def execute(params: str) -> str:
 - `weather_brief.py` - 天气简报查询
 - `today_date.py` - 日期/星期查询
 - `open_notes.py` - 打开备忘录
+- `open_browser.py` - 打开浏览器
+- `brightness_control.py` - 亮度快速调节
 - `find_skills.py` - Skills 检索提示
 - `social_content.py` - 社媒内容辅助
 - `pptx.py` - 演示文稿技能

@@ -312,10 +312,37 @@ class KageTools:
         return f"{name}({', '.join(args)})"
 
     def open_app(self, app_name):
-        print(f"正在尝试打开: {app_name}")
+        print(f"🧭 Tool: open_app -> {app_name}")
         
         # 1. Cleaning
         clean_name = app_name.strip().lower()
+        alias_map = {
+            "微信": "WeChat",
+            "qq": "QQ",
+            "qq音乐": "QQMusic",
+            "网易云": "NeteaseMusic",
+            "网易云音乐": "NeteaseMusic",
+            "钉钉": "DingTalk",
+            "飞书": "Lark",
+            "企业微信": "WeCom",
+            "谷歌浏览器": "Google Chrome",
+            "谷歌": "Google Chrome",
+            "chrome": "Google Chrome",
+            "safari": "Safari",
+            "支付宝": "Alipay",
+            "应用商店": "App Store",
+            "备忘录": "Notes",
+            "便签": "Notes",
+            "备忘录app": "Notes",
+            "日历": "Calendar",
+            "邮件": "Mail",
+            "终端": "Terminal",
+            "设置": "System Settings",
+            "系统设置": "System Settings",
+            "系统偏好设置": "System Settings",
+        }
+        if clean_name in alias_map:
+            clean_name = alias_map[clean_name].lower()
         
         # 2. Fuzzy / Registry Match
         target_app = app_name # Default to what user said
@@ -346,12 +373,14 @@ class KageTools:
         try:
             if self.os_type == "Darwin":
                 # Try 1: Registry Name
+                print(f"🧭 Exec: open -a {run_name}")
                 result = subprocess.run(["open", "-a", run_name], capture_output=True, text=True)
                 if result.returncode == 0:
                     return f"已打开 {target_app} ✨"
                 
                 # Try 2: Raw Name (maybe Spotlight finds it)
                 if run_name != app_name:
+                    print(f"🧭 Exec: open -a {app_name}")
                     result = subprocess.run(["open", "-a", app_name], capture_output=True, text=True)
                     if result.returncode == 0:
                         return f"已打开 {app_name} ✨"
@@ -372,6 +401,7 @@ class KageTools:
             # 确保 URL 有协议前缀
             if not url.startswith(("http://", "https://")):
                 url = "https://" + url
+            print(f"🧭 Tool: open_url -> {url}")
             
             if self.os_type == "Darwin":
                 subprocess.run(["open", url], check=True)
@@ -433,61 +463,125 @@ class KageTools:
     # =========================================
     # 内部实现方法 (Internal Implementations)
     # =========================================
+    
+    def _send_system_key(self, key_type: int, repeat: int = 1) -> bool:
+        """
+        使用 Quartz 发送系统键事件 (音量/亮度/媒体键)
+        统一的底层实现，确保一致性
+        """
+        try:
+            import Quartz
+            
+            for _ in range(repeat):
+                # Key down
+                ev = Quartz.NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                    Quartz.NSEventTypeSystemDefined,  # 14
+                    (0, 0),
+                    0xa00,  # NX_KEYDOWN << 8
+                    0, 0, 0,
+                    8,  # NX_SUBTYPE_AUX_CONTROL_BUTTONS
+                    (key_type << 16) | (0xa << 8),
+                    -1
+                )
+                Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev.CGEvent())
+                
+                # Key up
+                ev = Quartz.NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(
+                    Quartz.NSEventTypeSystemDefined,
+                    (0, 0),
+                    0xb00,  # NX_KEYUP << 8
+                    0, 0, 0,
+                    8,
+                    (key_type << 16) | (0xb << 8),
+                    -1
+                )
+                Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev.CGEvent())
+            return True
+        except ImportError:
+            return False
+        except Exception as e:
+            print(f"System key error: {e}")
+            return False
+    
     def _control_volume_internal(self, action):
-        """控制音量: up, down, mute"""
+        """控制音量: up, down, mute (使用 Quartz 系统键)"""
+        # NX_KEYTYPE 常量
+        NX_KEYTYPE_SOUND_UP = 0
+        NX_KEYTYPE_SOUND_DOWN = 1
+        NX_KEYTYPE_MUTE = 7
+        
         try:
             if self.os_type == "Darwin":
                 if action in ["up", "加大", "大"]:
-                    script = '''
-                    set curVolume to output volume of (get volume settings)
-                    set newVolume to curVolume + 12
-                    if newVolume > 100 then set newVolume to 100
-                    set volume output volume newVolume
-                    '''
-                    subprocess.run(["osascript", "-e", script], check=True)
-                    return "音量已调大 🔊"
+                    if self._send_system_key(NX_KEYTYPE_SOUND_UP, repeat=2):
+                        return "音量已调大 🔊"
                 elif action in ["down", "减小", "小"]:
-                    script = '''
-                    set curVolume to output volume of (get volume settings)
-                    set newVolume to curVolume - 12
-                    if newVolume < 0 then set newVolume to 0
-                    set volume output volume newVolume
-                    '''
-                    subprocess.run(["osascript", "-e", script], check=True)
-                    return "音量已调小 🔉"
+                    if self._send_system_key(NX_KEYTYPE_SOUND_DOWN, repeat=2):
+                        return "音量已调小 🔉"
                 elif action in ["mute", "muted", "静音"]:
-                    subprocess.run(["osascript", "-e", "set volume with output muted"], check=True)
-                    return "已静音 🔇"
+                    if self._send_system_key(NX_KEYTYPE_MUTE):
+                        return "已静音 🔇"
                 elif action in ["unmute", "取消静音"]:
-                    subprocess.run(["osascript", "-e", "set volume without output muted"], check=True)
-                    return "已取消静音 🔊"
+                    # 静音键是切换的，再按一次取消
+                    if self._send_system_key(NX_KEYTYPE_MUTE):
+                        return "已取消静音 🔊"
                 else:
                     return f"不认识的音量操作: {action}"
+                
+                # Quartz 失败，回退到 osascript
+                return self._control_volume_fallback(action)
             return "此功能仅支持 Mac"
         except Exception as e:
             return f"音量控制失败: {e}"
     
+    def _control_volume_fallback(self, action):
+        """音量控制回退方案 (osascript)"""
+        if action in ["up", "加大", "大"]:
+            script = '''
+            set curVolume to output volume of (get volume settings)
+            set newVolume to curVolume + 12
+            if newVolume > 100 then set newVolume to 100
+            set volume output volume newVolume
+            '''
+            subprocess.run(["osascript", "-e", script], check=True)
+            return "音量已调大 🔊"
+        elif action in ["down", "减小", "小"]:
+            script = '''
+            set curVolume to output volume of (get volume settings)
+            set newVolume to curVolume - 12
+            if newVolume < 0 then set newVolume to 0
+            set volume output volume newVolume
+            '''
+            subprocess.run(["osascript", "-e", script], check=True)
+            return "音量已调小 🔉"
+        elif action in ["mute", "muted", "静音"]:
+            subprocess.run(["osascript", "-e", "set volume with output muted"], check=True)
+            return "已静音 🔇"
+        elif action in ["unmute", "取消静音"]:
+            subprocess.run(["osascript", "-e", "set volume without output muted"], check=True)
+            return "已取消静音 🔊"
+        return f"不认识的音量操作: {action}"
+    
     def _control_brightness_internal(self, action):
-        """控制屏幕亮度: up, down (使用原生模拟按键)"""
+        """控制屏幕亮度: up, down (使用 Quartz 系统键)"""
+        # 注意: 这里的 key type 是键盘背光，屏幕亮度需要用其他方式
+        # 屏幕亮度实际上用 key code 更好
         try:
             if self.os_type == "Darwin":
-                # 使用 AppleScript 模拟亮度功能键
-                # Key Code 144: Brightness Up
-                # Key Code 145: Brightness Down
-                
                 repeat_times = 2
                 
                 if action == "up" or "大" in action or "高" in action:
+                    # 尝试 Quartz 方式 (键盘亮度)
+                    # 屏幕亮度还是用 key code 更可靠
                     script = f'tell application "System Events" to repeat {repeat_times} times\n key code 144\n end repeat'
-                    msg = "亮度已调高 ☀️"
+                    subprocess.run(["osascript", "-e", script], check=True)
+                    return "亮度已调高 ☀️"
                 elif action == "down" or "小" in action or "低" in action:
                     script = f'tell application "System Events" to repeat {repeat_times} times\n key code 145\n end repeat'
-                    msg = "亮度已调低 🌙"
+                    subprocess.run(["osascript", "-e", script], check=True)
+                    return "亮度已调低 🌙"
                 else:
                     return f"不认识的亮度操作: {action}"
-                
-                subprocess.run(["osascript", "-e", script], check=True)
-                return msg
 
             return "此功能仅支持 Mac"
         except Exception as e:
@@ -596,6 +690,7 @@ class KageTools:
                 return f"检测到危险命令，已拒绝执行 ⚠️"
         
         try:
+            print(f"🧭 Exec: run_cmd -> {cmd}")
             result = subprocess.run(
                 cmd,
                 shell=True,
