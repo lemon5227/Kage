@@ -51,7 +51,17 @@ class KageEars:
         
         # Wake Word Detection (using Vosk English model)
         self.wakeword_enabled = VOSK_AVAILABLE
-        self.wakeword_keywords = ["hey kage", "kage"]  # 英文唤醒词
+        # Vosk 常把 "kage" 识别为各种近似词，所以用宽松匹配
+        # 精确关键词列表（子串匹配）
+        self.wakeword_keywords = [
+            "hey kage", "kage", "hey cage", "cage",
+            "hey kaj", "kaj", "hey cadge", "cadge",
+            "hey page", "hey gage", "gage",
+            "hey kate", "hey case",
+            "k age", "hey k",
+        ]
+        # 模糊匹配核心音素：只要文本中包含类似 "kage/cage/kaj" 的音就算命中
+        self._wakeword_fuzzy_cores = ["kag", "cag", "kaj", "cadg", "gag", "kej", "kag"]
         self.vosk_model = None
         if self.wakeword_enabled:
             try:
@@ -118,6 +128,23 @@ class KageEars:
             print(f"Error parsing emotion: {e}")
             return "neutral"
     
+    def _match_wakeword(self, text: str) -> bool:
+        """Check if text contains a wake word using both exact keywords and fuzzy phoneme matching."""
+        t = text.lower().strip()
+        if not t:
+            return False
+        # 1. Exact keyword substring match
+        for keyword in self.wakeword_keywords:
+            if keyword in t:
+                return True
+        # 2. Fuzzy phoneme core match — catches Vosk misrecognitions
+        # Remove spaces for phoneme matching (e.g. "k age" -> "kage")
+        t_nospace = t.replace(" ", "")
+        for core in self._wakeword_fuzzy_cores:
+            if core in t_nospace:
+                return True
+        return False
+
     def wait_for_wakeword(self, timeout_sec: float = 300) -> bool:
         """
         使用 Vosk 低功耗等待唤醒词。
@@ -158,21 +185,26 @@ class KageEars:
                     result = vosk_json.loads(recognizer.Result())
                     text = result.get("text", "").lower()
                     
+                    # DEBUG: 打印识别结果
+                    if text:
+                        print(f"\n[Vosk] Heard: '{text}'")
+                    
                     # 检查是否包含唤醒词
-                    for keyword in self.wakeword_keywords:
-                        if keyword.lower() in text:
-                            print(f"\n🎯 Wake word detected: '{keyword}' in '{text}'")
-                            detected = True
-                            break
+                    if self._match_wakeword(text):
+                        print(f"\n🎯 Wake word detected in '{text}'")
+                        detected = True
                 
                 # 也检查部分结果（更快响应）
                 partial = vosk_json.loads(recognizer.PartialResult())
                 partial_text = partial.get("partial", "").lower()
-                for keyword in self.wakeword_keywords:
-                    if keyword.lower() in partial_text:
-                        print(f"\n🎯 Wake word detected: '{keyword}' in '{partial_text}'")
-                        detected = True
-                        break
+                
+                # DEBUG: 打印部分结果
+                if partial_text and len(partial_text) > 2:
+                    print(f"\r[Vosk] Partial: '{partial_text}'", end="", flush=True)
+                
+                if self._match_wakeword(partial_text):
+                    print(f"\n🎯 Wake word detected in partial: '{partial_text}'")
+                    detected = True
                 
                 if detected:
                     break

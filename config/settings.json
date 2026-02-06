@@ -1,0 +1,67 @@
+{
+    "model": {
+        "path": "mlx-community/Phi-4-mini-instruct-4bit",
+        "preferred_model": "local",
+        "available_models": [
+            "mlx-community/Phi-4-mini-instruct-4bit",
+            "mlx-community/Phi-4-mini-instruct-8bit",
+            "LiquidAI/LFM2.5-1.2B-Instruct-MLX-bf16",
+            "LiquidAI/LFM2.5-1.2B-Thinking-MLX-bf16",
+            "mlx-community/Qwen2.5-7B-Instruct-4bit"
+        ],
+        "temperature": 0.7,
+        "max_tokens": 120,
+        "cloud_api": {
+            "provider": "openai",
+            "api_key": "",
+            "model_name": "gpt-4o-mini",
+            "base_url": "https://api.openai.com/v1"
+        }
+    },
+    "voice": {
+        "tts_voice": "zh-CN-XiaoyiNeural",
+        "available_voices": [
+            "zh-CN-XiaoyiNeural",
+            "zh-CN-XiaoxiaoNeural",
+            "zh-CN-YunxiNeural"
+        ],
+        "speed": 1.0,
+        "volume": 1.0
+    },
+    "wakeword": {
+        "enabled": true,
+        "sensitivity": "medium"
+    },
+    "window": {
+        "auto_start": false,
+        "always_on_top": true,
+        "opacity": 1.0,
+        "remember_position": true,
+        "hide_to_tray": true
+    },
+    "live2d": {
+        "current_model": "default",
+        "scale": 1.0,
+        "models_dir": "kage-avatar"
+    },
+    "advanced": {
+        "server_port": 12345,
+        "debug_mode": false,
+        "hotkey": "Command+Shift+K"
+    },
+    "version": "1.0.0",
+    "heartbeat": {
+        "enabled": true,
+        "interval_minutes": 30
+    },
+    "memory": {
+        "consolidation_days": 7,
+        "bm25_weight": 0.3,
+        "vector_weight": 0.7
+    },
+    "tools": {
+        "tavily_api_key": "",
+        "web_fetch_timeout": 15,
+        "exec_default_timeout": 30
+    }
+}
