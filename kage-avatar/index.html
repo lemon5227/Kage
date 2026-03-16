@@ -5,14 +5,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kage Avatar</title>
-  <!-- Live2D Core SDKs (Locally Downloaded) -->
-  <script src="/live2dcubismcore.min.js"></script>
-  <script src="/live2d.min.js"></script>
+  <!-- Live2D Core SDKs - 使用相对路径确保打包后可用 -->
+  <script src="./live2dcubismcore.min.js"></script>
+  <script src="./live2d.min.js"></script>
 </head>
 
 <body data-tauri-drag-region>
   <div id="app"></div>
-  <script type="module" src="/src/main.ts"></script>
+  <div id="error-display" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+       background: rgba(255, 68, 68, 0.95); color: white; padding: 20px; border-radius: 12px; max-width: 80%; 
+       font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 14px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+    <h3 style="margin: 0 0 10px 0;">❌ 启动错误</h3>
+    <pre id="error-message" style="margin: 0; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; max-height: 200px; overflow-y: auto;"></pre>
+    <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 16px; background: white; color: #ff4444; border: none; 
+            border-radius: 6px; cursor: pointer; font-weight: 600;">重新加载</button>
+  </div>
+  <script type="module" src="./src/main.ts"></script>
 </body>
 
 </html>

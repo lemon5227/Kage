@@ -29,7 +29,7 @@ Kage 拒绝冷冰冰的机器回复。
 - **Live2D 形象**：基于 Haru 模型，表情丰富，动作灵动，支持口型同步 (LipSync)。
 
 ### 🔒 隐私优先 (Privacy First)
-- **完全本地化**：基于 Apple MLX 框架，搭载 Phi-4 模型，无需联网也能思考。
+- **完全本地化**：基于 Qwen3 GGUF + llama-server，本地推理无需联网。
 - **数据安全**：你的对话、记忆、屏幕截图永远只留在你的 Mac 上。
 
 ### �️ 强大能力 (Powerful Skills)
@@ -50,7 +50,14 @@ Kage 拒绝冷冰冰的机器回复。
 
 **1. 启动大脑 (Backend)**
 ```bash
+# 建议使用 Conda 创建干净环境
+conda create -n kage python=3.10
 conda activate kage
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 启动 (首次运行会自动下载模型)
 python main.py
 ```
 
@@ -67,11 +74,18 @@ npm run tauri dev
 ## 🏗️ 技术架构
 
 Kage 是 AI Agent 技术的集大成者：
-*   **Brain**: Apple MLX + Phi-4-mini (4-bit Quantized)
-*   **Ears**: FunASR (Paraformer + Emotion2Vec) + OpenWakeWord
+*   **Brain**: Qwen3 GGUF + llama-server (OpenAI Compatible API)
+*   **Ears**: FunASR (Paraformer + Emotion2Vec) + **Vosk** (超低功耗唤醒)
 *   **Body**: Tauri v2 + PixiJS Live2D
 *   **Control**: Quartz Event Services + Native macOS APIs
 
 ## 📄 License
 
 MIT License © 2026 Kage Project
+---
+> 📜 **历史技术文档**: 查看 [docs/optimization_history.md](docs/optimization_history.md) 了解 Kage 从 v1.0 CoT 到 v3.0 双层路由的技术演进。
+>
+> 🧭 **接手与优化入口**:
+> - [docs/HANDOFF_FOR_NEXT_MODEL.md](docs/HANDOFF_FOR_NEXT_MODEL.md)
+> - [docs/agent_orchestration_playbook.md](docs/agent_orchestration_playbook.md)
+> - [docs/agent_progress_log.md](docs/agent_progress_log.md)

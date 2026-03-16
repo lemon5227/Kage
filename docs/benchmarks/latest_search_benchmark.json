@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-02-11 21:45:59",
+  "mode": "mock",
+  "summary": {
+    "pass_rate": 1.0,
+    "avg_ms": 0.06666666666666667
+  },
+  "results": [
+    {
+      "name": "youtube-latest",
+      "source": "youtube",
+      "query": "曹操 最新 视频",
+      "latency_ms": 0.2,
+      "success": true,
+      "items_count": 1,
+      "top_domain": "www.youtube.com",
+      "domain_ok": true,
+      "error": null
+    },
+    {
+      "name": "bilibili-latest",
+      "source": "bilibili",
+      "query": "曹操 最新 视频",
+      "latency_ms": 0.0,
+      "success": true,
+      "items_count": 1,
+      "top_domain": "www.bilibili.com",
+      "domain_ok": true,
+      "error": null
+    },
+    {
+      "name": "web-weather",
+      "source": "web",
+      "query": "明天 尼斯 天气",
+      "latency_ms": 0.0,
+      "success": true,
+      "items_count": 1,
+      "top_domain": "wttr.in",
+      "domain_ok": true,
+      "error": null
+    }
+  ]
+}

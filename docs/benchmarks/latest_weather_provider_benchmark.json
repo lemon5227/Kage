@@ -1,0 +1,141 @@
+{
+  "generated_at": "2026-02-11 23:24:33",
+  "providers": [
+    "open_meteo",
+    "wttr",
+    "metno"
+  ],
+  "cities": [
+    "Nice",
+    "Shanghai"
+  ],
+  "results": [
+    {
+      "provider": "open_meteo",
+      "city": "Nice",
+      "rounds": 5,
+      "ok_rate": 1.0,
+      "median_ms": 422.9,
+      "p95_ms": 450.2,
+      "samples_ms": [
+        478.6,
+        393.9,
+        422.9,
+        450.2,
+        406.7
+      ],
+      "errors": []
+    },
+    {
+      "provider": "wttr",
+      "city": "Nice",
+      "rounds": 5,
+      "ok_rate": 0.2,
+      "median_ms": 3063.5,
+      "p95_ms": 4066.6,
+      "samples_ms": [
+        3063.5,
+        4066.6,
+        3012.8,
+        4959.5,
+        3012.4
+      ],
+      "errors": [
+        "URLError",
+        "URLError",
+        "URLError",
+        "URLError"
+      ]
+    },
+    {
+      "provider": "metno",
+      "city": "Nice",
+      "rounds": 5,
+      "ok_rate": 1.0,
+      "median_ms": 465.2,
+      "p95_ms": 498.6,
+      "samples_ms": [
+        613.6,
+        459.9,
+        465.2,
+        455.6,
+        498.6
+      ],
+      "errors": []
+    },
+    {
+      "provider": "open_meteo",
+      "city": "Shanghai",
+      "rounds": 5,
+      "ok_rate": 1.0,
+      "median_ms": 389.0,
+      "p95_ms": 435.5,
+      "samples_ms": [
+        388.0,
+        383.2,
+        448.0,
+        389.0,
+        435.5
+      ],
+      "errors": []
+    },
+    {
+      "provider": "wttr",
+      "city": "Shanghai",
+      "rounds": 5,
+      "ok_rate": 0.2,
+      "median_ms": 3063.5,
+      "p95_ms": 3864.7,
+      "samples_ms": [
+        3012.4,
+        6035.9,
+        3012.4,
+        3864.7,
+        3063.5
+      ],
+      "errors": [
+        "URLError",
+        "TimeoutError",
+        "URLError",
+        "URLError"
+      ]
+    },
+    {
+      "provider": "metno",
+      "city": "Shanghai",
+      "rounds": 5,
+      "ok_rate": 1.0,
+      "median_ms": 450.4,
+      "p95_ms": 512.7,
+      "samples_ms": [
+        512.7,
+        435.3,
+        434.9,
+        450.4,
+        542.8
+      ],
+      "errors": []
+    }
+  ],
+  "ranking": [
+    {
+      "provider": "open_meteo",
+      "avg_median_ms": 405.9,
+      "avg_ok_rate": 1.0
+    },
+    {
+      "provider": "metno",
+      "avg_median_ms": 457.8,
+      "avg_ok_rate": 1.0
+    },
+    {
+      "provider": "wttr",
+      "avg_median_ms": 3063.5,
+      "avg_ok_rate": 0.2
+    }
+  ],
+  "recommended_top2": [
+    "open_meteo",
+    "metno"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-02-12 22:00:14",
+  "A_rule_only": {
+    "pass_rate": 1.0,
+    "correctness_rate": 1.0,
+    "slo_rate": 1.0,
+    "correction_success_rate": 1.0,
+    "avg_ms": 793.5,
+    "p95_ms": 869.1,
+    "count": 4
+  },
+  "B_model_assist": {
+    "pass_rate": 1.0,
+    "correctness_rate": 1.0,
+    "slo_rate": 1.0,
+    "correction_success_rate": 1.0,
+    "avg_ms": 985.4,
+    "p95_ms": 747.0,
+    "count": 4
+  },
+  "recommendation": "OFF",
+  "reason": "fails_quality_or_latency_gates"
+}

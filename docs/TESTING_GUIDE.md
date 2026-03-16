@@ -31,7 +31,7 @@ python3 scripts/test_round6.py          # 泛化测试
 |------|----------|----------|
 | 意图分类错误 | `core/router.py` | 添加示例到 few-shot prompt |
 | Action 格式错误 | `core/brain.py` | 在【能力定义】部分添加示例 |
-| 工具执行失败 | `core/tools.py` | 修复对应的内部方法 |
+| 工具执行失败 | `core/tool_executor.py` / `core/tools_impl.py` | 修复对应的工具 handler 或参数归一化 |
 | 回复有乱码/外语 | `core/brain.py` | 在 Report 模式加强中文指令 |
 
 ### 4. 修改后重新测试
@@ -44,10 +44,13 @@ python3 scripts/test_round6.py          # 泛化测试
 
 ```
 core/
-├── router.py    # 意图分类 (COMMAND vs CHAT)
-├── brain.py     # LLM 提示词 (Action/Chat/Report 模式)
-├── tools.py     # 工具执行 (system_control, open_app 等)
-└── memory.py    # 对话记忆
+├── agentic_loop.py    # 统一执行循环 (model -> tools -> observe)
+├── tool_registry.py   # 工具 schema 注册
+├── tool_executor.py   # 工具解析/执行/审计/确认
+├── tools_impl.py      # 工具实现 (fs/system/web/skills)
+├── prompt_builder.py  # 组装提示词
+├── brain.py           # 本地模型推理 (仅推理，不含工具)
+└── memory.py          # 记忆
 
 scripts/
 ├── test_comprehensive.py  # 综合测试 (17 场景)

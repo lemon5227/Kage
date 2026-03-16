@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kage</title>
+  <script>
+    // Dev-only: enable Vite HMR in this static HTML page.
+    // `public/launcher.html` is served as-is, so Vite won't inject the client automatically.
+    (function () {
+      try {
+        var isDev = location.protocol.startsWith('http') && (location.port === '1420' || location.hostname === 'localhost');
+        if (!isDev) return;
+        var s = document.createElement('script');
+        s.type = 'module';
+        s.src = '/@vite/client';
+        document.head.appendChild(s);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      /* Big-company flat, quiet depth */
+      --bg: #f1f4fb;
+      --bg-2: #e9edf7;
+      --panel: rgba(255, 255, 255, 0.94);
+      --panel-2: rgba(255, 255, 255, 0.86);
+      --border: rgba(15, 23, 42, 0.10);
+      --border-strong: rgba(15, 23, 42, 0.16);
+
+      --text: #0f172a;
+      --muted: rgba(15, 23, 42, 0.62);
+      --muted-2: rgba(15, 23, 42, 0.45);
+
+      --accent: #2563eb;
+      --accent-2: #0ea5e9;
+      --danger: #dc2626;
+
+      --radius: 14px;
+      /* Depth: key + ambient (keeps it "flat" but not weightless) */
+      --shadow-ambient: 0 2px 10px rgba(15, 23, 42, 0.08);
+      --shadow-key: 0 18px 44px rgba(15, 23, 42, 0.14);
+      --shadow-sm: 0 12px 28px rgba(15, 23, 42, 0.10);
+      --shadow-md: 0 22px 60px rgba(15, 23, 42, 0.16);
+      --shadow-btn: 0 14px 26px rgba(37, 99, 235, 0.28);
+      --inset-highlight: inset 0 1px 0 rgba(255,255,255,0.78);
+      --inset-border: inset 0 0 0 1px rgba(15,23,42,0.08);
+
+      /* Back-compat tokens used by inline styles */
+      --text-primary: var(--text);
+      --text-secondary: var(--muted);
+      --accent-hover: #1d4ed8;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(1000px 700px at 18% 8%, rgba(37, 99, 235, 0.14), transparent 60%),
+        radial-gradient(900px 680px at 82% 20%, rgba(14, 165, 233, 0.12), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(1100px 650px at 12% 0%, rgba(255,255,255,0.70), transparent 60%),
+        radial-gradient(900px 650px at 90% 28%, rgba(255,255,255,0.55), transparent 60%);
+      opacity: 1;
+    }
+
+    /* Subtle grain for "material" feel (very low contrast) */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.06;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.56));
+      backdrop-filter: blur(14px);
+      border-right: 1px solid var(--border);
+      padding: 22px 14px;
+      overflow-y: auto;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.86);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .nav {
+      margin-top: 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 10px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.70);
+      color: rgba(15, 23, 42, 0.88);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.10);
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.82);
+      color: rgba(15, 23, 42, 0.92);
+      border-color: rgba(37, 99, 235, 0.22);
+      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.10);
+    }
+
+    .nav-item:focus-visible {
+      outline: 3px solid rgba(30, 94, 255, 0.35);
+      outline-offset: 2px;
+    }
+
+    .main { flex: 1; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+
+    .header {
+      padding: 18px 26px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.46));
+      backdrop-filter: blur(14px);
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.74);
+      font-size: 12px;
+      color: rgba(15, 23, 42, 0.82);
+      box-shadow: var(--shadow-ambient);
+      max-width: 420px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #999;
+    }
+
+    .dot.ok { background: #16a34a; }
+    .dot.warn { background: #f59e0b; }
+    .dot.bad { background: #dc2626; }
+
+    .content { flex: 1; min-height: 0; padding: 22px 26px 110px; overflow-y: auto; }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel) 0%, rgba(255,255,255,0.86) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: var(--inset-highlight), var(--shadow-ambient);
+    }
+
+    .card:hover {
+      box-shadow: var(--inset-highlight), var(--shadow-key);
+    }
+
+    .card-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: rgba(23,23,23,0.85); }
+    .select-wrapper { position: relative; }
+    .select-wrapper::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid rgba(248, 250, 252, 0.55);
+      pointer-events: none;
+    }
+    select {
+      width: 100%;
+      padding: 10px 36px 10px 12px;
+      background: rgba(255, 255, 255, 0.70);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+    select:hover { background: rgba(255, 255, 255, 0.82); border-color: rgba(37, 99, 235, 0.24); }
+    select:focus { outline: none; border-color: rgba(37, 99, 235, 0.38); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14); }
+
+    input[type="text"], input[type="number"], input[type="search"] {
+      background: rgba(255, 255, 255, 0.70);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .mono {
+      background: rgba(15, 23, 42, 0.92);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 14px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.92);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 44px rgba(0,0,0,0.22);
+    }
+
+    /* Download jobs (Model Manager) */
+    .dl-item {
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.18);
+      margin-bottom: 10px;
+    }
+    .dl-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .dl-repo {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .dl-status {
+      font-size: 11px;
+      color: rgba(255,255,255,0.72);
+      white-space: nowrap;
+    }
+    .dl-status.failed { color: #ff6b6b; }
+    .dl-status.completed { color: #34d399; }
+    .dl-bar {
+      margin-top: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .dl-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(16,185,129,1) 0%, rgba(34,197,94,1) 100%);
+      transition: width 160ms ease;
+    }
+    .dl-bar-fill.failed {
+      background: linear-gradient(90deg, rgba(239,68,68,1) 0%, rgba(249,115,22,1) 100%);
+    }
+    .dl-bar-fill.indeterminate {
+      width: 30%;
+      animation: dlIndeterminate 1.2s ease-in-out infinite;
+    }
+    @keyframes dlIndeterminate {
+      0% { transform: translateX(-10%); }
+      50% { transform: translateX(160%); }
+      100% { transform: translateX(-10%); }
+    }
+    .dl-sub {
+      margin-top: 8px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.70);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dl-sub.error { color: #ff6b6b; }
+
+    .action-bar {
+      padding: 18px 26px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+      box-shadow: 0 -18px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Range slider (WebKit-friendly) */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 28px;
+      background: transparent;
+    }
+    input[type="range"]:focus { outline: none; }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      margin-top: -5px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.98), rgba(59,130,246,0.90));
+      box-shadow: 0 10px 22px rgba(34,197,94,0.22);
+      border: 1px solid rgba(255,255,255,0.65);
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      box-shadow: 0 14px 28px rgba(30,94,255,0.26);
+    }
+    input[type="range"]::-moz-range-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.98), rgba(59,130,246,0.90));
+      border: 1px solid rgba(255,255,255,0.65);
+      box-shadow: 0 10px 22px rgba(34,197,94,0.22);
+    }
+
+    .btn-launch {
+      background: linear-gradient(180deg, rgba(37,99,235,1) 0%, rgba(29,78,216,1) 100%);
+      color: white;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+      box-shadow: var(--inset-highlight), 0 1px 0 rgba(255,255,255,0.10), var(--shadow-btn);
+    }
+
+    .btn-launch:hover { transform: translateY(-1px); filter: brightness(1.02); box-shadow: var(--inset-highlight), 0 1px 0 rgba(255,255,255,0.12), 0 18px 32px rgba(37, 99, 235, 0.30); }
+    .btn-launch:active { transform: translateY(0px); filter: brightness(0.98); box-shadow: var(--inset-border), 0 10px 18px rgba(37, 99, 235, 0.20); }
+    .btn-launch:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-launch:focus-visible { outline: 3px solid rgba(30, 94, 255, 0.35); outline-offset: 2px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .nav-item,
+      .btn-launch {
+        transition: none;
+      }
+      .nav-item:hover,
+      .btn-launch:hover {
+        transform: none;
+      }
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon" aria-hidden="true"><img src="app-icon.png" alt="" width="22" height="22" style="width: 22px; height: 22px; border-radius: 6px; box-shadow: 0 6px 14px rgba(0,0,0,0.18);" /></div>
+      <div>Kage</div>
+    </div>
+    <div class="nav">
+      <button class="nav-item active" type="button" data-page="general">Overview</button>
+      <button class="nav-item" type="button" data-page="model">Models</button>
+      <button class="nav-item" type="button" data-page="logs">Logs</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="header">
+      <h1>Launcher</h1>
+      <div class="header-right">
+        <div class="pill" id="backendPill"><span class="dot" id="backendDot"></span><span id="backendText">Backend: starting…</span></div>
+        <button class="btn-launch" id="stopBackendBtn" type="button" onclick="toggleBackend()" style="padding: 10px 14px; font-size: 12px;">Stop</button>
+        <span class="pill" id="buildPill" style="max-width: 220px;"><span id="buildText">Build: dev</span></span>
+      </div>
+    </div>
+    <div class="content">
+      <div id="page-general" class="page active">
+        <div class="card">
+          <div class="card-title">Configuration</div>
+          <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 8px;">Voice Engine</label>
+          <div class="select-wrapper">
+            <select><option>Edge TTS - Xiaoyi</option><option>Edge TTS - Xiaoxiao</option></select>
+          </div>
+
+          <div style="height: 12px;"></div>
+          <label for="modelSelect" style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 8px;">Model</label>
+          <div class="select-wrapper">
+            <select id="modelSelect"></select>
+          </div>
+          <div style="margin-top: 10px; color: var(--text-secondary); font-size: 12px;">Launch will download the selected model if missing.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Avatar Framing</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap: 12px;">
+            <div style="min-width:0;">
+              <div style="font-size: 12px; color: var(--text-secondary);">Crop bottom (hide legs)</div>
+              <div id="cropValue" style="font-size: 13px; font-weight: 650;">(loading…)</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-launch" type="button" onclick="nudgeCrop(-10)" style="padding:10px 12px; font-size:12px;">-10</button>
+              <button class="btn-launch" type="button" onclick="nudgeCrop(10)" style="padding:10px 12px; font-size:12px;">+10</button>
+            </div>
+          </div>
+          <label for="cropSlider" style="position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;">Crop bottom slider</label>
+          <input id="cropSlider" name="cropBottom" type="range" min="0" max="500" step="5" value="190" style="width:100%; margin-top: 14px;" />
+          <div style="margin-top: 10px; color: var(--text-secondary); font-size: 12px;">Tip: increase until feet/shins disappear. This affects only the avatar window.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">System Logs</div>
+          <div class="mono" id="log-output" role="log" aria-live="polite" aria-label="System logs"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">Waiting for backend logs…</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Background Tasks</div>
+          <div class="mono" id="background-jobs" role="status" aria-live="polite" aria-label="Background tasks"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No background tasks yet</div></div>
+        </div>
+      </div>
+      <div id="page-model" class="page">
+        <div class="card">
+          <div class="card-title">Model Manager</div>
+
+          <div style="display:flex; gap:12px; align-items:flex-end;">
+            <div style="flex:1;">
+              <label for="repoId" style="font-size: 12px; color: var(--text-secondary); display:block; margin-bottom: 8px;">Download by Repo ID</label>
+              <input id="repoId" placeholder="Qwen/Qwen3-4B-GGUF" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background: rgba(255,255,255,0.80); color: var(--text); font-size:13px; box-shadow: 0 10px 26px rgba(0,0,0,0.08);" />
+            </div>
+            <button class="btn-launch" id="downloadBtn" onclick="downloadModel()" style="padding:10px 16px;">Download</button>
+          </div>
+
+          <div style="margin-top: 10px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <div style="min-width:0;">
+              <div style="font-size: 12px; color: var(--text-secondary);">Active Model</div>
+              <div id="activeModel" style="font-size: 13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">(loading…)</div>
+            </div>
+            <button class="btn-launch" onclick="setActiveFromInput()" style="padding:8px 12px; font-size:12px;">Set Active</button>
+          </div>
+
+          <div style="margin-top: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-launch" onclick="quickDownload('Qwen/Qwen3-4B-GGUF')" style="padding:8px 12px; font-size:12px;">Qwen3 4B</button>
+            <button class="btn-launch" onclick="quickDownload('Qwen/Qwen3-8B-GGUF')" style="padding:8px 12px; font-size:12px;">Qwen3 8B</button>
+            <button class="btn-launch" id="downloadFeaturedBtn" onclick="downloadFeaturedModel()" style="padding:8px 12px; font-size:12px; background: linear-gradient(180deg, #10b981 0%, #059669 100%); box-shadow: 0 14px 26px rgba(16, 185, 129, 0.28);">Download Featured Model ⚡</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Downloads</span>
+            <button class="btn-launch" onclick="refreshDownloads()" style="padding:6px 10px; font-size:12px;">Refresh</button>
+          </div>
+          <div class="mono" id="downloads" style="height: 140px;"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No downloads</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Installed Models</span>
+            <button class="btn-launch" onclick="refreshInstalled()" style="padding:6px 10px; font-size:12px;">Refresh</button>
+          </div>
+          <div class="mono" id="installed" style="height: 180px;"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">Loading…</div></div>
+        </div>
+      </div>
+       <div id="page-logs" class="page">
+           <div class="card"><div class="card-title">All Logs</div><div class="mono" id="log-all" role="log" aria-live="polite" aria-label="All logs" style="height: 300px;"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No logs yet</div></div></div>
+       </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn-launch" id="previewBtn" type="button" onclick="previewAvatar()" style="padding: 12px 14px;">Preview Avatar</button>
+      <button class="btn-launch" id="launchBtn" onclick="launchKage()">Launch Kage</button>
+    </div>
+  </div>
+  <script>
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const page = this.getAttribute('data-page');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        this.classList.add('active');
+      });
+    });
+    
+    function clearPlaceholder(el) {
+      if (!el) return;
+      const first = el.firstElementChild;
+      if (first && first.getAttribute('data-placeholder') === '1') {
+        el.innerHTML = '';
+      }
+    }
+
+    function appendLog(line, stream = 'stdout') {
+      const output = document.getElementById('log-output');
+      const all = document.getElementById('log-all');
+      const time = new Date().toLocaleTimeString();
+      const text = `${time} ${String(line ?? '')}`;
+
+      const mk = (target) => {
+        if (!target) return;
+        clearPlaceholder(target);
+        const row = document.createElement('div');
+        row.textContent = text;
+        row.style.whiteSpace = 'pre-wrap';
+        row.style.wordBreak = 'break-word';
+        row.style.color = stream === 'stderr' ? '#ff6b6b' : 'rgba(255,255,255,0.92)';
+        target.appendChild(row);
+        target.scrollTop = target.scrollHeight;
+      };
+
+      mk(output);
+      mk(all);
+    }
+
+    let BACKEND_STATE = 'starting';
+
+    function updateBackendButton() {
+      const btn = document.getElementById('stopBackendBtn');
+      if (!btn) return;
+      if (BACKEND_STATE === 'running') {
+        btn.textContent = 'Stop';
+        btn.disabled = false;
+        return;
+      }
+      if (BACKEND_STATE === 'stopped' || BACKEND_STATE === 'failed') {
+        btn.textContent = 'Start';
+        btn.disabled = false;
+        return;
+      }
+      btn.textContent = '…';
+      btn.disabled = true;
+    }
+
+    function setBackendPill(state) {
+      const dot = document.getElementById('backendDot');
+      const text = document.getElementById('backendText');
+      if (!dot || !text) return;
+
+      const s = String(state || 'unknown');
+      BACKEND_STATE = s;
+      if (s === 'running' || s === 'ready') {
+        dot.className = 'dot ok';
+        text.textContent = 'Backend: online';
+        updateBackendButton();
+        return;
+      }
+      if (s === 'failed' || s === 'error' || s === 'stopped') {
+        dot.className = 'dot bad';
+        text.textContent = 'Backend: offline';
+        updateBackendButton();
+        return;
+      }
+      dot.className = 'dot warn';
+      text.textContent = 'Backend: starting…';
+      updateBackendButton();
+    }
+
+    function tauriAvailable() {
+      const t = window.__TAURI__;
+      return !!(t && (t.core?.invoke || t.invoke));
+    }
+
+    async function tauriInvoke(command, args) {
+      const t = window.__TAURI__;
+      if (t?.core?.invoke) {
+        return t.core.invoke(command, args);
+      }
+      if (t?.invoke) {
+        return t.invoke(command, args);
+      }
+      throw new Error('Tauri invoke not available');
+    }
+
+    async function bootstrapLogs() {
+      const tauri = window.__TAURI__;
+      if (tauri?.event?.listen) {
+        tauri.event.listen('backend-log', (event) => {
+          const payload = event?.payload || {};
+          appendLog(payload.line || '', payload.stream || 'stdout');
+        });
+        tauri.event.listen('backend-status', (event) => {
+          const payload = event?.payload || {};
+          setBackendPill(payload.state);
+          appendLog(`backend status: ${payload.state || 'unknown'}${payload.pid ? ' (pid ' + payload.pid + ')' : ''}`, 'stdout');
+        });
+      }
+
+      if (tauri?.core?.invoke || tauri?.invoke) {
+        try {
+          const lines = await tauriInvoke('get_recent_logs');
+          if (Array.isArray(lines)) {
+            const output = document.getElementById('log-all');
+            if (output) output.innerHTML = '';
+            lines.forEach((line) => appendLog(line));
+          }
+        } catch (e) {
+          appendLog('Failed to load recent logs: ' + e, 'stderr');
+        }
+      }
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    async function fetchJson(path, options = {}, attempts = 3) {
+      const url = API_URL + path;
+      let lastErr;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const res = await fetchWithTimeout(url, options, 8000);
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return await res.json();
+        } catch (e) {
+          lastErr = e;
+          await new Promise(r => setTimeout(r, 350 + i * 250));
+        }
+      }
+      throw lastErr;
+    }
+    const API_URL = 'http://127.0.0.1:12345/api';
+    let ACTIVE_MODEL = '';
+    const FEATURED_REPO = 'Qwen/Qwen3-4B-GGUF';
+    let INSTALLED_MODELS = [];
+    let MODEL_PROFILES = [];
+
+    function qs(id) {
+      return document.getElementById(id);
+    }
+
+    function normalizeModelResponse(payload) {
+      const managed = Array.isArray(payload?.managed) ? payload.managed : [];
+      const hfCache = Array.isArray(payload?.hf_cache) ? payload.hf_cache : [];
+      return [...managed, ...hfCache];
+    }
+
+    function normalizeInstalledEntry(entry) {
+      const e = entry || {};
+      const sizeBytes = Number(e.size_bytes);
+      const size = Number.isFinite(sizeBytes) && sizeBytes > 0
+        ? formatBytes(sizeBytes)
+        : String(e.size || '').trim();
+      return {
+        id: String(e.id || '').trim(),
+        name: String(e.repo_id || e.name || e.id || '').trim(),
+        path: String(e.path || '').trim(),
+        size,
+        engine: String(e.engine || '').trim(),
+        managed: !String(e.id || '').startsWith('models--'),
+      };
+    }
+
+    function normalizeProfiles(cfg) {
+      const raw = cfg?.model?.local_profiles;
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .map((p) => ({
+          id: String(p?.id || '').trim(),
+          label: String(p?.label || p?.model || '').trim(),
+          model: String(p?.model || '').trim(),
+          description: String(p?.description || '').trim(),
+        }))
+        .filter((p) => p.model);
+    }
+
+    function formatBytes(bytes) {
+      const n = Number(bytes);
+      if (!Number.isFinite(n) || n <= 0) return '';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let value = n;
+      let idx = 0;
+      while (value >= 1024 && idx < units.length - 1) {
+        value /= 1024;
+        idx += 1;
+      }
+      const digits = value >= 100 || idx === 0 ? 0 : 1;
+      return `${value.toFixed(digits)} ${units[idx]}`;
+    }
+
+    function renderModelSelect(cfg) {
+      const sel = qs('modelSelect');
+      if (!sel) return;
+
+      MODEL_PROFILES = normalizeProfiles(cfg);
+
+      const fromCfg = cfg?.model?.available_models;
+      const base = Array.isArray(fromCfg) ? fromCfg : [];
+      const list = base
+        .map((m) => String(m || '').trim())
+        .filter(Boolean);
+      MODEL_PROFILES.forEach((p) => {
+        if (p.model && !list.includes(p.model)) {
+          list.push(p.model);
+        }
+      });
+
+      const current = String((cfg?.model?.path || ACTIVE_MODEL || '')).trim();
+      if (current && !list.includes(current)) {
+        list.unshift(current);
+      }
+
+      if (list.length === 0) {
+        list.push(
+          'Qwen/Qwen3-4B-GGUF',
+          'Qwen/Qwen3-8B-GGUF'
+        );
+      }
+
+      const prev = sel.value;
+      sel.innerHTML = '';
+      list.forEach((m) => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        const profile = MODEL_PROFILES.find((p) => p.model === m);
+        opt.textContent = profile ? `${profile.label} · ${m}` : m;
+        if (profile?.description) {
+          opt.title = profile.description;
+        }
+        sel.appendChild(opt);
+      });
+
+      sel.value = current || prev || list[0];
+    }
+
+    (function initModelSelect() {
+      const sel = qs('modelSelect');
+      if (!sel) return;
+      sel.addEventListener('change', () => {
+        const v = String(sel.value || '').trim();
+        if (v) setActiveModel(v);
+      });
+    })();
+
+    function formatPct(job) {
+      const total = Number(job?.file_total);
+      const done = Number(job?.file_downloaded);
+      if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(done)) {
+        return null;
+      }
+      const pct = Math.round((done / total) * 100);
+      return Math.max(0, Math.min(100, pct));
+    }
+
+    function normStatus(s) {
+      const v = String(s || '').toLowerCase();
+      if (v === 'completed' || v === 'complete' || v === 'done') return 'completed';
+      if (v === 'failed' || v === 'error') return 'failed';
+      if (v === 'queued') return 'queued';
+      if (v === 'running' || v === 'downloading') return 'running';
+      return v || 'unknown';
+    }
+
+    const CROP_STORAGE_KEY = 'kage.cropBottomPx';
+    const DEFAULT_CROP_BOTTOM_PX = 190;
+    let cropChannel;
+    try { cropChannel = new BroadcastChannel('kage-settings'); } catch { cropChannel = null; }
+
+    function clampInt(v, min, max, fallback) {
+      const n = typeof v === 'number' ? v : Number(String(v ?? '').trim());
+      if (!Number.isFinite(n)) return fallback;
+      return Math.max(min, Math.min(max, Math.round(n)));
+    }
+
+    function setCropBottomPx(px) {
+      const value = clampInt(px, 0, 500, DEFAULT_CROP_BOTTOM_PX);
+      try { localStorage.setItem(CROP_STORAGE_KEY, String(value)); } catch {}
+      if (cropChannel) {
+        try { cropChannel.postMessage({ type: 'crop', value }); } catch {}
+      }
+      const label = document.getElementById('cropValue');
+      if (label) label.textContent = value + 'px';
+      const slider = document.getElementById('cropSlider');
+      if (slider) slider.value = String(value);
+    }
+
+    function getCropBottomPx() {
+      try {
+        const raw = localStorage.getItem(CROP_STORAGE_KEY);
+        return clampInt(raw, 0, 500, DEFAULT_CROP_BOTTOM_PX);
+      } catch {
+        return DEFAULT_CROP_BOTTOM_PX;
+      }
+    }
+
+    function nudgeCrop(delta) {
+      setCropBottomPx(getCropBottomPx() + delta);
+    }
+
+    async function loadConfig() {
+      let cfg = null;
+      try {
+        cfg = await fetchJson('/config', {}, 5);
+        ACTIVE_MODEL = (cfg?.model?.path || '').trim();
+      } catch (e) {
+        appendLog('Failed to load config (will retry): ' + e, 'stderr');
+      }
+      if (!ACTIVE_MODEL) {
+        ACTIVE_MODEL = 'Qwen/Qwen3-4B-GGUF';
+      }
+
+      // Keep the select usable even if config fetch failed.
+      renderModelSelect(cfg || { model: { path: ACTIVE_MODEL, available_models: [] } });
+
+      const el = document.getElementById('activeModel');
+      if (el) el.textContent = ACTIVE_MODEL;
+
+      const sel = qs('modelSelect');
+      if (sel && sel.value !== ACTIVE_MODEL) {
+        sel.value = ACTIVE_MODEL;
+      }
+    }
+
+    async function setActiveModel(repo) {
+      const value = (repo || '').trim();
+      if (!value) {
+        appendLog('Active model cannot be empty', 'stderr');
+        return;
+      }
+      try {
+        const json = await fetchJson('/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: { path: value } })
+        }, 3);
+        if (json?.error) {
+          appendLog('Failed to save config: ' + json.error, 'stderr');
+          return;
+        }
+        ACTIVE_MODEL = value;
+        const el = document.getElementById('activeModel');
+        if (el) el.textContent = ACTIVE_MODEL;
+
+        const sel = qs('modelSelect');
+        if (sel && sel.value !== ACTIVE_MODEL) {
+          sel.value = ACTIVE_MODEL;
+        }
+        appendLog('Active model set: ' + ACTIVE_MODEL);
+      } catch (e) {
+        appendLog('Failed to save config: ' + e, 'stderr');
+      }
+    }
+
+    function setActiveFromInput() {
+      const input = document.getElementById('repoId');
+      const repo = (input?.value || '').trim();
+      if (!repo) {
+        appendLog('Please input a repo id first', 'stderr');
+        return;
+      }
+      return setActiveModel(repo);
+    }
+
+    async function refreshInstalled() {
+      const el = document.getElementById('installed');
+      if (!el) return;
+      el.innerHTML = '<div style="color: rgba(255,255,255,0.65);" data-placeholder="1">Loading…</div>';
+      try {
+        const payload = await fetchJson('/models', {}, 3);
+        const models = normalizeModelResponse(payload).map(normalizeInstalledEntry);
+        INSTALLED_MODELS = models;
+        if (models.length === 0) {
+          el.innerHTML = '<div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No models found</div>';
+          setDownloadUiState(_list_jobs_cache || []);
+          return;
+        }
+        el.innerHTML = '';
+        models.forEach((m) => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.justifyContent = 'space-between';
+          row.style.gap = '10px';
+          row.style.padding = '6px 0';
+          row.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+          const meta = [m.size, m.engine].filter(Boolean).join(' · ');
+          row.innerHTML = `<div style="min-width:0;"><div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name || m.id}</div><div style="color: rgba(255,255,255,0.65); font-size:11px;">${meta}</div></div><div style="color: rgba(255,255,255,0.55); font-size:11px;">${m.id || ''}</div>`;
+          el.appendChild(row);
+        });
+      } catch (e) {
+        INSTALLED_MODELS = [];
+        el.innerHTML = '<div style="color: #ff6b6b;" data-placeholder="1">Failed to load installed models</div>';
+        appendLog('Failed to load installed models: ' + e, 'stderr');
+      }
+    }
+
+    function isRepoInstalled(repoId) {
+      const repo = String(repoId || '').trim();
+      if (!repo) return false;
+      return Array.isArray(INSTALLED_MODELS) && INSTALLED_MODELS.some((m) => {
+        const name = String(m?.name || '');
+        const id = String(m?.id || '');
+        const path = String(m?.path || '');
+        return name === repo || path.includes(repo) || id.includes(repo.replace('/', '-'));
+      });
+    }
+
+    let _list_jobs_cache = null;
+    let _background_jobs = [];
+
+    function renderBackgroundJobs() {
+      const el = document.getElementById('background-jobs');
+      if (!el) return;
+      const jobs = Array.isArray(_background_jobs) ? _background_jobs.slice() : [];
+      if (jobs.length === 0) {
+        el.innerHTML = '<div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No background tasks yet</div>';
+        return;
+      }
+      jobs.sort((a, b) => (Number(b?.updated_at) || 0) - (Number(a?.updated_at) || 0));
+      el.innerHTML = '';
+      jobs.slice(0, 6).forEach((job) => {
+        const row = document.createElement('div');
+        row.style.padding = '8px 0';
+        row.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+        const status = String(job?.status || 'unknown');
+        const taskType = String(job?.task_type || 'background_task');
+        const inputText = String(job?.input_text || '').trim();
+        const result = job?.result && typeof job.result === 'object' ? String(job.result.final_text || '') : '';
+        const error = String(job?.error || '').trim();
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <div style="font-size:12px; font-weight:650; color: var(--text);">${taskType}</div>
+            <div style="font-size:11px; color: rgba(255,255,255,0.58); text-transform: uppercase;">${status}</div>
+          </div>
+          <div style="margin-top:4px; font-size:11px; color: rgba(255,255,255,0.68); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${inputText || '(empty task)'}</div>
+          ${result ? `<div style="margin-top:4px; font-size:11px; color: rgba(255,255,255,0.84); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${result}</div>` : ''}
+          ${error ? `<div style="margin-top:4px; font-size:11px; color: #ff8f8f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${error}</div>` : ''}
+        `;
+        el.appendChild(row);
+      });
+    }
+
+    function upsertBackgroundJob(job) {
+      if (!job || typeof job !== 'object') return;
+      const jobId = String(job.job_id || '').trim();
+      if (!jobId) return;
+      const next = Array.isArray(_background_jobs) ? _background_jobs.slice() : [];
+      const idx = next.findIndex((item) => String(item?.job_id || '') === jobId);
+      if (idx >= 0) {
+        next[idx] = { ...next[idx], ...job };
+      } else {
+        next.push(job);
+      }
+      _background_jobs = next;
+      renderBackgroundJobs();
+    }
+
+    async function refreshDownloads() {
+      const el = document.getElementById('downloads');
+      if (!el) return;
+      try {
+        const jobs = await fetchJson('/models/download', {}, 2);
+        _list_jobs_cache = jobs;
+        if (!Array.isArray(jobs) || jobs.length === 0) {
+          el.innerHTML = '<div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No downloads</div>';
+          setDownloadUiState([]);
+          return;
+        }
+        renderDownloads(el, jobs);
+        setDownloadUiState(jobs);
+
+        // If featured model just finished downloading, refresh installed list once.
+        if (Array.isArray(jobs)) {
+          const featuredDone = jobs.some((j) => String(j?.repo_id || '').trim() === FEATURED_REPO && normStatus(j?.status) === 'completed');
+          if (featuredDone && !isRepoInstalled(FEATURED_REPO)) {
+            refreshInstalled();
+          }
+        }
+      } catch (e) {
+        el.innerHTML = '<div style="color: #ff6b6b;">Failed to load downloads</div>';
+        setDownloadUiState([]);
+      }
+    }
+
+    function renderDownloads(container, jobs) {
+      container.innerHTML = '';
+      const sorted = jobs
+        .slice()
+        .sort((a, b) => (Number(b?.updated_at) || 0) - (Number(a?.updated_at) || 0));
+
+      sorted.forEach((job) => {
+        const repo = String(job?.repo_id || '(unknown repo)');
+        const status = normStatus(job?.status);
+        const pct = status === 'completed' ? 100 : formatPct(job);
+
+        const item = document.createElement('div');
+        item.className = 'dl-item';
+
+        const top = document.createElement('div');
+        top.className = 'dl-top';
+
+        const repoEl = document.createElement('div');
+        repoEl.className = 'dl-repo';
+        repoEl.textContent = repo;
+
+        const statusEl = document.createElement('div');
+        statusEl.className = 'dl-status ' + status;
+        const statusText = pct === null ? status : `${status} · ${pct}%`;
+        statusEl.textContent = statusText;
+        if (status === 'failed') statusEl.classList.add('failed');
+        if (status === 'completed') statusEl.classList.add('completed');
+
+        top.appendChild(repoEl);
+        top.appendChild(statusEl);
+        item.appendChild(top);
+
+        const bar = document.createElement('div');
+        bar.className = 'dl-bar';
+
+        const fill = document.createElement('div');
+        fill.className = 'dl-bar-fill';
+        if (status === 'failed') fill.classList.add('failed');
+        if (pct === null && status !== 'failed' && status !== 'completed') {
+          fill.classList.add('indeterminate');
+        } else {
+          fill.style.width = String(pct ?? 0) + '%';
+        }
+        bar.appendChild(fill);
+        item.appendChild(bar);
+
+        const sub = document.createElement('div');
+        sub.className = 'dl-sub';
+        if (status === 'failed') {
+          const err = String(job?.error || 'Unknown error');
+          sub.textContent = 'ERROR: ' + err;
+          sub.classList.add('error');
+        } else {
+          const cf = String(job?.current_file || '').trim();
+          if (cf) {
+            sub.textContent = cf;
+          } else {
+            sub.textContent = status === 'completed' ? 'Completed' : 'Downloading…';
+          }
+        }
+        item.appendChild(sub);
+
+        container.appendChild(item);
+      });
+
+      if (sorted.length === 0) {
+        container.innerHTML = '<div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No downloads</div>';
+      }
+    }
+
+    function setDownloadUiState(jobs) {
+      const btn = qs('downloadFeaturedBtn');
+      if (!btn) return;
+      const active = Array.isArray(jobs) && jobs.some((j) => {
+        const repo = String(j?.repo_id || '').trim();
+        const st = normStatus(j?.status);
+        return repo === FEATURED_REPO && (st === 'queued' || st === 'running');
+      });
+      btn.disabled = !!active;
+      btn.textContent = active ? 'Downloading…' : 'Download Featured Model ⚡';
+    }
+
+    async function downloadModel() {
+      const input = document.getElementById('repoId');
+      const repo = (input?.value || '').trim();
+      if (!repo) {
+        appendLog('Please input a repo id', 'stderr');
+        return;
+      }
+      return quickDownload(repo);
+    }
+
+    function downloadFeaturedModel() {
+      return quickDownload(FEATURED_REPO);
+    }
+
+    async function quickDownload(repo) {
+      appendLog('Download requested: ' + repo);
+      try {
+        const json = await fetchJson('/models/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repo_id: repo })
+        }, 2);
+        if (json.error) {
+          appendLog('Download error: ' + json.error, 'stderr');
+          return;
+        }
+        appendLog('Download job started: ' + json.job_id);
+        refreshDownloads();
+      } catch (e) {
+        appendLog('Download failed: ' + e, 'stderr');
+      }
+    }
+
+    window.addEventListener('kage:job', (ev) => {
+      const detail = ev?.detail || {};
+      const eventName = String(detail.event || '').trim();
+      const job = detail.job || {};
+      upsertBackgroundJob(job);
+      if (eventName) {
+        const taskType = String(job?.task_type || 'background_task');
+        const status = String(job?.status || 'unknown');
+        appendLog(`Background job ${eventName}: ${taskType} (${status})`);
+      }
+    });
+
+    window.addEventListener('kage:audio', (ev) => {
+      const detail = ev?.detail || {};
+      const eventName = String(detail.event || '').trim();
+      if (!eventName) return;
+      const source = String(detail.source || '').trim();
+      appendLog(`Audio event: ${eventName}${source ? ' (' + source + ')' : ''}`);
+    });
+
+    async function ensureModelInstalledOrWarn() {
+      if (!ACTIVE_MODEL) {
+        await loadConfig();
+      }
+      try {
+        const payload = await fetchJson('/models', {}, 5);
+        const models = normalizeModelResponse(payload).map(normalizeInstalledEntry);
+        const installed = models.some((m) => {
+          const name = String(m.name || '');
+          const id = String(m.id || '');
+          const path = String(m.path || '');
+          return name === ACTIVE_MODEL || path.includes(ACTIVE_MODEL) || id.includes(ACTIVE_MODEL.replace('/', '-'));
+        });
+        if (!installed) {
+          appendLog(`Active model not installed: ${ACTIVE_MODEL}`, 'stderr');
+          return false;
+        }
+        return true;
+      } catch (e) {
+        appendLog('Failed to check installed models: ' + e, 'stderr');
+        return false;
+      }
+    }
+
+    async function startRuntimeAndWaitReady() {
+      appendLog('Starting runtime…');
+      await fetchJson('/runtime/start', { method: 'POST' }, 2);
+      const timeoutMs = 120000;
+      const startedAt = Date.now();
+      let lastTick = 0;
+      let lastStage = '';
+      while (Date.now() - startedAt < timeoutMs) {
+        try {
+          const st = await fetchJson('/runtime/status', {}, 2);
+          if (st.status === 'ready') {
+            appendLog('Runtime ready');
+            return true;
+          }
+          if (st.status === 'error') {
+            appendLog('Runtime failed: ' + (st.error || 'unknown'), 'stderr');
+            return false;
+          }
+
+          const stage = String(st.stage || 'booting');
+          if (stage && stage !== lastStage) {
+            lastStage = stage;
+            appendLog('Stage: ' + stage);
+          }
+
+          const now = Date.now();
+          if (now - lastTick > 2500) {
+            lastTick = now;
+            const elapsed = Math.round((now - startedAt) / 1000);
+            appendLog(`Runtime booting… (${elapsed}s) ${lastStage ? '— ' + lastStage : ''}`);
+          }
+        } catch (e) {
+          // ignore brief errors
+        }
+        await new Promise(r => setTimeout(r, 800));
+      }
+      appendLog('Runtime start timeout', 'stderr');
+      return false;
+    }
+
+    async function checkHealthOnce() {
+      try {
+        const st = await fetchJson('/health', {}, 1);
+        if (st?.ok) {
+          setBackendPill('running');
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+      setBackendPill('failed');
+    }
+
+    async function launchKage() {
+      const btn = document.getElementById('launchBtn');
+      btn.disabled = true;
+      btn.textContent = 'Launching…';
+      appendLog('Starting Kage…');
+      try {
+        // Always use the latest selected model.
+        await loadConfig();
+
+        const ok = await ensureModelInstalledOrWarn();
+        if (!ok) {
+          appendLog(`Auto-downloading missing model: ${ACTIVE_MODEL}`, 'stderr');
+          await quickDownload(ACTIVE_MODEL);
+          // Jump to Models page so user can see progress.
+          try {
+            const navBtn = document.querySelector('.nav-item[data-page="model"]');
+            if (navBtn) navBtn.click();
+          } catch {}
+
+          btn.disabled = false;
+          btn.textContent = 'Launch Kage';
+          return;
+        }
+        const ready = await startRuntimeAndWaitReady();
+        if (!ready) {
+          btn.disabled = false;
+          btn.textContent = 'Launch Kage';
+          return;
+        }
+        if (tauriAvailable()) {
+          await tauriInvoke('launch_kage');
+          appendLog('Kage launched successfully!');
+        } else {
+          appendLog('Tauri not available', 'stderr');
+        }
+      } catch(e) {
+        appendLog('Error: ' + e, 'stderr');
+        btn.disabled = false;
+        btn.textContent = 'Launch Kage';
+      }
+    }
+
+    async function toggleBackend() {
+      try {
+        if (!tauriAvailable()) {
+          appendLog('Tauri not available', 'stderr');
+          return;
+        }
+
+        if (BACKEND_STATE === 'running') {
+          appendLog('Stopping backend…');
+          await tauriInvoke('stop_backend_cmd');
+          appendLog('Backend stop requested');
+          setBackendPill('stopped');
+          return;
+        }
+
+        appendLog('Starting backend…');
+        setBackendPill('starting');
+        await tauriInvoke('start_backend_cmd');
+        await new Promise(r => setTimeout(r, 600));
+        await checkHealthOnce();
+      } catch (e) {
+        appendLog('Backend toggle failed: ' + e, 'stderr');
+        setBackendPill('failed');
+      }
+    }
+
+    async function previewAvatar() {
+      appendLog('Preview: opening avatar window (no runtime)');
+      try {
+        if (tauriAvailable()) {
+          await tauriInvoke('show_main_window');
+        } else {
+          appendLog('Tauri not available', 'stderr');
+        }
+      } catch (e) {
+        appendLog('Failed to open avatar window: ' + e, 'stderr');
+      }
+    }
+
+    bootstrapLogs();
+    checkHealthOnce();
+    // Visible build stamp to confirm the launcher HTML updated.
+    (function setBuildStamp() {
+      const el = document.getElementById('buildText');
+      if (el) el.textContent = 'Build: 2026-01-31-02-19';
+      appendLog('Launcher URL: ' + location.href);
+      appendLog('Launcher build: 2026-01-31-02-19');
+    })();
+    renderBackgroundJobs();
+    // Avatar crop controls
+    (function initCrop() {
+      const slider = document.getElementById('cropSlider');
+      const current = getCropBottomPx();
+      setCropBottomPx(current);
+      if (slider) {
+        slider.addEventListener('input', () => setCropBottomPx(slider.value));
+      }
+    })();
+    loadConfig();
+    refreshInstalled();
+    refreshDownloads();
+    setInterval(refreshDownloads, 2000);
+    setInterval(checkHealthOnce, 4000);
+  </script>
+</body>
+</html>

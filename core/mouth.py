@@ -3,6 +3,7 @@ import edge_tts
 import pygame
 import os
 import re
+import threading
 
 class KageMouth:
     def __init__(self,voice="zh-CN-XiaoyiNeural"):
@@ -12,6 +13,7 @@ class KageMouth:
         # zh-CN-XiaoxiaoNeural (温柔女性)
         self.voice = voice
         self.temp_audio_file="temp_kage_speech.mp3"
+        self._stop_event = threading.Event()
 
         # init speaker
         pygame.mixer.init()
@@ -46,14 +48,19 @@ class KageMouth:
             return None
 
     def play_audio_file(self, file_path):
-        """Plays the given audio file (Blocking)"""
-        if not file_path or not os.path.exists(file_path): return
+        """Play a generated audio file until completion or interruption."""
+        if not file_path or not os.path.exists(file_path):
+            return False
 
         try:
+            self._stop_event.clear()
             pygame.mixer.music.load(file_path)
             pygame.mixer.music.play()
 
             while pygame.mixer.music.get_busy():
+                if self._stop_event.is_set():
+                    pygame.mixer.music.stop()
+                    break
                 pygame.time.Clock().tick(10)
             
             pygame.mixer.music.unload()
@@ -63,9 +70,20 @@ class KageMouth:
             try:
                 os.remove(file_path)
             except: pass
-            
+            return not self._stop_event.is_set()
         except Exception as e:
             print(f"Error playing audio: {e}")
+            return False
+
+    def stop_playback(self):
+        self._stop_event.set()
+        try:
+            if pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
+                return True
+        except Exception:
+            pass
+        return False
     
     def _clean_text(self, text):
         # 1. Replace symbols for better pronunciation

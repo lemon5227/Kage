@@ -1,0 +1,10 @@
+{
+  "model": "meta/llama-4-maverick-17b-128e-instruct",
+  "messages": [{"role":"user","content":""}],
+  "max_tokens": 512,
+  "temperature": 1.00,
+  "top_p": 1.00,
+  "frequency_penalty": 0.00,
+  "presence_penalty": 0.00,
+  "stream": false
+}

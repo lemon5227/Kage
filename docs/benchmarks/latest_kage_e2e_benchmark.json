@@ -1,0 +1,316 @@
+{
+  "generated_at": "2026-02-12 22:57:46",
+  "uri": "ws://127.0.0.1:12346/ws",
+  "timeout_sec": 45.0,
+  "include_system": true,
+  "summary": {
+    "pass_rate": 1.0,
+    "correctness_rate": 1.0,
+    "slo_rate": 1.0,
+    "correction_success_rate": 1.0,
+    "avg_ms": 614.4,
+    "p95_ms": 845.4,
+    "count": 6
+  },
+  "results": [
+    {
+      "ok": true,
+      "latency_ms": 561.6,
+      "speech": "尼斯明天，小雨，气温10到16度，当前14度。",
+      "error": null,
+      "events": 3,
+      "text": "帮我查一下明天尼斯天气。",
+      "expect_any": [
+        "天气",
+        "度",
+        "体感",
+        "湿度",
+        "尼斯"
+      ],
+      "correct": true,
+      "slo_ms": 4000,
+      "latency_ok": true,
+      "name": "weather",
+      "turns": [
+        {
+          "ok": true,
+          "latency_ms": 561.6,
+          "speech": "尼斯明天，小雨，气温10到16度，当前14度。",
+          "error": null,
+          "events": 3,
+          "text": "帮我查一下明天尼斯天气。",
+          "expect_any": [
+            "天气",
+            "度",
+            "体感",
+            "湿度",
+            "尼斯"
+          ],
+          "correct": true,
+          "slo_ms": 4000,
+          "latency_ok": true
+        }
+      ],
+      "turn_count": 1,
+      "correction_case": false,
+      "correction_success": null,
+      "latency_ms_total": 561.6,
+      "slo_ms_total": 4000
+    },
+    {
+      "ok": true,
+      "latency_ms": 845.4,
+      "speech": "我找到一个最新视频候选：润不了怎么活？给99%中国人的“留守生存指南”｜如何度过历史垃圾时间？（频道：曹操说）。链接：https://www.youtube.com/watch?v=DMj1CYt3Xok。依据：频道名命中、YouTube来源。 如果不是这个，你可以说‘不是这个，是…’。",
+      "error": null,
+      "events": 3,
+      "text": "帮我查一下曹操说最新视频。",
+      "expect_any": [
+        "youtube",
+        "youtu.be",
+        "链接",
+        "曹操说",
+        "频道：曹操说"
+      ],
+      "correct": true,
+      "slo_ms": 2500,
+      "latency_ok": true,
+      "name": "video",
+      "turns": [
+        {
+          "ok": true,
+          "latency_ms": 845.4,
+          "speech": "我找到一个最新视频候选：润不了怎么活？给99%中国人的“留守生存指南”｜如何度过历史垃圾时间？（频道：曹操说）。链接：https://www.youtube.com/watch?v=DMj1CYt3Xok。依据：频道名命中、YouTube来源。 如果不是这个，你可以说‘不是这个，是…’。",
+          "error": null,
+          "events": 3,
+          "text": "帮我查一下曹操说最新视频。",
+          "expect_any": [
+            "youtube",
+            "youtu.be",
+            "链接",
+            "曹操说",
+            "频道：曹操说"
+          ],
+          "correct": true,
+          "slo_ms": 2500,
+          "latency_ok": true
+        }
+      ],
+      "turn_count": 1,
+      "correction_case": false,
+      "correction_success": null,
+      "latency_ms_total": 845.4,
+      "slo_ms_total": 2500
+    },
+    {
+      "ok": true,
+      "latency_ms": 583.8,
+      "speech": "我找到一个最新视频候选：党指挥枪还是枪指挥党？（频道：曹操说）。链接：https://www.youtube.com/watch?v=cHbMAYjSK9w。依据：频道名命中、YouTube来源。 如果不是这个，你可以说‘不是这个，是…’。",
+      "error": null,
+      "events": 4,
+      "text": "帮我查一下曹操最新视频。",
+      "expect_any": [
+        "曹操说",
+        "频道：曹操说",
+        "youtube",
+        "链接"
+      ],
+      "correct": true,
+      "slo_ms": 2500,
+      "latency_ok": true,
+      "name": "video_correction",
+      "turns": [
+        {
+          "ok": true,
+          "latency_ms": 743.0,
+          "speech": "我找到一个最新视频候选：刘备和曹操怎么发火？于和伟上演“判若两人” 【看看新闻Knews】shorts（频道：看看新闻Knews）。链接：https://www.youtube.com/watch?v=Q4YeYRaU87Y。依据：标题命中、YouTube来源。 如果不是这个，你可以说‘不是这个，是…’。",
+          "error": null,
+          "events": 3,
+          "text": "帮我查一下曹操最新视频。",
+          "expect_any": [
+            "youtube",
+            "youtu.be",
+            "链接",
+            "视频"
+          ],
+          "correct": true,
+          "slo_ms": 2500,
+          "latency_ok": true
+        },
+        {
+          "ok": true,
+          "latency_ms": 583.8,
+          "speech": "我找到一个最新视频候选：党指挥枪还是枪指挥党？（频道：曹操说）。链接：https://www.youtube.com/watch?v=cHbMAYjSK9w。依据：频道名命中、YouTube来源。 如果不是这个，你可以说‘不是这个，是…’。",
+          "error": null,
+          "events": 4,
+          "text": "不是这个，是曹操说最新视频。",
+          "expect_any": [
+            "曹操说",
+            "频道：曹操说",
+            "youtube",
+            "链接"
+          ],
+          "correct": true,
+          "slo_ms": 2500,
+          "latency_ok": true
+        }
+      ],
+      "turn_count": 2,
+      "correction_case": true,
+      "correction_success": true,
+      "latency_ms_total": 1326.8,
+      "slo_ms_total": 5000
+    },
+    {
+      "ok": true,
+      "latency_ms": 302.2,
+      "speech": "尼斯今天，阴，气温10到16度，当前14度。",
+      "error": null,
+      "events": 4,
+      "text": "帮我查一下上海天气。",
+      "expect_any": [
+        "尼斯",
+        "天气",
+        "度"
+      ],
+      "correct": true,
+      "slo_ms": 4000,
+      "latency_ok": true,
+      "name": "weather_correction",
+      "turns": [
+        {
+          "ok": true,
+          "latency_ms": 508.0,
+          "speech": "上海今天，阴，气温5到20度，当前5度。",
+          "error": null,
+          "events": 3,
+          "text": "帮我查一下上海天气。",
+          "expect_any": [
+            "上海",
+            "天气",
+            "度"
+          ],
+          "correct": true,
+          "slo_ms": 4000,
+          "latency_ok": true
+        },
+        {
+          "ok": true,
+          "latency_ms": 302.2,
+          "speech": "尼斯今天，阴，气温10到16度，当前14度。",
+          "error": null,
+          "events": 4,
+          "text": "不是这个，是帮我查一下尼斯天气。",
+          "expect_any": [
+            "尼斯",
+            "天气",
+            "度"
+          ],
+          "correct": true,
+          "slo_ms": 4000,
+          "latency_ok": true
+        }
+      ],
+      "turn_count": 2,
+      "correction_case": true,
+      "correction_success": true,
+      "latency_ms_total": 810.2,
+      "slo_ms_total": 8000
+    },
+    {
+      "ok": true,
+      "latency_ms": 52.5,
+      "speech": "亮度已调高。",
+      "error": null,
+      "events": 4,
+      "text": "帮我把音量调高一点。",
+      "expect_any": [
+        "亮度",
+        "调高",
+        "已调"
+      ],
+      "correct": true,
+      "slo_ms": 800,
+      "latency_ok": true,
+      "name": "command_correction",
+      "turns": [
+        {
+          "ok": true,
+          "latency_ms": 51.7,
+          "speech": "音量已调高。",
+          "error": null,
+          "events": 3,
+          "text": "帮我把音量调高一点。",
+          "expect_any": [
+            "音量",
+            "调高",
+            "已调"
+          ],
+          "correct": true,
+          "slo_ms": 800,
+          "latency_ok": true
+        },
+        {
+          "ok": true,
+          "latency_ms": 52.5,
+          "speech": "亮度已调高。",
+          "error": null,
+          "events": 4,
+          "text": "不是这个，是把亮度调高。",
+          "expect_any": [
+            "亮度",
+            "调高",
+            "已调"
+          ],
+          "correct": true,
+          "slo_ms": 800,
+          "latency_ok": true
+        }
+      ],
+      "turn_count": 2,
+      "correction_case": true,
+      "correction_success": true,
+      "latency_ms_total": 104.2,
+      "slo_ms_total": 1600
+    },
+    {
+      "ok": true,
+      "latency_ms": 38.3,
+      "speech": "亮度已调高。",
+      "error": null,
+      "events": 3,
+      "text": "帮我调高亮度。",
+      "expect_any": [
+        "亮度",
+        "调高",
+        "已调"
+      ],
+      "correct": true,
+      "slo_ms": 800,
+      "latency_ok": true,
+      "name": "system",
+      "turns": [
+        {
+          "ok": true,
+          "latency_ms": 38.3,
+          "speech": "亮度已调高。",
+          "error": null,
+          "events": 3,
+          "text": "帮我调高亮度。",
+          "expect_any": [
+            "亮度",
+            "调高",
+            "已调"
+          ],
+          "correct": true,
+          "slo_ms": 800,
+          "latency_ok": true
+        }
+      ],
+      "turn_count": 1,
+      "correction_case": false,
+      "correction_success": null,
+      "latency_ms_total": 38.3,
+      "slo_ms_total": 800
+    }
+  ]
+}

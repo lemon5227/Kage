@@ -12,3 +12,23 @@ vosk
 openwakeword
 jieba
 onnxruntime
+
+# Added based on codebase analysis
+chromadb>=0.4.0
+Pillow
+pystray>=0.19.5; sys_platform != 'darwin'
+rumps>=0.4.0; sys_platform == 'darwin'
+defusedxml
+lxml
+openpyxl
+pdf2image
+pypdf
+six
+pyobjc-framework-Quartz; sys_platform == 'darwin'
+
+# Launcher/model manager prerequisites
+huggingface_hub
+tqdm
+
+# Optional (bundled) MCP server for web search
+duckduckgo-mcp-server

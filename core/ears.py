@@ -346,5 +346,40 @@ class KageEars:
                 os.remove(self.temp_audio_file)
             return "", None
 
+    def detect_voice_activity(self, timeout_sec: float = 0.25, consecutive_chunks: int = 2) -> bool:
+        """Lightweight VAD-style probe used for barge-in detection.
+
+        It does not transcribe or persist audio. It only checks whether speech
+        activity above the configured threshold appears within a short window.
+        """
+        p = pyaudio.PyAudio()
+        stream = p.open(
+            format=self.format,
+            channels=self.channels,
+            rate=self.rate,
+            input=True,
+            frames_per_buffer=self.chunk,
+        )
+
+        chunks_per_second = max(1, int(self.rate / self.chunk))
+        max_chunks = max(1, int(timeout_sec * chunks_per_second))
+        hits = 0
+
+        try:
+            for _ in range(max_chunks):
+                data = stream.read(self.chunk, exception_on_overflow=False)
+                rms = audioop.rms(data, 2)
+                if rms > self.THRESHOLD:
+                    hits += 1
+                    if hits >= max(1, int(consecutive_chunks)):
+                        return True
+                else:
+                    hits = 0
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+
+        return False
 
 

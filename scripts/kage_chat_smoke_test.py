@@ -1,15 +1,9 @@
-import os
-import sys
+import asyncio
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
-
-from core.brain import KageBrain
-from core.tools import KageTools
+from scripts.harness import make_agentic_loop
 
 
-def quick_chat_response(tools: KageTools, user_input: str):
+def quick_chat_response(user_input: str):
     text = (user_input or "").strip()
     if not text:
         return None
@@ -18,7 +12,7 @@ def quick_chat_response(tools: KageTools, user_input: str):
     if "你能做什么" in text:
         return "系统控制/计算/文件工具哒💖"
     if "冷笑话" in text or "笑话" in text:
-        return tools.execute_tool_call("joke")
+        return "我可以讲，不过现在更希望你给我一个要做的事。"
     return None
 
 
@@ -88,8 +82,7 @@ def collect_stream(stream):
 
 
 def run():
-    brain = KageBrain()
-    tools = KageTools()
+    loop = make_agentic_loop()
     prompts = [
         "你好，Kage",
         "你是谁？",
@@ -105,12 +98,12 @@ def run():
     for prompt in prompts:
         print("\n=== User ===")
         print(prompt)
-        quick = quick_chat_response(tools, prompt)
+        quick = quick_chat_response(prompt)
         if quick:
             response = quick
         else:
-            response = collect_stream(brain.think(prompt, memories=[], current_emotion="neutral", mode="chat"))
-            response = polish_chat_response(response)
+            res = asyncio.run(loop.run(prompt))
+            response = polish_chat_response(res.final_text)
         print("=== Kage ===")
         print(response)
 

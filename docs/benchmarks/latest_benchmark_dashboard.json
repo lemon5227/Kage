@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-02-12 23:06:22",
+  "inputs": {
+    "e2e": "/Users/wenbo/Kage/docs/benchmarks/latest_kage_e2e_benchmark.json",
+    "route_ab": "/Users/wenbo/Kage/docs/benchmarks/latest_route_ab_benchmark.json",
+    "parallel": "/Users/wenbo/Kage/docs/benchmarks/latest_parallel_tools_benchmark.json"
+  },
+  "summary": {
+    "pass_rate": 1.0,
+    "correctness_rate": 1.0,
+    "slo_rate": 1.0,
+    "correction_success_rate": 1.0,
+    "route_assist_recommendation": "OFF",
+    "route_assist_reason": "fails_quality_or_latency_gates",
+    "parallel_speedup": 1.99
+  },
+  "gates": {
+    "e2e_quality_gate": true,
+    "e2e_latency_gate": true,
+    "correction_gate": true,
+    "route_assist_gate": true,
+    "parallel_speedup_gate": true
+  },
+  "ready_for_test_assembly": true
+}

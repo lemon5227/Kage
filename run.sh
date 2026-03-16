@@ -14,13 +14,32 @@ echo -e "${BLUE}👻 Starting Project Kage...${NC}"
 # Function to handle shutdown
 cleanup() {
     echo -e "\n${RED}🛑 Shutting down Kage...${NC}"
-    # Kill background jobs (Backend)
+
+    # Best-effort: kill any leaked Kage backend on port 12345.
+    # Only terminate processes that look like Kage (avoid killing unrelated services).
+    if command -v lsof >/dev/null 2>&1; then
+        PIDS=$(lsof -ti tcp:12345 2>/dev/null | tr '\n' ' ')
+        for pid in $PIDS; do
+            cmd=$(ps -o command= -p "$pid" 2>/dev/null | tr -d '\n')
+            cmd_l=$(echo "$cmd" | tr '[:upper:]' '[:lower:]')
+            if echo "$cmd_l" | grep -q "kage" && (echo "$cmd_l" | grep -q "main.py" || echo "$cmd_l" | grep -q "kage-server"); then
+                echo -e "${RED}   Killing leaked backend PID $pid: $cmd${NC}"
+                kill -TERM "$pid" 2>/dev/null
+                sleep 0.2
+                kill -KILL "$pid" 2>/dev/null
+            fi
+        done
+    fi
+    
+    # Kill any remaining background jobs
     kill $(jobs -p) 2>/dev/null
-    exit
+    
+    echo -e "${GREEN}✅ Kage shutdown complete${NC}"
+    exit 0
 }
 
-# Trap Ctrl+C (SIGINT)
-trap cleanup SIGINT
+# Trap Ctrl+C (SIGINT) and SIGTERM
+trap cleanup SIGINT SIGTERM
 
 # 1. Activate Conda Environment
 # Try to find conda source
@@ -39,20 +58,11 @@ fi
 echo -e "${GREEN}🐍 Activating Conda Environment: kage${NC}"
 conda activate kage
 
-# 2. Start Backend (Background)
-echo -e "${GREEN}🧠 Starting Backend (main.py)...${NC}"
-python main.py &
-BACKEND_PID=$!
-
-# Wait a moment for backend to initialize
-sleep 2
-
-# 3. Start Frontend (Foreground)
+# 2. Start Frontend (Foreground). Tauri starts/stops backend.
 echo -e "${GREEN}💅 Starting Frontend (Tauri)...${NC}"
 cd kage-avatar
 npm run tauri dev
 
 # Usage:
-# The script waits here because 'npm run tauri dev' is interactive/blocking.
-# When you close the Tauri window or hit Ctrl+C, the trap triggers 'cleanup'.
-wait $BACKEND_PID
+# - Tauri owns the backend process and stops it on tray Quit.
+# - Ctrl+C triggers this script's cleanup for leaked processes.

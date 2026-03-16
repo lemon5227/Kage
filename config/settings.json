@@ -1,16 +1,48 @@
 {
     "model": {
-        "path": "mlx-community/Phi-4-mini-instruct-4bit",
+        "path": "Qwen/Qwen3-4B-GGUF",
         "preferred_model": "local",
         "available_models": [
-            "mlx-community/Phi-4-mini-instruct-4bit",
-            "mlx-community/Phi-4-mini-instruct-8bit",
-            "LiquidAI/LFM2.5-1.2B-Instruct-MLX-bf16",
-            "LiquidAI/LFM2.5-1.2B-Thinking-MLX-bf16",
-            "mlx-community/Qwen2.5-7B-Instruct-4bit"
+            "Qwen/Qwen3-4B-GGUF",
+            "Qwen/Qwen3-8B-GGUF"
+        ],
+        "local_profiles": [
+            {
+                "id": "qwen3-4b-fast",
+                "label": "Qwen3 4B",
+                "model": "Qwen/Qwen3-4B-GGUF",
+                "description": "Fast local baseline for realtime tasks"
+            },
+            {
+                "id": "qwen3-8b-balanced",
+                "label": "Qwen3 8B",
+                "model": "Qwen/Qwen3-8B-GGUF",
+                "description": "Stronger local model for heavier tasks"
+            }
         ],
         "temperature": 0.7,
         "max_tokens": 120,
+        "local_runtime": {
+            "engine": "llama.cpp",
+            "host": "127.0.0.1",
+            "port": 8080,
+            "ctx": 8192,
+            "max_tokens": 1024,
+            "temperature": 0.7,
+            "top_p": 0.8,
+            "top_k": 20,
+            "min_p": 0.0,
+            "presence_penalty": 1.5,
+            "ngl": 99,
+            "reasoning": "off",
+            "timeout_sec": 120
+        },
+        "broker": {
+            "routing_provider": "local",
+            "realtime_provider": "local",
+            "background_provider": "local",
+            "fallback_provider": "cloud"
+        },
         "cloud_api": {
             "provider": "openai",
             "api_key": "",

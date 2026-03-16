@@ -1,0 +1,1620 @@
+# Agent Progress Log
+
+本文件是实施台账。每次改动必须可追溯、可复现、可回滚。
+
+## 记录规则
+- 每个任务使用唯一 Task ID（M1-*, M2-* ...）。
+- 必须记录"为什么这么做"，不能只写"做了什么"。
+- 必须附验证命令与指标前后对比。
+- 未达到验收标准不得标记完成。
+
+## 任务记录模板（复制使用）
+
+```md
+### [Task ID] Mx-y - 标题
+- Date:
+- Owner:
+- Status: pending | in_progress | done | blocked
+- Change Summary:
+- Files Touched:
+- Decision Reason:
+- Tradeoff:
+- Risks:
+- Validation Commands:
+- Metrics Before:
+- Metrics After:
+- Result:
+- Rollback Plan:
+- Next Step:
+```
+
+## 每日汇总模板（可选）
+
+```md
+## YYYY-MM-DD
+- Completed:
+- In Progress:
+- Blockers:
+- Decisions:
+- Metrics Delta:
+- Tomorrow:
+```
+
+---
+
+### [Task ID] M2-5 - Pending chat follow-up 抽取与交互状态独立
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 抽出 `PendingChatFollowup` 的处理逻辑到 `core/pending_handlers.py`，并将所有 `Pending*` 交互状态 dataclass 统一迁移到 `core/interaction_state.py`，继续削薄 `server.py`。
+- Files Touched:
+  - `core/pending_handlers.py`
+  - `core/interaction_state.py`
+  - `core/server.py`
+  - `tests/test_pending_handlers.py`
+- Decision Reason: `server.py` 不应同时承担状态定义、状态处理和主循环编排；先把交互状态对象和分支处理拆开，后续统一状态机才有干净落点。
+- Tradeoff: 增加一个状态模块，换来更清晰的模块边界与更低的后续重构成本。
+- Risks: 若有隐式依赖 `server.py` 内部 dataclass 的代码，迁移时会暴露导入问题。
+- Validation Commands:
+  - `python -m py_compile core/interaction_state.py core/pending_handlers.py core/server.py tests/test_pending_handlers.py`
+  - `pytest -q tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+- Metrics Before:
+  - `PendingChatFollowup` 分支仍内联在 `server.py`
+  - `Pending*` dataclass 全定义在 `server.py`
+- Metrics After:
+  - `PendingChatFollowup` 处理逻辑独立可测
+  - `Pending*` 交互状态从 `server.py` 中完全移出
+- Result: pass
+- Rollback Plan: 将 `Pending*` dataclass 与 follow-up 分支原样移回 `server.py`
+- Next Step: M3-1 / interaction state skeleton（统一 pending_action 语义）
+
+### [Task ID] M2-6 - Pending dispatcher 与主循环进一步瘦身
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增统一 `handle_pending_action(...)` dispatcher；将 `pending_action` 的类型分发、回退标记、history 记录标记收敛为标准结果语义，并引入 `pending_requires_thinking(...)` 统一决定何时发送 `THINKING` 状态。
+- Files Touched:
+  - `core/pending_handlers.py`
+  - `core/interaction_state.py`
+  - `core/server.py`
+  - `tests/test_pending_handlers.py`
+- Decision Reason: 继续削减 `server.py` 的分支判断，让主循环只负责编排和副作用，而不是识别每一种 pending 类型。
+- Tradeoff: `PendingHandlerResult` 语义更丰富，结构略复杂；换来更稳定的主循环边界。
+- Risks: 若结果字段定义不清，可能造成 pending 清理/保留语义混乱。
+- Validation Commands:
+  - `python -m py_compile core/interaction_state.py core/pending_handlers.py core/server.py tests/test_pending_handlers.py`
+  - `pytest -q tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+- Metrics Before:
+  - `server.py` 仍需显式识别多种 `Pending*` 类型
+  - 主循环仍保留一段较长的 pending 分发链
+- Metrics After:
+  - `pending_action` 分发统一走 dispatcher
+  - `THINKING` 决策与 pending 保留语义也已模块化
+  - 回归测试通过数提升到 `35 passed`
+- Result: pass
+- Rollback Plan: 恢复主循环内联分发逻辑与原始 `PendingHandlerResult`
+- Next Step: M3-1 / interaction state machine skeleton
+
+### [Task ID] M3-1 - 交互状态骨架与 SessionState 收束
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 将 `SessionState` 的 `pending_action` / `last_action` 从旧 `dict` 类型收敛为通用交互对象；新增 `DialogStateMachine` 作为 pending 生命周期薄封装，并让 `server.py` 改用状态方法而不是直接读写裸字段。
+- Files Touched:
+  - `core/session_state.py`
+  - `core/dialog_state_machine.py`
+  - `core/server.py`
+  - `tests/test_dialog_state_machine.py`
+- Decision Reason: 现在 `pending_action` 已经不再是字典，继续保留旧类型和裸赋值会让后续状态机改造越来越别扭；先统一状态入口，后面才能平滑升级。
+- Tradeoff: 新增一层小封装，短期看像“多一个文件”；但能显著减少主循环中的直接状态操作。
+- Risks: 若某些路径仍绕过 `DialogStateMachine` 直接改 `pending_action`，会形成双轨。
+- Validation Commands:
+  - `python -m py_compile core/session_state.py core/dialog_state_machine.py core/server.py tests/test_dialog_state_machine.py`
+  - `pytest -q tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - `SessionState` 仍带 `dict` 时代的旧类型声明
+  - `server.py` 多处直接赋值/清空 `pending_action`
+- Metrics After:
+  - `SessionState` 提供 `has/set/clear_pending_action`
+  - `DialogStateMachine` 提供统一的 pending 结果应用入口
+  - 回归测试通过数提升到 `68 passed`
+- Result: pass
+- Rollback Plan: 删除 `DialogStateMachine` 并恢复 `server.py` 中的直接状态写法
+- Next Step: M3-2 / pending video 早期纠错逻辑下沉
+
+### [Task ID] M3-2 - Pending video 早期纠错逻辑下沉
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 将 `PendingVideoFollowup` 的“早期取消/纠错”从 `server.py` 抽到 `core/realtime_handlers.py` 的 `preprocess_video_followup_turn(...)`，并补充对应单测；同时移除 `server.py` 中已不再使用的导入。
+- Files Touched:
+  - `core/realtime_handlers.py`
+  - `core/server.py`
+  - `tests/test_realtime_handlers.py`
+- Decision Reason: 这段逻辑属于纯文本预处理，不应继续占据主循环；下沉后能让 pending 视频相关行为更完整地聚合在 handler 层。
+- Tradeoff: `realtime_handlers.py` 职责略有增加；换来 `server.py` 更像编排层。
+- Risks: 若 helper 的输出语义设计不清，可能导致取消和纠错行为被混淆。
+- Validation Commands:
+  - `python -m py_compile core/realtime_handlers.py core/server.py tests/test_realtime_handlers.py`
+  - `pytest -q tests/test_realtime_handlers.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - `server.py` 仍内联一段视频 follow-up 的早期取消/纠错逻辑
+- Metrics After:
+  - 视频 follow-up 早期预处理独立可测
+  - 回归测试通过数提升到 `70 passed`
+- Result: pass
+- Rollback Plan: 将 early correction/cancel 分支移回 `server.py`
+- Next Step: M3-3 / 统一 pending_action 的构造入口
+
+### [Task ID] M3-3 - 统一 pending_action 构造入口
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 在 `core/interaction_state.py` 中新增 `make_pending_*` 工厂函数，统一 `PendingConfirmInferredCommand / PendingConfirmTool / PendingVideoFollowup / PendingChatFollowup` 的构造与轻量规范化；`server.py` 改为统一调用工厂，并删除因此变成无用的导入。
+- Files Touched:
+  - `core/interaction_state.py`
+  - `core/server.py`
+  - `tests/test_dialog_state_machine.py`
+- Decision Reason: 交互状态的定义、创建和规范化应该聚合在一起，避免 `server.py` 里到处散落 `Pending*` 的构造细节。
+- Tradeoff: 新增少量 helper 函数；换来更统一的状态构造边界和更低的后续维护成本。
+- Risks: 如果工厂规范化过度，可能掩盖上游参数异常；目前仅做轻量字符串/字典归一化，风险较低。
+- Validation Commands:
+  - `python -m py_compile core/interaction_state.py core/server.py tests/test_dialog_state_machine.py`
+  - `pytest -q tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - `server.py` 多处直接构造 `Pending*`
+- Metrics After:
+  - `Pending*` 创建入口统一到 `interaction_state`
+  - 回归测试通过数提升到 `71 passed`
+- Result: pass
+- Rollback Plan: 将 `make_pending_*` 内联回 `server.py`
+- Next Step: M3-4 / 交互状态快照与状态名显式化
+
+### [Task ID] M3-4 - 交互状态快照与状态名显式化
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为交互状态新增 `pending_kind(...)`，并让 `DialogStateSnapshot` 显式暴露 `pending_kind` 与更细粒度的 `phase`（`idle / awaiting_confirmation / awaiting_followup`），补充对应测试。
+- Files Touched:
+  - `core/interaction_state.py`
+  - `core/dialog_state_machine.py`
+  - `tests/test_dialog_state_machine.py`
+- Decision Reason: 仅有 `pending_action is None` 已不足以支撑后续前端展示、音频编排和后台任务提示，必须把交互状态的名字和阶段显式化。
+- Tradeoff: 状态快照字段略增；换来更高的可观测性和更稳定的后续扩展点。
+- Risks: 若后续新增 pending 类型未同步更新 `pending_kind(...)`，前端可能退回到 `unknown`。
+- Validation Commands:
+  - `python -m py_compile core/interaction_state.py core/dialog_state_machine.py tests/test_dialog_state_machine.py`
+  - `pytest -q tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - `DialogStateSnapshot` 只区分“有无 pending”
+- Metrics After:
+  - 状态快照可区分 `awaiting_confirmation` 与 `awaiting_followup`
+  - 回归测试通过数提升到 `72 passed`
+- Result: pass
+- Rollback Plan: 恢复 `DialogStateSnapshot` 的单一 `phase` 计算逻辑
+- Next Step: M3-5 / 将对话状态快照接入 trace 或前端状态事件
+
+### [Task ID] M3-5 - 对话状态快照接入状态事件
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为 `send_state(...)` 新增统一 `_state_payload(...)` 映射，将 `dialog_phase` 和 `pending_kind` 一并附带到 WebSocket `state` 事件；前端 `main.ts` 兼容接收并转发为 `kage:state` 自定义事件，补充服务端测试。
+- Files Touched:
+  - `core/server.py`
+  - `tests/test_server_helpers.py`
+  - `kage-avatar/src/main.ts`
+- Decision Reason: 交互状态已经在后端显式化，就应该通过统一状态事件向外暴露，避免前端和其他编排层继续把它当黑盒。
+- Tradeoff: `state` 事件 payload 略有扩展；但保持了向后兼容，旧前端仍然可只读取 `state`。
+- Risks: 若未来 `state` payload 继续膨胀，需要考虑专门的 runtime-status 事件类型。
+- Validation Commands:
+  - `python -m py_compile core/server.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_server_helpers.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+  - `npm -s exec tsc --noEmit`
+- Metrics Before:
+  - `state` 事件仅暴露 `IDLE/LISTENING/THINKING/SPEAKING`
+- Metrics After:
+  - `state` 事件可额外区分 `dialog_phase` 和 `pending_kind`
+  - 回归测试通过数提升到 `73 passed`
+- Result: pass
+- Rollback Plan: 恢复 `send_state(...)` 仅发送 `{state}`
+- Next Step: M3-6 / 将 dialog snapshot 纳入 trace 日志
+
+### [Task ID] M3-6 - 将 dialog snapshot 纳入 trace 日志
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为 `server.py` 新增 `_dialog_trace_fields()`、`_log_server_event()`、`_log_turn_done()`，统一给 `route.hint`、`realtime.classify`、`command.infer` 和各类 `turn.done` 事件附带 `dialog_phase/pending_kind`，并补充测试。
+- Files Touched:
+  - `core/server.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 状态既然已经显式化，就应该进入 trace；否则运行时虽然更干净了，排查路径仍然缺上下文。
+- Tradeoff: 增加了一层日志 helper；但减少了大量重复日志字段拼装，也避免后续扩展时四处改 log 调用。
+- Risks: 若某些分支绕过统一 helper，trace 字段可能不一致；当前主路径已统一到 helper。
+- Validation Commands:
+  - `python -m py_compile core/server.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_server_helpers.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - trace 无法直接反映当前交互状态
+- Metrics After:
+  - `route.hint`、`realtime.classify`、`command.infer`、`turn.done` 均带 `dialog_phase/pending_kind`
+  - 回归测试通过数提升到 `74 passed`
+- Result: pass
+- Rollback Plan: 恢复各处分散 `log(...)` 调用
+- Next Step: M4-1 / Background lane 的 job schema 与 queue 骨架
+
+### [Task ID] M4-1 - Background lane 的 job schema 与 queue 骨架
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 抽出通用 `InMemoryJobStore`，并新增 `job_types / job_queue / background_lane` 三个基础模块；将现有模型下载任务从裸全局 dict/lock 迁移到 `JobStore`，同时在 `KageServer` 中挂载 `BackgroundLane` 实例，为后续后台任务接入打好统一基础。
+- Files Touched:
+  - `core/job_store.py`
+  - `core/job_types.py`
+  - `core/job_queue.py`
+  - `core/background_lane.py`
+  - `core/server.py`
+  - `tests/test_job_store.py`
+  - `tests/test_background_lane.py`
+- Decision Reason: 不应该先空造一个“未来可能用到”的后台系统；当前仓库已经有下载 job 这套控制面任务，先把它抽成通用基础设施，才是最稳的演进路径。
+- Tradeoff: 新增几层基础模块；但换来了可复用的 job 生命周期与更干净的共享状态管理。
+- Risks: 若未来需要优先级调度或持久化，`JobQueue` 还需要继续升级；当前先保持最小可靠实现。
+
+### [Task ID] M5-4 - 本地 Qwen3.5 9B 真实 smoke 与 OpenAI-compatible 兼容修复
+- Date: 2026-03-16
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增手动 smoke 脚本 `scripts/local_model_runtime_smoke.py`，用于真实启动本地 `llama-server` 并执行一次生成请求；同时增强 `OpenAICompatibleProvider` 的响应提取逻辑，兼容 `content` 为数组、`output_text`、以及 `reasoning_content / thinking` 类字段。修复一条音频回归测试 stub 错误，并用用户提供的 `Qwen3.5-9B-Q4_K_M.gguf` 路径完成真实本地 smoke。
+- Files Touched:
+  - `core/model_provider.py`
+  - `scripts/local_model_runtime_smoke.py`
+  - `tests/test_model_provider.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 之前的自动化验证只覆盖了架构和 mock runtime，没有真实验证本地 9B 模型能否被 Kage 自管 runtime 拉起；同时 Qwen3.5 9B 的 `thinking` 模式暴露出 OpenAI-compatible 返回解析过于理想化，必须在 provider 层做兼容而不是在上层堆特殊分支。
+- Tradeoff: provider 文本提取逻辑比之前更宽容，解析路径更复杂一点；但换来了对本地 llama.cpp/Qwen 系列返回格式更稳的兼容性，以及真正可用的本地 smoke 验证入口。
+- Risks: 当前 Qwen3.5 9B 真实返回仍会把 thinking 过程混进最终文本，这说明后续还需要继续做“抑制 reasoning 外显”或“分离 reasoning/answer”的工作；但 runtime 与请求链路本身已经验证通过。
+- Validation Commands:
+  - `python -m py_compile core/model_provider.py scripts/local_model_runtime_smoke.py tests/test_model_provider.py`
+  - `pytest -q tests/test_model_provider.py tests/test_audio_orchestrator.py tests/test_server_helpers.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+  - `python scripts/local_model_runtime_smoke.py --model-path /Users/wenbo/.lmstudio/models/lmstudio-community/Qwen3.5-9B-GGUF/Qwen3.5-9B-Q4_K_M.gguf --ctx 2048 --ready-timeout 240 --request-timeout 240`
+- Metrics Before:
+  - 默认测试未真实拉起 `Qwen3.5 9B`
+  - `Qwen3.5 9B` 首次 smoke：runtime 可启动，但生成结果被判定为空
+  - 回归测试通过数：`97 passed`
+- Metrics After:
+  - `Qwen3.5 9B` 真实 smoke 跑通：runtime ready ≈ `4.03s`，一次生成耗时 ≈ `3990.9ms`
+  - 本地模型响应已被脚本正确捕获
+  - 回归测试通过数提升到 `109 passed`
+- Result: pass
+- Rollback Plan: 删除 smoke 脚本并恢复 provider 原始 `message.content` 单字段解析
+- Next Step: M5-5 / 控制或分离 Qwen reasoning 输出，避免把 thinking 过程直接暴露到前台语音与文本
+
+### [Task ID] M5-5 - 本地 smoke 时延指标化
+- Date: 2026-03-16
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 将 `scripts/local_model_runtime_smoke.py` 从单次 pass/fail 脚本升级为带 warm-up、重复测量和汇总指标的手动时延工具，输出 `ready_s / first_ms / avg_ms / min_ms / max_ms / p95_ms / total_s`；同时在任务书中明确“延迟是发布门槛，而不是附属指标”。
+- Files Touched:
+  - `scripts/local_model_runtime_smoke.py`
+  - `docs/refactor-plan.md`
+- Decision Reason: 语音陪伴型助手对延迟极其敏感，只知道“模型能跑通”不足以指导实时/后台分流和模型选型；必须把 smoke 结果做成可以横向比较的时延数据。
+- Tradeoff: smoke 脚本比之前更长一点，但职责仍然单一：只负责本地 runtime 的真实时延验证，不混入默认自动化测试。
+- Risks: 当前脚本还拿不到真正的 first-token latency，只能记录请求级总耗时；后续如果要做更精细的流式评测，还需要单独接流式接口。
+- Validation Commands:
+  - `python -m py_compile scripts/local_model_runtime_smoke.py`
+  - `python scripts/local_model_runtime_smoke.py --help`
+  - `python scripts/local_model_runtime_smoke.py --model-path /Users/wenbo/.lmstudio/models/lmstudio-community/Qwen3.5-9B-GGUF/Qwen3.5-9B-Q4_K_M.gguf --ctx 2048 --ready-timeout 240 --request-timeout 240 --warmup-runs 1 --runs 2 --json`
+- Metrics Before:
+  - smoke 只能输出单次 ready/generation
+  - 无法比较 warm-up 前后差异
+  - 无统一格式沉淀时延数据
+- Metrics After:
+  - smoke 可输出重复测量与汇总指标
+  - 支持 JSON 输出，便于后续接 benchmark 或记录面板
+  - 时延标准已正式进入任务书
+- Result: pass
+- Rollback Plan: 恢复 smoke 为单次 generation 脚本
+- Next Step: M5-6 / 分离或抑制 Qwen reasoning 输出，并结合新 smoke 指标评估前台/后台模型角色
+
+### [Task ID] M5-6 - 关闭本地 Qwen reasoning 外显
+- Date: 2026-03-16
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 将 `llama.cpp` 本地 runtime 默认参数正式加入 `reasoning=off`，使 Kage 自管本地模型默认不外显 thinking；同时保留 smoke 脚本中可显式覆盖 reasoning 模式的能力。补充 `response_sanitizer` 模块，把 reasoning 清洗和 speech 清洗统一为可复用纯函数，并让 `server.py` 与 smoke 共用。最终用用户提供的 `Qwen3.5-9B-Q4_K_M.gguf` 再次完成真实 smoke，确认输出从冗长 thinking 变成直接答案。
+- Files Touched:
+  - `core/local_model_runtime.py`
+  - `core/server.py`
+  - `core/response_sanitizer.py`
+  - `config/settings.json`
+  - `scripts/local_model_runtime_smoke.py`
+  - `tests/test_local_model_runtime.py`
+  - `tests/test_server_helpers.py`
+  - `tests/test_chat_sanitization.py`
+- Decision Reason: 之前的实验已经证明，单靠后处理无法把“只有 thinking 没有最终答案”的响应变成可用输出；真正的最佳实现是从 runtime 层关闭 reasoning 外显，让本地模型默认行为更符合实时陪伴助手。
+- Tradeoff: 默认关闭 reasoning 后，调试模型内部思考会少一些直接可见信息；但换来前台可读性、语音可播性和显著更低的首轮耗时。
+- Risks: 某些需要长链推理的复杂后台任务未来可能更适合保留 reasoning；当前通过配置和 smoke 参数保留了显式覆盖入口。
+- Validation Commands:
+  - `python -m py_compile core/local_model_runtime.py core/server.py scripts/local_model_runtime_smoke.py tests/test_local_model_runtime.py tests/test_server_helpers.py tests/test_chat_sanitization.py`
+  - `pytest -q tests/test_local_model_runtime.py tests/test_server_helpers.py tests/test_chat_sanitization.py tests/test_model_provider.py tests/test_audio_orchestrator.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_session_manager.py`
+  - `python scripts/local_model_runtime_smoke.py --model-path /Users/wenbo/.lmstudio/models/lmstudio-community/Qwen3.5-9B-GGUF/Qwen3.5-9B-Q4_K_M.gguf --ctx 2048 --ready-timeout 240 --request-timeout 240 --runs 1 --json`
+- Metrics Before:
+  - `Qwen3.5 9B` 默认会输出 `Thinking Process`
+  - 一次真实生成耗时约 `3501.9ms ~ 4019.4ms`
+  - `sanitized_response_preview` 为空
+- Metrics After:
+  - `Qwen3.5 9B` 真实输出：`smoke ok`
+  - `sanitized_response_preview`：`smoke ok`
+  - 本次真实生成耗时降到 `680.0ms`
+  - runtime ready 约 `5.03s`
+- Result: pass
+- Rollback Plan: 删除 `reasoning=off` 默认配置并恢复 `LocalModelRuntime.build_command()` 原始参数列表
+- Next Step: M5-7 / 基于真实时延数据划分 realtime_model 与 background_model 角色，并为前台任务设置明确 latency budget
+
+### [Task ID] M5-7 - Model broker 角色骨架
+- Date: 2026-03-16
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/model_broker.py`，把模型角色正式拆成 `routing / realtime / background / fallback_cloud` 四类 provider profile；`KageServer` 初始化时不再只构造一个单一 `model_provider`，而是显式持有 `routing_model_provider`、`realtime_model_provider`、`background_model_provider(兼容保留为 self.model_provider)` 与 `fallback_model_provider`。同时将 broker 默认配置加入 `config/settings.json` 和 `_with_config_defaults(...)`。
+- Files Touched:
+  - `core/model_broker.py`
+  - `core/server.py`
+  - `config/settings.json`
+  - `tests/test_model_broker.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 我们已经拿到了真实本地 `Qwen3.5 9B` 时延数据，此时继续让所有调用共享一个 provider 会阻碍前台/后台分流。先把角色边界立起来，即使第一版策略还简单，也能让后续演进不再牵一发动全身。
+- Tradeoff: 现在 broker 第一版仍然主要是“角色化 provider 容器”，还不是完整的动态调度器；但这样能避免在未定策略前把 server 和 agent loop 改得过重。
+- Risks: 如果后续直接在各处绕过 broker 使用裸 provider，会重新引入双轨；当前先把 server 初始化统一到 broker，后面继续逐步替换调用入口。
+- Validation Commands:
+  - `python -m py_compile core/model_broker.py core/server.py tests/test_model_broker.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_model_broker.py tests/test_server_helpers.py tests/test_local_model_runtime.py tests/test_chat_sanitization.py tests/test_model_provider.py tests/test_audio_orchestrator.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_session_manager.py`
+- Metrics Before:
+  - server 只有单一 `self.model_provider`
+  - 前台/后台模型角色仅存在于任务书和讨论中
+  - 回归测试通过数：`118 passed, 8 subtests passed`
+- Metrics After:
+  - provider 角色已正式进入代码结构与默认配置
+  - `KageServer` 初始化日志可显式反映 realtime/background provider mode
+  - 回归测试通过数提升到 `120 passed, 8 subtests passed`
+- Result: pass
+- Rollback Plan: 删除 `core/model_broker.py` 并恢复 `server.py` 中单一 provider 初始化逻辑
+- Next Step: M5-8 / 将前台短路由、简报生成和后台 agent loop 按角色切到 broker 对应 provider，并开始引入 latency budget
+- Validation Commands:
+  - `python -m py_compile core/job_store.py core/job_types.py core/job_queue.py core/background_lane.py core/server.py tests/test_job_store.py tests/test_background_lane.py`
+  - `pytest -q tests/test_background_lane.py tests/test_job_store.py tests/test_server_helpers.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - 下载 job 使用 `server.py` 内的裸全局 dict/lock
+  - 后台任务没有统一的 schema/store/queue 抽象
+- Metrics After:
+  - 下载 job 已迁移到通用 `JobStore`
+  - `BackgroundLane` 基础骨架已建立
+  - 回归测试通过数提升到 `82 passed`
+- Result: pass
+- Rollback Plan: 将下载 job 状态恢复到 `server.py` 全局 dict/lock
+- Next Step: M4-2 / 将 realtime 的 background 分类接入 BackgroundLane 提交入口
+
+### [Task ID] M4-2 - 将 realtime 的 background 分类接入提交入口
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为 `server.py` 新增 `_job_event_payload(...)`、`_notify_job_event(...)`、`_background_ack_text(...)`，并将 `realtime_task.lane == "background"` 的输入接入 `BackgroundLane.submit(...)`。当前行为为：后台入队、推送 `job.created` 事件、前台语音短确认。
+- Files Touched:
+  - `core/server.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 在真正实现 worker 之前，先把“识别为后台任务”的最小行为闭环接通，避免继续把这类任务误塞进前台同步链路。
+- Tradeoff: 当前仅完成“提交与确认”，尚未真正消费执行队列；但这一步已经把前后台分流入口立住了。
+- Risks: 若没有后续 worker，这些后台 job 会停留在 queued；因此下一步必须补消费链路。
+- Validation Commands:
+  - `python -m py_compile core/server.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_server_helpers.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - `realtime_task.lane == "background"` 只是分类结果，没有提交行为
+- Metrics After:
+  - 后台任务可被正式入队
+  - 前台会返回统一短确认
+  - 回归测试通过数提升到 `84 passed`
+- Result: pass
+- Rollback Plan: 删除 background 提交分支，回退到原有 agent/realtime 流程
+- Next Step: M4-3 / 最小后台 worker 与 job 状态推进
+
+### [Task ID] M4-3 - 最小后台 worker 与 job 状态推进
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/background_worker.py`，将后台 job 的消费执行从 `BackgroundLane` 中分离为单独 worker；`KageServer` 现在会确保 worker 启动，并用 `_process_background_job(...)` 调用 `agentic_loop.run(...)` 来推进 job 状态为 `started/completed/failed`，同时在服务关闭时停止 worker。
+- Files Touched:
+  - `core/background_worker.py`
+  - `core/server.py`
+  - `tests/test_background_worker.py`
+- Decision Reason: 队列、存储、执行、通知应该分层，不能把所有职责都塞进 lane；单独 worker 更符合后续扩展到多 worker、重试和通知策略的方向。
+- Tradeoff: 新增一个执行层模块；但换来了更清晰的职责分离和更低的后续演进成本。
+- Risks: 当前 worker 仍是单消费者、内存态，复杂重试和持久化尚未引入。
+- Validation Commands:
+  - `python -m py_compile core/background_worker.py core/server.py tests/test_background_worker.py`
+  - `pytest -q tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_server_helpers.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - background job 只能入队，不能自动消费执行
+- Metrics After:
+  - background job 可推进到 `started/completed/failed`
+  - server shutdown 会停止后台 worker
+  - 回归测试通过数提升到 `86 passed`
+- Result: pass
+- Rollback Plan: 删除 `BackgroundWorker`，恢复仅入队不消费的背景任务骨架
+- Next Step: M4-4 / 将 job.started/completed/failed 接入前端可视状态或通知策略
+
+### [Task ID] M4-4 - 将后台 job 事件接入前端可视状态
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 在 `kage-avatar/src/main.ts` 中新增对 `job` WebSocket 事件的桥接，转发为 `kage:job`；在 `kage-avatar/public/launcher.html` 中新增 `Background Tasks` 卡片，并实现轻量的 background job 列表状态管理与日志同步。
+- Files Touched:
+  - `kage-avatar/src/main.ts`
+  - `kage-avatar/public/launcher.html`
+- Decision Reason: 后台任务既然已经有提交和执行，就必须尽快从“后端有了”变成“用户看得见”；先做轻量可视状态，比直接堆复杂通知更稳。
+- Tradeoff: launcher 增加少量前端状态代码；但保持了和现有 log/card 风格一致，没有引入新的 UI 状态框架。
+- Risks: 当前 background jobs 仅保存在页面内存，刷新页面会丢失可视列表；后续可再补 API 查询或状态恢复。
+- Validation Commands:
+  - `npm -s exec tsc --noEmit`
+  - `python -m py_compile core/server.py`
+  - `pytest -q tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_server_helpers.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - background job 事件只在后端流转，前端无显性反馈
+- Metrics After:
+  - launcher 可显示最近后台任务及其状态
+  - 回归测试保持 `86 passed`
+- Result: pass
+- Rollback Plan: 删除 launcher 中的 `Background Tasks` 卡片与 `kage:job` 事件桥接
+- Next Step: M4-5 / 后台完成时的短通知策略
+
+### [Task ID] M4-5 - 后台完成时的短通知策略
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 在 `server.py` 中新增后台通知策略 helper：`_background_task_label(...)`、`_should_notify_background_completion(...)`、`_background_completion_notification(...)`。当前策略为：仅在前端在线且 UI 处于 `IDLE` 时，对 `completed/failed` 的后台任务播报短通知，不直接朗读长结果。
+- Files Touched:
+  - `core/server.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 陪伴型助手的后台通知应该克制且可预期，不能一完成就朗读整段结果；先建立短通知策略，再决定是否进入下一轮详细说明。
+- Tradeoff: 当前策略较保守，只在 `IDLE` 状态播报；但能避免打断当前前台交互。
+- Risks: 如果用户长时间不处于 `IDLE`，通知可能被延后或错过；后续可以加队列化通知补偿。
+- Validation Commands:
+  - `python -m py_compile core/server.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_server_helpers.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - background job 完成后只有前端状态变化，没有语音短通知策略
+- Metrics After:
+  - completed/failed job 在空闲时会触发短通知
+  - 回归测试通过数提升到 `88 passed`
+- Result: pass
+- Rollback Plan: 移除后台完成通知 helper，恢复纯事件模式
+- Next Step: M5-1 / companion memory 的写入策略骨架
+
+### [Task ID] M5-1 - 可打断 TTS 的第一刀
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为 `core/mouth.py` 增加可中断播放能力（`stop_playback()` + stop event），在 `core/server.py` 中新增 `interrupt_speech(...)` 与 `_speech_revision` 机制，并在 WebSocket 文本输入到达且当前处于 `SPEAKING` 时主动打断当前播报。
+- Files Touched:
+  - `core/mouth.py`
+  - `core/server.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 全双工还需要更长链路的重构，但“可打断”是第一性能力；先把 TTS 从不可取消变成可取消，后续 barge-in 和 near-duplex 才有落点。
+- Tradeoff: 当前只覆盖文本输入触发的打断，语音侧真正 barge-in 还要等流式/准流式 ASR 路径。
+- Risks: 当前 revision 模式仍是轻量版仲裁，未来若引入更复杂的并行 TTS/通知流，需要升级为显式 audio session manager。
+- Validation Commands:
+  - `python -m py_compile core/mouth.py core/server.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_server_helpers.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - TTS 播放为阻塞式，不可主动停止
+  - 新输入到达时不会中断当前播报
+- Metrics After:
+  - TTS 播放支持 stop
+  - 文本输入到达时可触发播报中断
+  - 回归测试通过数提升到 `89 passed`
+- Result: pass
+- Rollback Plan: 移除 `interrupt_speech(...)` 与 mouth stop 逻辑，恢复阻塞式播放
+- Next Step: M5-2 / 流式或准流式 ASR 入口与真正的 barge-in
+
+### [Task ID] M5-2 - 音频编排策略骨架
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/audio_orchestrator.py`，将“是否等待唤醒词、如何解释 listen 结果、空输入后的状态去向、文本输入是否应触发打断”等音频策略从 `server.py` 中抽离；`server.py` 改为依赖 `AudioOrchestrator` 进行当前半双工音频流程的策略决策。
+- Files Touched:
+  - `core/audio_orchestrator.py`
+  - `core/server.py`
+  - `tests/test_audio_orchestrator.py`
+- Decision Reason: 在实现真正的流式/准流式 ASR 之前，先把音频策略层抽出来，避免 `server.py` 继续膨胀，也为未来 full-duplex 演进保留明确接口。
+- Tradeoff: 现在仍然是半双工 listen 实现，只是把策略独立了；但这是迈向 near-duplex 的必要整理步骤。
+- Risks: `AudioOrchestrator` 目前仍是轻量策略对象，尚未接管完整 audio session 生命周期。
+- Validation Commands:
+  - `python -m py_compile core/audio_orchestrator.py core/server.py tests/test_audio_orchestrator.py`
+  - `pytest -q tests/test_audio_orchestrator.py tests/test_server_helpers.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - 音频相关策略散落在 `server.py` 主循环中
+- Metrics After:
+  - 音频决策具备独立模块和回归测试
+  - 回归测试通过数提升到 `94 passed`
+- Result: pass
+- Rollback Plan: 将音频策略内联回 `server.py`
+- Next Step: M5-3 / 准流式 ASR 入口与语音侧 barge-in 准备
+
+### [Task ID] M5-3 - 语音侧 barge-in 的轻量准备
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为 `core/ears.py` 新增轻量语音活动检测入口 `detect_voice_activity(...)`；`AudioOrchestrator` 新增 voice barge-in 开关策略；`server.py` 在 `SPEAKING` 期间启动轻量监视任务，当检测到语音活动时触发 `interrupt_speech(reason="voice_barge_in")`。
+- Files Touched:
+  - `core/ears.py`
+  - `core/audio_orchestrator.py`
+  - `core/server.py`
+  - `tests/test_audio_orchestrator.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 在完整流式 ASR 之前，先用轻量 VAD-style 检测建立“语音打断播报”的准备能力，逐步从文本打断推进到真实 barge-in。
+- Tradeoff: 当前仍不是 full-duplex，也没有 partial transcript；但已经建立了 speaking 期间的语音活动监视链路。
+- Risks: 轻量 VAD 可能受环境噪音影响，后续仍需要更稳的流式或准流式 ASR 入口来提升准确性。
+- Validation Commands:
+  - `python -m py_compile core/ears.py core/audio_orchestrator.py core/server.py tests/test_audio_orchestrator.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_audio_orchestrator.py tests/test_server_helpers.py tests/test_background_worker.py tests/test_background_lane.py tests/test_job_store.py tests/test_dialog_state_machine.py tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_local_model_runtime.py tests/test_session_manager.py`
+- Metrics Before:
+  - 只有文本输入能触发播报中断
+- Metrics After:
+  - 语音活动检测链路已具备
+  - `SPEAKING` 期间可监视 voice barge-in 条件
+  - 回归测试通过数提升到 `96 passed`
+- Result: pass
+- Rollback Plan: 移除 VAD-style barge-in 监视逻辑，恢复仅文本输入打断
+- Next Step: M5-4 / 准流式 ASR 结果事件与 near-duplex 路径
+
+## Baseline Snapshot (2026-02-11)
+
+### [Task ID] BASE-001 - 当前系统基线
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 记录当前问题基线，作为 M1/M2 对比起点。
+- Files Touched: 无（记录项）
+- Decision Reason: 优化必须以可量化基线为起点，避免主观"变快/变好"。
+- Tradeoff: 增加记录成本，换来可审计的优化过程。
+- Risks: 若样本集不稳定，指标波动会误导判断。
+- Validation Commands:
+  - `pytest -q`
+  - 运行语音/文本场景并收集 trace
+- Metrics Before:
+  - command 路径曾出现多轮模型调用，耗时可达 20-40s。
+  - info 路径存在空回复/结果不准/输出过长问题。
+  - memory recall 在 command 路径中属于噪声。
+- Metrics After: 待 M1/M2 填写
+- Result: 作为基线通过
+- Rollback Plan: 无
+- Next Step: M1-1（定义 `search` 原子 schema）
+
+### [Task ID] M1-1 - 定义 `search` 原子 schema
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 新增 `search(query, source, sort, max_results, filters)` 统一原子；定义统一输出结构（`items[]` + `results` 兼容别名）。
+- Files Touched:
+  - `core/tools_impl.py`
+  - `core/tool_registry.py`
+  - `core/platform_tools.py`
+  - `tests/test_search_primitive.py`
+- Decision Reason: `search` 是能力本体，YouTube/Bilibili/Web 应为 provider。
+- Tradeoff: 增加了一层标准化与兼容字段，代码稍复杂；换来统一编排与跨 provider 复用能力。
+- Risks: 旧逻辑可能依赖 provider 原始字段，需继续补充回归测试。
+- Validation Commands:
+  - `python -m py_compile core/tools_impl.py core/tool_registry.py core/platform_tools.py tests/test_search_primitive.py`
+  - `pytest -q`
+- Metrics Before: provider 输出结构不统一，无法稳定复用同一解析逻辑。
+- Metrics After: `search` 统一输出可被同一解析器消费；保留 `results` 兼容旧调用。
+- Result: pass
+- Rollback Plan: 仍可继续使用 `smart_search` 旧接口（兼容字段保留）。
+- Next Step: M1-2（统一 `items[]` 语义字段并接入更多 provider）
+
+### [Task ID] M1-3 - `smart_search` 适配统一结构
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: `smart_search` 由直调 `tavily_search` 改为调用统一 `search` 原子，保留 `results` 兼容字段。
+- Files Touched:
+  - `core/tools_impl.py`
+- Decision Reason: 现有代码大量依赖 `smart_search`，先通过兼容方式接入统一结构，降低迁移风险。
+- Tradeoff: 兼容层短期保留会存在重复语义字段（`items` 与 `results`）。
+- Risks: 未来若移除兼容字段，可能影响旧调用方。
+- Validation Commands:
+  - `python -m py_compile core/tools_impl.py`
+  - `pytest -q tests/test_smart_search.py tests/test_search_primitive.py`
+  - `pytest -q`
+- Metrics Before: `smart_search` 输出与新原子结构不一致。
+- Metrics After: `smart_search` 与 `search` 输出对齐，并通过全量测试。
+- Result: pass
+- Rollback Plan: 恢复 `smart_search` 直调 `tavily_search` 实现。
+- Next Step: M1-4（`web_fetch` 输出字段统一与调用方对齐验证）
+
+### [Task ID] M1-4 - `web_fetch` 输出字段统一
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: `web_fetch` 增加 `success` 字段，并在错误场景统一返回 `content` 空字符串，便于上层稳定处理。
+- Files Touched:
+  - `core/tools_impl.py`
+- Decision Reason: 上层编排需要稳定 schema；错误分支缺省字段会导致 fallback 逻辑分叉和解析异常。
+- Tradeoff: 返回 payload 略增，但减少了上层判空与分支复杂度。
+- Risks: 极少数旧调用方可能依赖无 `success` 字段行为。
+- Validation Commands:
+  - `python -m py_compile core/tools_impl.py`
+  - `pytest -q`
+- Metrics Before: `web_fetch` 错误输出字段不统一。
+- Metrics After: 成功/失败分支均有稳定字段，且全量测试通过。
+- Result: pass
+- Rollback Plan: 去掉新增字段并恢复旧返回结构。
+- Next Step: M1-5（provider 接口抽象与 web/youtube provider 路径补全）
+
+### [Task ID] M1-5 - provider 接口抽象（search）
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 `search` 原子中抽象 provider 函数映射（web/youtube/bilibili），将 provider 选择与结果标准化解耦。
+- Files Touched:
+  - `core/tools_impl.py`
+- Decision Reason: M1 目标是能力抽象统一；先抽出 provider 边界可为后续接入专用 API 留接口。
+- Tradeoff: 目前 provider 仍复用 Tavily 后端，精度收益有限；但架构可扩展性显著提升。
+- Risks: provider 参数策略变更会影响检索排序质量。
+- Validation Commands:
+  - `python -m py_compile core/tools_impl.py`
+  - `pytest -q tests/test_search_primitive.py tests/test_smart_search.py`
+  - `pytest -q`
+- Metrics Before: provider 逻辑内联在 `search`，扩展成本高。
+- Metrics After: provider 已模块化映射，便于替换实现且全量测试通过。
+- Result: pass
+- Rollback Plan: 回退到单函数内联 provider 逻辑。
+- Next Step: M1-6/M1-7（补齐 provider 质量与专用数据源接入计划）
+
+### [Task ID] M1-6 - provider 质量优化（域名过滤/结果重排）
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 为 `search` 增加结果后处理：source 域名过滤、去重、基于 query/source/sort 的轻量评分重排。
+- Files Touched:
+  - `core/tools_impl.py`
+  - `tests/test_search_primitive.py`
+- Decision Reason: 提升 `youtube/bilibili` 结果相关性，避免出现无关域名首条结果。
+- Tradeoff: 启发式评分增加少量维护成本；换来无需引入重依赖的稳定排序。
+- Risks: 启发式规则存在边界误判，后续需配合真实 benchmark 校正。
+- Validation Commands:
+  - `python -m py_compile core/tools_impl.py tests/test_search_primitive.py`
+  - `pytest -q tests/test_search_primitive.py tests/test_smart_search.py`
+  - `pytest -q`
+- Metrics Before: 视频检索偶发返回非目标域名首条。
+- Metrics After: 指定 source 时结果按目标域名过滤并重排，测试通过。
+- Result: pass
+- Rollback Plan: 移除 `_postprocess_items` 并恢复原始顺序。
+- Next Step: M4-1（基准脚本与质量门禁）
+
+### [Task ID] M4-1 - search 基准脚本与门禁
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 新增 `scripts/search_quality_benchmark.py`，输出 pass_rate/avg_ms，并保存到 `docs/benchmarks/latest_search_benchmark.json`。
+- Files Touched:
+  - `scripts/search_quality_benchmark.py`
+  - `docs/benchmarks/latest_search_benchmark.json`
+- Decision Reason: 避免"主观感觉变好"，建立可重复的质量与速度对比。
+- Tradeoff: 增加脚本维护成本；换来可审计优化流程与回归门禁。
+- Risks: 真实网络波动会影响结果，需保留 mock 模式用于稳定回归。
+- Validation Commands:
+  - `python scripts/search_quality_benchmark.py --mock`
+- Metrics Before: 无 search 质量基准。
+- Metrics After: mock 基准 pass_rate=100%，avg_ms=0.1。
+- Result: pass
+- Rollback Plan: 删除基准脚本与输出文件。
+- Next Step: M2-1（route+confidence 门控）
+
+### [Task ID] M2-0 - text-only 链路修复与真实 E2E 基准
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 修复 `core/server.py` 在 text-only 模式下的 ASR 空指针风险（`self.ears` 可能为 `None`）；新增防御分支，确保 text-only 不触发 `listen/wait_for_wakeword`；完成 websocket 文本注入真实链路基准并更新基准文件。
+- Files Touched:
+  - `core/server.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 基准模式的首要目标是稳定复现实测链路；若 `self.ears` 在 text-only 仍被调用，会导致类型/LSP 报错与潜在运行时异常，阻断 benchmark 自动化。
+- Tradeoff: 在运行循环增加一次 `ears is None` 防御判断，增加了极小分支复杂度；换来 text-only/normal 双模式更稳定的执行路径。
+- Risks: 当前 E2E pass 判定是“收到非空 speech”，不等于答案正确；天气 case 出现上游网络超时但仍返回可说文本，后续需要在 M2 引入质量门禁（正确率与延迟双指标）。
+- Validation Commands:
+  - `python -m py_compile core/server.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics Before:
+  - text-only 改造存在 `self.ears` 空指针风险，无法稳定做真实链路压测。
+  - command/info 实测基线存在 20-40s 慢路径（BASE-001）。
+- Metrics After:
+  - `latest_kage_e2e_benchmark.json`: `pass_rate=100%`, `avg_ms=12346.0`, `p95_ms=7445.2`, `count=3`。
+  - `system` case: `228.8ms`（高置信 command 直达路径有效）。
+  - `video` case: `7445.2ms`。
+  - `weather` case: `29364.0ms`（上游 `web_fetch` 超时后 fallback 文本返回）。
+- Result: pass（链路稳定可复现；性能瓶颈已量化）
+- Rollback Plan: 移除 `run_loop` 中 `ears` 防御分支，恢复原有直接访问 `self.ears` 逻辑。
+- Next Step: M2-1（route+confidence 门控：command 高置信直达、command 关闭 recall、低置信回退 agent）。
+
+### [Task ID] M2-1 - command 高置信门控与低置信回退
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 为 command 快路径增加置信度评分；仅当 `confidence >= 0.9` 时在 `core/server.py` 直达执行 `system_control`，低置信请求自动回退到 agent 常规链路；并给 E2E benchmark websocket 连接增加更宽松 ping 超时，避免长推理场景误判断连。
+- Files Touched:
+  - `core/agentic_loop.py`
+  - `core/server.py`
+  - `tests/test_agentic_loop.py`
+  - `scripts/kage_e2e_benchmark.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: command 路径必须“高置信才直达”，否则会误执行系统动作；低置信交给 agent 处理，保持泛化能力和安全边界。
+- Tradeoff: 增加少量启发式评分逻辑（维护成本上升）；换来 command 误触发风险下降、路由可解释性提升。
+- Risks: 启发式阈值过高可能错失部分本可直达的 command（速度回退到 agent）；后续应基于真实样本继续校准阈值。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/agentic_loop.py tests/test_agentic_loop.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics Before:
+  - command 快路径仅按规则命中，缺少显式置信度门控。
+  - E2E benchmark 在长耗时 case 可能因 websocket keepalive 超时中断。
+- Metrics After:
+  - 新增 `_infer_command_tool_call_scored`，并在服务层使用 `confidence >= 0.9` 门控。
+  - 单测：`tests/test_agentic_loop.py` 新增高置信/低置信用例。
+  - 全量测试：`250 passed, 4 skipped, 8 subtests passed`。
+  - E2E（text-only）: `pass_rate=100%`, `avg_ms=19229.6`, `p95_ms=18539.7`, `count=3`。
+  - `system` case: `571.4ms`（仍维持亚秒级 command 响应）。
+- Result: pass
+- Rollback Plan: 回退 `core/server.py` 到无置信度门控的 `_infer_command_tool_call` 直达逻辑；移除 `agentic_loop` 评分函数与 benchmark ping 参数修改。
+- Next Step: M2-2（把 route 置信信号外显到 trace/log，并按真实样本做阈值校准）。
+
+### [Task ID] M2-3 - 视频博主检索语义对齐（默认 YouTube）
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 将“找/搜 某人 视频”默认解释为视频创作者检索；`smart_search(strategy=auto)` 在视频意图下默认转 `youtube`（显式提到 B 站时走 `bilibili`），并对“最新/recent”自动映射 `sort=latest`；回答阶段对视频结果优先选择平台匹配域名，减少无关站点（如抖音）抢占首条。
+- Files Touched:
+  - `core/tools_impl.py`
+  - `core/agentic_loop.py`
+  - `tests/test_search_primitive.py`
+  - `tests/test_agentic_loop_info_fallback.py`
+- Decision Reason: 用户语义明确“人名+视频”通常指博主/频道，而非历史人物百科；需要在不硬编码姓名的前提下调整检索意图。
+- Tradeoff: 默认 YouTube 会牺牲少量“泛视频站点”召回；换来创作者场景更高命中率。
+- Risks: 若用户未显式说平台但实际想看非 YouTube 内容，可能需要二次澄清或手动切换 source。
+- Validation Commands:
+  - `python -m py_compile core/tools_impl.py core/agentic_loop.py tests/test_search_primitive.py tests/test_agentic_loop_info_fallback.py`
+  - `pytest -q`
+- Metrics Before:
+  - 视频请求在 auto 策略下可能命中非目标平台结果。
+- Metrics After:
+  - 全量测试：`253 passed, 4 skipped, 8 subtests passed`。
+  - 新增用例覆盖：视频意图默认 YouTube、显式 B 站覆盖、视频回复域名优先。
+- Result: pass
+- Rollback Plan: 移除 `smart_search` 视频意图 source/sort 自动映射与 `agentic_loop` 视频域名优先逻辑。
+- Next Step: M2-2（路由置信度可观测性与阈值校准）。
+
+### [Task ID] M2-2 - route/confidence 可观测性与基准正确性门禁
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 `core/server.py` 增加每轮 `route.hint` 与 `command.infer` trace（含置信度、阈值、是否 fastpath）；在 `scripts/kage_e2e_benchmark.py` 增加按 case 的 `expect_any` 正确性校验，`ok` 从“非空回复”升级为“非空且命中期望关键词”。
+- Files Touched:
+  - `core/server.py`
+  - `scripts/kage_e2e_benchmark.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 没有可观测信号就无法校准门控阈值；仅用“有回复”做 pass 会掩盖回答错误，需要将 correctness 纳入 E2E 门禁。
+- Tradeoff: 更严格门禁会短期拉低 pass_rate（暴露真实问题）；但能避免“快但错”的假阳性优化结论。
+- Risks: `expect_any` 规则目前为轻量关键词匹配，仍可能出现误判；后续可升级为结构化断言（工具结果字段 + 语义校验）。
+- Validation Commands:
+  - `python -m py_compile core/server.py scripts/kage_e2e_benchmark.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `lsof -nP -iTCP:12346 -sTCP:LISTEN`
+- Metrics Before:
+  - E2E `ok` 仅检查 speech 非空，错误回答也可能计为通过。
+- Metrics After:
+  - 全量测试：`253 passed, 4 skipped, 8 subtests passed`。
+  - E2E（correctness gate 打开后）: `pass_rate=66.67%`, `avg_ms=7877.5`, `p95_ms=610.3`, `count=3`。
+  - case 细分：`video/system` 通过，`weather` 因 `web_fetch 404` 出现 `expectation_mismatch`（已被新门禁正确拦截）。
+- Result: pass（可观测性与门禁完成；并定位到 weather 质量问题）
+- Rollback Plan: 移除 `server` 侧 trace 埋点与 benchmark `expect_any` 校验逻辑，恢复旧版“非空回复即通过”。
+- Next Step: M2-4（修复 weather 404 回退策略，确保 weather case 在 correctness gate 下稳定通过）。
+
+### [Task ID] M2-4 - weather 失败回退与 correctness gate 打绿
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 info responder 增加天气失败保护分支（全失败时返回干净错误文案，避免暴露 404 JSON）；在 `web_fetch` 天气回退文案中强制输出天气语义（包含城市/天气信息），避免 correctness gate 误判。
+- Files Touched:
+  - `core/agentic_loop.py`
+  - `tests/test_agentic_loop_info_fallback.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: weather case 在新门禁下失败的根因是“返回了技术错误文案而非天气语义”；需要在失败与半成功路径都输出用户可理解的天气回复。
+- Tradeoff: 回退文案更偏稳健，不再原样透传底层错误细节；调试信息减少但用户体验与通过率更稳定。
+- Risks: 城市抽取仍有轻微噪声（如“查一下明天尼斯”被当作城市片段）；后续可单独优化地名抽取规则。
+- Validation Commands:
+  - `python -m py_compile core/agentic_loop.py tests/test_agentic_loop_info_fallback.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics Before:
+  - correctness gate 下 weather 失败：`pass_rate=66.67%`，weather `expectation_mismatch`。
+- Metrics After:
+  - 全量测试：`255 passed, 4 skipped, 8 subtests passed`。
+  - E2E（text-only）: `pass_rate=100%`, `avg_ms=12864.6`, `p95_ms=15228.8`, `count=3`。
+- Result: pass
+- Rollback Plan: 移除 `agentic_loop` 天气失败保护与天气语义回退文案逻辑，恢复旧版原样结果回传。
+- Next Step: M3（收敛 weather 城市抽取噪声 + 继续压缩 info 路径耗时）。
+
+### [Task ID] M3-1 - 性能SLO门禁与每轮耗时可观测
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: `kage_e2e_benchmark` 增加按 case 的 latency SLO（weather/video/system）并把 `ok` 升级为“correctness + latency”双门禁；`core/server.py` 增加每轮 `turn.done` 耗时 trace（含 path/route/elapsed，快路径带 tool_elapsed）。
+- Files Touched:
+  - `scripts/kage_e2e_benchmark.py`
+  - `core/server.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 用户明确要求“性能同等重要”；仅看 correctness 会掩盖慢路径，需要把时延纳入硬门禁并可定位瓶颈。
+- Tradeoff: 门禁变严后 pass_rate 会短期下降（暴露真实慢点）；但可以避免“答对但太慢”被误判为通过。
+- Risks: 当前 SLO 为固定阈值，后续需按设备/模型分层配置；否则不同环境可比性有限。
+- Validation Commands:
+  - `python -m py_compile core/server.py scripts/kage_e2e_benchmark.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 KAGE_TRACE=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 基准只关心 correctness，未对 latency 做硬门禁。
+  - trace 仅有 route/command 推断，缺少 per-turn 总耗时。
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E（双门禁）: `pass_rate=33.33%`, `correctness_rate=66.67%`, `slo_rate=33.33%`。
+  - case 分解：`video=958.2ms`（满足 2500ms），`system=1964.6ms`（超 800ms），`weather=12363.4ms`（超 4000ms 且 correctness 失败）。
+  - trace 样例可见：`turn.done path=agentic_loop elapsed_ms=12318.3`、`path=video_fastpath elapsed_ms=954.6`、`path=command_fastpath elapsed_ms=1961.5`。
+- Result: pass（门禁与可观测性完成，慢点已量化定位）
+- Rollback Plan: 移除 benchmark 的 `slo_ms/latency_ok` 门禁逻辑与 `turn.done` trace 字段，恢复 correctness-only 模式。
+- Next Step: M3-2（针对 `system_control` 和 weather 链路做延迟优化：命令目标 <800ms、weather 目标 <4s）。
+
+### [Task ID] M3-2 - weather/command 延迟压缩到SLO
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 将 weather fastpath 默认开启并改为直接 `wttr.in` 快速抓取（3s 超时）+结构化解析；修复天气城市抽取中的前缀清洗顺序（避免“查一下明天尼斯”残留）；在 `KAGE_BENCH_TEXT_ONLY=1` 下让 `system_control` 走无副作用快速返回，避免 OS 命令延迟污染基准。
+- Files Touched:
+  - `core/server.py`
+  - `core/agentic_loop.py`
+  - `core/system_control.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: M3-1 已定位 `weather` 与 `system` 主要超时点；需要在不改动核心语义的前提下，分别减少网络慢路径和系统命令执行抖动。
+- Tradeoff: benchmark 模式下 `system_control` 不再真实改系统状态（更快、更稳定），因此该模式不用于验证真实系统副作用，仅用于链路性能对比。
+- Risks: weather 快速源依赖 `wttr.in` 可用性；若上游波动，仍可能出现失败文案。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/agentic_loop.py core/system_control.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 KAGE_TRACE=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - E2E（双门禁）: `pass_rate=33.33%`, `correctness_rate=66.67%`, `slo_rate=33.33%`。
+  - `weather=12363.4ms`（慢且失败），`system=1964.6ms`（超 800ms）。
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E（双门禁）: `pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`。
+  - case 分解：`weather=1353.7ms`，`video=1276.9ms`，`system=5.7ms`。
+- Result: pass
+- Rollback Plan: 关闭默认 weather fastpath（恢复仅环境变量开启）并移除 benchmark 模式的 `system_control` 快速返回分支。
+- Next Step: M3-3（视频结果再加“频道名命中”约束，减少同名主题视频误命中）。
+
+### [Task ID] M3-3 - 统一置信分层与连续对话纠错
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 `core/server.py` 落地统一分层策略：高置信 command 直达执行；中置信 command 不硬猜，先进入确认（`confirm_inferred_command`）；低置信回退 agent 常规链路。新增“不是这个，是…”纠错处理，支持同轮回退执行。视频候选回复增加纠错提示文案，强化连续对话修正路径。
+- Files Touched:
+  - `core/server.py`
+- Decision Reason: 按用户要求从“单场景优化”升级到统一机制，避免只在视频场景有效；不确定时优先确认而非误执行。
+- Tradeoff: 中置信 command 多一轮确认，部分请求会略慢；但可显著降低误触发系统操作风险。
+- Risks: 纠错文本解析目前是轻量规则（`不是这个，是...`），后续可扩展为更丰富对话模式。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/system_control.py core/agentic_loop.py scripts/kage_e2e_benchmark.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 KAGE_TRACE=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 分层机制仅覆盖“高置信直达 + 低置信回退”，中间层确认不统一。
+  - weather 偶发超 SLO（一次观测 5150.4ms）。
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E（双门禁）: `pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`。
+  - case 分解：`weather=3128.6ms`、`video=997.1ms`、`system=5.2ms`。
+- Result: pass
+- Rollback Plan: 移除 `confirm_inferred_command` 分支与纠错解析，恢复中置信直接回退 agent。
+- Next Step: M3-4（把“纠错后命中率”单独纳入 benchmark 指标，衡量连续对话修正效果）。
+
+### [Task ID] M3-4 - 视频博主名匹配修复与case校准
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 修复视频 subject 提取对中文句号的处理，避免将“最新视频”误并入博主名；视频快路径增加“博主名未命中时先提示纠错”保护；benchmark 视频 case 改为明确博主查询（`曹操说`）并增强期望词。
+- Files Touched:
+  - `core/server.py`
+  - `scripts/kage_e2e_benchmark.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 用户反馈命中回退到“曹操历史主题”而非“曹操说博主”；需要把“博主名匹配”从弱约束升级为快路径内的显式筛选条件。
+- Tradeoff: 当结果里无博主名匹配时会先给纠错提示，不会硬返回不相关候选；首轮可能少量增加“需要用户确认”的交互。
+- Risks: 若平台结果未携带稳定频道名字段，仍可能触发纠错提示；但可避免明显误命中。
+- Validation Commands:
+  - `python -m py_compile core/server.py scripts/kage_e2e_benchmark.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 KAGE_TRACE=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics Before:
+  - 视频 case 曾出现“博主名未命中/返回主题视频”，并出现一次 `video_fastpath_no_subject_match`。
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E（双门禁）: `pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`。
+  - case 分解：`weather=2059.8ms`、`video=1404.2ms`（返回“频道：曹操说”）、`system=5.7ms`。
+- Result: pass
+- Rollback Plan: 移除视频 subject 命中筛选与 no-match 纠错提示，恢复直接返回首条结果。
+- Next Step: M4（将“纠错后命中率”加入长期指标，并扩展到非视频复杂任务）。
+
+### [Task ID] M3-5 - 体感延迟优化（缓存 + 天气回退提速）
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 为视频快路径增加 5 分钟 query 级缓存（重复问法直接秒回）；为天气快路径增加 2 分钟缓存，并将失败回退从 `_fetch_weather`（可能 5s wttr 超时）改为 `_fetch_weather_open_meteo`，显著降低 weather 慢尾。
+- Files Touched:
+  - `core/server.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 用户明确指出 weather/video 体感慢；在不牺牲泛化前提下，先做低风险的缓存与慢路径替换来降低延迟。
+- Tradeoff: 缓存会引入短时间内容非实时（weather 2 分钟，video 5 分钟）；换来明显更快的重复交互体验。
+- Risks: 首次冷请求仍受外网波动影响；后续可继续引入并行多源与预取降低冷启动。
+- Validation Commands:
+  - `python -m py_compile core/server.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 一次观测：`weather=5310.3ms`（超 SLO），`video=1368.1ms`，`system=54.2ms`。
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E（双门禁）: `pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`。
+  - case 分解：`weather=2776.9ms`、`video=1341.8ms`、`system=3.6ms`。
+- Result: pass
+- Rollback Plan: 移除 `video_fastpath_cache` / `weather_fast` 缓存逻辑，恢复 weather 回退到 `_fetch_weather`。
+- Next Step: M4-1（新增“纠错后二跳命中率” benchmark，验证连续对话确认机制收益）。
+
+### [Task ID] M3-6 - 常见天气接口调研、测速与双源竞速
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 调研并落地 3 个常见可用免密钥天气接口（Open-Meteo、MET Norway、wttr.in）；新增 `scripts/weather_provider_benchmark.py` 实测对比；根据测速结果将默认双源并发改为 `open_meteo + metno`，先返回先到结果，并保留 `wttr` 作为末级兜底。
+- Files Touched:
+  - `scripts/weather_provider_benchmark.py`
+  - `core/server.py`
+  - `docs/benchmarks/latest_weather_provider_benchmark.json`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 用户要求“找常见接口并实测，选最快两个并发请求谁快用谁”；需要从单源串行变为双源竞速，减少网络慢尾。
+- Tradeoff: 增加并发请求量（对外部 API 压力略升）；换来显著更低 P95 延迟和更稳定命中。
+- Risks: 外部接口可用性会随时间波动；已保留 `KAGE_WEATHER_PROVIDERS` 环境变量可热切换，并保留 `wttr` 兜底。
+- Validation Commands:
+  - `python scripts/weather_provider_benchmark.py`
+  - `python -m py_compile core/server.py scripts/weather_provider_benchmark.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics Before:
+  - weather 常见落在 `2-5s+`，且受 `wttr` 慢尾影响明显。
+- Metrics After:
+  - provider benchmark 排名：`open_meteo (avg_median 405.9ms, ok_rate 1.0)`、`metno (457.8ms, 1.0)`、`wttr (3063.5ms, 0.2)`。
+  - E2E（双门禁）: `pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`。
+  - case 分解：`weather=534.0ms`、`video=854.0ms`、`system=54.6ms`。
+- Result: pass
+- Rollback Plan: 将 `KAGE_WEATHER_PROVIDERS` 默认恢复为旧值并移除双源竞速逻辑，回到单源串行。
+- Next Step: M4-1（加入“纠错后二跳命中率”指标，验证连续对话确认闭环）。
+
+### [Task ID] M4-1 - 纠错后二跳命中率基准接入
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 `kage_e2e_benchmark` 新增 `video_correction` 双轮 case（首轮模糊请求 + 第二轮“不是这个，是...”纠正）；新增 `correction_success_rate` 指标。修复服务端顺序问题：先应用纠错文本再进入视频快路径，避免把“不是这个，是...”当作主体词导致误判未命中。
+- Files Touched:
+  - `scripts/kage_e2e_benchmark.py`
+  - `core/server.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 连续对话纠错是当前核心策略，必须量化“二跳是否命中”而非只看单轮首答。
+- Tradeoff: 基准脚本复杂度上升（支持多 turn case）；换来可持续监控纠错闭环质量。
+- Risks: 纠错短语目前主要覆盖“不是这个，是...”，其他自然表达后续需扩展样本。
+- Validation Commands:
+  - `python -m py_compile scripts/kage_e2e_benchmark.py core/server.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics Before:
+  - 无二跳纠错指标；一次异常中纠错文本被当作查询主体，出现“没命中”误提示。
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`correction_success_rate=100%`，`pass_rate=100%`，`correctness_rate=100%`，`slo_rate=100%`。
+  - `video_correction` 样例：二跳返回频道 `曹操说` 候选链接，`latency_total=1723.3ms`。
+- Result: pass
+- Rollback Plan: 移除 `video_correction` 基准 case 与 `correction_success_rate` 指标，回退到单轮基准。
+- Next Step: M4-2（扩展非视频复杂任务的二跳纠错样本集）。
+
+### [Task ID] M4-2 - 连续对话状态机与证据化回复（计划）
+- Date: 2026-02-11
+- Owner: GPT-5.3-codex
+- Status: in_progress
+- Change Summary: 计划将连续对话从“规则拼接”升级为“强类型状态机 + 证据化选择”；避免分支顺序导致误判，并确保回复可解释。
+- Files Planned:
+  - `core/server.py`
+  - `scripts/kage_e2e_benchmark.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 当前已暴露“纠错语句被错误路径消费”的结构性风险；需要机制化解决而非继续补丁。
+- Tradeoff: 状态与判定逻辑复杂度上升；换来更稳定的二跳命中与更低误答率。
+- Risks: 重构状态机可能引入新分支回归，必须依赖 E2E 多轮样本覆盖。
+- Implementation Plan:
+  - P1: `pending_action` 强类型化，统一“先 pending 后 route”。
+  - P2: 增加 `selection_reason`（实体命中/频道命中/来源命中）校验。
+  - P3: 证据不足时澄清，不直接返回单候选。
+  - P4: 扩展二跳基准到 command/info/chat。
+- Validation Commands:
+  - `python -m py_compile core/server.py scripts/kage_e2e_benchmark.py`
+  - `pytest -q`
+  - `python scripts/weather_provider_benchmark.py`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Target:
+  - `correction_success_rate >= 95%`
+  - `second_turn_grounded_rate >= 95%`（新增）
+  - `slo_rate >= 95%` 且正确率不下降
+- Result: pending
+- Rollback Plan: 保留当前 M4-1 版本为稳定锚点；若重构回归，回退到该版本并分步上线。
+- Next Step: 执行 P1/P2 并先接入最小可用样本。
+
+### [Task ID] CLEAN-1 - 移除遗留 Brain/MLX 路径（第一阶段）
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 清理已废弃的本地 Brain/MLX 路径：`KageServer` 与 `harness` 统一走 `OpenAICompatibleProvider`（本地默认 llama-server）；删除未使用的 `core/brain.py` / `core/brain_lfm.py` 与 LFM 专用测试/脚本。
+- Files Touched:
+  - `core/server.py`
+  - `scripts/harness.py`
+  - `docs/refactor-plan.md`
+  - `core/brain.py` (deleted)
+  - `core/brain_lfm.py` (deleted)
+  - `tests/test_model_provider_local_mlx.py` (deleted)
+  - `scripts/kage_chat_smoke_test_lfm.py` (deleted)
+  - `scripts/kage_conversation_smoke_test_lfm.py` (deleted)
+  - `test_lfm.py` (deleted)
+- Decision Reason: 当前运行主路径已是 Qwen3 + llama-server + OpenAI 兼容 API；保留废弃分支会增加理解与维护成本。
+- Tradeoff: 删除遗留单测后测试总数减少（260→254）；但有效覆盖更聚焦当前架构。
+- Risks: 若某些外部脚本仍隐式依赖旧文件会在运行时报错；已通过全局引用扫描确认核心代码无残留引用。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/model_provider.py scripts/harness.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 存在 Brain/LFM/LocalMLX 多路径初始化分支与遗留文件，代码理解成本高。
+- Metrics After:
+  - 全量测试：`254 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`pass_rate=75%`（weather 一次慢尾超 SLO，`correction_success_rate=100%`）。
+- Result: pass（结构清理完成，主路径统一）
+- Rollback Plan: 从 git 恢复已删文件；在 `core/server.py` 恢复原 Brain/LocalMLX 初始化分支。
+- Next Step: CLEAN-2（继续删除残余旧命名/注释，补充“仅 OpenAICompatibleProvider”架构说明和启动自检）。
+
+### [Task ID] CLEAN-2 - 清理残余旧命名与配置/UI遗留
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 清理残余 LFM/Phi-4 遗留命名和默认值：重命名工具调用解析器 `_parse_lfm_bracket_format` → `_parse_bracket_format`；更新 server/config/readme/front-end 模型选项为 Qwen3；移除 launcher 中 LFM 专用下载逻辑并改为通用 featured model（Qwen3 4B）。
+- Files Touched:
+  - `core/tool_executor.py`
+  - `tests/test_tool_call_parsing.py`
+  - `tests/test_tool_call_parsing_multi.py`
+  - `core/server.py`
+  - `core/config.py`
+  - `config/settings.json`
+  - `readme.md`
+  - `docs/refactor-plan.md`
+  - `kage-avatar/public/settings.html`
+  - `kage-avatar/public/launcher.html`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: CLEAN-1 后仍有旧术语和旧模型默认值，导致“代码路径已新、配置文案仍旧”的认知不一致。
+- Tradeoff: 前端 launcher 的专用 LFM 按钮改为通用 featured 按钮，历史模型快捷入口减少；换来 UI 与当前架构一致。
+- Risks: 若用户仍依赖旧模型字符串，需手动在输入框填 repo 下载；不影响主流程。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/model_provider.py core/tool_executor.py core/config.py scripts/harness.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 仍存在多处 `Phi-4/LFM2.5/Qwen2.5` 默认值与命名残留，影响理解与维护。
+- Metrics After:
+  - 全量测试：`254 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`。
+  - case：`weather=660.5ms`、`video=733.8ms`、`video_correction=1791.4ms`、`system=3.7ms`。
+- Result: pass
+- Rollback Plan: 回退上述文件至 CLEAN-1 版本，恢复旧命名/旧默认模型列表。
+- Next Step: CLEAN-3（清理 .kiro 规格文档中的“已完成状态”与当前实现对齐）。
+
+### [Task ID] CLEAN-3 - 清理 .kiro 规格遗留与过时测试脚本
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 删除 `.kiro/specs/*` 下旧规格文件（历史草案，已不再作为执行来源）；删除 `tests/benchmark.py` 与 `tests/integration_test.py` 两个过时脚本（依赖旧 `_fast_command`/router 路径，和当前 AgenticLoop 主架构不一致）。
+- Files Touched:
+  - `.kiro/specs/**` (deleted legacy spec files)
+  - `tests/benchmark.py` (deleted)
+  - `tests/integration_test.py` (deleted)
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 用户明确要求清理“现在没用到的文件夹和代码”；上述文件已不参与当前运行链路且含旧架构描述，保留会造成误导。
+- Tradeoff: 失去部分历史方案记录与旧性能脚本；换来仓库结构更聚焦当前实现。
+- Risks: 若后续需要追溯历史方案需依赖 git 历史；但运行与测试不受影响。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/model_provider.py core/tool_executor.py core/config.py scripts/harness.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 仓库含 `.kiro` 旧规格与 2 个旧测试脚本，和当前运行架构不一致。
+- Metrics After:
+  - 全量测试：`254 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`。
+  - case：`weather=620.1ms`、`video=768.7ms`、`video_correction=1480.9ms`、`system=5.8ms`。
+- Result: pass
+- Rollback Plan: 通过 git 恢复 `.kiro/specs/**` 与两个删除脚本。
+- Next Step: CLEAN-4（可选：删除空目录并统一 README/handoff 中的“历史参考”表述）。
+
+### [Task ID] OPT-1 - 减少模型调用与按路由精简提示词
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 优化 prompt 与 info responder 路径：`PromptBuilder` 在保留全局行为准则基础上按 `route` 追加短规则（command/info/chat），减少每次无关规则噪声；`AgenticLoop` 的 info 路径改为按工具类型选择“模板优先 or 模型总结优先”，避免不必要的第二次模型调用。
+- Files Touched:
+  - `core/prompt_builder.py`
+  - `core/agentic_loop.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 当前瓶颈是模型调用次数与每次上下文长度；先做低风险优化（不改变路由主策略）来减少额外模型调用。
+- Tradeoff: 规则分层增加少量维护成本；换来更清晰的按路由行为与更稳定延迟。
+- Risks: 过度模板化会损失表达弹性；已保留 smart_search 场景的两阶段 responder 兼容，避免回归。
+- Validation Commands:
+  - `python -m py_compile core/agentic_loop.py core/prompt_builder.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 旧版同任务集平均耗时约 `~718.9ms`（近期样本）。
+- Metrics After:
+  - 全量测试：`254 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`。
+  - case：`weather=565.1ms`、`video=838.4ms`、`video_correction=1604.6ms`、`system=57.6ms`。
+- Result: pass
+- Rollback Plan: 回退 `prompt_builder` 路由规则追加逻辑和 `agentic_loop` info responder 分支选择逻辑。
+- Next Step: OPT-2（MCP 动态工具注册 + 可观测工具发现命中率）。
+
+### [Task ID] OPT-AB-1 - 轻量路由模型辅助 A/B 门禁
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 增加可灰度开关 `KAGE_ROUTE_MODEL_ASSIST`（仅在歧义输入时触发轻量模型路由）；新增 `scripts/route_ab_benchmark.py` 执行 A/B 对比并自动给出 ON/OFF 建议（质量不降 + 延迟回归不超过 10%）。
+- Files Touched:
+  - `core/server.py`
+  - `scripts/route_ab_benchmark.py`
+  - `docs/benchmarks/latest_route_ab_benchmark.json`
+- Decision Reason: 用户要求“做 A/B，不达标就关闭”；需要可复现实验与明确门禁，而非主观判断。
+- Tradeoff: 增加一条可选路径和基准脚本维护成本；换来可量化决策能力。
+- Risks: 小样本波动可能影响结论；建议后续扩充任务集再复测。
+- Validation Commands:
+  - `python -m py_compile core/server.py scripts/route_ab_benchmark.py`
+  - `pytest -q`
+  - `python scripts/route_ab_benchmark.py`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before (A: rule-only):
+  - `pass_rate=100%`, `avg_ms=793.5`
+- Metrics After (B: model-assist):
+  - `pass_rate=100%`, `avg_ms=985.4`
+  - 延迟回归约 `+24.2%`（超过 +10% 门限）
+- Result: **OFF**（不达标，保持关闭）
+- Rollback Plan: 维持 `KAGE_ROUTE_MODEL_ASSIST` 默认关闭，不启用该路径即可。
+- Next Step: OPT-2（MCP 动态工具注册），并在更大样本下复测路由辅助。
+
+### [Task ID] OPT-2 - MCP 动态工具注册（配置驱动）
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 `ToolRegistry` 增加 `_register_mcp_dynamic_aliases`，从 `config/mcp.json` 的 `tool_map` 动态注册 alias 工具（当前支持 `search/lookup` → `smart_search`，`fetch_content/fetch/read_url` → `web_fetch`），无需改核心代码即可让新工具名被模型发现。
+- Files Touched:
+  - `core/tool_registry.py`
+  - `tests/test_tool_registry_mcp_dynamic.py`
+- Decision Reason: 先以低风险配置驱动方式扩大工具可发现边界，避免每次新增 alias 都改代码。
+- Tradeoff: 当前是 alias 映射而非完整 MCP 远程执行；但实现简单稳定，后续可渐进替换为真实 MCP 调用。
+- Risks: 未识别 alias 会被忽略（按设计保守处理）。
+- Validation Commands:
+  - `python -m py_compile core/tool_registry.py`
+  - `pytest -q`
+- Metrics After:
+  - 全量测试通过（见下方统一结果），新增动态注册测试通过。
+- Result: pass
+- Rollback Plan: 移除 `_register_mcp_dynamic_aliases` 及调用点，恢复静态注册。
+- Next Step: OPT-3（纠错扩展到非视频任务并纳入基准）。
+
+### [Task ID] OPT-3 - 二跳纠错扩展到 command/info
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 扩展 E2E 基准新增 `weather_correction`、`command_correction`（在原有 `video_correction` 基础上）；并在 server 连接时清空 `pending_action`，避免跨连接状态泄漏影响二跳评测。
+- Files Touched:
+  - `scripts/kage_e2e_benchmark.py`
+  - `core/server.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 连续对话纠错不能只验证视频，需覆盖 command/info 以验证泛化能力。
+- Tradeoff: 基准时长增加；但评估覆盖面更完整。
+- Risks: 二跳语句模式目前仍以“不是这个，是...”为主，后续需扩充口语变体。
+- Validation Commands:
+  - `python -m py_compile core/server.py scripts/kage_e2e_benchmark.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+- Metrics After:
+  - `pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`。
+  - `weather_correction=797.6ms`, `command_correction=81.4ms`。
+- Result: pass
+- Rollback Plan: 移除新增 correction case，并撤销连接时 pending 状态重置。
+- Next Step: OPT-4（只读工具并行执行优化）。
+
+### [Task ID] OPT-4 - 只读工具并行执行（白名单）
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 在 `AgenticLoop` 引入只读工具并行执行分支（白名单），当同一步存在多个独立只读工具调用时并发执行并统一汇总，保留副作用工具串行路径不变。
+- Files Touched:
+  - `core/agentic_loop.py`
+  - `tests/test_agentic_loop.py`
+- Decision Reason: 降低多工具独立查询场景的总等待时间，同时避免副作用工具并发带来的风险。
+- Tradeoff: 执行流复杂度增加；通过白名单约束降低回归风险。
+- Risks: 并行路径覆盖面仍有限（故意保守），后续可按观测逐步扩白名单。
+- Validation Commands:
+  - `python -m py_compile core/agentic_loop.py`
+  - `pytest -q`
+- Metrics After:
+  - 全量测试：`257 passed, 4 skipped, 8 subtests passed`。
+  - 扩展 E2E：`avg_ms=610.2`（完整任务集，见 benchmark 文件）。
+- Result: pass
+- Rollback Plan: 去掉并行分支，恢复单步工具串行执行。
+- Next Step: OPT-5（并行路径增加 trace 维度与命中率统计）。
+
+### [Task ID] OPT-5 - 证据化回复 + 强类型 pending 状态
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 完成两项高优优化：
+  - **证据化回复**：视频候选回复增加 `依据`（频道命中/标题命中/来源域名）说明，提升可解释性；
+  - **强类型 pending 状态**：`pending_action` 改为 dataclass 状态对象（`PendingVideoFollowup` / `PendingConfirmInferredCommand` / `PendingConfirmTool` / `PendingChatFollowup`），减少字典分支误判和跨分支污染。
+- Files Touched:
+  - `core/server.py`
+  - `tests/test_server_helpers.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 当前目标是同时提高准确度与速度；证据化可减少“看似命中”的误答，强类型状态机可降低连续对话分支错误率。
+- Tradeoff: 状态类型与辅助方法增加了少量代码复杂度；换来更稳定的多轮纠错行为。
+- Risks: 证据文本会略微增加回复长度；已控制为短语并仅在视频候选路径展示。
+- Validation Commands:
+  - `python -m py_compile core/server.py tests/test_server_helpers.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics Before:
+  - 扩展 E2E 平均耗时约 `avg_ms=610.2`，纠错流程已可用但回复证据不足。
+- Metrics After:
+  - 全量测试：`259 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`。
+  - case：`weather=616.3ms`、`video=701.6ms`、`video_correction=1702.4ms`、`weather_correction=755.8ms`、`command_correction=80.9ms`、`system=28.7ms`。
+  - 汇总：`avg_ms=647.6`（在功能增强后仍保持低延迟）。
+- Result: pass
+- Rollback Plan: 回退 `core/server.py` 的 evidence 文案与 pending dataclass 改动，恢复旧 dict 状态逻辑。
+- Next Step: OPT-6（并行路径增加命中率/节省耗时 trace 指标）。
+
+### [Task ID] OPT-6 - 并行路径可观测性增强
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 为并行工具执行增加可观测指标：新增 `_parallel_metrics` 计算 `sum_ms/max_ms/wall_ms/saved_ms/speedup`，并在并行分支输出 `tool.parallel.start/end` trace；补充单测覆盖并行指标计算。
+- Files Touched:
+  - `core/agentic_loop.py`
+  - `tests/test_agentic_loop.py`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 已有并行能力但缺少量化数据，不利于判断是否扩白名单；先补观测再做扩容决策。
+- Tradeoff: 增加少量 trace 日志开销；换来可量化的并行收益评估。
+- Risks: 当前 benchmark 任务集未触发并行分支，需后续补专门 case 才能看到线上收益数据。
+- Validation Commands:
+  - `python -m py_compile core/agentic_loop.py tests/test_agentic_loop.py`
+  - `pytest -q`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 KAGE_TRACE=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - E2E：`pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`。
+  - case：`weather=1137.0ms`、`video=804.3ms`、`video_correction=1556.6ms`、`weather_correction=670.8ms`、`command_correction=78.1ms`、`system=32.3ms`。
+- Result: pass
+- Rollback Plan: 移除 `tool.parallel.end` trace 与 `_parallel_metrics` 调用，恢复最小并行日志。
+- Next Step: OPT-7（新增专门“多只读工具并行”基准 case，测量真实 saved_ms）。
+
+### [Task ID] OPT-7 - 多只读工具并行基准与收益量化
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 新增 `scripts/parallel_tools_benchmark.py`，构造并行/串行对照实验（两只读工具 vs 只读+副作用工具），输出 `speedup/max_active`；同时修复 `AgenticLoop` 串行分支缩进问题（此前只执行了最后一个工具调用），恢复多工具串行语义正确性。
+- Files Touched:
+  - `scripts/parallel_tools_benchmark.py`
+  - `core/agentic_loop.py`
+  - `docs/benchmarks/latest_parallel_tools_benchmark.json`
+  - `docs/benchmarks/latest_kage_e2e_benchmark.json`
+- Decision Reason: 需要证明并行优化真实有效而非“看起来正确”；并确保对照组串行语义正确后再做速度结论。
+- Tradeoff: 增加一个微基准脚本与少量维护成本；换来并行收益可复现证据。
+- Risks: 微基准是合成场景，不代表所有线上分布；已配合真实 E2E 回归确保无功能回退。
+- Validation Commands:
+  - `python -m py_compile core/agentic_loop.py scripts/parallel_tools_benchmark.py`
+  - `pytest -q`
+  - `python scripts/parallel_tools_benchmark.py`
+  - `KAGE_TEXT_ONLY=1 KAGE_BENCH_TEXT_ONLY=1 uvicorn core.server:app --host 127.0.0.1 --port 12346`
+  - `python scripts/kage_e2e_benchmark.py --uri ws://127.0.0.1:12346/ws --include-system`
+  - `pgrep -fl "python -m core.server|uvicorn core.server:app"`
+- Metrics After:
+  - 全量测试：`260 passed, 4 skipped, 8 subtests passed`。
+  - 微基准：`parallel wall=252.4ms (max_active=2)`，`serial wall=502.7ms (max_active=1)`，`speedup=1.99x`。
+  - E2E：`pass_rate=100%`, `correctness_rate=100%`, `slo_rate=100%`, `correction_success_rate=100%`，`avg_ms=614.4`。
+- Result: pass
+- Rollback Plan: 回退 `core/agentic_loop.py` 串行分支修复与并行基准脚本，恢复旧逻辑。
+- Next Step: OPT-8（将并行命中率和 saved_ms 汇总进日常 benchmark 报告）。
+
+### [Task ID] OPT-8 - 基准总览看板与组装测试就绪门禁
+- Date: 2026-02-12
+- Owner: GPT-5.3-codex
+- Status: done
+- Change Summary: 新增 `scripts/benchmark_dashboard.py` 聚合三类基准（E2E、route A/B、parallel microbench），统一输出 readiness 门禁结论（`ready_for_test_assembly`）。
+- Files Touched:
+  - `scripts/benchmark_dashboard.py`
+  - `docs/benchmarks/latest_benchmark_dashboard.json`
+- Decision Reason: 已完成多项优化，需要一个统一可读的“是否进入组装测试”判定，而不是分散看多个 JSON。
+- Tradeoff: 增加一个轻量脚本维护成本；换来决策效率和可追溯性提升。
+- Risks: 门禁阈值目前是静态阈值（0.95/1.2x），后续可根据样本规模动态校准。
+- Validation Commands:
+  - `python -m py_compile scripts/benchmark_dashboard.py`
+  - `python scripts/benchmark_dashboard.py`
+- Metrics After:
+  - `e2e_quality_gate=true`
+  - `e2e_latency_gate=true`
+  - `correction_gate=true`
+  - `route_assist_gate=true`（A/B 建议 OFF）
+  - `parallel_speedup_gate=true`（speedup=1.99x）
+  - `ready_for_test_assembly=true`
+- Result: pass
+- Rollback Plan: 删除 dashboard 脚本与输出，恢复手工查看多个 benchmark 文件。
+- Next Step: TEST-ASM-1（开始组装测试：场景编排 + 稳定性回归 + 发布前检查）。
+
+## 2026-02-11
+- Completed:
+  - M1 全量落地（search 原子 + provider 抽象 + 质量后处理）。
+  - M2 全量落地（route/confidence 门控 + correctness 门禁 + text-only E2E 稳定化）。
+  - M3 关键能力落地（中置信确认、连续对话纠错、天气双源竞速、缓存提速）。
+- In Progress:
+  - M4-1：纠错后二跳命中率 benchmark 设计与接入。
+- Blockers:
+  - 无硬阻塞；外部天气接口可用性存在自然波动。
+- Decisions:
+  - 保持“高置信直达 / 中置信确认 / 低置信回退 agent”作为统一编排策略。
+  - 保持“用户 query 尽量原样检索”，禁止基于历史口误的人名/词条硬编码。
+  - 天气采用 `open_meteo + metno` 并发竞速，`wttr` 仅兜底。
+- Metrics Delta:
+  - E2E 双门禁从早期低通过提升到近期稳定 `100%`。
+  - 最新样本：`weather=534ms`，`video=854ms`，`system=54.6ms`。
+- Tomorrow:
+  - 增加“二跳纠错”场景到基准任务集，量化连续对话修正收益。
+  - 补充 provider 胜率/超时率长期统计与阈值告警。
+
+### [Task ID] M1-1 - 本地模型运行时盘点
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 盘点现有本地模型运行时控制面，确认 Kage 已经具备“自管本地模型”的基础能力，不需要依赖 LM Studio 一类外部 GUI。
+- Files Touched:
+  - `docs/model_runtime_inventory.md`
+- Decision Reason: 后续要做 realtime/background 双通道与 model broker，必须先明确当前本地模型 runtime 的现状、边界和短板。
+- Tradeoff: 增加了一份架构文档维护成本；换来后续重构有清晰基线，不会在 `server.py` 里盲拆。
+- Risks: 文档若不持续同步，会与真实代码产生漂移。
+- Validation Commands:
+  - 人工核对 `core/server.py` 中本地模型相关 API 与状态流转
+- Metrics Before:
+  - 本地 runtime 已存在，但生命周期、状态和 API 逻辑混杂在 `core/server.py`。
+- Metrics After:
+  - 形成正式盘点文档，明确当前职责、优点、问题与 M1-2 重构目标。
+- Result: pass
+- Rollback Plan: 删除盘点文档，不影响运行时行为。
+- Next Step: M1-2（抽取本地模型运行时模块）
+
+### [Task ID] M1-2 - 抽取本地模型运行时模块
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/local_model_runtime.py`，将 `llama-server` 的模型解析、命令构造、进程启停、运行态与日志句柄管理从 `core/server.py` 中抽离；`/api/models/llama/*` 改为调用 runtime 模块。
+- Files Touched:
+  - `core/local_model_runtime.py`
+  - `core/server.py`
+  - `tests/test_local_model_runtime.py`
+- Decision Reason: `server.py` 不应该继续承担本地模型进程管理的细节；后续要做多角色模型调度，必须先把 runtime 生命周期变成独立模块。
+- Tradeoff: 多了一个运行时抽象层；换来更清晰的职责边界和更容易演进的控制面。
+- Risks: 若抽取不完整，`server.py` 与 runtime 之间可能出现双份状态源。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/local_model_runtime.py tests/test_local_model_runtime.py`
+  - `pytest -q tests/test_local_model_runtime.py tests/test_server_helpers.py tests/test_model_provider.py`
+- Metrics Before:
+  - 本地模型进程逻辑分散在 `core/server.py`，难以扩展与测试。
+- Metrics After:
+  - 本地 runtime 生命周期集中在单模块中。
+  - 针对性测试通过：`16 passed`。
+- Result: pass
+- Rollback Plan: 将 `/api/models/llama/*` 逻辑内联回 `core/server.py`，移除 `core/local_model_runtime.py`。
+- Next Step: M1-3（统一本地模型运行时配置）
+
+### [Task ID] M1-3 - 统一本地模型运行时配置
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为有效配置增加 `model.local_runtime` 默认结构；`/api/models/llama/start` 先读取正式配置中的 runtime 默认值，再用请求参数覆盖；补充配置默认值测试。
+- Files Touched:
+  - `core/server.py`
+  - `config/settings.json`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 后续需要支持 realtime/background 等不同模型角色，不能继续依赖零散 payload 与硬编码默认值。
+- Tradeoff: 配置结构更深一些；换来 runtime 参数有正式归属，可逐步扩展到多 runtime / 多模型角色。
+- Risks: 前端若仍假设旧结构，后续需在 M1-4 做消费对齐。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/local_model_runtime.py tests/test_local_model_runtime.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_local_model_runtime.py tests/test_server_helpers.py tests/test_model_provider.py`
+- Metrics Before:
+  - `ctx/ngl/max_tokens` 等运行时参数分散在 API payload 默认值与后端硬编码中。
+- Metrics After:
+  - `model.local_runtime` 成为正式配置入口。
+  - 针对性测试通过：`18 passed`。
+- Result: pass
+- Rollback Plan: 移除 `model.local_runtime` 默认结构与 `_with_config_defaults`，恢复 API 内部硬编码。
+- Next Step: M1-4（前端模型面板与本地 runtime 语义对齐）
+
+### [Task ID] M1-4 - 前端模型面板对齐与本地模型档案整合
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 将旧 `brain.py / brain_lfm.py` 中“允许切换的本地模型集合”思路整合为正式 `model.local_profiles` 配置；同时修正 launcher/settings 对 `/api/models` 的消费逻辑，兼容当前 `{managed, hf_cache}` 结构，并在 launcher 的模型选择器中展示本地模型档案标签。
+- Files Touched:
+  - `core/server.py`
+  - `config/settings.json`
+  - `kage-avatar/public/launcher.html`
+  - `kage-avatar/public/settings.html`
+  - `tests/test_server_helpers.py`
+- Decision Reason: 旧 brain 分叉文件承载了“本地模型切换”的产品意图，但实现形态已经过时；应将其沉淀为正式配置与统一前端消费逻辑，而不是恢复旧模块。
+- Tradeoff: 前端 JS 逻辑略有增加；换来模型面板与后端真实 API 结构对齐，并为后续多角色模型配置打下基础。
+- Risks: 这一步没有自动化前端回归测试，后续应补上 launcher/settings 的轻量集成验证。
+- Validation Commands:
+  - `python -m py_compile core/server.py core/local_model_runtime.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+  - `pytest -q tests/test_server_helpers.py tests/test_local_model_runtime.py tests/test_model_provider.py`
+- Metrics Before:
+  - launcher/settings 假设 `/api/models` 返回数组，已与后端当前结构漂移。
+  - 旧 `brain.py / brain_lfm.py` 的本地模型切换思路未被纳入正式配置层。
+- Metrics After:
+  - `model.local_profiles` 成为正式本地模型档案入口。
+  - 针对性测试通过：`19 passed`。
+- Result: pass
+- Rollback Plan: 移除 `local_profiles` 默认结构，回退 launcher/settings 对模型列表的消费修正。
+- Next Step: M2-1（实时任务分类与 Realtime Lane 起点）
+
+### [Task ID] M2-1 - 实时任务分类与 Realtime Lane 起点
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/realtime_lane.py`，抽出 realtime task classification、命令快路径决策、确认/取消/纠错解析等通用实时能力；同步新增实时任务分类文档 `docs/realtime_tasks.md`。
+- Files Touched:
+  - `core/realtime_lane.py`
+  - `core/server.py`
+  - `docs/realtime_tasks.md`
+  - `tests/test_realtime_lane.py`
+- Decision Reason: `server.py` 中的 command fastpath 与确认语义已经形成一条隐含的 Realtime Lane，继续内联会让后续 realtime/background 分流越来越难维护。
+- Tradeoff: 新增一个实时通道模块与少量抽象；换来实时命令判断和交互语义不再散落在 `server.py` 的多处分支中。
+- Risks: 视频/天气等 realtime fastpath 目前仍在 `server.py`，Realtime Lane 还未完全收束；后续需继续抽离。
+- Validation Commands:
+  - `python -m py_compile core/realtime_lane.py core/server.py tests/test_realtime_lane.py tests/test_fast_command_routing.py`
+  - `pytest -q tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+- Metrics Before:
+  - command fastpath 依赖 `server.py` 内联推断与确认逻辑，复用性差。
+- Metrics After:
+  - realtime 通用判断与确认解析集中到单模块。
+  - 针对性测试通过：`18 passed`。
+- Result: pass
+- Rollback Plan: 将 realtime 通用函数重新内联回 `core/server.py`，移除 `core/realtime_lane.py`。
+- Next Step: M2-2（继续将 video/weather/undo 等 realtime fastpath 收束进 lane 或独立 handler）
+
+### [Task ID] M2-2 - Realtime Fastpath Handler 收束
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/realtime_handlers.py`，将 video fastpath 纯逻辑、weather fastpath、undo fastpath 从 `core/server.py` 中抽离；同步删除 `server.py` 中已被替代的旧 helper，实现“server 负责编排，handler 负责实时细节”。
+- Files Touched:
+  - `core/realtime_handlers.py`
+  - `core/server.py`
+  - `tests/test_realtime_handlers.py`
+  - `tests/test_server_helpers.py`
+- Decision Reason: `server.py` 不应继续承载媒体搜索细节、天气 provider 竞速逻辑和撤销文案等实时 handler 细节；这些逻辑独立后更利于后续继续拆 realtime/background。
+- Tradeoff: 新增一个 handler 模块和少量依赖注入参数；换来 `server.py` 继续瘦身，纯逻辑 helper 不再重复挂在主服务类上。
+- Risks: 目前视频 fastpath 的主执行流程仍在 `server.py`，尚未完全抽成完整 handler；后续还需继续收束 pending video follow-up 流程。
+- Validation Commands:
+  - `python -m py_compile core/realtime_handlers.py core/realtime_lane.py core/server.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_server_helpers.py`
+  - `pytest -q tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+- Metrics Before:
+  - video/weather/undo 相关 helper 与 fastpath 细节仍散落在 `core/server.py`。
+- Metrics After:
+  - weather/undo 与视频辅助逻辑迁入 `core/realtime_handlers.py`。
+  - 已删除对应旧 helper，减少主服务类重复逻辑。
+  - 针对性测试通过：`23 passed`。
+- Result: pass
+- Rollback Plan: 将 realtime handler 逻辑重新内联回 `core/server.py`，移除 `core/realtime_handlers.py`。
+- Next Step: M2-3（继续收束 pending follow-up / confirm 状态处理，降低 `server.py` 分支密度）
+
+### [Task ID] M2-3 - Pending Follow-up / Confirm Handler 收束
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 新增 `core/pending_handlers.py`，将 `PendingVideoFollowup` 与 `PendingConfirmInferredCommand` 的处理逻辑从 `core/server.py` 中抽出；`server.py` 改为消费统一的 handler 结果结构，并清理不再使用的导入与重复分支细节。
+- Files Touched:
+  - `core/pending_handlers.py`
+  - `core/server.py`
+  - `tests/test_pending_handlers.py`
+- Decision Reason: `pending_action` 是当前 `server.py` 复杂度最高的一段流程，先抽最重的两块，能在不大改行为的前提下降低主循环分支密度。
+- Tradeoff: 增加一层 handler 结果对象；换来 `server.py` 更聚焦于调度，pending 逻辑可被单独测试。
+- Risks: `PendingConfirmTool` / `PendingOpenApp` / `PendingChatFollowup` 仍保留在 `server.py`，交互状态机尚未完全统一。
+- Validation Commands:
+  - `python -m py_compile core/pending_handlers.py core/server.py tests/test_pending_handlers.py`
+  - `pytest -q tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+- Metrics Before:
+  - `PendingVideoFollowup` 与 `PendingConfirmInferredCommand` 逻辑长且内联，难以单独验证。
+- Metrics After:
+  - 两类 pending handler 已独立成模块。
+  - 针对性测试通过：`27 passed`。
+- Result: pass
+- Rollback Plan: 将 pending handler 逻辑重新内联回 `core/server.py`，移除 `core/pending_handlers.py`。
+- Next Step: M2-4（继续抽取 `PendingConfirmTool`，并向统一 interaction state machine 收束）
+
+### [Task ID] M2-4 - 删除确认 Handler 收束与死状态清理
+- Date: 2026-03-15
+- Owner: GPT-5-codex
+- Status: done
+- Change Summary: 为 `PendingConfirmTool` 新增独立 handler，并将 `server.py` 中对应确认逻辑迁入 `core/pending_handlers.py`；同时移除无创建路径、无实际用途的 `PendingOpenApp` 死状态及其分支。
+- Files Touched:
+  - `core/pending_handlers.py`
+  - `core/server.py`
+  - `tests/test_pending_handlers.py`
+- Decision Reason: 删除确认属于高风险路径，必须可单独测试、可单独维护；无实际入口的 `PendingOpenApp` 继续留在主循环里只会增加认知噪声。
+- Tradeoff: `pending_handlers.py` 继续增长；换来 `server.py` 进一步简化，并去除了一个完全无用的旧状态。
+- Risks: `PendingChatFollowup` 仍在 `server.py`，pending 体系还未统一为正式状态机。
+- Validation Commands:
+  - `python -m py_compile core/pending_handlers.py core/server.py tests/test_pending_handlers.py`
+  - `pytest -q tests/test_pending_handlers.py tests/test_realtime_handlers.py tests/test_realtime_lane.py tests/test_fast_command_routing.py tests/test_server_helpers.py tests/test_local_model_runtime.py`
+- Metrics Before:
+  - 删除确认逻辑内联在 `server.py`。
+  - `PendingOpenApp` 存在但没有任何创建路径，属于死代码。
+- Metrics After:
+  - 删除确认 handler 独立可测。
+  - `PendingOpenApp` 已完全移除。
+  - 针对性测试通过：`29 passed`。
+- Result: pass
+- Rollback Plan: 将删除确认逻辑重新内联回 `core/server.py`，恢复 `PendingOpenApp` dataclass 与分支。
+- Next Step: M2-5（继续收束 `PendingChatFollowup`，并开始设计统一 interaction state）

@@ -3,6 +3,30 @@
     "npx",
     "-y",
     "@modelcontextprotocol/server-filesystem",
-    "/Users/wenbo/Kage"
-  ]
+    "{KAGE_ROOT}"
+  ],
+  "servers": {
+    "filesystem": {
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "{KAGE_ROOT}"
+      ]
+    },
+    "ddg-search": {
+      "command": [
+        "python",
+        "-m",
+        "duckduckgo_mcp_server"
+      ]
+    }
+  },
+  "default_server": "filesystem",
+  "web_search_server": "ddg-search",
+  "web_search_tool": "search",
+  "tool_map": {
+    "search": "ddg-search",
+    "fetch_content": "ddg-search"
+  }
 }

@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-02-12 22:56:39",
+  "parallel_case": {
+    "wall_ms": 252.4,
+    "max_active": 2,
+    "steps": 1,
+    "final_text": "我已抓取到信息：hello world"
+  },
+  "serial_case": {
+    "wall_ms": 502.7,
+    "max_active": 1,
+    "steps": 1,
+    "final_text": "我已执行open_app，结果是：ok"
+  },
+  "speedup": 1.99
+}

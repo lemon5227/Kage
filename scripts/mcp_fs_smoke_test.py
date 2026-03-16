@@ -1,25 +1,17 @@
 import os
-import sys
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
-
-from core.tools import KageTools
+from scripts.harness import make_tool_executor
 
 
 def run():
-    tools = KageTools()
-    test_path = os.path.join(ROOT_DIR, "temp_mcp_test.txt")
+    ex = make_tool_executor()
+    test_path = os.path.join(os.getcwd(), "temp_fs_test.txt")
 
-    print("MCP list:")
-    print(tools.execute_tool_call("mcp_fs_list", {"path": ROOT_DIR}))
-
-    print("\nMCP write:")
-    print(tools.execute_tool_call("mcp_fs_write", {"path": test_path, "content": "mcp test"}))
-
-    print("\nMCP read:")
-    print(tools.execute_tool_call("mcp_fs_read", {"path": test_path}))
+    import asyncio
+    print("fs_write:")
+    print(asyncio.run(ex.execute("fs_write", {"path": test_path, "content": "kage fs test"})).result)
+    print("\nfs_undo_last:")
+    print(asyncio.run(ex.execute("fs_undo_last", {})).result)
 
 
 if __name__ == "__main__":

@@ -1,74 +1,31 @@
-import os
-import sys
+import asyncio
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
-
-from core.brain import KageBrain
-from core.tools import KageTools
+from scripts.harness import make_agentic_loop
 
 
-def collect_stream(stream):
-    text = ""
-    for chunk in stream:
-        piece = getattr(chunk, "text", str(chunk))
-        text += piece
-    return text.strip()
-
-
-def run_case(brain: KageBrain, tools: KageTools, user_input: str):
+async def run_case(loop, user_input: str):
     print("\n=== User ===")
     print(user_input)
-
-    trigger_result = tools.execute_trigger(user_input)
-    if trigger_result is not None:
-        print("=== Tool Result ===")
-        print(trigger_result)
-        print("=== Kage ===")
-        print(str(trigger_result))
-        return
-
-    response = collect_stream(brain.think(user_input, memories=[], current_emotion="neutral", mode="action"))
-    tool_calls = tools.parse_tool_calls(response)
-    if tool_calls:
-        results = []
-        for call in tool_calls:
-            name = call.get("name")
-            arguments = call.get("arguments") or call.get("parameters")
-            result = tools.execute_tool_call(name, arguments)
-            results.append(f"{name}: {result}")
-        tool_result = "\n".join(results)
-        print("=== Tool Result ===")
-        print(tool_result)
-        print("=== Kage ===")
-        print(tool_result)
-        return
-
-    if ">>>ACTION:" in response:
-        parts = response.split(">>>ACTION:")
-        raw_cmd = parts[1].strip()
-        tool_result = tools.execute(raw_cmd)
-        print("=== Tool Result ===")
-        print(tool_result)
-        print("=== Kage ===")
-        print(str(tool_result))
-        return
-
+    res = await loop.run(user_input)
+    if res.tool_calls_executed:
+        print("=== Tools ===")
+        for tc in res.tool_calls_executed:
+            name = tc.get("name")
+            ok = tc.get("success")
+            print(f"- {name}: {'ok' if ok else 'err'}")
     print("=== Kage ===")
-    print(response)
+    print(res.final_text)
 
 
 def run():
-    brain = KageBrain()
-    tools = KageTools()
+    loop = make_agentic_loop()
 
     cases = [
         "帮我记一下：今天开会",
         "计算 12*(3+4)",
         "列目录 /Users/wenbo/Kage",
         "读文件 /Users/wenbo/Kage/readme.md",
-        "搜索代码 KageTools",
+        "搜索代码 ToolExecutor",
         "帮我写社媒内容",
         "帮我找技能",
         "做一个PPT",
@@ -79,7 +36,7 @@ def run():
     ]
 
     for user_input in cases:
-        run_case(brain, tools, user_input)
+        asyncio.run(run_case(loop, user_input))
 
 
 if __name__ == "__main__":

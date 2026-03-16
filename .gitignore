@@ -27,6 +27,9 @@ wheels/
 # Mac
 .DS_Store
 
+# Pytest
+.pytest_cache/
+
 # Virtual Env
 venv/
 env/
@@ -36,8 +39,11 @@ ENV/
 .vscode/
 .idea/
 
-# External skills
-outer_skills/
-tests/
+# Tauri / Node
+kage-avatar/src-tauri/target/
+kage-avatar/node_modules/
+
+# Local planning
+.kiro/
+
 *.wav
-scripts/
