@@ -29,7 +29,6 @@ class ToolRegistry:
     def __init__(self):
         self._tools: dict[str, ToolDefinition] = {}
         self._schemas_cache: list[dict] | None = None
-        self._descriptions_cache: str | None = None
 
     def register(self, tool_def: ToolDefinition) -> None:
         """注册工具。名称冲突时覆盖并记录警告。"""
@@ -48,9 +47,8 @@ class ToolRegistry:
             logger.warning("覆盖已存在的工具: %s", tool_def.name)
         
         self._tools[tool_def.name] = tool_def
-        # Invalidate caches
+        # Invalidate cache
         self._schemas_cache = None
-        self._descriptions_cache = None
 
     def get_handler(self, tool_name: str) -> Optional[Callable]:
         """获取工具的 handler 函数，不存在返回 None。"""
@@ -83,14 +81,6 @@ class ToolRegistry:
             ]
         return self._schemas_cache
 
-    def get_tool_descriptions(self) -> str:
-        """返回所有工具的文本描述（用于系统提示词，已缓存）。"""
-        if self._descriptions_cache is None:
-            self._descriptions_cache = "\n".join(
-                f"- {tool.name}: {tool.description}" for tool in self._tools.values()
-            )
-        return self._descriptions_cache
-
     def get_tool_names(self) -> list[str]:
         """返回所有已注册工具名称。"""
         return list(self._tools.keys())
@@ -107,7 +97,13 @@ def _register_mcp_dynamic_aliases(registry: ToolRegistry, mcp_cfg_path: str | No
     as aliases to existing safe primitives, so newly declared tools are
     discoverable by the model without core code edits.
     """
-    path = str(mcp_cfg_path or os.environ.get("KAGE_MCP_CFG") or "/Users/wenbo/Kage/config/mcp.json")
+    # Default config path: relative to this module's parent directory so the
+    # repo works for any user. Override via `mcp_cfg_path` arg or KAGE_MCP_CFG env.
+    default_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "config", "mcp.json",
+    )
+    path = str(mcp_cfg_path or os.environ.get("KAGE_MCP_CFG") or default_path)
     try:
         with open(path, "r", encoding="utf-8") as f:
             cfg = json.load(f)

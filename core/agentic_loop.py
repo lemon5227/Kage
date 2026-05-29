@@ -117,6 +117,15 @@ _READ_ONLY_TOOLS = frozenset({
     "fs_preview",
 })
 
+# Tools that handle skills lifecycle / web fetch — they are background-ish helpers
+# that should not flip the "did_non_skill_tool" flag in the agentic loop.
+_SKILL_LIFECYCLE_TOOLS = frozenset({
+    "skills_find_remote",
+    "web_fetch",
+    "skills_install",
+    "skills_read",
+})
+
 
 class AgenticLoop:
     """多步工具调用循环"""
@@ -514,7 +523,7 @@ class AgenticLoop:
                             last_tool = "workflow"
                             for tc in reversed(tool_calls_executed):
                                 n = str(tc.get("name") or "").strip()
-                                if n and n not in ("skills_find_remote", "web_fetch", "skills_install", "skills_read"):
+                                if n and n not in _SKILL_LIFECYCLE_TOOLS:
                                     last_tool = n
                                     break
                             skill_name = f"auto-{last_tool}-{digest}"
@@ -562,32 +571,9 @@ class AgenticLoop:
                     parallel_t0 = time.monotonic()
                     log("loop", "tool.parallel.start", step=step, count=len(names), names=",".join(names))
 
-                    async def _exec_one(call: dict) -> dict:
-                        n = str(call.get("name") or "")
-                        a = call.get("arguments") if isinstance(call.get("arguments"), dict) else {}
-                        try:
-                            r = await self.tools.execute(n, a)
-                            return {
-                                "name": n,
-                                "arguments": a,
-                                "success": bool(getattr(r, "success", False)),
-                                "result": str(getattr(r, "result", "") or ""),
-                                "error_type": getattr(r, "error_type", None),
-                                "error_message": getattr(r, "error_message", None),
-                                "elapsed_ms": float(getattr(r, "elapsed_ms", 0.0) or 0.0),
-                            }
-                        except Exception as exc:
-                            return {
-                                "name": n,
-                                "arguments": a,
-                                "success": False,
-                                "result": "",
-                                "error_type": type(exc).__name__,
-                                "error_message": str(exc),
-                                "elapsed_ms": 0.0,
-                            }
-
-                    parallel_rows = await asyncio.gather(*[_exec_one(tc) for tc in tool_calls if isinstance(tc, dict)])
+                    parallel_rows = await asyncio.gather(*[
+                        self._exec_one(tc) for tc in tool_calls if isinstance(tc, dict)
+                    ])
                     m = self._parallel_metrics(parallel_rows, wall_ms=(time.monotonic() - parallel_t0) * 1000)
                     log(
                         "loop",
@@ -622,7 +608,7 @@ class AgenticLoop:
                         }
                         tool_calls_executed.append(item)
                         step_tool_calls.append(item)
-                        if name not in ("skills_find_remote", "web_fetch", "skills_install", "skills_read"):
+                        if name not in _SKILL_LIFECYCLE_TOOLS:
                             did_non_skill_tool = True
                         if success:
                             history.append({"role": "assistant", "content": f"[Tool: {name}] {item['result']}"})
@@ -695,7 +681,7 @@ class AgenticLoop:
                         })
                         step_tool_calls.append(tool_calls_executed[-1])
 
-                        if name not in ("skills_find_remote", "web_fetch", "skills_install", "skills_read"):
+                        if name not in _SKILL_LIFECYCLE_TOOLS:
                             did_non_skill_tool = True
 
                         # If we loaded a skill, extract guidance.
@@ -1092,6 +1078,37 @@ class AgenticLoop:
             if n not in _READ_ONLY_TOOLS:
                 return False
         return True
+
+    async def _exec_one(self, call: dict) -> dict:
+        """Execute a single tool call and return a normalized result row.
+
+        Used by the parallel-batch path so it can be passed to asyncio.gather.
+        Extracted from a closure inside `run()` to keep the latter shorter
+        and to make this code path independently testable.
+        """
+        n = str(call.get("name") or "")
+        a = call.get("arguments") if isinstance(call.get("arguments"), dict) else {}
+        try:
+            r = await self.tools.execute(n, a)
+            return {
+                "name": n,
+                "arguments": a,
+                "success": bool(getattr(r, "success", False)),
+                "result": str(getattr(r, "result", "") or ""),
+                "error_type": getattr(r, "error_type", None),
+                "error_message": getattr(r, "error_message", None),
+                "elapsed_ms": float(getattr(r, "elapsed_ms", 0.0) or 0.0),
+            }
+        except Exception as exc:
+            return {
+                "name": n,
+                "arguments": a,
+                "success": False,
+                "result": "",
+                "error_type": type(exc).__name__,
+                "error_message": str(exc),
+                "elapsed_ms": 0.0,
+            }
 
     @staticmethod
     def _parallel_metrics(rows: list[dict], wall_ms: float) -> dict[str, float]:
