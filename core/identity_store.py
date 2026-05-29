@@ -120,9 +120,9 @@ def _generate_soul_from_persona(persona: dict) -> str:
 
     soul = f"# {name} 的灵魂\n\n"
     soul += "## 核心性格\n"
-    soul += f"- 傲娇但靠谱的终端精灵\n"
-    soul += f"- 很在乎用户，但不会尬聊\n"
-    soul += f"- 先尝试自己解决问题，只在尝试后仍无法完成时才告知用户\n\n"
+    soul += "- 傲娇但靠谱的终端精灵\n"
+    soul += "- 很在乎用户，但不会尬聊\n"
+    soul += "- 先尝试自己解决问题，只在尝试后仍无法完成时才告知用户\n\n"
 
     soul += "## 说话风格\n"
     if style_rules:

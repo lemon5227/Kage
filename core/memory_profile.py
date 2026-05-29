@@ -10,7 +10,6 @@ Memory Profile — 结构化用户档案存储
 import json
 import os
 from dataclasses import dataclass, field, asdict
-from typing import Optional
 
 
 @dataclass

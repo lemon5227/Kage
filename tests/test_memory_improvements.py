@@ -61,7 +61,7 @@ def test_memory_extractor():
                 print(f"  ❌ '{text}' -> 未提取到事实")
 
     print(f"\n结果: {passed}/{len(test_cases)} 通过")
-    return passed == len(test_cases)
+    assert passed == len(test_cases), f"only {passed}/{len(test_cases)} extractor cases passed"
 
 
 def test_memory_profile():
@@ -100,7 +100,6 @@ def test_memory_profile():
         print("  ✅ 偏好更新正常")
         print("  ✅ 关系添加正常")
 
-        return True
     finally:
         shutil.rmtree(tmpdir)
 
@@ -160,13 +159,12 @@ def test_memory_decay():
 
             if new_score > old_score:
                 print("  ✅ 衰减机制正常：新记忆优先级更高")
-                return True
             else:
                 print("  ⚠️ 衰减效果不明显")
-                return False
+                assert False, "新记忆衰减后应优先于旧记忆"
         else:
             print("  ⚠️ 召回结果不足")
-            return False
+            assert False, "召回结果应包含至少 2 条记忆"
     finally:
         shutil.rmtree(tmpdir)
 
@@ -208,10 +206,9 @@ def test_conversation_fact_extraction():
         if results:
             print(f"  召回 '川菜': {results[0]['content']}")
             print("  ✅ 事实提取和召回正常")
-            return True
         else:
             print("  ⚠️ 召回失败")
-            return False
+            assert False, "应至少召回一条 '川菜' 相关记忆"
     finally:
         shutil.rmtree(tmpdir)
 
@@ -256,8 +253,8 @@ def test_deduplication():
 
         if len(memory._entries) == len(duplicates):
             print("  ✅ 记忆存储正常")
-            return True
-        return False
+        else:
+            assert False, f"记忆存储数应等于 {len(duplicates)}，实际 {len(memory._entries)}"
     finally:
         shutil.rmtree(tmpdir)
 

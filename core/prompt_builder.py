@@ -142,6 +142,7 @@ class PromptBuilder:
         is_open = any(k in text for k in _OPEN_KEYWORDS)
         is_file = any(k in text for k in _FILE_KEYWORDS)
         is_system = any(k in text for k in _SYSTEM_CTRL_KEYWORDS)
+        is_weather = "天气" in text
 
         # Pure info queries should keep tool schemas minimal.
         if is_web and not is_file and not is_system and not is_open:
@@ -159,7 +160,9 @@ class PromptBuilder:
                 chosen.discard("open_url")
                 chosen.discard("open_website")
 
-        if is_open:
+        if is_open and not is_weather:
+            # Weather queries should always answer inline (no browser opening),
+            # even when the user said "打开天气".
             chosen.update({"open_url", "open_website", "open_app"})
 
         if is_file:
@@ -225,7 +228,6 @@ class PromptBuilder:
         log("prompt", "tools.schemas_pruned", count=len(tool_schemas))
 
         # Detect broad intent for context trimming.
-        user_low = str(user_input or "").strip().lower()
         is_web_like = route == "info"
         is_command_like = route == "command"
 

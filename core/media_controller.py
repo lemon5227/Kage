@@ -8,7 +8,6 @@ Handles:
 - AppleScript fallback for specific apps
 """
 
-import json
 import subprocess
 import time
 import logging
@@ -61,13 +60,10 @@ def _send_system_media_key(action: str) -> str | None:
         if keytype is None:
             return None
 
-        def send_media_key(key):
-            import Quartz
-            from Quartz.CoreGraphics import CGEventCreateKeyboardEvent, CGEventPost, kCGHIDEventTap
-            # Simulate media key press
-            pass  # Simplified - full implementation needs CGEvent
-
-        send_media_key(keytype)
+        # NOTE: Full CGEvent media-key simulation requires HID-tap event
+        # construction. Currently this is a no-op stub; AppleScript fallback
+        # in the caller handles per-app control. Remove or implement when
+        # whole-system media keys become a hard requirement.
         action_name = {"playpause": "播放/暂停", "play": "播放", "pause": "暂停", "next": "下一曲", "previous": "上一曲"}
         return f"{action_name.get(action, action)} 🎵"
     except ImportError:

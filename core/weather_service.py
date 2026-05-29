@@ -16,8 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
-import time
-from typing import Any, Protocol
+from typing import Protocol
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -132,7 +131,6 @@ def fetch_open_meteo(
     if temp is None:
         return ""
 
-    desc = _wmo_desc(int(code) if code is not None else None)
     try:
         t = int(round(float(temp)))
     except (ValueError, TypeError):

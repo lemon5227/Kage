@@ -84,7 +84,6 @@ def test_llm_extractor_basic():
     print("  ✅ 通过")
 
     print("\n  结果: 5/5 通过")
-    return True
 
 
 def test_llm_integration_with_agentic_loop():
@@ -163,7 +162,6 @@ def test_llm_integration_with_agentic_loop():
         assert len(memory._entries) >= 1, "Should have at least 1 memory entry"
         print("  ✅ 通过")
 
-        return True
 
     finally:
         shutil.rmtree(tmpdir)

@@ -17,6 +17,7 @@ import datetime
 import logging
 import difflib
 import ast
+import asyncio
 from dataclasses import dataclass
 from typing import Optional, Callable, Awaitable, TYPE_CHECKING
 
@@ -538,9 +539,15 @@ class ToolExecutor:
                 self._write_audit_log(result, arguments)
                 return result
 
-        # Execute via handler
+        # Execute via handler.
+        # Sync handlers do blocking I/O (urllib, subprocess), which would
+        # block the event loop and defeat parallel tool execution. Run them
+        # on a worker thread; async handlers are awaited directly.
         try:
-            raw_result = handler(**arguments)
+            if asyncio.iscoroutinefunction(handler):
+                raw_result = await handler(**arguments)
+            else:
+                raw_result = await asyncio.to_thread(handler, **arguments)
             elapsed = (time.monotonic() - start) * 1000
             result = ToolResult(
                 name=name, success=True,

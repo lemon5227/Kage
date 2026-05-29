@@ -9,10 +9,8 @@ New code should import from core.tools directly:
     from core.tools import fs_move, web_fetch, ...
 """
 
-# Re-export everything from the new modular structure
-from core.tools import *  # noqa: F401,F403
-
-# Explicit re-exports for static analyzers
+# Re-export from the new modular structure for backward compatibility.
+# Explicit imports + __all__ keep static analyzers happy and provide a stable API.
 from core.tools import (
     fs_move, fs_rename, fs_write, fs_trash, fs_undo_last,
     fs_search, fs_preview, fs_apply,

@@ -4,7 +4,7 @@ import asyncio
 import os
 import re
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable
+from typing import Any, Callable
 
 from core.realtime_lane import extract_correction_text, is_cancel_text, is_confirm_text
 

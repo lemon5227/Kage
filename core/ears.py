@@ -2,7 +2,6 @@ import pyaudio
 import wave
 import audioop
 import os
-import numpy as np
 from funasr import AutoModel
 # Suppress heavy logging from FunASR/ModelScope
 import logging

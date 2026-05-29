@@ -259,7 +259,7 @@ def system_control(target: str, action: str, value: str | None = None) -> str:
 
         # Fallback: open Settings page
         _ = _run(["open", "x-apple.systempreferences:com.apple.Bluetooth"], timeout=5)
-        return SystemControlResult(True, f"opened bluetooth settings (manual toggle needed)").to_json()
+        return SystemControlResult(True, "opened bluetooth settings (manual toggle needed)").to_json()
 
     # --- App ---
     if t in ("app", "application"):

@@ -5,7 +5,7 @@ Kage 统一配置管理模块
 """
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 import json
 
 

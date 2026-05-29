@@ -2,10 +2,11 @@
 
 import os
 import re
-import json
 import shutil
 import subprocess
 import logging
+
+from core.tools._response import ok, err
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,13 @@ def run_npx(args: list[str], timeout: int = 30) -> tuple[int, str, str]:
     env.setdefault("DO_NOT_TRACK", "1")
     env.setdefault("DISABLE_TELEMETRY", "1")
     try:
-        proc = subprocess.run(["npx", *args], capture_output=True, text=True, timeout=max(1, min(120, int(timeout))), env=env)
+        proc = subprocess.run(
+            ["npx", *args],
+            capture_output=True,
+            text=True,
+            timeout=max(1, min(120, int(timeout))),
+            env=env,
+        )
         return proc.returncode, proc.stdout or "", proc.stderr or ""
     except subprocess.TimeoutExpired:
         return 124, "", "timeout"
@@ -59,14 +66,14 @@ def parse_skills_find_output(text: str, max_results: int = 5) -> list[dict]:
 
 def find_skills(query: str, max_results: int = 5, skills_dir: str = "skills") -> str:
     """Find skills locally and via npx."""
-    ok, msg = ensure_node_tools()
-    if not ok:
-        return json.dumps({"error": "NodeNotFound", "message": msg}, ensure_ascii=False)
+    have_node, msg = ensure_node_tools()
+    if not have_node:
+        return err("NodeNotFound", msg)
     rc, stdout, stderr = run_npx(["skills", "find", query], timeout=30)
     if rc != 0:
-        return json.dumps({"error": "NPXFailed", "message": stderr or "npx skills find failed"}, ensure_ascii=False)
+        return err("NPXFailed", stderr or "npx skills find failed")
     skills = parse_skills_find_output(stdout, max_results)
-    return json.dumps({"skills": skills}, ensure_ascii=False)
+    return ok(skills=skills)
 
 
 def skills_find_remote(query: str, max_results: int = 5) -> str:
@@ -76,41 +83,41 @@ def skills_find_remote(query: str, max_results: int = 5) -> str:
 
 def skills_install(repo: str, skill: str, global_install: bool = True, agent: str = "opencode") -> str:
     """Install a skill from a remote repo."""
-    ok, msg = ensure_node_tools()
-    if not ok:
-        return json.dumps({"error": "NodeNotFound", "message": msg}, ensure_ascii=False)
+    have_node, msg = ensure_node_tools()
+    if not have_node:
+        return err("NodeNotFound", msg)
     flags = ["--yes", "--"]
     if global_install:
         flags.append("-g")
     rc, stdout, stderr = run_npx(["skills", "install", f"{repo}@{skill}", *flags], timeout=60)
     if rc != 0:
-        return json.dumps({"error": "InstallFailed", "message": stderr or "npx skills install failed"}, ensure_ascii=False)
-    return json.dumps({"success": True, "message": stdout}, ensure_ascii=False)
+        return err("InstallFailed", stderr or "npx skills install failed")
+    return ok(message=stdout)
 
 
 def skills_list(global_install: bool = True, agent: str = "opencode") -> str:
     """List installed skills."""
-    ok, msg = ensure_node_tools()
-    if not ok:
-        return json.dumps({"error": "NodeNotFound", "message": msg}, ensure_ascii=False)
+    have_node, msg = ensure_node_tools()
+    if not have_node:
+        return err("NodeNotFound", msg)
     flags = ["--yes", "--"]
     if global_install:
         flags.append("-g")
     rc, stdout, stderr = run_npx(["skills", "list", *flags], timeout=30)
     if rc != 0:
-        return json.dumps({"error": "ListFailed", "message": stderr or "npx skills list failed"}, ensure_ascii=False)
-    return json.dumps({"skills": stdout}, ensure_ascii=False)
+        return err("ListFailed", stderr or "npx skills list failed")
+    return ok(skills=stdout)
 
 
 def skills_read(skill_name: str, workspace_dir: str = "~/.kage") -> str:
     """Read skill content."""
-    ok, msg = ensure_node_tools()
-    if not ok:
-        return json.dumps({"error": "NodeNotFound", "message": msg}, ensure_ascii=False)
+    have_node, msg = ensure_node_tools()
+    if not have_node:
+        return err("NodeNotFound", msg)
     rc, stdout, stderr = run_npx(["skills", "read", skill_name], timeout=30)
     if rc != 0:
-        return json.dumps({"error": "ReadFailed", "message": stderr or f"Cannot read skill: {skill_name}"}, ensure_ascii=False)
-    return json.dumps({"skill": skill_name, "content": stdout}, ensure_ascii=False)
+        return err("ReadFailed", stderr or f"Cannot read skill: {skill_name}")
+    return ok(skill=skill_name, content=stdout)
 
 
 def skills_save_local(skill_name: str, content: str, workspace_dir: str = "~/.kage") -> str:
@@ -122,6 +129,6 @@ def skills_save_local(skill_name: str, content: str, workspace_dir: str = "~/.ka
     try:
         with open(skill_file, "w", encoding="utf-8") as f:
             f.write(content)
-        return json.dumps({"success": True, "path": skill_file}, ensure_ascii=False)
+        return ok(path=skill_file)
     except Exception as e:
-        return json.dumps({"error": "SaveFailed", "message": str(e)}, ensure_ascii=False)
+        return err("SaveFailed", str(e))

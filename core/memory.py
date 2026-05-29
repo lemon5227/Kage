@@ -514,6 +514,9 @@ class MemorySystem:
             keep_indices.add(i)
             content_i = self._entries[i].get("content", "")
             tokens_i = _tokenize(content_i)
+            # Compute scores once per outer i; the score vector is the same
+            # for every j in the inner loop.
+            scores = self._bm25.get_scores(tokens_i)
 
             for j in range(i + 1, len(self._entries)):
                 if j in keep_indices:
@@ -524,8 +527,6 @@ class MemorySystem:
                     keep_indices.add(j)
                     removed += 1
                 elif len(content_i) > 10 and len(content_j) > 10:
-                    tokens_j = _tokenize(content_j)
-                    scores = self._bm25.get_scores(tokens_i)
                     if len(scores) > j and scores[j] > 10:
                         keep_indices.add(j)
                         removed += 1
@@ -626,14 +627,23 @@ class MemorySystem:
         return merged
 
     def _merge_similar_bm25(self) -> int:
-        """Fallback merging using BM25 scores."""
+        """Fallback merging using BM25 scores.
+
+        BM25 scores are asymmetric (depend on document length normalization),
+        so we score from the side of i and check candidates j > i.
+
+        For each merged group, the entry with highest importance is kept and
+        its content is updated to the longest variant (preserving most info).
+        Other entries in the group are removed afterwards.
+        """
         if not self._entries or self._bm25 is None:
             return 0
 
         merged = 0
-        merged_indices = set()
+        merged_indices: set[int] = set()
+        n = len(self._entries)
 
-        for i in range(len(self._entries)):
+        for i in range(n):
             if i in merged_indices:
                 continue
 
@@ -641,21 +651,42 @@ class MemorySystem:
             tokens_i = _tokenize(content_i)
             scores = self._bm25.get_scores(tokens_i)
 
-            similar = []
-            for j in range(i + 1, len(self._entries)):
-                if j in merged_indices:
-                    continue
-                if len(scores) > j and scores[j] > 5:
-                    similar.append(j)
+            similar = [
+                j for j in range(i + 1, n)
+                if j not in merged_indices and len(scores) > j and scores[j] > 5
+            ]
 
-            if similar:
-                best_idx = max(
-                    [i] + similar,
-                    key=lambda idx: self._entries[idx].get("importance", 1),
-                )
-                for idx in similar:
-                    merged_indices.add(idx)
-                    merged += 1
+            if not similar:
+                continue
+
+            candidates = [i] + similar
+            best_idx = max(
+                candidates,
+                key=lambda idx: self._entries[idx].get("importance", 1),
+            )
+            max_importance = max(
+                self._entries[idx].get("importance", 1) for idx in candidates
+            )
+            longest = max(
+                (self._entries[idx].get("content", "") for idx in candidates),
+                key=len,
+            )
+            self._entries[best_idx]["content"] = longest
+            self._entries[best_idx]["importance"] = max_importance
+            self._entries[best_idx]["merged_from"] = len(candidates)
+
+            for idx in similar:
+                merged_indices.add(idx)
+                merged += 1
+
+        if merged > 0:
+            keep_indices = sorted(set(range(n)) - merged_indices)
+            self._entries = [self._entries[k] for k in keep_indices]
+            self._corpus_tokens = [self._corpus_tokens[k] for k in keep_indices]
+            self._corpus_token_sets = None  # invalidate cache
+            if self._embeddings is not None:
+                self._embeddings = self._embeddings[keep_indices]
+            self._rebuild_bm25(force=True)
 
         return merged
 

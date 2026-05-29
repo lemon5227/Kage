@@ -10,7 +10,6 @@ from core.job_types import (
     JOB_STATUS_CANCELLED,
     JOB_STATUS_COMPLETED,
     JOB_STATUS_FAILED,
-    JOB_STATUS_QUEUED,
     JOB_STATUS_RUNNING,
     make_background_job_record,
 )

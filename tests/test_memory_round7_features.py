@@ -57,7 +57,6 @@ def test_profile_version_history():
         print(f"  当前版本: {profile.profile.version}")
 
         print("  ✅ 通过")
-        return True
 
     finally:
         shutil.rmtree(tmpdir)
@@ -130,7 +129,6 @@ def test_memory_forget():
         assert "非常重要的记忆" in remaining_contents, "High importance should never be forgotten"
 
         print("  ✅ 通过")
-        return True
 
     finally:
         shutil.rmtree(tmpdir)
@@ -177,7 +175,6 @@ def test_memory_merge():
         assert merged >= 1, "Should have merged at least 1 group"
 
         print("  ✅ 通过")
-        return True
 
     finally:
         shutil.rmtree(tmpdir)
@@ -206,7 +203,6 @@ def test_memory_stats():
         assert stats["bm25_ready"] is True
 
         print("  ✅ 通过")
-        return True
 
     finally:
         shutil.rmtree(tmpdir)

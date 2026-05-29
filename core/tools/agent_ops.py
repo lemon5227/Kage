@@ -1,7 +1,8 @@
-"""Agent tools — proactive agent creation."""
+"""Agent tools — proactive skill creation."""
 
-import json
 import os
+
+from core.tools._response import ok, err
 
 
 def proactive_agent(skill_name: str, description: str, steps: str = "", skills_dir: str = "skills") -> str:
@@ -13,6 +14,6 @@ def proactive_agent(skill_name: str, description: str, steps: str = "", skills_d
     try:
         with open(skill_file, "w", encoding="utf-8") as f:
             f.write(content)
-        return json.dumps({"success": True, "path": skill_file}, ensure_ascii=False)
+        return ok(path=skill_file)
     except Exception as e:
-        return json.dumps({"error": "CreateFailed", "message": str(e)}, ensure_ascii=False)
+        return err("CreateFailed", str(e))

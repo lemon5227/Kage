@@ -313,7 +313,6 @@ def test_monitor_voice_barge_in_interrupts_when_activity_detected():
     async def fake_interrupt_speech(reason="user_input"):
         called["reason"] = reason
         server._speech_revision += 1
-        return True
 
     audio_events = []
     transcriptions = []

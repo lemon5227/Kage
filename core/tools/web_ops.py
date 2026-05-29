@@ -2,7 +2,6 @@
 
 import datetime
 import json
-import shlex
 import subprocess
 import urllib.request
 import urllib.parse
@@ -13,6 +12,7 @@ import logging
 import time
 
 from core.tools.html_ops import strip_html_tags, truncate_output
+from core.tools._response import ok, err
 
 logger = logging.getLogger(__name__)
 
@@ -45,13 +45,13 @@ def _tavily_api_search(query: str, max_results: int, api_key: str) -> str:
         with urllib.request.urlopen(req, timeout=10) as response:
             result = json.loads(response.read().decode('utf-8'))
         results = [{"title": item.get("title", ""), "url": item.get("url", ""), "snippet": item.get("content", "")[:200]} for item in result.get("results", [])[:max_results]]
-        return json.dumps({"results": results}, ensure_ascii=False)
+        return json.dumps({"success": True, "results": results}, ensure_ascii=False)
     except urllib_error.URLError as e:
         if hasattr(e, 'reason') and 'timed out' in str(e.reason).lower():
-            return json.dumps({"error": "Timeout", "message": "搜索超时"}, ensure_ascii=False)
-        return json.dumps({"error": "NetworkError", "message": str(e)}, ensure_ascii=False)
+            return err("Timeout", "搜索超时")
+        return err("NetworkError", str(e))
     except Exception as e:
-        return json.dumps({"error": "NetworkError", "message": str(e)}, ensure_ascii=False)
+        return err("NetworkError", str(e))
 
 
 def _duckduckgo_fallback(query: str, max_results: int) -> str:
@@ -62,9 +62,9 @@ def _duckduckgo_fallback(query: str, max_results: int) -> str:
         with urllib.request.urlopen(req, timeout=8) as response:
             html_text = response.read().decode('utf-8', errors='replace')
         results = parse_duckduckgo_html(html_text, max_results)
-        return json.dumps({"results": [{"title": t, "url": u, "snippet": ""} for t, u in results]}, ensure_ascii=False)
+        return json.dumps({"success": True, "results": [{"title": t, "url": u, "snippet": ""} for t, u in results]}, ensure_ascii=False)
     except Exception as e:
-        return json.dumps({"error": "SearchFailed", "message": str(e)}, ensure_ascii=False)
+        return err("SearchFailed", str(e))
 
 
 def parse_duckduckgo_html(html_text: str, max_results: int = 5) -> list[tuple[str, str]]:
@@ -102,7 +102,7 @@ def web_fetch(url: str) -> str:
             # Check Content-Length to avoid downloading huge files
             content_length = response.headers.get('Content-Length')
             if content_length and int(content_length) > _MAX_RESPONSE_BYTES:
-                return json.dumps({"error": "TooLarge", "message": f"响应过大 ({int(content_length)} bytes)"}, ensure_ascii=False)
+                return err("TooLarge", f"响应过大 ({int(content_length)} bytes)")
             # Read in chunks with size limit
             chunks = []
             total = 0
@@ -122,20 +122,20 @@ def web_fetch(url: str) -> str:
         return truncate_output(text)
     except urllib_error.URLError as e:
         if hasattr(e, 'reason') and 'timed out' in str(e.reason).lower():
-            return json.dumps({"error": "Timeout", "message": "网页抓取超时"}, ensure_ascii=False)
-        return json.dumps({"error": "NetworkError", "message": str(e)}, ensure_ascii=False)
+            return err("Timeout", "网页抓取超时")
+        return err("NetworkError", str(e))
     except Exception as e:
-        return json.dumps({"error": "FetchFailed", "message": str(e)}, ensure_ascii=False)
+        return err("FetchFailed", str(e))
 
 
 def exec_command(command: str, timeout: int = 30) -> str:
     """Execute a shell command with safety checks."""
     command = str(command or "").strip()
     if not command:
-        return json.dumps({"error": "InvalidInput", "message": "命令不能为空"}, ensure_ascii=False)
+        return err("InvalidInput", "命令不能为空")
     # Block dangerous patterns
     if _BLOCKED_COMMAND_PATTERNS.search(command):
-        return json.dumps({"error": "Blocked", "message": "命令包含危险操作，已拒绝执行"}, ensure_ascii=False)
+        return err("Blocked", "命令包含危险操作，已拒绝执行")
     try:
         # Use shell=True but with explicit /bin/sh for predictability.
         # We keep shell=True because commands may use pipes, redirects, etc.
@@ -143,34 +143,37 @@ def exec_command(command: str, timeout: int = 30) -> str:
         result = subprocess.run(
             ["/bin/sh", "-c", command],
             capture_output=True, text=True, timeout=timeout,
-            env={**__import__("os").environ, "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"},
+            env={**os.environ, "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"},
         )
         output = (result.stdout or "") + (result.stderr or "")
         if not output.strip() and result.returncode == 0:
-            return json.dumps({"success": True, "message": "命令执行成功，无输出"}, ensure_ascii=False)
-        return json.dumps({"success": result.returncode == 0, "output": truncate_output(output), "returncode": result.returncode}, ensure_ascii=False)
+            return ok(message="命令执行成功，无输出")
+        return json.dumps(
+            {"success": result.returncode == 0, "output": truncate_output(output), "returncode": result.returncode},
+            ensure_ascii=False,
+        )
     except subprocess.TimeoutExpired:
-        return json.dumps({"error": "Timeout", "message": f"命令执行超时 ({timeout}s)"}, ensure_ascii=False)
+        return err("Timeout", f"命令执行超时 ({timeout}s)")
     except Exception as e:
-        return json.dumps({"error": "ExecutionFailed", "message": str(e)}, ensure_ascii=False)
+        return err("ExecutionFailed", str(e))
 
 
 def open_url(url: str) -> str:
     """Open URL in default browser."""
     try:
         subprocess.run(["open", url], check=False)
-        return json.dumps({"success": True, "opened": url}, ensure_ascii=False)
+        return ok(opened=url)
     except Exception as e:
-        return json.dumps({"error": "OpenFailed", "message": str(e)}, ensure_ascii=False)
+        return err("OpenFailed", str(e))
 
 
 def open_app(app_name: str) -> str:
     """Open an application by name."""
     try:
         subprocess.run(["open", "-a", app_name], check=False)
-        return json.dumps({"success": True, "opened": app_name}, ensure_ascii=False)
+        return ok(opened=app_name)
     except Exception as e:
-        return json.dumps({"error": "OpenFailed", "message": str(e)}, ensure_ascii=False)
+        return err("OpenFailed", str(e))
 
 
 def open_website(site: str) -> str:
@@ -190,15 +193,15 @@ def take_screenshot() -> str:
         filename = f"screenshot_{int(time.time())}.png"
         filepath = os.path.join(screenshots_dir, filename)
         subprocess.run(["screencapture", "-x", filepath], check=True)
-        return json.dumps({"success": True, "path": filepath}, ensure_ascii=False)
+        return ok(path=filepath)
     except Exception as e:
-        return json.dumps({"error": "ScreenshotFailed", "message": str(e)}, ensure_ascii=False)
+        return err("ScreenshotFailed", str(e))
 
 
 def get_time() -> str:
     """Get current time."""
     now = datetime.datetime.now()
-    return json.dumps({"success": True, "time": now.strftime("%Y-%m-%d %H:%M:%S"), "weekday": now.strftime("%A")}, ensure_ascii=False)
+    return ok(time=now.strftime("%Y-%m-%d %H:%M:%S"), weekday=now.strftime("%A"))
 
 
 def system_control(target: str, action: str, value: str = "") -> str:
@@ -332,9 +335,9 @@ def _youtube_html_search_raw(query: str, max_results: int) -> list[dict]:
 def _youtube_html_search(query: str, max_results: int) -> str:
     """Search YouTube via HTML scraping. Returns JSON string (compat wrapper)."""
     try:
-        return json.dumps({"results": _youtube_html_search_raw(query, max_results)}, ensure_ascii=False)
+        return json.dumps({"success": True, "results": _youtube_html_search_raw(query, max_results)}, ensure_ascii=False)
     except Exception as e:
-        return json.dumps({"error": "SearchFailed", "message": str(e)}, ensure_ascii=False)
+        return err("SearchFailed", str(e))
 
 
 def _search_provider_youtube(query: str, sort: str, max_results: int) -> str:
@@ -365,16 +368,16 @@ def _search_provider_bilibili_raw(query: str, max_results: int) -> list[dict]:
 def _search_provider_bilibili(query: str, sort: str, max_results: int) -> str:
     """Search Bilibili. Returns JSON string (compat wrapper)."""
     try:
-        return json.dumps({"results": _search_provider_bilibili_raw(query, max_results)}, ensure_ascii=False)
+        return json.dumps({"success": True, "results": _search_provider_bilibili_raw(query, max_results)}, ensure_ascii=False)
     except Exception as e:
-        return json.dumps({"error": "SearchFailed", "message": str(e)}, ensure_ascii=False)
+        return err("SearchFailed", str(e))
 
 
 def search(query: str, max_results: int = 5, strategy: str = "auto", sort: str = "relevance") -> str:
     """Unified search across multiple providers."""
     q = str(query or "").strip()
     if not q:
-        return json.dumps({"error": "InvalidInput", "message": "query 不能为空"}, ensure_ascii=False)
+        return err("InvalidInput", "query 不能为空")
 
     if strategy == "youtube":
         return _search_provider_youtube(q, sort, max_results)
@@ -396,7 +399,7 @@ def search(query: str, max_results: int = 5, strategy: str = "auto", sort: str =
             except Exception:
                 pass
         items = _postprocess_items(all_items, q, "video", sort, max_results)
-        return json.dumps({"results": items, "strategy": "video_auto"}, ensure_ascii=False)
+        return json.dumps({"success": True, "results": items, "strategy": "video_auto"}, ensure_ascii=False)
 
     # Default: web search
     return tavily_search(q, max_results)
@@ -409,7 +412,7 @@ def search_and_open(query: str, prefer_domains: list[str] | None = None, max_res
         data = json.loads(result)
         items = data.get("results", [])
         if not items:
-            return json.dumps({"error": "NoResults", "message": "未找到结果"}, ensure_ascii=False)
+            return err("NoResults", "未找到结果")
         # Prefer specific domains
         if prefer_domains:
             for item in items:
@@ -418,4 +421,4 @@ def search_and_open(query: str, prefer_domains: list[str] | None = None, max_res
                     return open_url(item["url"])
         return open_url(items[0]["url"])
     except Exception as e:
-        return json.dumps({"error": "OpenFailed", "message": str(e)}, ensure_ascii=False)
+        return err("OpenFailed", str(e))

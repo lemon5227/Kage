@@ -179,7 +179,6 @@ def simulate_user_session():
         print(f"  召回测试: {'✅ 通过' if results_food and results_work and results_friend else '❌ 失败'}")
         print(f"  衰减测试: {'✅ 通过' if len(results_decay) >= 2 else '❌ 失败'}")
 
-        return True
 
     finally:
         shutil.rmtree(tmpdir)

@@ -8,9 +8,7 @@ Memory Extractor — 从对话中提取结构化事实
 """
 
 import re
-import json
-from dataclasses import dataclass, field, asdict
-from typing import Optional
+from dataclasses import dataclass, asdict
 
 
 @dataclass
@@ -23,10 +21,60 @@ class ExtractedFact:
     source_type: str  # user_statement, assistant_observation, inferred
 
 
+# Module-level pre-compiled patterns. Compiled once at import time so each
+# MemoryExtractor() instantiation is O(1) instead of O(num_patterns).
+_PREFERENCE_PATTERNS = [
+    re.compile(p) for p in (
+        r"(喜欢|讨厌|不喜欢|爱|不爱|偏爱|偏好|中意|反感)",
+        r"(最好|最差|最(好|大|小|快|慢|重要))",
+        r"(习惯|不习惯|受不(了|住)|受不了|喜欢这样)",
+        r"(常用|经常用|一般用|平时用)",
+        r"(城市|住(在|于)|工作(在|于)|学校)",
+    )
+]
+_HABIT_PATTERNS = [
+    re.compile(p) for p in (
+        r"(每天|每周|每月|经常|偶尔|总是|从不|一般|通常)",
+        r"(早上|中午|下午|晚上|凌晨|半夜|睡前|起床)",
+        r"(点|点钟|半|刻) (去|做|开始|结束|吃饭|睡觉|起床|开会|上班|下班)",
+        r"(作息|日程|安排|计划|时间表)",
+    )
+]
+_RELATIONSHIP_PATTERNS = [
+    re.compile(p) for p in (
+        r"(朋友|同事|同学|老板|下属|家人|父母|兄弟|姐妹|男(朋)?友|女(朋)?友)",
+        r"(认识|见过|约了|和.*一起|跟.*去)",
+    )
+]
+_EVENT_PATTERNS = [
+    re.compile(p) for p in (
+        r"(考试|面试|会议|约会|旅行|出差|搬家|生日|节日|纪念日)",
+        r"(完成|结束|开始|通过|失败|成功|搞定|做完)",
+        r"(今天|明天|昨天|下周|上个月|明年|今年)",
+    )
+]
+_LOCATION_PATTERNS = [
+    re.compile(p) for p in (
+        r"(在|住(在|于)|工作(在|于)|学校(在|于)|公司(在|于))[\u4e00-\u9fff]{2,10}",
+        r"(北京|上海|广州|深圳|杭州|成都|南京|武汉|重庆|西安|天津|苏州|长沙|青岛|大连|厦门)",
+    )
+]
+
+_CATEGORY_PATTERNS = {
+    "preference": _PREFERENCE_PATTERNS,
+    "habit": _HABIT_PATTERNS,
+    "relationship": _RELATIONSHIP_PATTERNS,
+    "event": _EVENT_PATTERNS,
+    "location": _LOCATION_PATTERNS,
+}
+
+
 class MemoryExtractor:
     """从对话中提取结构化记忆事实"""
 
-    # 关键词模式 — 用于快速分类
+    # Class-level raw pattern constants kept for backward compat (tests
+    # and external callers may inspect them). The compiled versions live
+    # at module level above.
     PREFERENCE_PATTERNS = [
         r"(喜欢|讨厌|不喜欢|爱|不爱|偏爱|偏好|中意|反感)",
         r"(最好|最差|最(好|大|小|快|慢|重要))",
@@ -59,18 +107,9 @@ class MemoryExtractor:
     ]
 
     def __init__(self):
-        self._compiled_patterns = {}
-        self._compile_patterns()
-
-    def _compile_patterns(self):
-        """预编译正则表达式"""
-        self._compiled_patterns = {
-            "preference": [re.compile(p) for p in self.PREFERENCE_PATTERNS],
-            "habit": [re.compile(p) for p in self.HABIT_PATTERNS],
-            "relationship": [re.compile(p) for p in self.RELATIONSHIP_PATTERNS],
-            "event": [re.compile(p) for p in self.EVENT_PATTERNS],
-            "location": [re.compile(p) for p in self.LOCATION_PATTERNS],
-        }
+        # Reuse the module-level pre-compiled patterns to avoid re-compiling
+        # on every instance. Keeps the public attribute name for compat.
+        self._compiled_patterns = _CATEGORY_PATTERNS
 
     def extract_from_conversation(
         self,

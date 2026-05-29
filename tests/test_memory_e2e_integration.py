@@ -159,7 +159,6 @@ def test_agentic_loop_memory_integration():
         print(f"  记忆条目: {len(memory._entries)}")
         print(f"  档案自动更新: {'✅ 通过' if all_passed else '⚠️ 部分通过'}")
 
-        return True
 
     finally:
         shutil.rmtree(tmpdir)
@@ -220,7 +219,7 @@ def test_prompt_injection():
                 profile_section = system_content[start:start+200]
                 print(f"\n  注入的档案:\n{profile_section}")
 
-        return has_profile
+        assert has_profile, "档案信息应注入到系统提示词中"
 
     finally:
         shutil.rmtree(tmpdir)

@@ -133,7 +133,7 @@ class SessionManager:
 
         # 创建新的空文件
         try:
-            with open(self.current_file, "w", encoding="utf-8") as f:
+            with open(self.current_file, "w", encoding="utf-8"):
                 pass  # 空文件
         except OSError as exc:
             logger.warning("无法创建新的 current.jsonl: %s", exc)
@@ -170,7 +170,7 @@ class SessionManager:
 
         # 创建新的空 current.jsonl
         try:
-            with open(self.current_file, "w", encoding="utf-8") as f:
+            with open(self.current_file, "w", encoding="utf-8"):
                 pass
         except OSError as exc:
             logger.warning("无法创建新的 current.jsonl: %s", exc)

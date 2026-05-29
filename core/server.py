@@ -9,20 +9,21 @@ import re
 import threading
 import subprocess
 import hashlib
-import signal
 import sys
 import datetime
 import os
-import contextlib
 import shutil
 import uvicorn
+import urllib.request
+import urllib.error
 from uuid import uuid4
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 from typing import Any
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketState
 from core.avatar_animation import AvatarAnimation
+from core.audio_orchestrator import AudioOrchestrator
 from core.background_lane import BackgroundLane
 from core.background_worker import BackgroundWorker
 from core.dialog_state_machine import DialogStateMachine
@@ -40,7 +41,7 @@ from core.model_broker import ModelBroker
 from core.pending_handlers import (
     handle_pending_action,
 )
-from core.response_sanitizer import sanitize_for_speech_text, strip_reasoning_artifacts
+from core.response_sanitizer import sanitize_for_speech_text
 from core.realtime_handlers import (
     extract_video_subject,
     format_video_evidence,
@@ -58,27 +59,18 @@ from core.realtime_lane import (
     decide_realtime_command,
     describe_command_intent,
     extract_correction_text,
-    is_cancel_text,
-    is_confirm_text,
 )
 from core.media_controller import media_control as _media_control_engine
 from core.speech_engine import mouth_speak as _mouth_speak_engine
 from core.route_classifier import (
-    classify_route,
     is_route_ambiguous,
     should_try_tools,
-    extract_location_from_text,
     classify_route_by_model,
 )
 from core.chat_polisher import (
     polish_chat_response,
-    is_bad_chat_response,
     infer_chat_topic,
     structured_chat_followup,
-    fallback_chat_response,
-    short_care_phrase,
-    filter_chat_text,
-    collapse_repeats,
 )
 from core.trace import log
 
@@ -517,8 +509,6 @@ async def runtime_status():
 
 @app.post("/api/runtime/start")
 async def runtime_start():
-    global kage_server
-
     with _runtime_lock:
         if kage_server is not None:
             _runtime_state.update({
@@ -806,7 +796,7 @@ async def list_models():
                         "size_bytes": size_bytes,
                     }
                 )
-        except Exception as e:
+        except Exception:
             logger.warning("Error listing models: %s", exc_info=True)
 
         return models
@@ -1046,11 +1036,6 @@ class KageServer:
         from core.heartbeat import Heartbeat
 
         cfg = config or {}
-        model_path = (
-            cfg.get("model", {}).get("path")
-            or cfg.get("model", {}).get("default_model")
-            or "Qwen/Qwen3-4B-GGUF"
-        )
         voice = cfg.get("voice", {}).get("tts_voice") or "zh-CN-XiaoyiNeural"
         self._wakeword_enabled_cfg = bool(cfg.get("wakeword", {}).get("enabled", True))
         self._text_only_mode = _env_truthy("KAGE_TEXT_ONLY") or _env_truthy("KAGE_BENCH_TEXT_ONLY")
@@ -1083,8 +1068,6 @@ class KageServer:
         self.session_manager = SessionManager()
         self.session_manager.load_from_file()
 
-        model_cfg = cfg.get("model", {})
-        cloud_cfg = model_cfg.get("cloud_api", {}) if isinstance(model_cfg.get("cloud_api", {}), dict) else {}
         self.model_broker = ModelBroker(cfg)
         realtime_profile = self.model_broker.profile("realtime")
         background_profile = self.model_broker.profile("background")
@@ -1219,7 +1202,7 @@ class KageServer:
                 if self._active_turn_id and type_ in ("speech", "transcription", "state", "expression", "motion"):
                     payload["turn_id"] = str(self._active_turn_id)
                 await self.active_websocket.send_json(payload)
-            except Exception as e:
+            except Exception:
                 logger.warning("Send Error: %s", exc_info=True)
 
     def _state_payload(self, state: str) -> dict[str, str]:
@@ -1388,7 +1371,7 @@ class KageServer:
             try:
                 await self.heartbeat.start()
                 logger.info("Heartbeat started")
-            except Exception as e:
+            except Exception:
                 logger.warning("Heartbeat start failed: %s", exc_info=True)
 
         # Initial Greeting
@@ -2188,7 +2171,7 @@ class KageServer:
                 target = close_match.group(1).strip(" ：:，,。\n\t吧请")
                 # 网站 -> 关闭浏览器
                 if any(site in target for site in ["b站", "哔哩哔哩", "知乎", "百度", "网页", "浏览器"]):
-                    print(f"🧭 Direct: close_app -> Safari (网页)")
+                    print("🧭 Direct: close_app -> Safari (网页)")
                     return self._call_tool("system_control", "app", "close", "Safari")
                 # 其他应用
                 if target:

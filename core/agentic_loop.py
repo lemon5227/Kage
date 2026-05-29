@@ -26,7 +26,6 @@ import urllib.parse
 from dataclasses import dataclass, field
 
 from core.trace import Span, log
-from core.intent_keywords import needs_tool_action as _needs_tool_action, primitive_tool_hint as _primitive_tool_hint
 from core.weather_service import normalize_city_for_weather
 
 logger = logging.getLogger(__name__)
@@ -946,7 +945,6 @@ class AgenticLoop:
                 if "吃" in content or "菜" in content or "食物" in content or "辣" in content:
                     if is_negation:
                         # Extract what the user no longer likes
-                        import re
                         negated = _RE_NEGATION_STRIP.sub("", content).strip()
                         if negated:
                             self.profile.update_preference("food", "food_preference", f"不喜欢: {negated}")
@@ -974,7 +972,6 @@ class AgenticLoop:
                             break
             elif category == "relationship":
                 # Try to extract name and relationship
-                import re
                 # Pattern 1: "我朋友小明" -> name=小明, rel=朋友
                 m = _RE_RELATION.search(content)
                 if m:
