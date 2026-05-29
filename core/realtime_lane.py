@@ -6,6 +6,12 @@ import re
 from core.agentic_loop import AgenticLoop
 
 
+# Precompiled correction-text pattern. Used at conversational speed (every
+# user turn), so the per-call re.search compile cost was wasteful.
+_RE_CORRECTION = re.compile(r"不是这个\s*[，,]?\s*是\s*(.+)$")
+_CORRECTION_STRIP_CHARS = " ，,。.!！？?；;:："
+
+
 @dataclass(frozen=True)
 class RealtimeTaskClass:
     lane: str
@@ -103,9 +109,9 @@ def is_cancel_text(text: str) -> bool:
 
 def extract_correction_text(text: str) -> str:
     s = str(text or "").strip()
-    m = re.search(r"不是这个\s*[，,]?\s*是\s*(.+)$", s)
+    m = _RE_CORRECTION.search(s)
     if m:
-        return str(m.group(1) or "").strip(" ，,。.!！？?；;:：")
+        return str(m.group(1) or "").strip(_CORRECTION_STRIP_CHARS)
     return ""
 
 

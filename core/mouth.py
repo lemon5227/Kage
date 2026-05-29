@@ -5,6 +5,12 @@ import os
 import re
 import threading
 
+
+# Hoisted regex patterns for clean_text_for_tts (called for every TTS turn).
+_RE_TTS_DISALLOWED_CHARS = re.compile(r'[^\u4e00-\u9fa5a-zA-Z0-9\s,。.?!，。？！:：;；"\'\-\(\)（）摄氏度]')
+_RE_TTS_REPEATED_CHARS = re.compile(r'(.)\1{2,}')
+
+
 class KageMouth:
     def __init__(self,voice="zh-CN-XiaoyiNeural"):
         # voice selection
@@ -95,11 +101,11 @@ class KageMouth:
         # Filter out emojis (like 😄, ✨) which sound weird in TTS
         # But wait, sometimes we want to keep text structure.
         # Let's just remove specific emoji ranges or non-text content.
-        cleaned = re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9\s,。.?!，。？！:：;；"\'\-\(\)（）摄氏度]', '', text)
+        cleaned = _RE_TTS_DISALLOWED_CHARS.sub('', text)
         
         # 3. Remove repetitive characters (like 🌡️🌡️🌡️ or .......)
         # Collapse 3 or more repeated chars to 1
-        cleaned = re.sub(r'(.)\1{2,}', r'\1', cleaned)
+        cleaned = _RE_TTS_REPEATED_CHARS.sub(r'\1', cleaned)
         
         # 4. Strictly limit ANY repeated sequence at the end of the string (Emoji spam killer)
         # If the last 5 chars contain repeated chars, chop them

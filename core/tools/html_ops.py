@@ -6,6 +6,11 @@ from html.parser import HTMLParser
 MAX_OUTPUT_LENGTH = 5000
 TRUNCATION_MARKER = "[输出已截断]"
 
+# Hoisted regex patterns for the strip_html_tags fallback path.
+_RE_HTML_SCRIPT = re.compile(r'<script[^>]*>.*?</script>', re.DOTALL | re.IGNORECASE)
+_RE_HTML_STYLE = re.compile(r'<style[^>]*>.*?</style>', re.DOTALL | re.IGNORECASE)
+_RE_HTML_TAG = re.compile(r'<[^>]+>')
+
 
 class HTMLTextExtractor(HTMLParser):
     """Extract plain text from HTML."""
@@ -41,9 +46,9 @@ def strip_html_tags(html_text: str) -> str:
         extractor.feed(html_text)
         return extractor.get_text()
     except Exception:
-        text = re.sub(r'<script[^>]*>.*?</script>', '', html_text, flags=re.DOTALL | re.IGNORECASE)
-        text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
-        text = re.sub(r'<[^>]+>', '', text)
+        text = _RE_HTML_SCRIPT.sub('', html_text)
+        text = _RE_HTML_STYLE.sub('', text)
+        text = _RE_HTML_TAG.sub('', text)
         return ' '.join(text.split())
 
 

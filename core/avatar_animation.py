@@ -66,7 +66,9 @@ class AvatarAnimation:
         if now - self._last_motion_time < self.motion.cooldown_sec:
             return None
 
-        weights_map = self.motion.emotion_weights.get(emotion_key, self.motion.weights)
+        # emotion_weights is on ExpressionConfig, not MotionConfig.
+        # Falls back to MotionConfig.weights when no per-emotion mapping exists.
+        weights_map = self.expression.emotion_weights.get(emotion_key, self.motion.weights)
         group = random.choices(
             list(self.motion.groups.keys()),
             weights=[weights_map.get(g, 1) for g in self.motion.groups],

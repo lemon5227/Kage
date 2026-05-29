@@ -9,6 +9,39 @@ from typing import Any, Callable
 from core.realtime_lane import extract_correction_text, is_cancel_text, is_confirm_text
 
 
+# Hoisted regex constants for normalize_video_query_for_search / extract_video_subject.
+# Precompiled at import so we don't re-build patterns on every speech turn.
+_RE_NVQ_TRAILING_OPEN_LONG = re.compile(
+    r"[，,\s]*(然后|再|并且|并|顺便)\s*(把|帮我)?\s*(它|这个|结果|视频|链接)?\s*(打开|点开|播放|播一下|放一下)(吧|一下)?[。.!！？?]*\s*$",
+    re.IGNORECASE,
+)
+_RE_NVQ_TRAILING_OPEN_SHORT = re.compile(
+    r"[，,\s]*(把|帮我)?\s*(它|这个|结果|视频|链接)?\s*(打开|点开|播放|播一下|放一下)(吧|一下)?[。.!！？?]*\s*$",
+    re.IGNORECASE,
+)
+_RE_NVQ_TRAILING_OPEN_PLAIN = re.compile(
+    r"[，,\s]*(然后|再|并且|并|顺便)\s*打开[。.!！？?]*\s*$",
+    re.IGNORECASE,
+)
+
+_RE_EVS_PREFIX_NEGATION = re.compile(r"^不是这个\s*[，,]?\s*是\s*")
+_RE_EVS_PREFIX_REQUEST = re.compile(r"^(帮我|请|麻烦|请帮我|我想|我想看|帮忙)\s*")
+_RE_EVS_PREFIX_VERB = re.compile(r"^(找|搜|搜索|查|看)(一下|下)?\s*")
+_RE_EVS_SUFFIX_VIDEO = re.compile(r"\s*(的)?\s*(最新|最近|刚发|本周|今日)?\s*(视频|频道|直播)\s*$")
+_RE_EVS_SUFFIX_PLATFORM = re.compile(
+    r"\s*(在)?\s*(youtube|bilibili|油管|b站|哔哩哔哩)\s*(上)?\s*$",
+    re.IGNORECASE,
+)
+
+_QUERY_STRIP_CHARS = " ，,。.!！？?；;:："
+
+# Detect any CJK character in a string
+_RE_HAS_CJK = re.compile(r"[\u4e00-\u9fff]")
+
+# Match leading "就是" / "是" before the actual subject in a correction reply
+_RE_CORRECTION_PREFIX = re.compile(r"^(?:就?是)\s*(.+)$")
+
+
 @dataclass(frozen=True)
 class VideoFollowupEarlyAction:
     consume_turn: bool = False
@@ -29,34 +62,24 @@ def normalize_video_query_for_search(text: str) -> str:
     s = str(text or "").strip()
     if not s:
         return ""
-    s = s.strip(" ，,。.!！？?；;:：")
-    s = re.sub(
-        r"[，,\s]*(然后|再|并且|并|顺便)\s*(把|帮我)?\s*(它|这个|结果|视频|链接)?\s*(打开|点开|播放|播一下|放一下)(吧|一下)?[。.!！？?]*\s*$",
-        "",
-        s,
-        flags=re.IGNORECASE,
-    )
-    s = re.sub(
-        r"[，,\s]*(把|帮我)?\s*(它|这个|结果|视频|链接)?\s*(打开|点开|播放|播一下|放一下)(吧|一下)?[。.!！？?]*\s*$",
-        "",
-        s,
-        flags=re.IGNORECASE,
-    )
-    s = re.sub(r"[，,\s]*(然后|再|并且|并|顺便)\s*打开[。.!！？?]*\s*$", "", s, flags=re.IGNORECASE)
-    return s.strip(" ，,。.!！？?；;:：")
+    s = s.strip(_QUERY_STRIP_CHARS)
+    s = _RE_NVQ_TRAILING_OPEN_LONG.sub("", s)
+    s = _RE_NVQ_TRAILING_OPEN_SHORT.sub("", s)
+    s = _RE_NVQ_TRAILING_OPEN_PLAIN.sub("", s)
+    return s.strip(_QUERY_STRIP_CHARS)
 
 
 def extract_video_subject(text: str) -> str:
     s = normalize_video_query_for_search(text)
     if not s:
         return ""
-    s = re.sub(r"^不是这个\s*[，,]?\s*是\s*", "", s)
-    s = re.sub(r"^(帮我|请|麻烦|请帮我|我想|我想看|帮忙)\s*", "", s)
-    s = re.sub(r"^(找|搜|搜索|查|看)(一下|下)?\s*", "", s)
-    s = s.strip(" ，,。.!！？?；;:：")
-    s = re.sub(r"\s*(的)?\s*(最新|最近|刚发|本周|今日)?\s*(视频|频道|直播)\s*$", "", s)
-    s = re.sub(r"\s*(在)?\s*(youtube|bilibili|油管|b站|哔哩哔哩)\s*(上)?\s*$", "", s, flags=re.IGNORECASE)
-    return s.strip(" ，,。.!！？?；;:：")
+    s = _RE_EVS_PREFIX_NEGATION.sub("", s)
+    s = _RE_EVS_PREFIX_REQUEST.sub("", s)
+    s = _RE_EVS_PREFIX_VERB.sub("", s)
+    s = s.strip(_QUERY_STRIP_CHARS)
+    s = _RE_EVS_SUFFIX_VIDEO.sub("", s)
+    s = _RE_EVS_SUFFIX_PLATFORM.sub("", s)
+    return s.strip(_QUERY_STRIP_CHARS)
 
 
 def video_selection_evidence(subject: str, item: dict) -> dict[str, bool]:
@@ -96,7 +119,7 @@ def video_subject_tokens(subject: str) -> list[str]:
     parts = [p for p in re.split(r"[^0-9a-zA-Z\u4e00-\u9fff]+", s) if p]
     out: list[str] = []
     for p in parts:
-        if re.search(r"[\u4e00-\u9fff]", p):
+        if _RE_HAS_CJK.search(p):
             if len(p) >= 1:
                 out.append(p)
         elif len(p) >= 3:
@@ -118,7 +141,7 @@ def video_subject_match_score(subject: str, item: dict) -> float:
     score = 0.0
     for tok in video_subject_tokens(subj):
         if tok and tok in hay:
-            score += 2.5 if re.search(r"[\u4e00-\u9fff]", tok) else 1.5
+            score += 2.5 if _RE_HAS_CJK.search(tok) else 1.5
     return score
 
 
@@ -159,10 +182,10 @@ def extract_video_followup_correction_text(text: str) -> str:
     explicit = extract_correction_text(s)
     if explicit:
         return explicit
-    s = s.strip(" ，,。.!！？?；;:：")
-    m = re.match(r"^(?:就?是)\s*(.+)$", s)
+    s = s.strip(_QUERY_STRIP_CHARS)
+    m = _RE_CORRECTION_PREFIX.match(s)
     if m:
-        cand = str(m.group(1) or "").strip(" ，,。.!！？?；;:：")
+        cand = str(m.group(1) or "").strip(_QUERY_STRIP_CHARS)
         if is_backchannel_text(cand):
             return ""
         return cand
