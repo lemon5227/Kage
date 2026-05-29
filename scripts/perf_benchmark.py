@@ -104,6 +104,20 @@ def benchmark_memory_ops():
         bench("bm25_search 5 results from 1000 entries", 1000,
               lambda: mem.bm25_search("topic content", n_results=5))
 
+        bench("recall 5 results from 1000 entries (BM25-only path)", 500,
+              lambda: mem.recall("topic content", n_results=5))
+
+
+def benchmark_collapse_repeats():
+    print("\n=== collapse_repeats (chat_polisher.py) ===")
+    from core.chat_polisher import collapse_repeats
+    short = "啊啊啊啊好哒哒哒哒"
+    long_with_runs = ("好" * 5 + "哒" * 4 + "了" * 3 + "！" * 6) * 5
+    long_no_runs = "你好今天天气真不错很适合出门散步呢"
+    bench("collapse_repeats 9 chars with runs", 100_000, lambda: collapse_repeats(short))
+    bench("collapse_repeats 90 chars with runs", 50_000, lambda: collapse_repeats(long_with_runs))
+    bench("collapse_repeats 18 chars no runs", 100_000, lambda: collapse_repeats(long_no_runs))
+
 
 def benchmark_route_classifier():
     print("\n=== route_classifier (route_classifier.py) ===")
@@ -142,6 +156,7 @@ if __name__ == "__main__":
     benchmark_extract_city()
     benchmark_route_classifier()
     benchmark_prompt_builder_classify()
+    benchmark_collapse_repeats()
     benchmark_memory_ops()
     print("\n" + "=" * 70)
     print("Done.")

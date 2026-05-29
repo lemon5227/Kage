@@ -68,6 +68,10 @@ class MemorySystem:
         self._bm25: Optional[BM25Okapi] = None
         self._bm25_dirty: int = 0  # inserts since last BM25 rebuild
 
+        # Cached importance vector — invalidated whenever entries are added /
+        # evicted / merged. Avoids rebuilding a numpy array on every recall().
+        self._importance_cache: Optional[np.ndarray] = None
+
         # Vector search (lazy-loaded)
         self._model = None                   # SentenceTransformer model
         self._embeddings: Optional[np.ndarray] = None  # (N, dim) matrix
@@ -76,6 +80,29 @@ class MemorySystem:
         self._load_from_raw_log()
 
         logger.info("MemorySystem initialized — %d entries loaded from raw_log", len(self._entries))
+
+    # ------------------------------------------------------------------
+    def _invalidate_caches(self) -> None:
+        """Drop derived caches when entries change. Caller must hold _lock."""
+        self._corpus_token_sets = None
+        self._importance_cache = None
+
+    def _get_importance_array(self) -> np.ndarray:
+        """Return cached importance vector aligned with self._entries.
+
+        Built on demand and reused across recall() calls until entries change.
+        Caller must hold _lock.
+        """
+        if (
+            self._importance_cache is None
+            or len(self._importance_cache) != len(self._entries)
+        ):
+            self._importance_cache = np.fromiter(
+                (entry.get("importance", 1) for entry in self._entries),
+                dtype=np.float64,
+                count=len(self._entries),
+            )
+        return self._importance_cache
 
     # ------------------------------------------------------------------
     # Startup helpers
@@ -237,6 +264,11 @@ class MemorySystem:
             # Append to token sets cache if it exists, else leave None
             if self._corpus_token_sets is not None:
                 self._corpus_token_sets.append(set(tokens))
+            # Extend importance cache in place (avoids rebuild on next recall)
+            if self._importance_cache is not None:
+                self._importance_cache = np.append(
+                    self._importance_cache, float(importance)
+                )
             self._rebuild_bm25()
 
             # Update vector index if model is already loaded
@@ -282,7 +314,7 @@ class MemorySystem:
         keep_indices = [i for i in range(len(self._entries)) if i not in evict_indices]
         self._entries = [self._entries[i] for i in keep_indices]
         self._corpus_tokens = [self._corpus_tokens[i] for i in keep_indices]
-        self._corpus_token_sets = None  # invalidate cache
+        self._invalidate_caches()
         if self._embeddings is not None and len(self._embeddings) > 0:
             self._embeddings = self._embeddings[keep_indices]
         self._rebuild_bm25(force=True)
@@ -388,11 +420,10 @@ class MemorySystem:
             else:
                 return []
 
-            # Apply importance as a multiplicative boost (not a sort override)
-            importance_scores = np.array([
-                entry.get("importance", 1) for entry in self._entries
-            ], dtype=float)
-            max_imp = importance_scores.max()
+            # Apply importance as a multiplicative boost (not a sort override).
+            # The importance vector is cached and reused across recalls.
+            importance_scores = self._get_importance_array()
+            max_imp = float(importance_scores.max()) if n > 0 else 0.0
             if max_imp > 0:
                 importance_norm = importance_scores / max_imp
             else:
@@ -401,9 +432,18 @@ class MemorySystem:
             # Final score: 85% relevance + 15% importance
             final_scores = 0.85 * combined + 0.15 * importance_norm
 
-            # Get top indices by final score
+            # Get top indices by final score. Use argpartition to find the
+            # top-k candidates in O(n), then sort just those k items.
             top_k = min(n_results, n)
-            top_indices = np.argsort(final_scores)[::-1][:top_k]
+            if top_k <= 0:
+                return []
+            if top_k >= n:
+                top_indices = np.argsort(-final_scores)
+            else:
+                # argpartition puts the top-k unsorted in the last k positions
+                # when partitioned at index n-k. Sort only those k.
+                part = np.argpartition(final_scores, n - top_k)[-top_k:]
+                top_indices = part[np.argsort(-final_scores[part])]
 
             # Build results in order of final score (relevance + importance)
             results = []
@@ -493,7 +533,7 @@ class MemorySystem:
             keep_indices = np.where(keep_mask)[0].tolist()
             self._entries = [self._entries[i] for i in keep_indices]
             self._corpus_tokens = [self._corpus_tokens[i] for i in keep_indices]
-            self._corpus_token_sets = None  # invalidate cache
+            self._invalidate_caches()
             self._embeddings = self._embeddings[keep_indices]
             self._rebuild_bm25(force=True)
 
@@ -619,7 +659,7 @@ class MemorySystem:
             keep_indices = sorted(set(range(len(self._entries))) - merged_indices)
             self._entries = [self._entries[i] for i in keep_indices]
             self._corpus_tokens = [self._corpus_tokens[i] for i in keep_indices]
-            self._corpus_token_sets = None  # invalidate cache
+            self._invalidate_caches()
             if self._embeddings is not None:
                 self._embeddings = self._embeddings[keep_indices]
             self._rebuild_bm25(force=True)
@@ -683,7 +723,7 @@ class MemorySystem:
             keep_indices = sorted(set(range(n)) - merged_indices)
             self._entries = [self._entries[k] for k in keep_indices]
             self._corpus_tokens = [self._corpus_tokens[k] for k in keep_indices]
-            self._corpus_token_sets = None  # invalidate cache
+            self._invalidate_caches()
             if self._embeddings is not None:
                 self._embeddings = self._embeddings[keep_indices]
             self._rebuild_bm25(force=True)
@@ -746,7 +786,7 @@ class MemorySystem:
             keep_indices = sorted(set(range(len(self._entries))) - forgotten_indices)
             self._entries = [self._entries[i] for i in keep_indices]
             self._corpus_tokens = [self._corpus_tokens[i] for i in keep_indices]
-            self._corpus_token_sets = None  # invalidate cache
+            self._invalidate_caches()
             if self._embeddings is not None:
                 self._embeddings = self._embeddings[keep_indices]
             self._rebuild_bm25(force=True)
@@ -849,7 +889,7 @@ class MemorySystem:
                 if entry.get("id") == entry_id:
                     self._entries.pop(i)
                     self._corpus_tokens.pop(i)
-                    self._corpus_token_sets = None  # invalidate cache
+                    self._invalidate_caches()
                     if self._embeddings is not None:
                         self._embeddings = np.delete(self._embeddings, i, axis=0)
                     self._rebuild_bm25(force=True)
@@ -866,7 +906,7 @@ class MemorySystem:
             count = len(self._entries)
             self._entries.clear()
             self._corpus_tokens.clear()
-            self._corpus_token_sets = None
+            self._invalidate_caches()
             self._embeddings = None
             self._bm25 = None
             self._bm25_dirty = 0

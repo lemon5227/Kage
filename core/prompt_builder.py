@@ -351,7 +351,14 @@ class PromptBuilder:
 
         Preserves: system prompt (index 0) + last 3 conversation turns + current user input.
         """
-        if self.count_tokens(messages) <= budget:
+        # Track per-message token counts so we can update the running total
+        # incrementally instead of summing from scratch each pop (was O(n^2)).
+        per_msg = [
+            max(1, len(m.get("content", "")) // _AVG_CHARS_PER_TOKEN)
+            for m in messages
+        ]
+        total = sum(per_msg)
+        if total <= budget:
             return messages
 
         # messages = [system, ...history..., current_user_input]
@@ -361,7 +368,9 @@ class PromptBuilder:
             return messages
 
         # Remove from index 1 (oldest history) until budget met
-        while len(messages) > 5 and self.count_tokens(messages) > budget:
+        while len(messages) > 5 and total > budget:
+            removed = per_msg.pop(1)
             messages.pop(1)
+            total -= removed
 
         return messages

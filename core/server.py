@@ -29,7 +29,6 @@ from core.background_worker import BackgroundWorker
 from core.dialog_state_machine import DialogStateMachine
 from core.interaction_state import (
     PendingVideoFollowup,
-    make_pending_chat_followup,
     make_pending_confirm_inferred_command,
     make_pending_confirm_tool,
     make_pending_video_followup,
@@ -64,7 +63,6 @@ from core.media_controller import media_control as _media_control_engine
 from core.speech_engine import mouth_speak as _mouth_speak_engine
 from core.route_classifier import (
     is_route_ambiguous,
-    should_try_tools,
     classify_route_by_model,
 )
 from core.chat_polisher import (
@@ -1865,23 +1863,6 @@ class KageServer:
         except Exception as exc:
             return [f"模型调用失败: {exc}"]
 
-    def _think_report(self, report_input: str, current_emotion: str):
-        messages = [
-            {"role": "system", "content": ""},
-            {"role": "user", "content": str(report_input or "")},
-        ]
-        try:
-            return self.realtime_model_provider.generate(
-                messages=messages,
-                tools=None,
-                max_tokens=200,
-                temperature=0.7,
-            )
-        except Exception as exc:
-            from core.model_provider import ModelResponse
-
-            return ModelResponse(text=f"模型调用失败: {exc}", emotion="sad")
-
     # NOTE: Legacy tool-loop/router removed. The runtime uses AgenticLoop + ToolExecutor.
 
     async def mouth_speak(self, text, emotion="neutral"):
@@ -1889,13 +1870,12 @@ class KageServer:
         await _mouth_speak_engine(self, text, emotion)
 
     def _sanitize_for_speech(self, text: str) -> str:
-        """Delegate to response_sanitizer."""
-        return sanitize_for_speech_text(text)
+        """Delegate to response_sanitizer.
 
-    async def _send_random_motion(self, emotion: str | None = None):
-        """Delegate to speech_engine module."""
-        from core.speech_engine import _send_random_motion as _srm
-        await _srm(self, emotion)
+        Kept as a thin wrapper to support tests that exercise the
+        sanitization pipeline through the server instance.
+        """
+        return sanitize_for_speech_text(text)
 
     def _classify_route_with_assist(self, user_input: str) -> str:
         """Rule-first route classification with optional model assist for ambiguity."""
@@ -1978,71 +1958,6 @@ class KageServer:
         if "冷笑话" in text or "笑话" in text:
             return "我当然会讲，不过这个版本的笑话技能还没装上。你想让我做点实际的事吗？"
         return None
-
-    def _quick_chat_plan(self, user_input: str):
-        """Return a (reply, pending_action) tuple for lightweight multi-turn chat."""
-        text = (user_input or "").strip()
-        if not text:
-            return None, None
-
-        reply = self._quick_chat_response(text)
-        if not reply:
-            return None, None
-
-        reply_s = str(reply)
-
-        # If we ask a clarification question, set pending chat follow-up.
-        needs_followup = False
-        topic = infer_chat_topic(text)
-        if reply_s in (
-            "你是想问天气，还是安排？",
-            "你想表达什么，给谁看？",
-            "你卡在哪一步？",
-            "把内容发我，我帮你看。",
-            "他发了啥？你想怎么回？",
-            "你想怎么说？我帮你拟一句。",
-        ):
-            needs_followup = True
-
-        pending = None
-        if needs_followup:
-            pending = make_pending_chat_followup(topic=str(topic or ""), asked=reply_s)
-        return reply_s, pending
-
-    def _should_try_tools(self, user_input: str) -> bool:
-        """Heuristic: route to action mode so the LLM can choose tools."""
-        return should_try_tools(user_input)
-
-    async def _repair_chat_response(
-        self,
-        user_input: str,
-        draft: str,
-        memories: list,
-        history: list,
-        current_emotion: str,
-    ) -> str:
-        """Second-pass rewrite to keep LLM feel without hardcoded replies."""
-        # Keep it short and purely a rewrite instruction.
-        repair_input = (
-            "把下面回复改写得更像真人、更有帮助。\n"
-            "要求：中文；1-2 句；先回应用户意图/情绪；再给建议或追问 1 个问题；不要自我介绍；不要输出英文。\n"
-            f"用户：{user_input}\n"
-            f"原回复：{draft}\n"
-            "只输出改写后的回复。"
-        )
-
-        response_stream = await asyncio.to_thread(  # type: ignore[arg-type]
-            self._think_action,
-            repair_input,
-            memories,
-            history,
-            current_emotion,
-            "chat",
-        )
-        out = ""
-        for chunk in response_stream:
-            out += getattr(chunk, "text", str(chunk))
-        return polish_chat_response(out)
 
     def _call_tool(self, tool_name: str, *args, **kwargs):
         """Unified tool call with fallback to direct import."""
@@ -2436,13 +2351,6 @@ class KageServer:
                 for k, _ in ordered[: len(ordered) // 4]:
                     self._fast_cache.pop(k, None)
         self._fast_cache[key] = {"timestamp": time.time(), "value": value}
-
-    def _strip_cmd_output(self, result) -> str:
-        text = str(result).strip()
-        if text.startswith("命令执行成功"):
-            parts = text.splitlines()
-            return parts[-1] if parts else ""
-        return text
 
     def _fetch_weather(self, city: str) -> str:
         local_city = self._get_local_city() or ""

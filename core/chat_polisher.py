@@ -102,22 +102,15 @@ def filter_chat_text(text: str) -> str:
     return "".join(output)
 
 
+# Pre-compiled regex for collapse_repeats: matches 3+ consecutive identical chars
+_REPEAT_RE = re.compile(r"(.)\1{2,}")
+
+
 def collapse_repeats(text: str) -> str:
-    """Collapse consecutive repeated characters (max 1 repeat)."""
+    """Collapse consecutive repeated characters to at most 2 in a row."""
     if not text:
         return text
-    output = []
-    last_char = None
-    repeat_count = 0
-    for ch in text:
-        if ch == last_char:
-            repeat_count += 1
-        else:
-            repeat_count = 0
-        last_char = ch
-        if repeat_count < 2:
-            output.append(ch)
-    return "".join(output)
+    return _REPEAT_RE.sub(r"\1\1", text)
 
 
 def polish_chat_response(text: str) -> str:
