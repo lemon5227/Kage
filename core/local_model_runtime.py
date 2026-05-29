@@ -62,7 +62,14 @@ class LocalModelRuntime:
         if proc is None:
             return False
         try:
-            return proc.poll() is None
+            rc = proc.poll()
+            if rc is not None:
+                # Process has exited — clean up log handle
+                self._close_log_handle()
+                self._proc = None
+                self._state.update({"status": "stopped", "pid": None, "updated_at": self._clock()})
+                return False
+            return True
         except Exception:
             return False
 
@@ -110,7 +117,9 @@ class LocalModelRuntime:
         presence_penalty = float(payload.get("presence_penalty") or 1.5)
         ngl = int(payload.get("ngl") or 99)
         reasoning = str(payload.get("reasoning") or "off").strip().lower() or "off"
-        return [
+        cache_type_k = str(payload.get("cache_type_k") or "q8_0").strip().lower() or "q8_0"
+        cache_type_v = str(payload.get("cache_type_v") or "q8_0").strip().lower() or "q8_0"
+        cmd = [
             llama_bin,
             "-m",
             str(model_path),
@@ -140,7 +149,12 @@ class LocalModelRuntime:
             "--no-context-shift",
             "--reasoning",
             reasoning,
+            "--cache-type-k",
+            cache_type_k,
+            "--cache-type-v",
+            cache_type_v,
         ]
+        return cmd
 
     def start(self, payload: dict[str, Any]) -> RuntimeStartResult:
         host = str(payload.get("host") or "127.0.0.1").strip() or "127.0.0.1"

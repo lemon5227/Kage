@@ -27,6 +27,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Pre-compiled regex for tool call extraction. parse_tool_calls() runs on every
+# agentic loop step (up to 5x per user turn) so module-level compilation matters.
+_BRACKET_TOOL_CALL_RE = re.compile(
+    r"<\|tool_call_start\|>\s*\[(.*?)\]\s*<\|tool_call_end\|>", re.DOTALL
+)
+
+# Fuzzy tool name resolution tunables
+_FUZZY_MATCH_CUTOFF = 0.84  # difflib similarity threshold (0-1)
+_FUZZY_CACHE_MAX = 256      # bounded cache to handle degenerate model output
+
 
 @dataclass
 class ToolResult:
@@ -48,6 +58,12 @@ class ToolExecutor:
 
         self.tool_log_file = os.path.join(workspace, "tool_log.jsonl")
         self.audit_log_file = os.path.join(workspace, "audit.log")
+
+        # Cache for fuzzy tool name resolution. The registry is effectively
+        # immutable post-startup, so the same hallucinated name maps to the
+        # same canonical tool every time. Bounded to avoid unbounded growth
+        # if a degenerate model emits many distinct invalid names.
+        self._fuzzy_cache: dict[str, str | None] = {}
 
         logger.info("ToolExecutor initialized — %d registered tools", 
                     len(self.registry.get_tool_names()))
@@ -91,8 +107,7 @@ class ToolExecutor:
         results: list[dict] = []
         if not text:
             return results
-        pattern = re.compile(r"<\|tool_call_start\|>\s*\[(.*?)\]\s*<\|tool_call_end\|>", re.DOTALL)
-        for m in pattern.finditer(text):
+        for m in _BRACKET_TOOL_CALL_RE.finditer(text):
             inner = (m.group(1) or "").strip()
             if not inner:
                 continue
@@ -149,6 +164,7 @@ class ToolExecutor:
         """Best-effort fuzzy match for hallucinated tool names.
 
         We intentionally do NOT fuzzy-map to `exec` because it is overly powerful.
+        Cached: the same name maps to the same canonical tool every time.
         """
         raw = str(name or "").strip()
         if not raw:
@@ -156,12 +172,23 @@ class ToolExecutor:
         if self.registry.has_tool(raw):
             return raw
 
+        # Cache check (covers both hits and previously-failed lookups)
+        if raw in self._fuzzy_cache:
+            return self._fuzzy_cache[raw]
+
         candidates = [n for n in (self.registry.get_tool_names() or []) if n != "exec"]
         if not candidates:
+            self._fuzzy_cache[raw] = None
             return None
 
-        matches = difflib.get_close_matches(raw, candidates, n=1, cutoff=0.84)
-        return matches[0] if matches else None
+        matches = difflib.get_close_matches(raw, candidates, n=1, cutoff=_FUZZY_MATCH_CUTOFF)
+        result = matches[0] if matches else None
+
+        # Bound the cache to prevent unbounded growth from degenerate model output
+        if len(self._fuzzy_cache) >= _FUZZY_CACHE_MAX:
+            self._fuzzy_cache.clear()
+        self._fuzzy_cache[raw] = result
+        return result
 
     def _normalize_arguments(self, name: str, arguments: dict) -> dict:
         """Normalize common hallucinated argument keys.

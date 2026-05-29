@@ -241,6 +241,40 @@ def test_interrupt_speech_updates_state_when_playing():
     assert logged["fields"]["reason"] == "text_input"
 
 
+def test_think_action_uses_realtime_model_provider():
+    server = object.__new__(KageServer)
+
+    class ProviderStub:
+        @staticmethod
+        def generate(messages, tools=None, max_tokens=200, temperature=0.7):
+            class Response:
+                text = "short reply"
+
+            return Response()
+
+    server.realtime_model_provider = ProviderStub()
+
+    result = server._think_action("hi", [], [], "neutral", "chat")
+
+    assert result == ["short reply"]
+
+
+def test_classify_route_by_model_uses_routing_provider():
+    server = object.__new__(KageServer)
+
+    class ProviderStub:
+        @staticmethod
+        def generate(messages, tools=None, max_tokens=8, temperature=0.0):
+            class Response:
+                text = "info"
+
+            return Response()
+
+    server.routing_model_provider = ProviderStub()
+
+    assert server._classify_route_by_model("查一下今天新闻") == "info"
+
+
 def test_monitor_voice_barge_in_interrupts_when_activity_detected():
     server = object.__new__(KageServer)
     server._speech_revision = 1

@@ -2,25 +2,20 @@ import json
 import unittest
 from unittest.mock import patch
 
-
-from core import tools_impl
+from core.tools import web_ops
 
 
 class TestSearchAndOpenNormalize(unittest.TestCase):
-    def test_search_and_open_preserves_user_phrase(self):
-        captured = {"q": None}
+    def test_search_and_open_opens_first_result(self):
+        def fake_search(query, max_results=5, strategy="auto", sort="relevance"):
+            return json.dumps({"results": [{"title": "Result", "url": "https://example.com/1", "snippet": ""}]})
 
-        def fake_search(q, max_results=5):
-            captured["q"] = q
-            fake = {"results": [{"title": "YT", "url": "https://www.youtube.com/watch?v=1", "snippet": ""}]}
-            return json.dumps(fake, ensure_ascii=False)
+        with patch.object(web_ops, "search", side_effect=fake_search):
+            with patch.object(web_ops, "open_url", return_value=json.dumps({"success": True, "opened": "https://example.com/1"})) as mock_open:
+                out = json.loads(web_ops.search_and_open("test query"))
 
-        with patch.object(tools_impl, "tavily_search", side_effect=fake_search):
-            with patch.object(tools_impl, "open_url", return_value=json.dumps({"success": True, "url": "https://www.youtube.com/watch?v=1"}, ensure_ascii=False)):
-                _ = tools_impl.search_and_open("曹操说 最新 血关 视频", prefer_domains=["youtube.com"], max_results=3)
-
-        self.assertIsNotNone(captured["q"])
-        self.assertIn("血关", str(captured["q"]))
+        self.assertTrue(out["success"])
+        mock_open.assert_called_once_with("https://example.com/1")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
 {
     "model": {
-        "path": "Qwen/Qwen3-4B-GGUF",
+        "path": "Jackrong/Qwopus3.5-9B-v3-GGUF",
         "preferred_model": "local",
         "available_models": [
             "Qwen/Qwen3-4B-GGUF",
-            "Qwen/Qwen3-8B-GGUF"
+            "Qwen/Qwen3-8B-GGUF",
+            "Jackrong/Qwopus3.5-9B-v3-GGUF"
         ],
         "local_profiles": [
             {
@@ -18,15 +19,23 @@
                 "label": "Qwen3 8B",
                 "model": "Qwen/Qwen3-8B-GGUF",
                 "description": "Stronger local model for heavier tasks"
+            },
+            {
+                "id": "qwopus35-9b-v3",
+                "label": "Qwopus3.5 9B v3 (TurboQuant)",
+                "model": "Jackrong/Qwopus3.5-9B-v3-GGUF",
+                "path": "/Users/wenbo/.cache/kage/models/Qwen3.5-9B.Q4_K_M.gguf",
+                "description": "Reasoning-enhanced Qwen3.5-9B with TurboQuant KV cache compression"
             }
         ],
         "temperature": 0.7,
         "max_tokens": 120,
         "local_runtime": {
-            "engine": "llama.cpp",
+            "engine": "llama.cpp-turboquant",
+            "binary_path": "/Users/wenbo/.local/bin/llama-server-turboquant",
             "host": "127.0.0.1",
             "port": 8080,
-            "ctx": 8192,
+            "ctx": 4096,
             "max_tokens": 1024,
             "temperature": 0.7,
             "top_p": 0.8,
@@ -35,6 +44,8 @@
             "presence_penalty": 1.5,
             "ngl": 99,
             "reasoning": "off",
+            "cache_type_k": "q8_0",
+            "cache_type_v": "turbo4",
             "timeout_sec": 120
         },
         "broker": {

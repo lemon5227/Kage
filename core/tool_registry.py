@@ -28,6 +28,8 @@ class ToolRegistry:
 
     def __init__(self):
         self._tools: dict[str, ToolDefinition] = {}
+        self._schemas_cache: list[dict] | None = None
+        self._descriptions_cache: str | None = None
 
     def register(self, tool_def: ToolDefinition) -> None:
         """注册工具。名称冲突时覆盖并记录警告。"""
@@ -46,6 +48,9 @@ class ToolRegistry:
             logger.warning("覆盖已存在的工具: %s", tool_def.name)
         
         self._tools[tool_def.name] = tool_def
+        # Invalidate caches
+        self._schemas_cache = None
+        self._descriptions_cache = None
 
     def get_handler(self, tool_name: str) -> Optional[Callable]:
         """获取工具的 handler 函数，不存在返回 None。"""
@@ -58,25 +63,33 @@ class ToolRegistry:
         return tool.safety_level if tool else "SAFE"
 
     def get_all_schemas(self) -> list[dict]:
-        """返回所有工具的 OpenAI Function Calling 格式 Schema。"""
-        schemas = []
-        for tool in self._tools.values():
-            schemas.append({
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": tool.parameters,
+        """返回所有工具的 OpenAI Function Calling 格式 Schema (cached).
+
+        Cache invalidates whenever register() is called. Tools are effectively
+        immutable after startup, so this is invoked thousands of times against
+        an unchanged registry — caching avoids rebuilding ~30 dicts per call.
+        """
+        if self._schemas_cache is None:
+            self._schemas_cache = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.parameters,
+                    },
                 }
-            })
-        return schemas
+                for tool in self._tools.values()
+            ]
+        return self._schemas_cache
 
     def get_tool_descriptions(self) -> str:
-        """返回所有工具的文本描述（用于系统提示词）。"""
-        lines = []
-        for tool in self._tools.values():
-            lines.append(f"- {tool.name}: {tool.description}")
-        return "\n".join(lines)
+        """返回所有工具的文本描述（用于系统提示词，已缓存）。"""
+        if self._descriptions_cache is None:
+            self._descriptions_cache = "\n".join(
+                f"- {tool.name}: {tool.description}" for tool in self._tools.values()
+            )
+        return self._descriptions_cache
 
     def get_tool_names(self) -> list[str]:
         """返回所有已注册工具名称。"""

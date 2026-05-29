@@ -22,14 +22,16 @@ class TestChatSanitization(unittest.TestCase):
         self.server = object.__new__(KageServer)
 
     def test_polish_removes_capability_brags(self):
+        from core.chat_polisher import polish_chat_response
         raw = "💖你好！我能做3项事：系统控制、计算、文件工具哒！ 😤 你还哒"
-        out = self.server._polish_chat_response(raw)
+        out = polish_chat_response(raw)
         self.assertNotIn("我能做", out)
 
     def test_polish_strips_filler_particles(self):
-        self.assertEqual(self.server._polish_chat_response("好的哒！"), "好的")
-        self.assertEqual(self.server._polish_chat_response("嗯哒"), "嗯")
-        self.assertEqual(self.server._polish_chat_response("哇哇！💖你今天高兴吗？哒"), "哇哇！💖你今天高兴吗？")
+        from core.chat_polisher import polish_chat_response
+        self.assertEqual(polish_chat_response("好的哒！"), "好的")
+        self.assertEqual(polish_chat_response("嗯哒"), "嗯")
+        self.assertEqual(polish_chat_response("哇哇！💖你今天高兴吗？哒"), "哇哇！💖你今天高兴吗？")
 
     def test_sanitize_for_speech_removes_system_blocks(self):
         raw = "你好<system-reminder>SECRET\nLINE</system-reminder>世界"
@@ -37,8 +39,9 @@ class TestChatSanitization(unittest.TestCase):
         self.assertEqual(out, "你好世界")
 
     def test_polish_strips_thinking_process_preamble(self):
+        from core.chat_polisher import polish_chat_response
         raw = "Thinking Process:\n\n1. analyze\n2. answer"
-        out = self.server._polish_chat_response(raw)
+        out = polish_chat_response(raw)
         self.assertEqual(out, "嗯")
 
     def test_sanitize_for_speech_prefers_final_answer_after_thinking(self):

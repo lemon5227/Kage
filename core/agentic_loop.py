@@ -26,6 +26,8 @@ import urllib.parse
 from dataclasses import dataclass, field
 
 from core.trace import Span, log
+from core.intent_keywords import needs_tool_action as _needs_tool_action, primitive_tool_hint as _primitive_tool_hint
+from core.weather_service import normalize_city_for_weather
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +50,58 @@ def detect_repetition(text: str, substr_len: int = 10, threshold: int = 3) -> bo
     """Return True if any 10-char substring appears >= 3 times."""
     if len(text) < substr_len:
         return False
+    counts: dict[str, int] = {}
     for i in range(len(text) - substr_len + 1):
         sub = text[i:i + substr_len]
-        if text.count(sub) >= threshold:
+        c = counts.get(sub, 0) + 1
+        if c >= threshold:
             return True
+        counts[sub] = c
     return False
+
+
+# Precompiled regex constants for hot-path heuristics. These are called on every
+# user turn (or every agentic loop step) so module-level compilation matters.
+_RE_FILE_ACTION = re.compile(
+    r"整理|归档|移动|挪到|放到|改名|重命名|批量|文件夹|文件|目录|路径|查找文件|找一下文件|找个文件"
+)
+_RE_WEB_INFO = re.compile(r"查一下|搜一下|来源|是否真实|核实|辟谣|机票|价格|便宜")
+_RE_SYSTEM_CTL = re.compile(r"音量|亮度|wifi|蓝牙|打开应用|启动", re.IGNORECASE)
+
+_RE_FS_BATCH = re.compile(r"整理|归档|移动|挪到|放到|改名|重命名|批量")
+_RE_FS_FIND = re.compile(r"找|查找|在哪|路径|目录|文件夹|文件")
+_RE_SYSTEM_CTL_PRIM = re.compile(
+    r"音量|亮度|wifi|wi-fi|蓝牙|bluetooth|打开应用|启动|关闭应用|退出", re.IGNORECASE
+)
+_RE_OPEN_WEBSITE = re.compile(r"打开.*网站|官网|网页|浏览器|打开.*\.(com|cn|net|org)")
+_RE_SEARCH_INTENT = re.compile(r"查一下|搜一下|搜索|找一下|对比|便宜|价格|机票")
+
+_RE_RELATION = re.compile(
+    r"我(的)?(朋友|同事|同学|老板|下属|家人|父母|兄弟|姐妹|男朋友|女朋友|男友|女友)([\u4e00-\u9fff]{2,4})"
+)
+_RE_NEGATION_STRIP = re.compile(r".*?(不(喜欢|吃)|讨厌|不再).*?(了)?$")
+
+# Negation detection patterns (compiled list for early-exit any() loop)
+_RE_NEGATIONS = [
+    re.compile(p) for p in (
+        r"不(喜欢|爱|吃|想要|想|习惯)(了)?$",
+        r"讨厌(死|极了|得很|了)?$",
+        r"不再(喜欢|吃|习惯|想要)",
+        r"以后不(吃|喜欢|要)",
+        r"改(吃|喜欢|习惯)",
+        r"换(了)?(口味|习惯)",
+    )
+]
+
+# Skill description scoring patterns
+_RE_WHITESPACE = re.compile(r"\s+")
+
+# Weather city extraction patterns
+_RE_WEATHER_CITY = re.compile(r"([\u4e00-\u9fffA-Za-z·\-]{1,20})\s*(的)?\s*天气")
+_RE_WEATHER_FILLER = re.compile(
+    r"^(帮我查一下|帮我查下|查一下|查下|查询|帮我|请|麻烦|帮忙|希望|想|我想|我想要)"
+)
+_RE_WEATHER_TIME_PREFIX = re.compile(r"^(今天|明天|后天)")
 
 
 class AgenticLoop:
@@ -61,11 +110,20 @@ class AgenticLoop:
     MAX_STEPS = 5
 
     def __init__(self, model_provider, tool_executor, prompt_builder,
-                 session_manager):
+                 session_manager, memory_system=None, memory_profile=None):
         self.model = model_provider
         self.tools = tool_executor
         self.prompt = prompt_builder
         self.session = session_manager
+        self.memory = memory_system
+        self.profile = memory_profile
+        # Memory write frequency control: batch facts
+        self._pending_facts: list[dict] = []
+        self._fact_batch_size = 3  # Write to memory every N facts
+        self._fact_batch_timeout = 300  # Or every 5 minutes (not yet implemented)
+        # LLM-assisted fact extraction
+        self._llm_extractor = None
+        self._use_llm_extraction = True  # Enable LLM extraction by default
 
     async def run(self, user_input: str,
                   current_emotion: str = "neutral") -> LoopResult:
@@ -470,8 +528,8 @@ class AgenticLoop:
                                 "error_type": getattr(save_res, "error_type", None),
                                 "error_message": getattr(save_res, "error_message", None),
                             })
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.warning("Skill autosave failed: %s", exc)
 
                     emotion = self._determine_emotion(tool_calls_executed)
                     return LoopResult(
@@ -765,6 +823,178 @@ class AgenticLoop:
                 outer.end(steps=last_step, tools=len(tool_calls_executed))
             except Exception:
                 pass
+            # Memory extraction: extract facts from the conversation turn
+            await self._extract_memory_if_available(base_user_input, last_text or "")
+
+    async def _extract_memory_if_available(self, user_input: str, assistant_response: str) -> None:
+        """Extract and store facts from a conversation turn after the loop completes.
+
+        Uses batch writing: facts are accumulated in memory and flushed when
+        the batch size threshold is reached, reducing I/O overhead.
+
+        Uses LLM-assisted extraction if enabled and available, falling back
+        to rule-based extraction.
+        """
+        if not self.memory:
+            return
+
+        # Skip very short or meaningless exchanges
+        if len(user_input.strip()) < 4:
+            return
+
+        try:
+            # Try LLM extraction first if enabled
+            facts = []
+            if self._use_llm_extraction:
+                if self._llm_extractor is None:
+                    from core.memory_llm_extractor import LLMFactExtractor
+                    self._llm_extractor = LLMFactExtractor(model_provider=self.model)
+                try:
+                    llm_facts = await self._llm_extractor.extract_facts(
+                        user_input, assistant_response
+                    )
+                except Exception as exc:
+                    logger.warning("LLM fact extraction failed: %s", exc)
+                    llm_facts = []
+                if llm_facts:
+                    facts = llm_facts
+
+            # Fall back to rule-based extraction if LLM failed or returned nothing
+            if not facts:
+                facts = self.memory.add_conversation_facts(
+                    user_input=user_input,
+                    assistant_response=assistant_response,
+                )
+
+            # Auto-update profile from extracted facts
+            if facts and self.profile:
+                self._update_profile_from_facts(facts)
+
+            # Batch tracking
+            if facts:
+                self._pending_facts.extend(facts)
+                self._flush_facts_if_needed()
+
+        except Exception as exc:
+            logger.warning("Memory extraction failed: %s", exc)
+
+    def _flush_facts_if_needed(self) -> None:
+        """Flush pending facts to persistent storage if batch threshold is met.
+
+        Persists each batched fact via memory.add_fact() before clearing the buffer
+        so that LLM-extracted facts are not silently dropped.
+        """
+        if len(self._pending_facts) < self._fact_batch_size:
+            return
+        self._persist_pending_facts(forced=False)
+
+    def flush_pending_facts(self) -> None:
+        """Force flush all pending facts. Call during shutdown."""
+        if not self._pending_facts:
+            return
+        self._persist_pending_facts(forced=True)
+
+    def _persist_pending_facts(self, *, forced: bool) -> None:
+        """Persist all queued facts then clear the buffer.
+
+        If self.memory is None, the queue is still cleared so it doesn't
+        grow unboundedly when persistence is disabled.
+        """
+        count = len(self._pending_facts)
+        if self.memory:
+            for fact in self._pending_facts:
+                if not isinstance(fact, dict):
+                    continue
+                content = fact.get("content")
+                if not content:
+                    continue
+                try:
+                    self.memory.add_fact(
+                        content=str(content),
+                        category=str(fact.get("category", "other")),
+                        importance=int(fact.get("importance", 2)),
+                        emotion=str(fact.get("emotion", "neutral")),
+                    )
+                except Exception as exc:
+                    logger.warning("Failed to persist batched fact: %s", exc)
+        self._pending_facts.clear()
+        prefix = "Force flushed" if forced else "Flushed"
+        logger.info("%s %d pending facts to memory", prefix, count)
+
+    def _update_profile_from_facts(self, facts: list[dict]) -> None:
+        """Update the user profile from extracted facts with conflict detection.
+
+        Implements upsert logic: if a new fact contradicts an existing profile
+        entry, the newer one wins (with importance-based confidence check).
+        """
+        if not self.profile:
+            return
+
+        for fact in facts:
+            content = fact.get("content", "")
+            category = fact.get("category", "")
+            importance = fact.get("importance", 1)
+
+            # Only update profile from high-confidence, high-importance facts
+            if importance < 3:
+                continue
+
+            # Check for negation — user is changing their mind
+            is_negation = self._is_negation(content)
+
+            if category == "preference":
+                if "吃" in content or "菜" in content or "食物" in content or "辣" in content:
+                    if is_negation:
+                        # Extract what the user no longer likes
+                        import re
+                        negated = _RE_NEGATION_STRIP.sub("", content).strip()
+                        if negated:
+                            self.profile.update_preference("food", "food_preference", f"不喜欢: {negated}")
+                        else:
+                            self.profile.update_preference("food", "food_preference", content)
+                    else:
+                        self.profile.update_preference("food", "food_preference", content)
+                elif "音乐" in content or "歌" in content or "听" in content:
+                    if is_negation:
+                        self.profile.update_preference("music", "music_preference", content)
+                    else:
+                        self.profile.update_preference("music", "music_preference", content)
+            elif category == "habit":
+                if "睡" in content or "起" in content or "作息" in content:
+                    self.profile.add_habit("sleep", content)
+                elif "工作" in content or "写代码" in content or "编程" in content:
+                    self.profile.add_habit("work", content)
+                elif "跑步" in content or "运动" in content or "健身" in content:
+                    self.profile.add_habit("exercise", content)
+            elif category == "location":
+                if "北京" in content or "上海" in content or "广州" in content or "深圳" in content:
+                    for city in ["北京", "上海", "广州", "深圳", "杭州", "成都", "南京", "武汉", "重庆", "西安"]:
+                        if city in content:
+                            self.profile.update_preference("location", "city", city)
+                            break
+            elif category == "relationship":
+                # Try to extract name and relationship
+                import re
+                # Pattern 1: "我朋友小明" -> name=小明, rel=朋友
+                m = _RE_RELATION.search(content)
+                if m:
+                    rel = m.group(2)
+                    name = m.group(3)
+                    self.profile.add_relationship(name, rel, content)
+
+    @staticmethod
+    def _is_negation(text: str) -> bool:
+        """Detect if the user is negating or changing a previous preference.
+
+        Examples:
+        - "我不吃川菜了" → True
+        - "我讨厌香菜" → True
+        - "我喜欢川菜" → False
+        """
+        for pattern in _RE_NEGATIONS:
+            if pattern.search(text):
+                return True
+        return False
 
     @staticmethod
     def _needs_tool_action(user_input: str) -> bool:
@@ -773,13 +1003,13 @@ class AgenticLoop:
         if not s:
             return False
         # File actions
-        if re.search(r"整理|归档|移动|挪到|放到|改名|重命名|批量|文件夹|文件|目录|路径|查找文件|找一下文件|找个文件", s):
+        if _RE_FILE_ACTION.search(s):
             return True
         # Web/info
-        if re.search(r"查一下|搜一下|来源|是否真实|核实|辟谣|机票|价格|便宜", s):
+        if _RE_WEB_INFO.search(s):
             return True
         # System control
-        if re.search(r"音量|亮度|wifi|蓝牙|打开应用|启动", s, re.IGNORECASE):
+        if _RE_SYSTEM_CTL.search(s):
             return True
         return False
 
@@ -810,21 +1040,21 @@ class AgenticLoop:
         low = s.lower()
 
         # File operations (prefer when both match)
-        if re.search(r"整理|归档|移动|挪到|放到|改名|重命名|批量", s):
+        if _RE_FS_BATCH.search(s):
             return "fs_apply（批量 move/rename/write），必要时先 fs_preview"
 
         # File discovery
-        if re.search(r"找|查找|在哪|路径|目录|文件夹|文件", s):
+        if _RE_FS_FIND.search(s):
             return "fs_search（全盘查找文件/文件夹）"
 
         # System control
-        if re.search(r"音量|亮度|wifi|wi-fi|蓝牙|bluetooth|打开应用|启动|关闭应用|退出", low, re.IGNORECASE):
+        if _RE_SYSTEM_CTL_PRIM.search(low):
             return "system_control（系统控制），如有现成 shortcut 可用 shortcuts_run"
 
         # Web / open
-        if re.search(r"打开.*网站|官网|网页|浏览器|打开.*\.(com|cn|net|org)", low):
+        if _RE_OPEN_WEBSITE.search(low):
             return "open_website 或 open_url"
-        if re.search(r"查一下|搜一下|搜索|找一下|对比|便宜|价格|机票", s):
+        if _RE_SEARCH_INTENT.search(s):
             return "smart_search / web_fetch / open_url"
 
         return "fs_search/fs_apply/system_control/open_url/smart_search（按需选择）"
@@ -917,52 +1147,6 @@ class AgenticLoop:
             guidance = guidance[:2000] + "\n[...snip...]"
 
         return sname or title or "skill", guidance
-
-    @staticmethod
-    def _score_skill_page(page_text: str, user_request: str) -> int:
-        """Very small relevance score for a skills.sh page.
-
-        We extract name/description if present and do token overlap.
-        """
-        txt = str(page_text or "")
-        req = str(user_request or "")
-        if not txt or not req:
-            return 0
-
-        head = "\n".join(txt.splitlines()[:80]).lower()
-        req_low = req.lower()
-
-        # Prefer explicit description/name signals.
-        desc = ""
-        m = re.search(r"^description:\s*(.+)$", head, re.MULTILINE)
-        if m:
-            desc = m.group(1).strip()
-        name = ""
-        m2 = re.search(r"^name:\s*(.+)$", head, re.MULTILINE)
-        if m2:
-            name = m2.group(1).strip()
-
-        hay = (name + " " + desc + " " + head)
-
-        score = 0
-        # Strong signals
-        if req_low and req_low in hay:
-            score += 8
-        # Token overlap
-        for tok in re.split(r"\s+", req_low):
-            tok = tok.strip()
-            if not tok:
-                continue
-            if tok in hay:
-                score += 1
-
-        # Chinese char overlap (coarse)
-        if re.search(r"[\u4e00-\u9fff]", req):
-            for ch in req:
-                if "\u4e00" <= ch <= "\u9fff" and ch in hay:
-                    score += 1
-
-        return score
 
     def _summarize_steps(self, tool_calls: list[dict]) -> str:
         """Summarize executed steps when max iterations reached."""
@@ -1102,7 +1286,7 @@ class AgenticLoop:
                     content = str((payload or {}).get("content") or "").strip()
                     if content:
                         # Keep concise and avoid reading long irrelevant blocks.
-                        cleaned = re.sub(r"\s+", " ", content)
+                        cleaned = _RE_WHITESPACE.sub(" ", content)
                         if is_weather:
                             return f"我查到了{city}天气信息：{cleaned[:80]}"
                         return f"我已抓取到信息：{cleaned[:80]}"
@@ -1212,12 +1396,12 @@ class AgenticLoop:
     @staticmethod
     def _extract_weather_city(user_input: str) -> str:
         s = str(user_input or "").strip()
-        m = re.search(r"([\u4e00-\u9fffA-Za-z·\-]{1,20})\s*(的)?\s*天气", s)
+        m = _RE_WEATHER_CITY.search(s)
         if m:
             city = str(m.group(1) or "").strip(" ，,。.!！?")
             # remove common fillers and temporal words accidentally captured
-            city = re.sub(r"^(帮我查一下|帮我查下|查一下|查下|查询|帮我|请|麻烦|帮忙|希望|想|我想|我想要)", "", city)
-            city = re.sub(r"^(今天|明天|后天)", "", city)
+            city = _RE_WEATHER_FILLER.sub("", city)
+            city = _RE_WEATHER_TIME_PREFIX.sub("", city)
             city = city.strip(" ，,。.!！?")
             city = city.strip()
             if city:
@@ -1226,25 +1410,8 @@ class AgenticLoop:
 
     @staticmethod
     def _normalize_city_for_weather_api(city: str) -> str:
-        c = str(city or "").strip()
-        mapping = {
-            "尼斯": "Nice",
-            "上海": "Shanghai",
-            "北京": "Beijing",
-            "广州": "Guangzhou",
-            "深圳": "Shenzhen",
-            "杭州": "Hangzhou",
-            "南京": "Nanjing",
-            "成都": "Chengdu",
-            "武汉": "Wuhan",
-            "重庆": "Chongqing",
-            "西安": "Xi'an",
-            "天津": "Tianjin",
-            "香港": "Hong Kong",
-            "澳门": "Macau",
-            "台北": "Taipei",
-        }
-        return mapping.get(c, c or "Shanghai")
+        """Delegate to shared weather service."""
+        return normalize_city_for_weather(city)
 
     @staticmethod
     def _format_weather_from_wttr_result(tool_call: dict, city: str, day_offset: int = 0) -> str:

@@ -69,7 +69,8 @@ class KageMouth:
             # Safe to clean up here as we are blocking.
             try:
                 os.remove(file_path)
-            except: pass
+            except OSError:
+                pass
             return not self._stop_event.is_set()
         except Exception as e:
             print(f"Error playing audio: {e}")

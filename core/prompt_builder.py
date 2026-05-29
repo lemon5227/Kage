@@ -27,6 +27,31 @@ logger = logging.getLogger(__name__)
 # Approximate: 1 token ≈ 1.5 Chinese chars or 4 English chars
 _AVG_CHARS_PER_TOKEN = 3
 
+# Keyword sets for route classification (frozen for O(1) membership + no rebuild)
+_FILE_KEYWORDS = frozenset(("文件", "目录", "文件夹", "路径", "代码", "项目", "仓库", "readme", ".py", ".ts", ".md"))
+_SYSTEM_KEYWORDS = frozenset((
+    "打开", "启动", "关闭", "调高", "调低", "音量", "亮度", "wifi", "蓝牙", "截图", "截屏", "undo", "撤销",
+    "太暗", "太亮", "太小声", "太大声", "太吵", "听不清", "看不清", "静音",
+))
+_INFO_KEYWORDS = frozenset(("天气", "新闻", "查", "搜索", "搜", "资料", "官网", "网页", "网站", "链接", "汇率", "股价", "价格", "机票"))
+_WEB_KEYWORDS = frozenset(("天气", "新闻", "查", "搜索", "搜", "资料", "官网", "网页", "网站", "链接"))
+_OPEN_KEYWORDS = frozenset(("打开", "open", "launch"))
+_SYSTEM_CTRL_KEYWORDS = frozenset(("音量", "亮度", "wifi", "蓝牙", "静音", "截屏", "截图", "screenshot"))
+
+# Tool name sets (frozen constants)
+_TOOLS_CMD = frozenset({
+    "exec", "get_time", "open_url", "open_website", "open_app",
+    "fs_search", "fs_preview", "fs_apply", "fs_undo_last",
+    "system_control", "shortcuts_run", "shortcuts_list", "shortcuts_view",
+})
+_TOOLS_BASE = frozenset({
+    "exec", "get_time", "smart_search", "web_fetch", "web_search",
+    "open_url", "open_website", "open_app",
+    "fs_search", "fs_preview", "fs_apply", "fs_undo_last",
+    "system_control", "system_capabilities",
+    "shortcuts_list", "shortcuts_view", "shortcuts_run",
+})
+
 
 class PromptBuilder:
     """动态提示词组装，管理 token 预算，双通道工具呈现"""
@@ -69,6 +94,7 @@ class PromptBuilder:
         max_context_tokens: int = 4096,
         memory_cfg: Optional[dict] = None,
         prune_tools: bool = False,
+        memory_profile=None,
     ):
         self.identity = identity_store
         self.memory = memory_system
@@ -77,6 +103,7 @@ class PromptBuilder:
         self.memory_cfg = memory_cfg or {}
         self.prune_tools = bool(prune_tools)
         self.last_route: str = "chat"
+        self.profile = memory_profile
 
     def classify_route(self, user_input: str) -> str:
         """Classify request into command/info/chat for routing."""
@@ -84,12 +111,9 @@ class PromptBuilder:
         if not text:
             return "chat"
 
-        has_file = any(k in text for k in ("文件", "目录", "文件夹", "路径", "代码", "项目", "仓库", "readme", ".py", ".ts", ".md"))
-        has_system = any(k in text for k in (
-            "打开", "启动", "关闭", "调高", "调低", "音量", "亮度", "wifi", "蓝牙", "截图", "截屏", "undo", "撤销",
-            "太暗", "太亮", "太小声", "太大声", "太吵", "听不清", "看不清", "静音",
-        ))
-        has_info = any(k in text for k in ("天气", "新闻", "查", "搜索", "搜", "资料", "官网", "网页", "网站", "链接", "汇率", "股价", "价格", "机票"))
+        has_file = any(k in text for k in _FILE_KEYWORDS)
+        has_system = any(k in text for k in _SYSTEM_KEYWORDS)
+        has_info = any(k in text for k in _INFO_KEYWORDS)
 
         if text.startswith("/") or has_file or has_system:
             return "command"
@@ -97,79 +121,36 @@ class PromptBuilder:
             return "info"
         return "chat"
 
-    def _select_tool_names(self, user_input: str) -> list[str] | None:
+    def _select_tool_names(self, user_input: str, route: str = "") -> list[str] | None:
         """Best-effort tool pruning to reduce prompt size and latency."""
         text = str(user_input or "").strip().lower()
         if not text:
             return None
 
-        route = self.classify_route(text)
+        if not route:
+            route = self.classify_route(text)
 
         if route == "info":
-            is_weather = "天气" in text
-            if is_weather:
+            if "天气" in text:
                 return ["smart_search", "web_fetch"]
             return ["smart_search", "web_fetch", "web_search", "get_time"]
 
         if route == "command":
-            base_cmd = {
-                "exec",
-                "get_time",
-                "open_url",
-                "open_website",
-                "open_app",
-                "fs_search",
-                "fs_preview",
-                "fs_apply",
-                "fs_undo_last",
-                "system_control",
-                "shortcuts_run",
-                "shortcuts_list",
-                "shortcuts_view",
-            }
-            return sorted(base_cmd)
+            return sorted(_TOOLS_CMD)
 
-        base = {
-            # Essential
-            "exec",
-            "get_time",
-            # Web/info
-            "smart_search",
-            "web_fetch",
-            # For test registries / legacy naming
-            "web_search",
-            # Open things
-            "open_url",
-            "open_website",
-            "open_app",
-            # Files (common)
-            "fs_search",
-            "fs_preview",
-            "fs_apply",
-            "fs_undo_last",
-            # System
-            "system_control",
-            "system_capabilities",
-            # Shortcuts
-            "shortcuts_list",
-            "shortcuts_view",
-            "shortcuts_run",
-        }
-
-        is_weather = "天气" in text
-        is_web = any(k in text for k in ("天气", "新闻", "查", "搜索", "搜", "资料", "官网", "网页", "网站", "链接"))
-        is_open = any(k in text for k in ("打开", "open", "launch"))
-        is_file = any(k in text for k in ("文件", "目录", "文件夹", "路径", "代码", "项目", "仓库", "readme", ".py", ".ts", ".md"))
-        is_system = any(k in text for k in ("音量", "亮度", "wifi", "蓝牙", "静音", "截屏", "截图", "screenshot"))
+        is_web = any(k in text for k in _WEB_KEYWORDS)
+        is_open = any(k in text for k in _OPEN_KEYWORDS)
+        is_file = any(k in text for k in _FILE_KEYWORDS)
+        is_system = any(k in text for k in _SYSTEM_CTRL_KEYWORDS)
 
         # Pure info queries should keep tool schemas minimal.
         if is_web and not is_file and not is_system and not is_open:
             core = {"smart_search", "web_fetch", "web_search", "get_time"}
-            if is_weather:
+            if "天气" in text:
                 core = {"smart_search", "web_fetch"}
             return sorted(core)
 
-        chosen = set(base)
+        chosen = set(_TOOLS_BASE)
 
         if is_web:
             chosen.update({"smart_search", "web_fetch"})
@@ -230,7 +211,7 @@ class PromptBuilder:
         log("prompt", "tools.schemas", count=len(tool_schemas))
 
         if self.prune_tools and tool_schemas:
-            allow = self._select_tool_names(user_input)
+            allow = self._select_tool_names(user_input, route=route)
             if allow:
                 allow_set = set(allow)
                 tool_schemas = [
@@ -307,6 +288,13 @@ class PromptBuilder:
 
         # Assemble system prompt
         system_parts = [soul, user_info, f"当前时间: {now}"]
+
+        # Inject user profile summary if available
+        if self.profile:
+            profile_summary = self.profile.get_profile_summary()
+            if profile_summary.strip():
+                system_parts.append(f"【用户档案】\n{profile_summary}")
+
         if memory_text:
             system_parts.append(memory_text)
         if tools_text:

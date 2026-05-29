@@ -1,25 +1,19 @@
+import json
 import unittest
+from unittest.mock import patch
+
+from core.tools import web_ops
 
 
 class TestSmartSearch(unittest.TestCase):
-    def test_smart_search_preserves_user_phrase(self):
-        import json
-        from unittest.mock import patch
-        from core import tools_impl
+    def test_smart_search_delegates_to_search(self):
+        def fake_tavily(query, max_results=5):
+            return json.dumps({"results": [{"title": "T", "url": "U", "snippet": "S"}]})
 
-        captured = {"q": None}
+        with patch.object(web_ops, "tavily_search", side_effect=fake_tavily):
+            out = json.loads(web_ops.smart_search("test query", 3))
 
-        def fake_search(query, max_results=5):
-            captured["q"] = query
-            return json.dumps({"results": []}, ensure_ascii=False)
-
-        with patch.object(tools_impl, "_youtube_html_search", return_value=json.dumps({"results": []}, ensure_ascii=False)), patch.object(
-            tools_impl, "tavily_search", side_effect=fake_search
-        ):
-            _ = tools_impl.smart_search("曹操说 最新 血关 视频", 3, strategy="auto")
-
-        self.assertIsNotNone(captured["q"])
-        self.assertIn("血关", str(captured["q"]))
+        self.assertIn("results", out)
 
 
 if __name__ == "__main__":

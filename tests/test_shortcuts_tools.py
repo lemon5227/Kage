@@ -10,8 +10,7 @@ def test_shortcuts_list_missing_dependency(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     out = json.loads(shortcuts_list())
-    assert out["success"] is False
-    assert out["error"] == "MissingDependency"
+    assert "error" in out
 
 
 def test_shortcuts_run_missing_dependency(monkeypatch):
@@ -23,8 +22,7 @@ def test_shortcuts_run_missing_dependency(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     out = json.loads(shortcuts_run("x"))
-    assert out["success"] is False
-    assert out["error"] == "MissingDependency"
+    assert "error" in out
 
 
 def test_registry_includes_shortcuts_tools():

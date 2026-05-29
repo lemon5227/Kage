@@ -81,7 +81,7 @@ def test_scan_skills_directory_recurses_for_skill_md(tmp_path):
 
 
 def test_parse_skills_find_output():
-    from core.tools_impl import _parse_skills_find_output
+    from core.tools.skill_ops import parse_skills_find_output
 
     sample = textwrap.dedent(
         """\
@@ -95,7 +95,7 @@ def test_parse_skills_find_output():
         """
     )
 
-    results = _parse_skills_find_output(sample, max_results=5)
+    results = parse_skills_find_output(sample, max_results=5)
     assert results
     assert results[0]["ref"] == "vercel-labs/skills@find-skills"
     assert results[0]["url"].startswith("https://skills.sh/")

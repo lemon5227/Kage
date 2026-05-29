@@ -1,6 +1,7 @@
 # pyright: reportGeneralTypeIssues=false
 import asyncio
 import json
+import logging
 import traceback
 import random
 import time
@@ -13,15 +14,15 @@ import sys
 import datetime
 import os
 import contextlib
-from urllib.parse import quote
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.websockets import WebSocketState
 import shutil
 import uvicorn
 from uuid import uuid4
+from urllib.parse import quote, urlencode
 from typing import Any
-from core.audio_orchestrator import AudioOrchestrator
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.websockets import WebSocketState
+from core.avatar_animation import AvatarAnimation
 from core.background_lane import BackgroundLane
 from core.background_worker import BackgroundWorker
 from core.dialog_state_machine import DialogStateMachine
@@ -60,7 +61,57 @@ from core.realtime_lane import (
     is_cancel_text,
     is_confirm_text,
 )
+from core.media_controller import media_control as _media_control_engine
+from core.speech_engine import mouth_speak as _mouth_speak_engine
+from core.route_classifier import (
+    classify_route,
+    is_route_ambiguous,
+    should_try_tools,
+    extract_location_from_text,
+    classify_route_by_model,
+)
+from core.chat_polisher import (
+    polish_chat_response,
+    is_bad_chat_response,
+    infer_chat_topic,
+    structured_chat_followup,
+    fallback_chat_response,
+    short_care_phrase,
+    filter_chat_text,
+    collapse_repeats,
+)
 from core.trace import log
+
+logger = logging.getLogger(__name__)
+
+
+# Precompiled regex for _extract_city stopword removal.
+# Sorted by length descending so longer phrases match before shorter substrings.
+_CITY_STOPWORDS = [
+    "天气", "怎么样", "如何", "今天", "现在", "查询", "查", "一下", "看看", "帮我",
+    "的", "吗", "么", "呀", "啊", "呢", "是不是", "想", "告诉我",
+    "我说", "我想", "我问", "我", "说", "问",
+    "晚上", "今晚上", "今晚", "明天", "后天", "上午", "下午", "早上", "中午",
+    "嗯", "嗯嗯", "额", "呃", "唉", "em",
+    "当地", "本地", "这里", "我这", "我们这",
+    "所以", "那", "然后", "不过", "就是", "此刻",
+    "去", "去查", "去看看", "去问", "帮我查", "帮我问",
+    "网络", "网上", "搜索", "搜", "搜下", "搜一下", "网络搜", "网络查询", "网络搜一下",
+]
+_CITY_STOPWORDS_RE = re.compile(
+    "|".join(re.escape(w) for w in sorted(set(_CITY_STOPWORDS), key=len, reverse=True))
+)
+_CITY_TOKEN_RE = re.compile(r"[A-Za-z\u4e00-\u9fff]+")
+
+# Location correction patterns for _quick_chat_response (called every text turn)
+_RE_LOCATION_CORRECTION = re.compile(
+    r"我不在([A-Za-z\u4e00-\u9fff]{2,})\s*.*我在([A-Za-z\u4e00-\u9fff]{2,})"
+)
+_RE_LOCATION_SET = re.compile(r"我(?:现在)?在\s*([A-Za-z\u4e00-\u9fff]{2,})")
+
+# Fast-path cache bounds (per-query keys can grow unbounded otherwise).
+_FAST_CACHE_MAX = 256
+_FAST_CACHE_STALE_SEC = 600  # entries older than this get pruned first
 
 
 def _env_truthy(name: str) -> bool:
@@ -120,18 +171,11 @@ from core.intent_router import is_undo_request
 
 # Import Kage Core Components
 # Assuming this file is core/server.py, we need to adjust paths if necessary
-# But since we run from root usually, we rely on sys.path or relative imports if in package.
-# We will setup sys.path in __main__ execution or assume module usage.
-import sys
-import os
-
 # Ensure we can import from the same directory or parent
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
-
- 
 
 from contextlib import asynccontextmanager
 
@@ -379,10 +423,10 @@ async def lifespan(app: FastAPI):
     _main_loop = asyncio.get_running_loop()
     mode = os.environ.get("KAGE_MODE", "runtime").strip().lower()
     if mode == "control":
-        print("🚦 Lifespan Startup: control mode (skip heavy init)")
+        logger.info("Lifespan Startup: control mode (skip heavy init)")
     else:
         if kage_server is None:
-            print("🚦 Lifespan Startup: initializing KageServer...")
+            logger.info("Lifespan Startup: initializing KageServer...")
             kage_server = KageServer(config=_load_effective_config())
         # Optionally auto-start the main loop (mic / wakeword) even without a
         # websocket client connected.
@@ -391,18 +435,24 @@ async def lifespan(app: FastAPI):
         if autostart_env in ("1", "true", "yes", "on") or always_listen_env in ("1", "true", "yes", "on"):
             try:
                 kage_server.ensure_main_loop_started()
-                print("🚀 Main loop autostart enabled")
+                logger.info("Main loop autostart enabled")
             except Exception as e:
-                print(f"⚠️ Failed to autostart main loop: {e}")
+                logger.warning("Failed to autostart main loop: %s", e, exc_info=True)
     yield
     # Shutdown
     if kage_server:
         kage_server.is_running = False
         try:
             await kage_server.background_worker.stop()
-        except Exception:
-            pass
-        print("🛑 Lifespan Shutdown: stopping KageServer...")
+        except Exception as exc:
+            logger.warning("background_worker.stop() failed during shutdown: %s", exc)
+        # Flush pending memory facts before exit
+        try:
+            if hasattr(kage_server, "agentic_loop") and kage_server.agentic_loop:
+                kage_server.agentic_loop.flush_pending_facts()
+        except Exception as exc:
+            logger.warning("flush_pending_facts() failed during shutdown: %s", exc)
+        logger.info("Lifespan Shutdown: stopping KageServer...")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -491,7 +541,7 @@ async def runtime_start():
     def _boot():
         global kage_server
         try:
-            print("🚀 Runtime boot requested")
+            logger.info("Runtime boot requested")
             with _runtime_lock:
                 _runtime_state.update({"stage": "loading_config", "updated_at": time.time()})
             cfg = _load_effective_config()
@@ -499,7 +549,7 @@ async def runtime_start():
                 _runtime_state.update({"stage": "initializing_runtime", "updated_at": time.time()})
 
             kage_server = KageServer(config=cfg)
-            print("✅ Runtime initialized")
+            logger.info("Runtime initialized")
 
             if _main_loop is not None:
                 with _runtime_lock:
@@ -517,7 +567,7 @@ async def runtime_start():
                                 "error": None,
                                 "updated_at": time.time(),
                             })
-                        print("✅ Runtime ready")
+                        logger.info("Runtime ready")
                     except Exception as e:
                         with _runtime_lock:
                             _runtime_state.update({
@@ -526,7 +576,7 @@ async def runtime_start():
                                 "error": str(e),
                                 "updated_at": time.time(),
                             })
-                        print(f"❌ Runtime loop start failed: {e}")
+                        logger.error("Runtime loop start failed: %s", e, exc_info=True)
 
                 _main_loop.call_soon_threadsafe(_start_loop_and_mark_ready)
             else:
@@ -537,9 +587,9 @@ async def runtime_start():
                         "error": None,
                         "updated_at": time.time(),
                     })
-                print("✅ Runtime ready")
+                logger.info("Runtime ready")
         except Exception as e:
-            print(f"❌ Runtime boot failed: {e}")
+            logger.error("Runtime boot failed: %s", e, exc_info=True)
             with _runtime_lock:
                 _runtime_state.update({
                     "status": "error",
@@ -702,10 +752,15 @@ async def start_model_download(payload: dict):
     threading.Thread(target=_run, daemon=True).start()
     return {"job_id": job_id}
 
-# Enable CORS
+# Enable CORS — restrict to Tauri and local dev origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:1420",   # Tauri dev
+        "http://localhost:5173",   # Vite dev
+        "http://localhost:5174",   # Vite dev (alternate)
+        "tauri://localhost",       # Tauri production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -752,7 +807,7 @@ async def list_models():
                     }
                 )
         except Exception as e:
-            print(f"Error listing models: {e}")
+            logger.warning("Error listing models: %s", exc_info=True)
 
         return models
 
@@ -794,6 +849,125 @@ _local_runtime = LocalModelRuntime(
     user_dir=_get_user_dir(),
     managed_model_getter=_get_managed_model,
 )
+
+
+# --- Memory API (Visualization & Management) ---
+
+@app.get("/api/memory/stats")
+async def memory_stats():
+    """Get memory system statistics."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "memory"):
+        return {"error": "memory system not available"}
+    return kage.memory.get_stats()
+
+
+@app.get("/api/memory/entries")
+async def memory_entries(limit: int = 50, offset: int = 0, category: str = ""):
+    """List memory entries with optional filtering."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "memory"):
+        return {"error": "memory system not available"}
+
+    entries, total = kage.memory.get_entries(limit=limit, offset=offset, category=category)
+
+    return {
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "entries": entries,
+    }
+
+
+@app.post("/api/memory/deduplicate")
+async def memory_deduplicate(threshold: float = 0.85):
+    """Remove duplicate memory entries."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "memory"):
+        return {"error": "memory system not available"}
+
+    removed = kage.memory.deduplicate_memories(similarity_threshold=threshold)
+    return {"status": "success", "removed": removed}
+
+
+@app.post("/api/memory/merge")
+async def memory_merge(threshold: float = 0.75):
+    """Merge similar memory entries."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "memory"):
+        return {"error": "memory system not available"}
+
+    merged = kage.memory.merge_similar_facts(similarity_threshold=threshold)
+    return {"status": "success", "merged": merged}
+
+
+@app.get("/api/memory/profile")
+async def memory_profile():
+    """Get the user profile summary."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "prompt_builder") or not kage.prompt_builder.profile:
+        return {"error": "profile not available"}
+
+    return {
+        "profile": kage.prompt_builder.profile.to_dict(),
+        "summary": kage.prompt_builder.profile.get_profile_summary(),
+    }
+
+
+@app.get("/api/memory/profile/history")
+async def memory_profile_history():
+    """Get profile version history."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "prompt_builder") or not kage.prompt_builder.profile:
+        return {"error": "profile not available"}
+
+    versions = kage.prompt_builder.profile.get_version_history()
+    return {"versions": versions}
+
+
+@app.post("/api/memory/profile/restore/{version}")
+async def memory_profile_restore(version: int):
+    """Restore a previous profile version."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "prompt_builder") or not kage.prompt_builder.profile:
+        return {"error": "profile not available"}
+
+    success = kage.prompt_builder.profile.restore_version(version)
+    if success:
+        return {"status": "success", "restored_version": version}
+    return {"status": "error", "message": "version not found"}
+
+
+@app.post("/api/memory/forget")
+async def memory_forget(max_age_days: int = 90, min_importance: int = 2):
+    """Automatically forget old, low-importance memories."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "memory"):
+        return {"error": "memory system not available"}
+
+    forgotten = kage.memory.forget_old_memories(
+        max_age_days=max_age_days,
+        min_importance=min_importance,
+    )
+    return {"status": "success", "forgotten": forgotten}
+
+
+@app.delete("/api/memory/entries/{entry_id}")
+async def memory_delete_entry(entry_id: str):
+    """Delete a specific memory entry."""
+    kage = _get_kage_server()
+    if not kage or not hasattr(kage, "memory"):
+        return {"error": "memory system not available"}
+
+    success = kage.memory.delete_entry(entry_id)
+    if success:
+        return {"status": "success", "deleted": entry_id}
+    return {"status": "error", "message": "entry not found"}
+
+
+def _get_kage_server():
+    """Get the running KageServer instance."""
+    return kage_server
 
 
 @app.get("/api/models/llama/status")
@@ -855,7 +1029,7 @@ async def activate_model(payload: dict):
 
 class KageServer:
     def __init__(self, config: dict | None = None):
-        print("⚙️ Initializing Kage Server (Heavy Load)...")
+        logger.info("Initializing Kage Server (Heavy Load)...")
 
         # Lazy imports to keep Control Plane startup fast
         from core.memory import MemorySystem
@@ -892,15 +1066,20 @@ class KageServer:
             self._wakeword_enabled_cfg = False
 
         # --- Identity Store ---
-        print("🪪 Loading identity store...", flush=True)
+        logger.info("Loading identity store...")
         self.identity_store = IdentityStore()
         self.identity_store.ensure_files_exist()
 
-        print("🧠 Loading memory...", flush=True)
+        logger.info("Loading memory...")
         self.memory = MemorySystem()
+        # Warm up vector model asynchronously to avoid blocking startup
+        def _warmup():
+            self.memory.warmup_model()
+        threading.Thread(target=_warmup, daemon=True, name="memory-warmup").start()
+        logger.info("Vector search model warming up in background...")
 
         # --- Session persistence ---
-        print("📝 Loading session manager...", flush=True)
+        logger.info("Loading session manager...")
         self.session_manager = SessionManager()
         self.session_manager.load_from_file()
 
@@ -910,28 +1089,22 @@ class KageServer:
         realtime_profile = self.model_broker.profile("realtime")
         background_profile = self.model_broker.profile("background")
 
-        print(
-            f"🧠 Realtime model provider: {realtime_profile.mode} ({realtime_profile.name})",
-            flush=True,
-        )
-        print(
-            f"🧠 Background model provider: {background_profile.mode} ({background_profile.name})",
-            flush=True,
-        )
+        logger.info("Realtime model provider: %s (%s)", realtime_profile.mode, realtime_profile.name)
+        logger.info("Background model provider: %s (%s)", background_profile.mode, background_profile.name)
 
         if self._text_only_mode:
-            print("🧪 Text-only mode enabled: skip TTS/ASR init", flush=True)
+            logger.info("Text-only mode enabled: skip TTS/ASR init")
             self.mouth = None
             self.ears = None
         else:
-            print(f"🗣️ Initializing TTS voice: {voice}", flush=True)
+            logger.info("Initializing TTS voice: %s", voice)
             self.mouth = KageMouth(voice=voice)
 
-            print("🎧 Loading ASR models...", flush=True)
+            logger.info("Loading ASR models...")
             self.ears = KageEars(model_id="paraformer-zh")
 
         # --- Tool Registry ---
-        print("🧰 Loading tool registry...", flush=True)
+        logger.info("Loading tool registry...")
         self.tool_registry = create_default_registry(memory_system=self.memory)
         # NOTE: Runtime uses unified ToolRegistry + ToolExecutor + AgenticLoop.
         # Keep runtime tool surface small and deterministic.
@@ -943,16 +1116,21 @@ class KageServer:
         # --- Model Providers by role ---
         self.routing_model_provider = self.model_broker.routing_provider
         self.realtime_model_provider = self.model_broker.realtime_provider
-        self.model_provider = self.model_broker.background_provider
+        self.background_model_provider = self.model_broker.background_provider
+        self.model_provider = self.background_model_provider
         self.fallback_model_provider = self.model_broker.fallback_provider
 
         # --- Prompt Builder (使用新的 Tool_Registry) ---
+        from core.memory_profile import MemoryProfile
+        memory_profile = MemoryProfile()
+
         self.prompt_builder = PromptBuilder(
             identity_store=self.identity_store,
             memory_system=self.memory,
             tool_registry=self.tool_registry,
             memory_cfg=cfg.get("memory", {}) if isinstance(cfg.get("memory", {}), dict) else {},
             prune_tools=True,
+            memory_profile=memory_profile,
         )
 
         # --- Agentic Loop ---
@@ -961,6 +1139,8 @@ class KageServer:
             tool_executor=self.tool_executor,
             prompt_builder=self.prompt_builder,
             session_manager=self.session_manager,
+            memory_system=self.memory,
+            memory_profile=memory_profile,
         )
 
         # --- Heartbeat ---
@@ -993,44 +1173,14 @@ class KageServer:
         self._main_loop_task: asyncio.Task | None = None
         self._ui_state = "IDLE"
         self._speech_revision = 0
-        self.motion_groups = {
-            "Idle": 3,
-            "Tap": 2,
-        }
-        self.motion_group_weights = {
-            "Idle": 1,
-            "Tap": 3,
-        }
-        self.motion_emotion_weights = {
-            "happy": {"Idle": 1, "Tap": 5},
-            "surprised": {"Idle": 1, "Tap": 4},
-            "sad": {"Idle": 4, "Tap": 1},
-            "angry": {"Idle": 2, "Tap": 3},
-        }
-        self.motion_cooldown_sec = 4.0
-        self.motion_cooldown_min_sec = 2.5
-        self.motion_cooldown_max_sec = 6.0
-        self._last_motion_time = 0.0
-        self.expression_duration_base_sec = 2.5
-        self.expression_duration_per_char = 0.04
-        self.expression_duration_min_sec = 2.0
-        self.expression_duration_max_sec = 6.0
-        self.expression_map = {
-            "neutral": "f05",
-            "happy": {
-                "choices": ["f00", "f01"],
-                "weights": [3, 1],
-            },
-            "sad": "f03",
-            "angry": "f07",
-            "fear": "f06",
-            "surprised": "f02",
-        }
+        # Live2D animation config (extracted to independent module)
+        self.avatar_animation = AvatarAnimation()
+        self._last_motion_time = 0.0  # kept for backward compat during transition
         self._fast_cache = {}
         self._text_input_queue: asyncio.Queue = asyncio.Queue()
         self._active_turn_id: str | None = None
         threading.Thread(target=self._prefetch_local_city, daemon=True).start()
-        print("✅ Kage Server Ready!")
+        logger.info("Kage Server Ready!")
 
     # ... (Rest of KageServer methods - same as before) ...
     async def connect(self, websocket: WebSocket):
@@ -1048,12 +1198,12 @@ class KageServer:
             self.dialog_state.clear_pending()
         except Exception:
             pass
-        print("🔌 Client connected!")
+        logger.info("Client connected!")
         await self.send_state("IDLE")
 
     async def disconnect(self):
         self.active_websocket = None
-        print("🔌 Client disconnected")
+        logger.info("Client disconnected")
 
     def ensure_main_loop_started(self):
         """Start the main loop once; keep it running across reconnects."""
@@ -1070,7 +1220,7 @@ class KageServer:
                     payload["turn_id"] = str(self._active_turn_id)
                 await self.active_websocket.send_json(payload)
             except Exception as e:
-                print(f"Send Error: {e}")
+                logger.warning("Send Error: %s", exc_info=True)
 
     def _state_payload(self, state: str) -> dict[str, str]:
         snapshot = self.dialog_state.snapshot()
@@ -1231,15 +1381,15 @@ class KageServer:
 
     async def run_loop(self):
         """The Main Async Event Loop"""
-        print("🚀 Starting Main Loop...")
+        logger.info("Starting Main Loop...")
         
         # Start heartbeat if enabled
         if self._heartbeat_enabled:
             try:
                 await self.heartbeat.start()
-                print("💓 Heartbeat started")
+                logger.info("Heartbeat started")
             except Exception as e:
-                print(f"⚠️ Heartbeat start failed: {e}")
+                logger.warning("Heartbeat start failed: %s", exc_info=True)
 
         # Initial Greeting
         greeting = "Kage 在这。"
@@ -1614,9 +1764,9 @@ class KageServer:
                         agentic_loop=self.agentic_loop,
                         classify_route=self._classify_route_with_assist,
                         is_undo_request=is_undo_request,
-                        infer_chat_topic=self._infer_chat_topic,
-                        structured_chat_followup=self._structured_chat_followup,
-                        polish_chat_response=self._polish_chat_response,
+                        infer_chat_topic=infer_chat_topic,
+                        structured_chat_followup=structured_chat_followup,
+                        polish_chat_response=polish_chat_response,
                         think_action=self._think_action,
                         history_provider=self.session.as_history_list,
                     )
@@ -1722,7 +1872,12 @@ class KageServer:
             {"role": "user", "content": str(user_input or "")},
         ]
         try:
-            resp = self.model_provider.generate(messages=messages, tools=None, max_tokens=200, temperature=0.7)
+            resp = self.realtime_model_provider.generate(
+                messages=messages,
+                tools=None,
+                max_tokens=200,
+                temperature=0.7,
+            )
             return [str(getattr(resp, "text", "") or "")]
         except Exception as exc:
             return [f"模型调用失败: {exc}"]
@@ -1733,7 +1888,12 @@ class KageServer:
             {"role": "user", "content": str(report_input or "")},
         ]
         try:
-            return self.model_provider.generate(messages=messages, tools=None, max_tokens=200, temperature=0.7)
+            return self.realtime_model_provider.generate(
+                messages=messages,
+                tools=None,
+                max_tokens=200,
+                temperature=0.7,
+            )
         except Exception as exc:
             from core.model_provider import ModelResponse
 
@@ -1742,92 +1902,17 @@ class KageServer:
     # NOTE: Legacy tool-loop/router removed. The runtime uses AgenticLoop + ToolExecutor.
 
     async def mouth_speak(self, text, emotion="neutral"):
-        """Speak and allow Frontend to sync lips and expression"""
-        text = self._sanitize_for_speech(text)
-        if not text:
-            return
-        self._speech_revision += 1
-        speech_revision = self._speech_revision
-
-        # Text-only benchmark mode: skip TTS playback and only emit speech message.
-        if self._text_only_mode or self.mouth is None:
-            await self.send_message("speech", {"text": text, "emotion": emotion})
-            if speech_revision == self._speech_revision:
-                await self.send_state("IDLE")
-            return
-
-        try:
-            print(f"🗣️ TTS request ({emotion}): {text}", flush=True)
-        except Exception:
-            pass
-
-        self._update_motion_cooldown(text)
-        await self._send_random_motion(emotion)
-        
-        # 1. Send Expression (Emotion)
-        exp_value = self.expression_map.get(emotion, "f05")
-        if isinstance(exp_value, dict):
-            choices = exp_value.get("choices") or []
-            weights = exp_value.get("weights")
-            if choices:
-                if weights and len(weights) == len(choices):
-                    exp_name = random.choices(choices, weights=weights, k=1)[0]
-                else:
-                    exp_name = random.choice(choices)
-            else:
-                exp_name = "f05"
-        elif isinstance(exp_value, list):
-            exp_name = random.choice(exp_value) if exp_value else "f05"
-        else:
-            exp_name = exp_value
-        await self.send_message("expression", {
-            "name": exp_name,
-            "duration": self._compute_expression_duration(text),
-        })
-
-        # 2. Send text to frontend (for speech bubble) with emotion field
-        await self.send_message("speech", {"text": text, "emotion": emotion})
-        
-        # 3. Audio Generation (Generating... not speaking yet)
-        audio_path = await self.mouth.generate_speech_file(text, emotion)
-        if speech_revision != self._speech_revision:
-            return
-        
-        if audio_path:
-            try:
-                print(f"🔊 Playing audio: {audio_path}", flush=True)
-            except Exception:
-                pass
-            # 4. Now we are ready to play. Signal Frontend!
-            await self.send_state("SPEAKING")
-            barge_task = None
-            if self.audio_orchestrator.should_enable_voice_barge_in(
-                text_only_mode=self._text_only_mode,
-                ears=self.ears,
-            ):
-                barge_task = asyncio.create_task(self._monitor_voice_barge_in(speech_revision))
-            # Blocking Playback
-            try:
-                await asyncio.to_thread(self.mouth.play_audio_file, audio_path)
-            finally:
-                if barge_task is not None:
-                    barge_task.cancel()
-                    with contextlib.suppress(asyncio.CancelledError):
-                        await barge_task
-            # Done
-            if speech_revision == self._speech_revision:
-                await self.send_state("IDLE")
-        else:
-            try:
-                print("⚠️ TTS generation failed (no audio_path)", flush=True)
-            except Exception:
-                pass
-            if speech_revision == self._speech_revision:
-                await self.send_state("IDLE")
+        """Delegate to speech_engine module."""
+        await _mouth_speak_engine(self, text, emotion)
 
     def _sanitize_for_speech(self, text: str) -> str:
-        """Remove system artifacts and keep speech user-facing."""
+        """Delegate to response_sanitizer."""
         return sanitize_for_speech_text(text)
+
+    async def _send_random_motion(self, emotion: str | None = None):
+        """Delegate to speech_engine module."""
+        from core.speech_engine import _send_random_motion as _srm
+        await _srm(self, emotion)
 
     def _classify_route_with_assist(self, user_input: str) -> str:
         """Rule-first route classification with optional model assist for ambiguity."""
@@ -1839,11 +1924,11 @@ class KageServer:
 
         if not self._route_model_assist_enabled:
             return base
-        if not self._is_route_ambiguous(str(user_input or ""), base):
+        if not is_route_ambiguous(str(user_input or ""), base):
             return base
 
         try:
-            assisted = self._classify_route_by_model(str(user_input or ""))
+            assisted = classify_route_by_model(str(user_input or ""), self.routing_model_provider)
             if assisted in ("command", "info", "chat"):
                 log("server", "route.assist", base=base, assisted=assisted)
                 return assisted
@@ -1851,46 +1936,13 @@ class KageServer:
             pass
         return base
 
-    @staticmethod
-    def _is_route_ambiguous(user_input: str, base_route: str) -> bool:
-        s = str(user_input or "").strip().lower()
-        if not s:
-            return False
-        system_hits = sum(1 for k in ("打开", "关闭", "调高", "调低", "音量", "亮度", "wifi", "蓝牙") if k in s)
-        info_hits = sum(1 for k in ("查", "搜索", "搜", "天气", "新闻", "价格", "汇率", "视频") if k in s)
-        if base_route == "chat":
-            return bool(system_hits or info_hits)
-        if base_route == "command" and info_hits >= 2:
-            return True
-        if base_route == "info" and system_hits >= 2:
-            return True
-        return False
-
     def _classify_route_by_model(self, user_input: str) -> str:
         """Use lightweight model call for ambiguous route classification."""
-        system = (
-            "你是路由分类器。只输出一个词：command 或 info 或 chat。"
-            "command=执行动作/系统控制；info=查询信息；chat=闲聊。"
-        )
-        user = f"用户输入：{str(user_input or '').strip()}\n只输出一个词。"
-        resp = self.model_provider.generate(
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            tools=None,
-            max_tokens=8,
-            temperature=0.0,
-        )
-        text = str(getattr(resp, "text", "") or "").strip().lower()
-        if "command" in text:
-            return "command"
-        if "info" in text:
-            return "info"
-        return "chat"
+        return classify_route_by_model(user_input, self.routing_model_provider)
 
     def _fetch_weather_tool_call_quick(self, city: str) -> dict | None:
         """Fetch wttr JSON quickly and convert to tool-call-like payload."""
         try:
-            import urllib.request
-
             url = f"https://wttr.in/{quote(str(city or 'Shanghai'))}?format=j1"
             req = urllib.request.Request(url, headers={"User-Agent": "Kage/1.0"})
             with urllib.request.urlopen(req, timeout=2) as resp:
@@ -1902,42 +1954,6 @@ class KageServer:
         except Exception:
             return None
 
-    async def _send_random_motion(self, emotion: str | None = None):
-        if not self.motion_groups:
-            return
-        now = time.monotonic()
-        if now - self._last_motion_time < self.motion_cooldown_sec:
-            return
-        self._last_motion_time = now
-        emotion_key = emotion or ""
-        weights_map = self.motion_emotion_weights.get(emotion_key, self.motion_group_weights)
-        groups = list(weights_map.keys())
-        weights = list(weights_map.values())
-        group = random.choices(groups, weights=weights, k=1)[0]
-        max_index = self.motion_groups.get(group, 0)
-        if max_index <= 0:
-            return
-        index = random.randrange(max_index)
-        await self.send_message("motion", {"group": group, "index": index})
-
-    def _update_motion_cooldown(self, text: str):
-        if not text:
-            return
-        duration = self.expression_duration_base_sec + len(text) * 0.06
-        self.motion_cooldown_sec = max(
-            self.motion_cooldown_min_sec,
-            min(duration, self.motion_cooldown_max_sec),
-        )
-
-    def _compute_expression_duration(self, text: str) -> float:
-        if not text:
-            return self.expression_duration_base_sec
-        duration = self.expression_duration_base_sec + len(text) * self.expression_duration_per_char
-        return max(
-            self.expression_duration_min_sec,
-            min(duration, self.expression_duration_max_sec),
-        )
-
     def _quick_chat_response(self, user_input: str):
         text = (user_input or "").strip()
         if not text:
@@ -1946,13 +1962,13 @@ class KageServer:
         # Location correction (used by local weather queries)
         try:
             # "我不在巴黎 我在尼斯"
-            m = re.search(r"我不在([A-Za-z\u4e00-\u9fff]{2,})\s*.*我在([A-Za-z\u4e00-\u9fff]{2,})", text)
+            m = _RE_LOCATION_CORRECTION.search(text)
             if m:
                 city = m.group(2)
                 self._set_location_override(city)
                 return f"好，我记下了，你在{city}。"
             # "我在尼斯" / "我现在在尼斯"
-            m = re.search(r"我(?:现在)?在\s*([A-Za-z\u4e00-\u9fff]{2,})", text)
+            m = _RE_LOCATION_SET.search(text)
             if m and "天气" not in text:
                 city = m.group(1)
                 # avoid obvious filler/time tokens
@@ -1994,7 +2010,7 @@ class KageServer:
 
         # If we ask a clarification question, set pending chat follow-up.
         needs_followup = False
-        topic = self._infer_chat_topic(text)
+        topic = infer_chat_topic(text)
         if reply_s in (
             "你是想问天气，还是安排？",
             "你想表达什么，给谁看？",
@@ -2011,74 +2027,8 @@ class KageServer:
         return reply_s, pending
 
     def _should_try_tools(self, user_input: str) -> bool:
-        """Heuristic: route to action mode so the LLM can choose tools.
-
-        Keep this broad (not app/site specific) to preserve generalization.
-        """
-        text = (user_input or "").strip()
-        if not text:
-            return False
-        lower_text = text.lower()
-
-        # Explicit imperative / help request.
-        if any(tok in text for tok in ["帮我", "请帮", "麻烦", "给我", "能不能"]):
-            return True
-
-        # Requests likely needing external data or tool execution.
-        toolish = [
-            "打开", "关闭", "启动", "开启", "退出",
-            "查询", "查", "搜索", "搜", "找", "推荐",
-            "下载", "安装",
-            "截图", "截屏",
-            "音量", "亮度", "wifi", "蓝牙",
-            "网址", "链接", "网站", "网页",
-        ]
-        if any(tok in text for tok in toolish):
-            return True
-
-        # English tool-ish.
-        if any(tok in lower_text for tok in ["open ", "close ", "search", "download", "install", "url", "link"]):
-            return True
-
-        return False
-
-    def _is_bad_chat_response(self, text: str, user_input: str) -> bool:
-        t = (text or "").strip()
-        if not t:
-            return True
-
-        # Avoid unintended English unless user used English.
-        import re
-        ui = (user_input or "").strip()
-        if re.search(r"[A-Za-z]", t) and not re.search(r"[A-Za-z]", ui):
-            return True
-        # Too short often sounds robotic.
-        if len(t) <= 2 and t not in ("嗯", "好", "行", "OK"):
-            return True
-        # Rude / refusal patterns.
-        bad_phrases = [
-            "我不是你的朋友",
-            "不关我的事",
-            "我不想",
-            "我不知道",
-            "我不清楚",
-            "无法回答",
-            "无法处理",
-        ]
-        if any(p in t for p in bad_phrases):
-            return True
-        # Off-topic generic filler.
-        if t in ("执行成功。", "成功。", "不知道。"):
-            return True
-        # If user asked for help, a super short reply is usually not helpful.
-        if any(k in ui for k in ("帮我", "怎么", "为什么", "怎么样")) and len(t) < 4:
-            return True
-
-        # Generic acknowledgements that are not helpful.
-        generic = {"明白了", "知道了", "了解", "好的", "好", "行", "嗯", "OK", "好的。", "好。", "行。", "嗯。"}
-        if t in generic and len(ui) >= 6:
-            return True
-        return False
+        """Heuristic: route to action mode so the LLM can choose tools."""
+        return should_try_tools(user_input)
 
     async def _repair_chat_response(
         self,
@@ -2109,114 +2059,22 @@ class KageServer:
         out = ""
         for chunk in response_stream:
             out += getattr(chunk, "text", str(chunk))
-        return self._polish_chat_response(out)
+        return polish_chat_response(out)
 
-    def _fallback_chat_response(self, user_input: str) -> str:
-        text = (user_input or "").strip()
-        if any(k in text for k in ("谢谢", "感谢")):
-            return "不客气。"
-        return "我在。你想让我怎么帮你？"
-
-    def _infer_chat_topic(self, text: str) -> str:
-        t = (text or "").strip()
-        if not t:
-            return ""
-        if "朋友圈" in t or "发这条" in t:
-            return "moments"
-        if "怎么回" in t:
-            return "reply"
-        if "道歉" in t:
-            return "apology"
-        if any(k in t for k in ["怎么弄", "怎么做", "怎么搞"]):
-            return "howto"
-        if "今天晚上" in t or "今晚" in t:
-            return "tonight"
-        return ""
-
-    def _structured_chat_followup(self, topic: str, user_input: str) -> str | None:
-        """Rule-based followups for product-grade reliability.
-
-        This is used when we explicitly asked for clarification and want a stable,
-        helpful answer without relying on the model to stay on-rails.
-        """
-        text = (user_input or "").strip()
-        if not text:
+    def _call_tool(self, tool_name: str, *args, **kwargs):
+        """Unified tool call with fallback to direct import."""
+        tools = getattr(self, "tools", None)
+        if tools is not None and hasattr(tools, tool_name):
+            try:
+                return getattr(tools, tool_name)(*args, **kwargs)
+            except Exception as exc:
+                log("tool", "fallback", tool=tool_name, error=str(exc))
+        try:
+            import core.tools_impl as tools_impl
+            return getattr(tools_impl, tool_name)(*args, **kwargs)
+        except (AttributeError, Exception) as exc:
+            log("tool", "call_failed", tool=tool_name, error=str(exc))
             return None
-
-        if topic == "moments":
-            # Friend circle advice + one copy-ready caption.
-            audience = "同学" if "同学" in text else "朋友" if "朋友" in text else "大家"
-            if "考完" in text or "考试" in text:
-                caption = "考试终于结束啦，辛苦自己了。接下来好好休息一下。"
-            else:
-                caption = f"{text}"
-                if len(caption) < 8:
-                    caption = f"{caption}。"
-            return f"建议发给{audience}。文案：{caption}"
-
-        if topic == "apology":
-            # One-line apology template.
-            return "你可以这样说：刚刚我语气有点冲，对不起。我很在乎你，想好好说。"
-
-        if topic == "reply":
-            return "把对方原话贴我，我给你拟一句更贴合的回复。"
-
-        if topic == "howto":
-            return "你先告诉我：你现在卡在哪一步、目标是什么？"
-
-        if topic == "tonight":
-            return "你是想问天气，还是今晚的安排？"
-
-        return None
-
-    def _polish_chat_response(self, text: str):
-        if not text:
-            return text
-        import re
-        cleaned = strip_reasoning_artifacts(text)
-        cleaned = " ".join(cleaned.split())
-
-        # Strip user-echo patterns: model sometimes repeats user input back
-        # e.g. "用户：帮我找... 助手：请问你在哪里查看"
-        cleaned = re.sub(r"用户[：:]\s*.*?助手[：:]\s*", "", cleaned)
-        # Also strip standalone "用户：..." prefix
-        cleaned = re.sub(r"^用户[：:]\s*.*$", "", cleaned, flags=re.MULTILINE)
-
-        # Strip system tool/runtime artifacts if they ever leak into speech.
-        cleaned = sanitize_for_speech_text(cleaned)
-        cleaned = cleaned.replace("Master心情:", "")
-        cleaned = cleaned.replace("Master心情", "")
-        cleaned = cleaned.replace("Master 心情:", "")
-        cleaned = cleaned.replace("Master 心情", "")
-        cleaned = cleaned.replace("@@@", "")
-
-        # Normalize addressing.
-        cleaned = cleaned.replace("Master", "你")
-
-
-        # Remove capability brag / meta descriptions that frequently leak from persona.
-        cleaned = re.sub(r"我能做[^。！？!]*[。！？!]*", "", cleaned)
-        cleaned = re.sub(r"\d+\s*项\s*事\s*[:：]\s*", "", cleaned)
-        cleaned = re.sub(r"项\s*事\s*[:：]\s*", "", cleaned)
-
-        cleaned = self._filter_chat_text(cleaned)
-        cleaned = self._collapse_repeats(cleaned)
-        cleaned = cleaned.strip()
-        if not cleaned:
-            cleaned = "嗯"
-
-        # Strip trailing filler particles.
-        cleaned = re.sub(r"\s*[哒捏哇]+\s*(?:[!！。.]*)\s*$", "", cleaned).strip()
-
-        # Strip leading decorative marks.
-        cleaned = re.sub(r"^[\s✨😤💖]+", "", cleaned).strip()
-        if not cleaned:
-            cleaned = "嗯"
-
-        max_len = 40
-        if len(cleaned) > max_len:
-            cleaned = cleaned[:max_len]
-        return cleaned
 
     def _fast_command(self, user_input: str):
         text = (user_input or "").strip()
@@ -2233,14 +2091,7 @@ class KageServer:
                 city = self._get_effective_city() or ""
             q = f"{city} 天气".strip() if city else "天气"
             print("🧭 Direct: web_search -> weather")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "web_search"):
-                try:
-                    return tools.web_search(q, max_results=3)
-                except Exception:
-                    pass
-            from core.tools_impl import smart_search
-            return smart_search(q, max_results=3)
+            return self._call_tool("smart_search", q, max_results=3)
 
         if "天气" in text:
             city = self._extract_city(text)
@@ -2262,37 +2113,26 @@ class KageServer:
             weather = self._fetch_weather(city)
             self.session.last_action = {"type": "weather", "result": weather, "summary": "我刚查了天气。"}
             return weather
+
         if "亮度" in text:
             action = "up"
             if any(token in text for token in ["低", "暗", "小", "降低", "调低", "调暗"]):
                 action = "down"
             print("🧭 Direct: system_control -> brightness")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "system_control"):
-                return tools.system_control("brightness", action)
-            from core.tools_impl import system_control
-            return system_control("brightness", action)
+            return self._call_tool("system_control", "brightness", action)
 
         # 独立的静音命令
         if "静音" in text or "mute" in lower_text:
             action = "unmute" if "取消" in text or "un" in lower_text else "mute"
             print("🧭 Direct: system_control -> mute")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "system_control"):
-                return tools.system_control("volume", action)
-            from core.tools_impl import system_control
-            return system_control("volume", action)
+            return self._call_tool("system_control", "volume", action)
 
         if "音量" in text or "声音" in text:
             action = "up"
             if any(token in text for token in ["小", "低", "降低", "调低"]):
                 action = "down"
             print("🧭 Direct: system_control -> volume")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "system_control"):
-                return tools.system_control("volume", action)
-            from core.tools_impl import system_control
-            return system_control("volume", action)
+            return self._call_tool("system_control", "volume", action)
 
         # 媒体控制 - 扩展关键词匹配
         media_keywords = ["播放", "暂停", "继续", "下一首", "下一曲", "上一首", "上一曲", 
@@ -2318,11 +2158,7 @@ class KageServer:
         if "蓝牙" in text:
             action = "off" if any(token in text for token in ["关", "关闭", "关掉"] ) else "on"
             print("🧭 Direct: system_control -> bluetooth")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "system_control"):
-                return tools.system_control("bluetooth", action)
-            from core.tools_impl import system_control
-            return system_control("bluetooth", action)
+            return self._call_tool("system_control", "bluetooth", action)
 
         # WiFi control: avoid matching generic "网络" in informational questions.
         wifi_control = False
@@ -2336,11 +2172,7 @@ class KageServer:
         if wifi_control and not any(tok in text for tok in ["查询", "搜索", "网络查询", "网上", "怎么样", "怎么", "为啥"]):
             action = "off" if any(token in text for token in ["关", "关闭", "关掉"] ) else "on"
             print("🧭 Direct: system_control -> wifi")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "system_control"):
-                return tools.system_control("wifi", action)
-            from core.tools_impl import system_control
-            return system_control("wifi", action)
+            return self._call_tool("system_control", "wifi", action)
 
 
         # 网站/应用打开交给大模型 action tool-calls，以获得更好的泛化能力。
@@ -2351,40 +2183,30 @@ class KageServer:
 
         # 关闭应用快速路径
         if is_close_action and not is_open_action:
-            # 匹配关闭的目标
             close_match = re.search(r"(?:关闭|退出|关掉)(.+)", text)
             if close_match:
                 target = close_match.group(1).strip(" ：:，,。\n\t吧请")
                 # 网站 -> 关闭浏览器
                 if any(site in target for site in ["b站", "哔哩哔哩", "知乎", "百度", "网页", "浏览器"]):
                     print(f"🧭 Direct: close_app -> Safari (网页)")
-                    from core.tools_impl import system_control
-                    return system_control("app", "close", "Safari")
+                    return self._call_tool("system_control", "app", "close", "Safari")
                 # 其他应用
                 if target:
                     print(f"🧭 Direct: close_app -> {target}")
-                    from core.tools_impl import system_control
-                    return system_control("app", "close", target)
+                    return self._call_tool("system_control", "app", "close", target)
 
         if "几点" in text or "时间" in text:
             print("🧭 Direct: get_time")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "get_time"):
-                return self._persona_wrap(tools.get_time(), "time")
-            from core.tools_impl import get_time
-            return self._persona_wrap(get_time(), "time")
+            result = self._call_tool("get_time")
+            return self._persona_wrap(result, "time") if result else None
 
         if "截图" in text or "截屏" in text:
             print("🧭 Direct: take_screenshot")
-            tools = getattr(self, "tools", None)
-            if tools is not None and hasattr(tools, "take_screenshot"):
-                return self._persona_wrap(tools.take_screenshot(), "screenshot")
-            from core.tools_impl import take_screenshot
-            return self._persona_wrap(take_screenshot(), "screenshot")
+            result = self._call_tool("take_screenshot")
+            return self._persona_wrap(result, "screenshot") if result else None
 
         if "电量" in text or "电池" in text:
             print("🧭 Direct: battery_status")
-            import subprocess
             try:
                 out = subprocess.check_output(["pmset", "-g", "batt"], text=True)
             except Exception:
@@ -2397,7 +2219,6 @@ class KageServer:
 
     def _persona_wrap(self, result: str, cmd_type: str = "default") -> str:
         """给快速命令结果添加 persona 风格"""
-        import random
         
         # 根据命令类型选择回复风格
         templates = {
@@ -2423,7 +2244,6 @@ class KageServer:
             return cached
         city = ""
         try:
-            import urllib.request
             req = urllib.request.Request(
                 "https://ipinfo.io/city",
                 headers={"User-Agent": "Kage/1.0"},
@@ -2451,9 +2271,6 @@ class KageServer:
 
     def _fetch_weather_open_meteo(self, city: str, day_offset: int = 0) -> str:
         """Open-Meteo provider (no API key), supports today/tomorrow."""
-        import json
-        import urllib.parse
-        import urllib.request
 
         name = str(city or "").strip()
         if not name:
@@ -2543,9 +2360,6 @@ class KageServer:
 
     def _fetch_weather_metno(self, city: str) -> str:
         """MET Norway provider (no API key, requires User-Agent)."""
-        import json
-        import urllib.parse
-        import urllib.request
 
         coords = self._resolve_weather_coords(str(city or ""))
         if not coords:
@@ -2574,9 +2388,6 @@ class KageServer:
 
     def _resolve_weather_coords(self, city: str) -> tuple[float, float, str] | None:
         """Resolve city to coordinates with cache."""
-        import json
-        import urllib.parse
-        import urllib.request
 
         name = str(city or "").strip()
         if not name:
@@ -2629,6 +2440,18 @@ class KageServer:
         return entry["value"]
 
     def _set_fast_cache(self, key: str, value: str):
+        # Bounded cache: prune expired entries when size grows beyond threshold
+        # to prevent unbounded growth from per-query cache keys (e.g. video search).
+        if len(self._fast_cache) >= _FAST_CACHE_MAX:
+            now = time.time()
+            stale = [k for k, v in self._fast_cache.items() if now - v["timestamp"] > _FAST_CACHE_STALE_SEC]
+            for k in stale:
+                self._fast_cache.pop(k, None)
+            # If still oversized, drop the oldest 25%
+            if len(self._fast_cache) >= _FAST_CACHE_MAX:
+                ordered = sorted(self._fast_cache.items(), key=lambda kv: kv[1]["timestamp"])
+                for k, _ in ordered[: len(ordered) // 4]:
+                    self._fast_cache.pop(k, None)
         self._fast_cache[key] = {"timestamp": time.time(), "value": value}
 
     def _strip_cmd_output(self, result) -> str:
@@ -2646,7 +2469,6 @@ class KageServer:
             return cached_weather
         weather = ""
         try:
-            import urllib.request
             url = f"https://wttr.in/{quote(city)}?format=3"
             req = urllib.request.Request(url, headers={"User-Agent": "Kage/1.0"})
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -2683,24 +2505,14 @@ class KageServer:
             pass
 
         cleaned = text
-        stopwords = [
-            "天气", "怎么样", "如何", "今天", "现在", "查询", "查", "一下", "看看", "帮我",
-            "的", "吗", "么", "呀", "啊", "呢", "是不是", "想", "告诉我",
-            "我说", "我想", "我问", "我", "说", "问",
-            "晚上", "今晚上", "今晚", "明天", "后天", "上午", "下午", "早上", "中午",
-            "嗯", "嗯嗯", "额", "呃", "啊", "唉", "em",
-            "当地", "本地", "这里", "我这", "我们这",
-            "所以", "那", "然后", "不过", "就是", "此刻",
-            "去", "去查", "去看看", "去问", "帮我查", "帮我问",
-            "网络", "网上", "搜索", "搜", "搜下", "搜一下", "网络搜", "网络查询", "网络搜一下",
-        ]
-        # Replace longer phrases first to avoid leaving fragments.
-        for word in sorted(stopwords, key=len, reverse=True):
-            cleaned = cleaned.replace(word, "")
+        # Single-pass regex replacement instead of 50+ string.replace() calls.
+        # The regex was built with stopwords sorted by length descending, so longer
+        # phrases match before their substring fragments.
+        cleaned = _CITY_STOPWORDS_RE.sub("", cleaned)
         cleaned = cleaned.strip(" ：:，,。\n\t")
         if not cleaned:
             return ""
-        matches = re.findall(r"[A-Za-z\u4e00-\u9fff]+", cleaned)
+        matches = _CITY_TOKEN_RE.findall(cleaned)
         if not matches:
             return ""
         candidate = max(matches, key=len)
@@ -2712,224 +2524,14 @@ class KageServer:
             return ""
         if candidate in ("当地", "本地", "这里", "我这", "我们这"):
             return ""
-        if any(bad in candidate for bad in ["我", "说", "问", "晚上", "今晚", "今天", "明天"]):
+        if any(bad in candidate for bad in ("我", "说", "问", "晚上", "今晚", "今天", "明天")):
             return ""
         return candidate
 
-    def _get_running_music_app(self) -> str | None:
-        """检测正在运行的音乐应用"""
-        # 常见音乐应用列表（按优先级排序）
-        music_apps = [
-            ("NeteaseMusic", "网易云音乐"),
-            ("Spotify", "Spotify"),
-            ("Music", "Apple Music"),
-            ("QQMusic", "QQ音乐"),
-            ("Kugou", "酷狗音乐"),
-            ("VLC", "VLC"),
-        ]
-        
-        for app_name, _ in music_apps:
-            try:
-                result = subprocess.run(
-                    ["pgrep", "-x", app_name], 
-                    capture_output=True, 
-                    timeout=1
-                )
-                if result.returncode == 0:
-                    return app_name
-            except Exception:
-                continue
-        return None
-
     def _media_control(self, action: str, preferred_apps: list[str]) -> str:
-        """
-        智能媒体控制：
-        1. 如果有正在运行的播放器 -> 控制它
-        2. 如果是播放命令且没有播放器 -> 打开默认播放器并播放
-        3. 优先使用系统媒体键
-        """
-        # 检测正在运行的播放器
-        running_app = self._get_running_music_app()
-        
-        # 如果是 "播放" 命令且没有播放器运行 -> 打开默认播放器
-        if action in ["play", "playpause"] and not running_app:
-            # 优先使用用户偏好的 app，否则用 Apple Music
-            default_app = preferred_apps[0] if preferred_apps else "Music"
-            print(f"🎵 No music app running, opening {default_app}...")
-            try:
-                from core.tools_impl import open_app
-                _ = open_app(default_app)
-            except Exception:
-                try:
-                    subprocess.run(["open", "-a", default_app], check=False)
-                except Exception:
-                    pass
-            import time
-            time.sleep(1)  # 等待 app 启动
-        
-        # 使用系统媒体键控制（适用于所有播放器）
-        result = self._send_system_media_key(action)
-        if result:
-            return result
-        
-        # 回退：尝试 AppleScript 直接控制特定 app
-        command_map = {
-            "playpause": "playpause",
-            "play": "play",
-            "pause": "pause",
-            "next": "next track",
-            "previous": "previous track",
-        }
-        osascript_cmd = command_map.get(action, "playpause")
-        
-        # 构建候选列表：运行中的 app > 用户偏好 > 默认
-        app_candidates = []
-        if running_app:
-            app_candidates.append(running_app)
-        app_candidates.extend(preferred_apps)
-        app_candidates.extend(["Music", "Spotify"])
-        
-        for app in app_candidates:
-            script = f'tell application "{app}" to {osascript_cmd}'
-            try:
-                subprocess.run(["osascript", "-e", script], check=True)
-                return f"已控制 {app} 播放 {action}"
-            except Exception:
-                continue
-        return "未找到可控制的播放器"
+        """Delegate to media_controller module."""
+        return _media_control_engine(action, preferred_apps)
 
-    def _send_system_media_key(self, action: str) -> str:
-        """
-        使用 macOS 系统级媒体键事件，适用于任意播放器（网易云、Spotify、Music 等）
-        通过 Quartz 框架发送 NX_KEYTYPE 事件
-        """
-        # macOS 媒体键 key code (NX_KEYTYPE_*)
-        # NX_KEYTYPE_PLAY = 16, NX_KEYTYPE_NEXT = 17, NX_KEYTYPE_PREVIOUS = 18
-        keytype_map = {
-            "playpause": 16,  # NX_KEYTYPE_PLAY
-            "play": 16,
-            "pause": 16,
-            "next": 17,       # NX_KEYTYPE_NEXT
-            "previous": 18,   # NX_KEYTYPE_PREVIOUS
-        }
-        keytype = keytype_map.get(action)
-        if keytype is None:
-            return ""
-        
-        # 使用 Python Quartz 绑定发送媒体键事件
-        try:
-            import Quartz  # type: ignore[import-not-found]
-            
-            def send_media_key(key):
-                # Key down
-                ev = Quartz.NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(  # type: ignore[attr-defined]
-                    Quartz.NSEventTypeSystemDefined,  # type: ignore[attr-defined]  # 14
-                    (0, 0),
-                    0xa00,  # NX_KEYDOWN << 8
-                    0,
-                    0,
-                    0,
-                    8,  # NX_SUBTYPE_AUX_CONTROL_BUTTONS
-                    (key << 16) | (0xa << 8),  # key << 16 | NX_KEYDOWN << 8
-                    -1
-                )
-                Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev.CGEvent())  # type: ignore[attr-defined]
-                
-                # Key up
-                ev = Quartz.NSEvent.otherEventWithType_location_modifierFlags_timestamp_windowNumber_context_subtype_data1_data2_(  # type: ignore[attr-defined]
-                    Quartz.NSEventTypeSystemDefined,  # type: ignore[attr-defined]
-                    (0, 0),
-                    0xb00,  # NX_KEYUP << 8
-                    0,
-                    0,
-                    0,
-                    8,
-                    (key << 16) | (0xb << 8),  # key << 16 | NX_KEYUP << 8
-                    -1
-                )
-                Quartz.CGEventPost(Quartz.kCGHIDEventTap, ev.CGEvent())  # type: ignore[attr-defined]
-            
-            send_media_key(keytype)
-            action_name = {"playpause": "播放/暂停", "play": "播放", "pause": "暂停", "next": "下一曲", "previous": "上一曲"}
-            return f"{action_name.get(action, action)} 🎵"
-        except ImportError:
-            # Quartz 未安装，回退到 osascript 方式
-            return ""
-        except Exception as e:
-            print(f"Media key error: {e}")
-            return ""
-
-    def _filter_chat_text(self, text: str):
-        if not text:
-            return text
-        blocked_words = ["neutral", "happy", "sad", "angry", "fear", "surprised"]
-        blocked_phrases = [
-            "AIspeak",
-            "cant be",
-            "AIspeak cant be",
-            "<system-reminder>",
-            "system-reminder",
-            "<|system|>",
-            "<|user|>",
-            "<|assistant|>",
-            "<|im_start|>",
-            "<|im_end|>",
-            "系统提示",
-            "提示词",
-            "文件工具哒",
-            "工具哒",
-        ]
-        for word in blocked_words:
-            text = text.replace(word, "")
-        for phrase in blocked_phrases:
-            text = text.replace(phrase, "")
-        allowed_emoji = {"✨", "😤", "💖"}
-        allowed_punct = set("，。！？!?、,.~:：;；()（）[]【】" )
-        output = []
-        for ch in text:
-            code = ord(ch)
-            if ch in allowed_emoji:
-                output.append(ch)
-                continue
-            if ch in allowed_punct:
-                output.append(ch)
-                continue
-            if ch.isalnum() or ch.isspace():
-                output.append(ch)
-                continue
-            if 0x4E00 <= code <= 0x9FFF:
-                output.append(ch)
-                continue
-        return "".join(output)
-
-    def _short_care_phrase(self):
-        phrases = [
-            "我在这儿陪你哒💖",
-            "别担心，我在呢哒😤",
-            "我会一直陪你哒✨",
-            "有我在就别怕哒💖",
-            "我会听你说哒😤",
-            "我一直在等你哒✨",
-            "我陪你慢慢来哒💖",
-            "先深呼吸一下哒😤",
-        ]
-        return random.choice(phrases)
-
-    def _collapse_repeats(self, text: str):
-        if not text:
-            return text
-        output = []
-        last_char = None
-        repeat_count = 0
-        for ch in text:
-            if ch == last_char:
-                repeat_count += 1
-            else:
-                repeat_count = 0
-            last_char = ch
-            if repeat_count < 2:
-                output.append(ch)
-        return "".join(output)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
