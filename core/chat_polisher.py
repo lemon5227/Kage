@@ -7,7 +7,6 @@ the god-class burden and make text cleaning independently testable.
 """
 
 import re
-import random
 
 from core.response_sanitizer import sanitize_for_speech_text, strip_reasoning_artifacts
 
@@ -54,35 +53,6 @@ _RE_ITEM_COUNT = re.compile(r"\d+\s*项\s*事\s*[:：]\s*")
 _RE_ITEM_LABEL = re.compile(r"项\s*事\s*[:：]\s*")
 _RE_TRAILING_FILLER = re.compile(r"\s*[哒捏哇]+\s*(?:[!！。.]*)\s*$")
 _RE_LEADING_DECO = re.compile(r"^[\s✨😤💖]+")
-_RE_HAS_LATIN = re.compile(r"[A-Za-z]")
-
-_BAD_RESPONSE_PHRASES = [
-    "我不是你的朋友",
-    "不关我的事",
-    "我不想",
-    "我不知道",
-    "我不清楚",
-    "无法回答",
-    "无法处理",
-]
-
-_GENERIC_ACKNOWLEDGEMENTS = {
-    "明白了", "知道了", "了解", "好的", "好", "行", "嗯",
-    "OK", "好的。", "好。", "行。", "嗯。",
-}
-
-_SHORT_OK_RESPONSES = {"嗯", "好", "行", "OK"}
-
-_CARE_PHRASES = [
-    "我在这儿陪你哒💖",
-    "别担心，我在呢哒😤",
-    "我会一直陪你哒✨",
-    "有我在就别怕哒💖",
-    "我会听你说哒😤",
-    "我一直在等你哒✨",
-    "我陪你慢慢来哒💖",
-    "先深呼吸一下哒😤",
-]
 
 
 def filter_chat_text(text: str) -> str:
@@ -176,43 +146,6 @@ def polish_chat_response(text: str) -> str:
     return cleaned
 
 
-def is_bad_chat_response(text: str, user_input: str) -> bool:
-    """Check if a chat response is bad/unhelpful.
-
-    Returns True if the response should be rejected and regenerated.
-    """
-    t = (text or "").strip()
-    if not t:
-        return True
-
-    # Avoid unintended English unless user used English
-    ui = (user_input or "").strip()
-    if _RE_HAS_LATIN.search(t) and not _RE_HAS_LATIN.search(ui):
-        return True
-
-    # Too short often sounds robotic
-    if len(t) <= 2 and t not in _SHORT_OK_RESPONSES:
-        return True
-
-    # Rude / refusal patterns
-    if any(p in t for p in _BAD_RESPONSE_PHRASES):
-        return True
-
-    # Off-topic generic filler
-    if t in ("执行成功。", "成功。", "不知道。"):
-        return True
-
-    # If user asked for help, a super short reply is usually not helpful
-    if any(k in ui for k in ("帮我", "怎么", "为什么", "怎么样")) and len(t) < 4:
-        return True
-
-    # Generic acknowledgements that are not helpful
-    if t in _GENERIC_ACKNOWLEDGEMENTS and len(ui) >= 6:
-        return True
-
-    return False
-
-
 def infer_chat_topic(text: str) -> str:
     """Infer the topic of a chat message for structured followups."""
     t = (text or "").strip()
@@ -260,16 +193,3 @@ def structured_chat_followup(topic: str, user_input: str) -> str | None:
         return "你是想问天气，还是今晚的安排？"
 
     return None
-
-
-def fallback_chat_response(user_input: str) -> str:
-    """Fallback response when model fails."""
-    text = (user_input or "").strip()
-    if any(k in text for k in ("谢谢", "感谢")):
-        return "不客气。"
-    return "我在。你想让我怎么帮你？"
-
-
-def short_care_phrase() -> str:
-    """Return a random care phrase."""
-    return random.choice(_CARE_PHRASES)

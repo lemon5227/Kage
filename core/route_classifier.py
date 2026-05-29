@@ -9,7 +9,6 @@ Classifies user input into one of three routes:
 Uses rule-first classification with optional model assist for ambiguity.
 """
 
-import re
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,8 +29,6 @@ _TOOLISH_KEYWORDS = (
 )
 _EXPLICIT_HELP = ("帮我", "请帮", "麻烦", "给我", "能不能")
 _ENGLISH_TOOLISH = ("open ", "close ", "search", "download", "install", "url", "link")
-
-_LOCATION_FILLER = {"今天", "今晚", "晚上", "明天", "后天", "这里", "本地", "当地"}
 
 _ROUTE_SYSTEM_P = (
     "你是路由分类器。只输出一个词：command 或 info 或 chat。"
@@ -82,32 +79,6 @@ def should_try_tools(user_input: str) -> bool:
     if any(tok in lower_text for tok in _ENGLISH_TOOLISH):
         return True
     return False
-
-
-def extract_location_from_text(text: str) -> str | None:
-    """Extract location mention from user text for weather override.
-
-    Returns the city name if found, None otherwise.
-    """
-    text = (text or "").strip()
-    if not text:
-        return None
-
-    # "我不在巴黎 我在尼斯"
-    m = re.search(r"我不在([A-Za-z\u4e00-\u9fff]{2,})\s*.*我在([A-Za-z\u4e00-\u9fff]{2,})", text)
-    if m:
-        city = m.group(2)
-        if city not in _LOCATION_FILLER:
-            return city
-
-    # "我在尼斯" / "我现在在尼斯"
-    m = re.search(r"我(?:现在)?在\s*([A-Za-z\u4e00-\u9fff]{2,})", text)
-    if m and "天气" not in text:
-        city = m.group(1)
-        if city not in _LOCATION_FILLER:
-            return city
-
-    return None
 
 
 def classify_route_by_model(user_input: str, model_provider) -> str:

@@ -4,12 +4,18 @@ import os
 import json
 import shutil
 import subprocess
+import tempfile
 import time
 
 from core.undo_log import UndoLog, _move_to_trash
 
 # Blocked system-critical paths
 _BLOCKED_PATHS = ("/etc", "/usr", "/bin", "/sbin", "/var", "/System", "/Library", "/private/etc")
+
+# Resolve the user home and tmp directories once at import. These are stable
+# for the process lifetime, so re-resolving them on every fs_* call is waste.
+_HOME_REAL = os.path.realpath(os.path.expanduser("~"))
+_TMP_REAL = os.path.realpath(tempfile.gettempdir())
 
 
 def _is_path_allowed(path: str) -> bool:
@@ -22,14 +28,10 @@ def _is_path_allowed(path: str) -> bool:
             if "/var/folders" in real or "/private/var/folders" in real:
                 break
             return False
-    # Must be under user home or temp directories
-    home = os.path.realpath(os.path.expanduser("~"))
-    if real == home or real.startswith(home + "/"):
+    # Must be under user home or temp directories (resolved once at import).
+    if real == _HOME_REAL or real.startswith(_HOME_REAL + "/"):
         return True
-    # Allow system temp directories (for tests and legitimate temp file ops)
-    import tempfile
-    tmp = os.path.realpath(tempfile.gettempdir())
-    if real == tmp or real.startswith(tmp + "/"):
+    if real == _TMP_REAL or real.startswith(_TMP_REAL + "/"):
         return True
     return False
 

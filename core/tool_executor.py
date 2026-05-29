@@ -39,6 +39,29 @@ _FUZZY_MATCH_CUTOFF = 0.84  # difflib similarity threshold (0-1)
 _FUZZY_CACHE_MAX = 256      # bounded cache to handle degenerate model output
 
 
+# fs_apply op kind synonyms — hoisted so we don't re-allocate on each op.
+_FS_APPLY_KIND_MAP = {
+    "mv": "move",
+    "move": "move",
+    "rename": "rename",
+    "rn": "rename",
+    "write": "write",
+    "save": "write",
+    "trash": "trash",
+    "delete": "trash",
+    "remove": "trash",
+}
+
+
+def _first_value(d: dict, keys: tuple) -> object:
+    """Return d[k] for the first non-empty key in `keys`, else None."""
+    for k in keys:
+        v = d.get(k)
+        if v not in (None, ""):
+            return v
+    return None
+
+
 @dataclass
 class ToolResult:
     name: str
@@ -200,26 +223,20 @@ class ToolExecutor:
             return {}
         args = dict(arguments)
 
-        def _first_value(d: dict, keys: list[str]):
-            for k in keys:
-                if k in d and d.get(k) not in (None, ""):
-                    return d.get(k)
-            return None
-
         if name == "exec":
-            cmd = _first_value(args, ["command", "cmd", "shell", "bash"]) 
+            cmd = _first_value(args, ("command", "cmd", "shell", "bash"))
             if cmd is not None:
                 args = {"command": cmd, "timeout": args.get("timeout", args.get("time", args.get("seconds", 30)))}
             return args
 
         if name == "open_url":
-            url = _first_value(args, ["url", "link", "href", "website"]) 
+            url = _first_value(args, ("url", "link", "href", "website"))
             if url is not None:
                 return {"url": url}
             return args
 
         if name == "skills_find_remote":
-            q = _first_value(args, ["query", "q", "keyword", "keywords", "text"]) 
+            q = _first_value(args, ("query", "q", "keyword", "keywords", "text"))
             if q is not None:
                 out = {"query": q}
                 if "max_results" in args:
@@ -228,8 +245,8 @@ class ToolExecutor:
             return args
 
         if name == "skills_install":
-            repo = _first_value(args, ["repo", "repository", "package", "url"]) 
-            skill = _first_value(args, ["skill", "name", "skill_name"]) 
+            repo = _first_value(args, ("repo", "repository", "package", "url"))
+            skill = _first_value(args, ("skill", "name", "skill_name"))
             out = dict(args)
             if repo is not None:
                 out["repo"] = repo
@@ -238,8 +255,8 @@ class ToolExecutor:
             return out
 
         if name == "fs_move":
-            src = _first_value(args, ["src", "source", "from", "path"]) 
-            dest_dir = _first_value(args, ["dest_dir", "dest", "dst", "to", "destination", "target_dir"]) 
+            src = _first_value(args, ("src", "source", "from", "path"))
+            dest_dir = _first_value(args, ("dest_dir", "dest", "dst", "to", "destination", "target_dir"))
             out = dict(args)
             if src is not None:
                 out["src"] = src
@@ -248,8 +265,8 @@ class ToolExecutor:
             return out
 
         if name == "fs_rename":
-            path = _first_value(args, ["path", "src", "from"]) 
-            new_name = _first_value(args, ["new_name", "to", "name", "new"]) 
+            path = _first_value(args, ("path", "src", "from"))
+            new_name = _first_value(args, ("new_name", "to", "name", "new"))
             out = dict(args)
             if path is not None:
                 out["path"] = path
@@ -258,8 +275,8 @@ class ToolExecutor:
             return out
 
         if name == "fs_write":
-            path = _first_value(args, ["path", "file", "filename", "to"]) 
-            content = _first_value(args, ["content", "text", "body", "data"]) 
+            path = _first_value(args, ("path", "file", "filename", "to"))
+            content = _first_value(args, ("content", "text", "body", "data"))
             out = dict(args)
             if path is not None:
                 out["path"] = path
@@ -268,7 +285,7 @@ class ToolExecutor:
             return out
 
         if name == "fs_trash":
-            path = _first_value(args, ["path", "src", "target", "file"]) 
+            path = _first_value(args, ("path", "src", "target", "file"))
             if path is not None:
                 return {"path": path}
             return args
@@ -282,39 +299,27 @@ class ToolExecutor:
                 if not isinstance(op, dict):
                     continue
                 kind = str(op.get("op") or "").strip().lower()
-                # Allow a tiny set of synonyms.
-                kind_map = {
-                    "mv": "move",
-                    "move": "move",
-                    "rename": "rename",
-                    "rn": "rename",
-                    "write": "write",
-                    "save": "write",
-                    "trash": "trash",
-                    "delete": "trash",
-                    "remove": "trash",
-                }
-                kind = kind_map.get(kind, kind)
+                kind = _FS_APPLY_KIND_MAP.get(kind, kind)
                 if kind == "move":
-                    src = _first_value(op, ["src", "source", "from", "path"]) 
-                    dest_dir = _first_value(op, ["dest_dir", "dest", "dst", "to", "destination", "target_dir"]) 
+                    src = _first_value(op, ("src", "source", "from", "path"))
+                    dest_dir = _first_value(op, ("dest_dir", "dest", "dst", "to", "destination", "target_dir"))
                     if src is None or dest_dir is None:
                         continue
                     norm_ops.append({"op": "move", "src": src, "dest_dir": dest_dir})
                 elif kind == "rename":
-                    path = _first_value(op, ["path", "src", "from"]) 
-                    new_name = _first_value(op, ["new_name", "to", "name", "new"]) 
+                    path = _first_value(op, ("path", "src", "from"))
+                    new_name = _first_value(op, ("new_name", "to", "name", "new"))
                     if path is None or new_name is None:
                         continue
                     norm_ops.append({"op": "rename", "path": path, "new_name": new_name})
                 elif kind == "write":
-                    path = _first_value(op, ["path", "file", "filename", "to"]) 
-                    content = _first_value(op, ["content", "text", "body", "data"]) 
+                    path = _first_value(op, ("path", "file", "filename", "to"))
+                    content = _first_value(op, ("content", "text", "body", "data"))
                     if path is None or content is None:
                         continue
                     norm_ops.append({"op": "write", "path": path, "content": content})
                 elif kind == "trash":
-                    path = _first_value(op, ["path", "src", "target", "file"]) 
+                    path = _first_value(op, ("path", "src", "target", "file"))
                     if path is None:
                         continue
                     norm_ops.append({"op": "trash", "path": path})

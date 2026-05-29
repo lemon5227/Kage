@@ -102,6 +102,21 @@ _RE_WEATHER_FILLER = re.compile(
 )
 _RE_WEATHER_TIME_PREFIX = re.compile(r"^(今天|明天|后天)")
 
+# Read-only tools that can safely run in parallel via asyncio.gather.
+# Hoisted to module level so we don't rebuild a set on every check.
+_READ_ONLY_TOOLS = frozenset({
+    "smart_search",
+    "search",
+    "web_fetch",
+    "tavily_search",
+    "web_search",
+    "get_time",
+    "memory_search",
+    "system_capabilities",
+    "fs_search",
+    "fs_preview",
+})
+
 
 class AgenticLoop:
     """多步工具调用循环"""
@@ -1070,23 +1085,11 @@ class AgenticLoop:
         """Return True when a batch of tool calls is read-only and independent."""
         if not isinstance(calls, list) or len(calls) <= 1:
             return False
-        read_only = {
-            "smart_search",
-            "search",
-            "web_fetch",
-            "tavily_search",
-            "web_search",
-            "get_time",
-            "memory_search",
-            "system_capabilities",
-            "fs_search",
-            "fs_preview",
-        }
         for tc in calls:
             if not isinstance(tc, dict):
                 return False
             n = str(tc.get("name") or "").strip()
-            if n not in read_only:
+            if n not in _READ_ONLY_TOOLS:
                 return False
         return True
 

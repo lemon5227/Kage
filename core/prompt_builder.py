@@ -52,6 +52,18 @@ _TOOLS_BASE = frozenset({
     "shortcuts_list", "shortcuts_view", "shortcuts_run",
 })
 
+# Pre-built tool subsets used by _select_tool_names. Hoisted so the function
+# does not allocate a fresh set per call. Lists are sorted to match the
+# previous `return sorted(core)` contract.
+_TOOLS_INFO_DEFAULT = sorted(("smart_search", "web_fetch", "web_search", "get_time"))
+_TOOLS_INFO_WEATHER = sorted(("smart_search", "web_fetch"))
+_TOOLS_WEB = frozenset({"smart_search", "web_fetch"})
+_TOOLS_OPEN = frozenset({"open_url", "open_website", "open_app"})
+_TOOLS_FILE = frozenset({
+    "fs_search", "fs_preview", "fs_apply", "fs_move", "fs_rename", "fs_write", "fs_trash",
+})
+_TOOLS_SYSTEM = frozenset({"system_control", "take_screenshot"})
+
 
 class PromptBuilder:
     """动态提示词组装，管理 token 预算，双通道工具呈现"""
@@ -146,15 +158,14 @@ class PromptBuilder:
 
         # Pure info queries should keep tool schemas minimal.
         if is_web and not is_file and not is_system and not is_open:
-            core = {"smart_search", "web_fetch", "web_search", "get_time"}
             if "天气" in text:
-                core = {"smart_search", "web_fetch"}
-            return sorted(core)
+                return list(_TOOLS_INFO_WEATHER)
+            return list(_TOOLS_INFO_DEFAULT)
 
         chosen = set(_TOOLS_BASE)
 
         if is_web:
-            chosen.update({"smart_search", "web_fetch"})
+            chosen |= _TOOLS_WEB
             # Only open browser when explicitly asked.
             if (not is_open) or is_weather:
                 chosen.discard("open_url")
@@ -163,13 +174,13 @@ class PromptBuilder:
         if is_open and not is_weather:
             # Weather queries should always answer inline (no browser opening),
             # even when the user said "打开天气".
-            chosen.update({"open_url", "open_website", "open_app"})
+            chosen |= _TOOLS_OPEN
 
         if is_file:
-            chosen.update({"fs_search", "fs_preview", "fs_apply", "fs_move", "fs_rename", "fs_write", "fs_trash"})
+            chosen |= _TOOLS_FILE
 
         if is_system:
-            chosen.update({"system_control", "take_screenshot"})
+            chosen |= _TOOLS_SYSTEM
 
         # Skills (only include when user asks about skills explicitly)
         if any(k in text for k in ("skill", "技能")):
