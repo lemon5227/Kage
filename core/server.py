@@ -1143,7 +1143,79 @@ async def update_hybrid_settings(payload: dict):
         patch["model"]["cloud_api"] = cloud_patch
 
     saved = _save_user_config_patch(patch)
-    return {"status": "ok", "saved": saved}
+
+    # Hot-reload the model broker so the new settings take effect on the
+    # next turn — no restart needed. Failure here is non-fatal: the save
+    # still succeeded; we just log and let the user restart manually.
+    server = _get_kage_server()
+    reload_status = "skipped"
+    if server is not None:
+        try:
+            server.reload_model_broker()
+            reload_status = "applied"
+        except Exception as exc:  # pragma: no cover (defensive)
+            logger.warning("model broker reload failed: %s", exc)
+            reload_status = f"failed: {exc}"
+
+    return {"status": "ok", "saved": saved, "reload": reload_status}
+
+
+@app.post("/api/settings/test_provider")
+async def test_provider_endpoint(payload: dict):
+    """Probe a cloud provider with a tiny ping to verify credentials.
+
+    Body:
+      {
+        "provider_type": "openai" | "anthropic",
+        "api_key":       str   (optional — if absent and `use_env_key`
+                                is set, the server reads from env)
+        "use_env_key":   "anthropic" | "openai" | ...
+        "model_name":    str   (optional)
+        "base_url":      str   (optional)
+        "use_stored":    bool  (optional — if true, ignores api_key/use_env_key
+                                and uses the currently saved config)
+      }
+
+    The endpoint NEVER returns the API key in its response. The result
+    contains only ok/provider/model/latency_ms/error/text_sample.
+    """
+    if not isinstance(payload, dict):
+        return {"ok": False, "error": "InvalidInput: expected object body"}
+
+    from core.provider_test import probe_provider as _probe
+
+    provider_type = str(payload.get("provider_type") or "").strip().lower() or "openai"
+    model_name = str(payload.get("model_name") or "").strip()
+    base_url = str(payload.get("base_url") or "").strip()
+
+    api_key = ""
+    if payload.get("use_stored"):
+        cfg = _load_effective_config()
+        cloud_cfg = (cfg.get("model") or {}).get("cloud_api") or {}
+        api_key = str(cloud_cfg.get("api_key") or "").strip()
+        if not provider_type or provider_type == "openai":
+            provider_type = str(cloud_cfg.get("provider_type") or "openai").strip().lower() or "openai"
+        if not model_name:
+            model_name = str(cloud_cfg.get("model_name") or "").strip()
+        if not base_url:
+            base_url = str(cloud_cfg.get("base_url") or "").strip()
+    else:
+        api_key = str(payload.get("api_key") or "").strip()
+        if not api_key:
+            env_provider = str(payload.get("use_env_key") or "").strip().lower()
+            if env_provider:
+                from core.credential_helpers import read_provider_credential
+                api_key = read_provider_credential(env_provider)
+                if api_key and provider_type == "openai" and env_provider in ("openai", "anthropic"):
+                    provider_type = env_provider
+
+    result = _probe(
+        provider_type=provider_type,
+        api_key=api_key,
+        model_name=model_name,
+        base_url=base_url,
+    )
+    return result.to_dict()
 
 
 class KageServer:
@@ -1316,6 +1388,41 @@ class KageServer:
     async def disconnect(self):
         self.active_websocket = None
         logger.info("Client disconnected")
+
+    def reload_model_broker(self) -> None:
+        """Rebuild ModelBroker from the latest on-disk config and update
+        every cached provider reference so the next turn uses the new
+        settings — no process restart needed.
+
+        Safe to call from a settings-save handler. Failure is loud (we
+        re-raise) so the caller can report `reload: failed: ...` to the UI.
+        """
+        cfg = _load_effective_config()
+        broker = ModelBroker(cfg)
+
+        # Replace the broker first so any code paths that grab providers
+        # via `self.model_broker.foo_provider` see the new ones immediately.
+        self.model_broker = broker
+        self.routing_model_provider = broker.routing_provider
+        self.realtime_model_provider = broker.realtime_provider
+        self.background_model_provider = broker.background_provider
+        self.model_provider = self.background_model_provider
+        self.fallback_model_provider = broker.fallback_provider
+
+        # AgenticLoop holds its own ref. Update it so the next run() call
+        # uses the new provider — otherwise the loop would keep using the
+        # provider captured at __init__ time.
+        agentic = getattr(self, "agentic_loop", None)
+        if agentic is not None:
+            agentic.model = self.background_model_provider
+
+        logger.info(
+            "ModelBroker reloaded — modes: routing=%s realtime=%s background=%s fallback=%s",
+            self.model_broker.profile("routing").mode,
+            self.model_broker.profile("realtime").mode,
+            self.model_broker.profile("background").mode,
+            self.model_broker.profile("fallback_cloud").mode,
+        )
 
     def ensure_main_loop_started(self):
         """Start the main loop once; keep it running across reconnects."""

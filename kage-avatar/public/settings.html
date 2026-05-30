@@ -501,6 +501,9 @@
           <button type="button" id="env-detect-btn" class="btn-secondary" style="padding: 6px 12px;">
             Detect from environment
           </button>
+          <button type="button" id="test-connection-btn" class="btn-secondary" style="padding: 6px 12px;">
+            Test connection
+          </button>
           <span id="env-detect-status" style="font-size: 11px; color: var(--text-secondary);"></span>
         </div>
 
@@ -810,10 +813,76 @@
       if (btn) btn.addEventListener('click', detectEnvCredentials);
     }
 
+    // "Test connection" button — issues a tiny ping against the configured
+    // (or just-typed) provider so the user gets immediate feedback that
+    // their key + base URL + model are usable.
+    async function testProviderConnection() {
+      const status = document.getElementById('env-detect-status');
+      const btn = document.getElementById('test-connection-btn');
+      const originalText = btn.innerText;
+      btn.innerText = "Testing…";
+      btn.disabled = true;
+      status.textContent = "";
+
+      try {
+        const providerType = document.getElementById('cloud-provider-type').value;
+        const apiKey = document.getElementById('cloud-api-key').value.trim();
+        const modelName = document.getElementById('cloud-model-name').value.trim();
+        const baseUrl = document.getElementById('cloud-base-url').value.trim();
+
+        const body = {
+          provider_type: providerType,
+          model_name: modelName,
+          base_url: baseUrl,
+        };
+        // If the user typed a key, probe with that. Otherwise probe with the
+        // currently saved key (use_stored=true). This lets the user verify
+        // an already-saved key without re-typing it.
+        if (apiKey) {
+          body.api_key = apiKey;
+        } else {
+          body.use_stored = true;
+        }
+
+        const res = await tauriFetch(API_URL + "/settings/test_provider", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res || !res.ok) {
+          status.textContent = "Test request failed.";
+          status.style.color = "#ff453a";
+          return;
+        }
+        const result = await res.json();
+        if (result.ok) {
+          const ms = Math.round(result.latency_ms || 0);
+          status.textContent = `✅ ${result.provider_type}/${result.model} responded in ${ms}ms`;
+          status.style.color = "#30d158";
+        } else {
+          status.textContent = `❌ ${result.error || "Unknown error"}`;
+          status.style.color = "#ff453a";
+        }
+      } catch (err) {
+        console.warn('test connection failed:', err);
+        status.textContent = "Test failed: " + (err && err.message ? err.message : "unknown");
+        status.style.color = "#ff453a";
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function wireTestConnectionButton() {
+      const btn = document.getElementById('test-connection-btn');
+      if (btn) btn.addEventListener('click', testProviderConnection);
+    }
+
     // Init - Check backend ONCE on page load, no polling
     checkBackend();
     loadHybridSettings();
     wireEnvDetectButton();
+    wireTestConnectionButton();
   </script>
 </body>
 
