@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from core.anthropic_provider import AnthropicProvider
 from core.hybrid_model_provider import HybridModelProvider
 from core.model_provider import ModelProvider, OpenAICompatibleProvider
 
@@ -15,6 +16,29 @@ def _make_openai_compatible_provider(cfg: dict[str, Any] | None) -> OpenAICompat
         base_url=str(config.get("base_url") or "http://127.0.0.1:8080/v1"),
         timeout_sec=int(config.get("timeout_sec") or 120),
     )
+
+
+def _make_anthropic_provider(cfg: dict[str, Any] | None) -> AnthropicProvider:
+    config = dict(cfg or {})
+    return AnthropicProvider(
+        api_key=str(config.get("api_key") or ""),
+        model_name=str(config.get("model_name") or "claude-3-5-haiku-latest"),
+        base_url=str(config.get("base_url") or "https://api.anthropic.com/v1"),
+        timeout_sec=int(config.get("timeout_sec") or 120),
+    )
+
+
+def _make_cloud_provider(cfg: dict[str, Any] | None) -> ModelProvider:
+    """Pick the right provider class based on `provider_type`.
+
+    Defaults to `openai` (which also covers OpenAI-compatible endpoints
+    like Together, Groq, Moonshot, DeepSeek, local llama-server).
+    """
+    config = dict(cfg or {})
+    ptype = str(config.get("provider_type") or "openai").strip().lower()
+    if ptype == "anthropic":
+        return _make_anthropic_provider(config)
+    return _make_openai_compatible_provider(config)
 
 
 @dataclass(frozen=True)
@@ -52,10 +76,19 @@ class ModelBroker:
             "timeout_sec": int(local_runtime.get("timeout_sec") or 120),
         }
         cloud_api_key = str(cloud_cfg.get("api_key") or "").strip()
+        cloud_provider_type = str(cloud_cfg.get("provider_type") or "openai").strip().lower()
+        # Default model name depends on provider — Anthropic defaults to a
+        # cheap fast Claude model unless the user has named their own.
+        default_cloud_model = "claude-3-5-haiku-latest" if cloud_provider_type == "anthropic" else "gpt-4o-mini"
+        default_cloud_base_url = (
+            "https://api.anthropic.com/v1" if cloud_provider_type == "anthropic"
+            else "https://api.openai.com/v1"
+        )
         cloud_provider_cfg = {
+            "provider_type": cloud_provider_type,
             "api_key": cloud_api_key,
-            "model_name": str(cloud_cfg.get("model_name") or "gpt-4o-mini"),
-            "base_url": str(cloud_cfg.get("base_url") or "https://api.openai.com/v1"),
+            "model_name": str(cloud_cfg.get("model_name") or default_cloud_model),
+            "base_url": str(cloud_cfg.get("base_url") or default_cloud_base_url),
             "timeout_sec": int(cloud_cfg.get("timeout_sec") or 120),
         }
 
@@ -82,7 +115,7 @@ class ModelBroker:
         def make_cloud() -> ModelProvider | None:
             if not cloud_api_key:
                 return None
-            return _make_openai_compatible_provider(cloud_provider_cfg)
+            return _make_cloud_provider(cloud_provider_cfg)
 
         def resolve_profile(role: str, default: str) -> ProviderProfile:
             mode = resolve_mode(role, default)
@@ -99,12 +132,16 @@ class ModelBroker:
 
             # Non-hybrid path (pure local OR explicit cloud per role).
             use_cloud = mode == "cloud" and cloud_api_key
-            provider_cfg = cloud_provider_cfg if use_cloud else local_provider_cfg
-            actual_mode = "cloud" if use_cloud else "local"
+            if use_cloud:
+                actual_mode = "cloud"
+                provider = _make_cloud_provider(cloud_provider_cfg)
+            else:
+                actual_mode = "local"
+                provider = _make_openai_compatible_provider(local_provider_cfg)
             return ProviderProfile(
                 name=role,
                 mode=actual_mode,
-                provider=_make_openai_compatible_provider(provider_cfg),
+                provider=provider,
             )
 
         return {

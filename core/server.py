@@ -379,6 +379,19 @@ def _with_config_defaults(cfg: dict) -> dict:
         "escalate_keywords": [],
     }
     hybrid_cfg = _deep_merge(hybrid_defaults, hybrid_cfg)
+
+    # Cloud provider config. provider_type=="anthropic" routes through the
+    # native Anthropic Messages API; otherwise the OpenAI-compatible layer
+    # (also covers DeepSeek, Moonshot, Together, Groq, etc.).
+    cloud_cfg = dict(model_cfg.get("cloud_api") or {})
+    cloud_defaults = {
+        "provider_type": "openai",
+        "api_key": "",
+        "model_name": "",
+        "base_url": "",
+        "timeout_sec": 120,
+    }
+    cloud_cfg = _deep_merge(cloud_defaults, cloud_cfg)
     local_profiles = model_cfg.get("local_profiles")
     if not isinstance(local_profiles, list) or not local_profiles:
         local_profiles = [
@@ -398,6 +411,7 @@ def _with_config_defaults(cfg: dict) -> dict:
     model_cfg["local_runtime"] = local_runtime
     model_cfg["broker"] = broker_cfg
     model_cfg["hybrid"] = hybrid_cfg
+    model_cfg["cloud_api"] = cloud_cfg
     model_cfg["local_profiles"] = local_profiles
     out["model"] = model_cfg
     return out
@@ -1042,10 +1056,23 @@ async def get_hybrid_settings():
     return {
         "enabled": bool(hybrid_cfg.get("enabled", False)),
         "escalate_keywords": list(hybrid_cfg.get("escalate_keywords") or []),
+        "cloud_provider_type": str(cloud_cfg.get("provider_type") or "openai"),
         "cloud_model_name": str(cloud_cfg.get("model_name") or ""),
         "cloud_base_url": str(cloud_cfg.get("base_url") or ""),
         "cloud_key_configured": bool(api_key.strip()),
     }
+
+
+@app.get("/api/settings/providers/detect")
+async def detect_provider_credentials_endpoint():
+    """Report which cloud-LLM credentials Kage can pick up from the user's
+    environment. Returns booleans + source labels — never the actual key.
+
+    Useful for the settings UI: show a "Found Anthropic key (Claude Code)"
+    badge so the user can adopt it with one click.
+    """
+    from core.credential_helpers import detect_provider_credentials
+    return {"providers": detect_provider_credentials()}
 
 
 @app.post("/api/settings/hybrid")
@@ -1055,10 +1082,15 @@ async def update_hybrid_settings(payload: dict):
     Accepts:
       - enabled (bool)
       - escalate_keywords (list[str] | comma-separated str)
+      - cloud_provider_type (str: "openai" | "anthropic"; default unchanged)
       - cloud_api_key (str, optional)  — only updated when non-empty (so the
         UI can avoid round-tripping the secret)
       - cloud_model_name (str, optional)
       - cloud_base_url (str, optional)
+      - use_env_key (str, optional)    — when set to a provider name like
+        "anthropic"/"openai", reads the key from environment (e.g.
+        ANTHROPIC_API_KEY) and stores it. Lets users adopt their existing
+        Claude Code / Codex key with one click.
     """
     if not isinstance(payload, dict):
         return {"error": "InvalidInput", "message": "expected object body"}
@@ -1071,9 +1103,27 @@ async def update_hybrid_settings(payload: dict):
     keywords = [str(k).strip() for k in raw_keywords if str(k).strip()]
 
     cloud_patch: dict = {}
+
+    provider_type = str(payload.get("cloud_provider_type") or "").strip().lower()
+    if provider_type in ("openai", "anthropic"):
+        cloud_patch["provider_type"] = provider_type
+
+    # Explicit key in the request wins. Otherwise honour use_env_key.
     api_key = str(payload.get("cloud_api_key") or "").strip()
     if api_key:
         cloud_patch["api_key"] = api_key
+    else:
+        env_provider = str(payload.get("use_env_key") or "").strip().lower()
+        if env_provider:
+            from core.credential_helpers import read_provider_credential
+            env_key = read_provider_credential(env_provider)
+            if env_key:
+                cloud_patch["api_key"] = env_key
+                # If the user picked an env provider but didn't pass an
+                # explicit provider_type, infer it.
+                if "provider_type" not in cloud_patch and env_provider in ("openai", "anthropic"):
+                    cloud_patch["provider_type"] = env_provider
+
     model_name = str(payload.get("cloud_model_name") or "").strip()
     if model_name:
         cloud_patch["model_name"] = model_name

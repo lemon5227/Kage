@@ -59,6 +59,7 @@
             "escalate_keywords": []
         },
         "cloud_api": {
+            "provider_type": "openai",
             "provider": "openai",
             "api_key": "",
             "model_name": "gpt-4o-mini",

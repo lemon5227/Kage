@@ -491,9 +491,22 @@
           <input type="checkbox" id="hybrid-enabled">
           <span>Enable hybrid fallback to cloud</span>
         </label>
-        <input type="password" id="cloud-api-key" placeholder="Cloud API key (e.g. sk-...)" style="width: 100%; margin-bottom: 8px;">
-        <input type="text" id="cloud-model-name" placeholder="Cloud model (default: gpt-4o-mini)" style="width: 100%; margin-bottom: 8px;">
-        <input type="text" id="cloud-base-url" placeholder="Base URL (default: https://api.openai.com/v1)" style="width: 100%; margin-bottom: 8px;">
+
+        <select id="cloud-provider-type" style="width: 100%; margin-bottom: 8px;">
+          <option value="openai">OpenAI / OpenAI-compatible (DeepSeek, Moonshot, Together, ...)</option>
+          <option value="anthropic">Anthropic (Claude — Opus / Sonnet / Haiku)</option>
+        </select>
+
+        <div id="env-detect-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
+          <button type="button" id="env-detect-btn" class="btn-secondary" style="padding: 6px 12px;">
+            Detect from environment
+          </button>
+          <span id="env-detect-status" style="font-size: 11px; color: var(--text-secondary);"></span>
+        </div>
+
+        <input type="password" id="cloud-api-key" placeholder="Cloud API key (e.g. sk-... / sk-ant-...)" style="width: 100%; margin-bottom: 8px;">
+        <input type="text" id="cloud-model-name" placeholder="Cloud model (default depends on provider)" style="width: 100%; margin-bottom: 8px;">
+        <input type="text" id="cloud-base-url" placeholder="Base URL (leave empty for provider default)" style="width: 100%; margin-bottom: 8px;">
         <input type="text" id="hybrid-escalate-keywords" placeholder="Direct-to-cloud keywords (comma separated, optional)" style="width: 100%;">
         <div class="desc" style="margin-top: 4px;">
           If a user message contains any of these keywords, Kage skips local
@@ -664,6 +677,7 @@
       try {
         // Persist hybrid mode + cloud API settings to the backend.
         const enabled = document.getElementById('hybrid-enabled').checked;
+        const providerType = document.getElementById('cloud-provider-type').value;
         const apiKey = document.getElementById('cloud-api-key').value.trim();
         const modelName = document.getElementById('cloud-model-name').value.trim();
         const baseUrl = document.getElementById('cloud-base-url').value.trim();
@@ -672,6 +686,7 @@
         const body = {
           enabled,
           escalate_keywords: keywords,
+          cloud_provider_type: providerType,
         };
         // Only send the key when the user actually typed one — otherwise
         // we'd overwrite a previously stored key with empty.
@@ -708,6 +723,9 @@
         if (!res || !res.ok) return;
         const cfg = await res.json();
         document.getElementById('hybrid-enabled').checked = !!cfg.enabled;
+        const ptype = (cfg.cloud_provider_type || "openai").toLowerCase();
+        const ptypeSel = document.getElementById('cloud-provider-type');
+        if (ptypeSel) ptypeSel.value = (ptype === "anthropic" ? "anthropic" : "openai");
         document.getElementById('cloud-model-name').value = cfg.cloud_model_name || "";
         document.getElementById('cloud-base-url').value = cfg.cloud_base_url || "";
         const kwInput = document.getElementById('hybrid-escalate-keywords');
@@ -721,9 +739,81 @@
       }
     }
 
+    // "Detect from environment" button — query backend for which env vars
+    // are set (e.g. ANTHROPIC_API_KEY from Claude Code, OPENAI_API_KEY from
+    // OpenAI CLI / Codex). On click, adopt the matching key server-side
+    // (the key never round-trips through the browser).
+    async function detectEnvCredentials() {
+      const status = document.getElementById('env-detect-status');
+      try {
+        const res = await tauriFetch(API_URL + "/settings/providers/detect", { method: 'GET' });
+        if (!res || !res.ok) {
+          status.textContent = "Detection failed.";
+          return;
+        }
+        const data = await res.json();
+        const providers = (data && data.providers) || {};
+        // Pick a provider matching the current dropdown selection if found,
+        // else pick whichever is detected in priority order.
+        const ptypeSel = document.getElementById('cloud-provider-type');
+        const preferred = ptypeSel ? ptypeSel.value : "openai";
+        const order = preferred === "anthropic"
+          ? ["anthropic", "openai"]
+          : ["openai", "anthropic"];
+
+        let chosen = null;
+        for (const name of order) {
+          if (providers[name] && providers[name].present) {
+            chosen = { name, source: providers[name].source };
+            break;
+          }
+        }
+        if (!chosen) {
+          const found = Object.entries(providers)
+            .filter(([_, v]) => v && v.present)
+            .map(([k]) => k);
+          status.textContent = found.length
+            ? `Found: ${found.join(", ")}. Pick a matching provider above and click again.`
+            : "No cloud LLM keys detected in environment.";
+          return;
+        }
+
+        // Adopt the env key on the backend (never read the value into JS).
+        const adoptBody = {
+          enabled: document.getElementById('hybrid-enabled').checked,
+          escalate_keywords: document.getElementById('hybrid-escalate-keywords').value.trim(),
+          cloud_provider_type: chosen.name,
+          use_env_key: chosen.name,
+        };
+        const adoptRes = await tauriFetch(API_URL + "/settings/hybrid", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(adoptBody),
+        });
+        if (adoptRes && adoptRes.ok) {
+          status.textContent = `Adopted ${chosen.source} key — saved.`;
+          if (ptypeSel) ptypeSel.value = chosen.name;
+          // Refresh visible state so the placeholder shows "•••• already set".
+          await loadHybridSettings();
+        } else {
+          status.textContent = "Adoption failed; try entering the key manually.";
+        }
+      } catch (err) {
+        console.warn('detectEnvCredentials failed:', err);
+        status.textContent = "Detection failed.";
+      }
+    }
+
+    // Wire the button on init.
+    function wireEnvDetectButton() {
+      const btn = document.getElementById('env-detect-btn');
+      if (btn) btn.addEventListener('click', detectEnvCredentials);
+    }
+
     // Init - Check backend ONCE on page load, no polling
     checkBackend();
     loadHybridSettings();
+    wireEnvDetectButton();
   </script>
 </body>
 
