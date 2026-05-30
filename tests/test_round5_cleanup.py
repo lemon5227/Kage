@@ -254,8 +254,8 @@ class TestToolExecutorThreadOffload:
         return ToolExecutor(registry)
 
     def test_parallel_sync_handlers_overlap(self):
-        """Two parallel calls to a 50ms blocking tool should finish in
-        roughly 50ms (overlap), not 100ms (serial)."""
+        """Two parallel calls to a 100ms blocking tool should finish in
+        roughly 100ms (overlap), not 200ms (serial)."""
         import asyncio
         import time as _t
 
@@ -264,18 +264,18 @@ class TestToolExecutorThreadOffload:
         async def run_pair():
             t0 = _t.monotonic()
             r1, r2 = await asyncio.gather(
-                executor.execute("slow_blocking", {"delay": 0.05}),
-                executor.execute("slow_blocking", {"delay": 0.05}),
+                executor.execute("slow_blocking", {"delay": 0.1}),
+                executor.execute("slow_blocking", {"delay": 0.1}),
             )
             return r1, r2, _t.monotonic() - t0
 
         r1, r2, elapsed = asyncio.run(run_pair())
         assert r1.success is True and r1.result == "done"
         assert r2.success is True and r2.result == "done"
-        # If the executor still ran handlers serially, elapsed would be >= 100ms.
-        # With asyncio.to_thread it should overlap → comfortably under 90ms
-        # even on slow CI; keep the budget generous.
-        assert elapsed < 0.09, f"parallel handlers did not overlap: {elapsed*1000:.1f}ms"
+        # If the executor still ran handlers serially, elapsed would be >= 200ms.
+        # With asyncio.to_thread it should overlap. The 170ms budget gives plenty
+        # of room for thread-pool warmup + scheduling jitter on loaded CI.
+        assert elapsed < 0.17, f"parallel handlers did not overlap: {elapsed*1000:.1f}ms"
 
     def test_async_handler_awaited_directly(self):
         """An async handler should be awaited, not wrapped in to_thread."""

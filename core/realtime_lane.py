@@ -99,12 +99,18 @@ def resolve_pending_inferred_command(tool_name: str, arguments: dict, text: str)
 
 def is_confirm_text(text: str) -> bool:
     s = str(text or "").strip().lower()
-    return s in ("确认", "确定", "好", "行", "执行", "是", "ok", "okay", "yes") or ("确认" in s)
+    return s in (
+        "确认", "确定", "好", "好的", "行", "执行", "是", "对", "嗯", "可以",
+        "ok", "okay", "yes",
+    ) or ("确认" in s)
 
 
 def is_cancel_text(text: str) -> bool:
     s = str(text or "").strip().lower()
-    return s in ("取消", "算了", "不", "不要", "no", "nope") or ("取消" in s)
+    return s in (
+        "取消", "算了", "不", "不要", "不行", "不可以",
+        "no", "nope",
+    ) or ("取消" in s)
 
 
 def extract_correction_text(text: str) -> str:
