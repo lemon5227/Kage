@@ -69,6 +69,10 @@ class ModelResponse:
     tool_calls: list[dict] = field(default_factory=list)
     emotion: str = "neutral"
     raw_output: str = ""
+    # Populated when generation failed (network, timeout, parse error).
+    # Successful responses always have error=None. The hybrid provider uses
+    # this to decide whether to escalate to a cloud model.
+    error: Optional[str] = None
 
 
 class ModelProvider:
@@ -167,6 +171,7 @@ class OpenAICompatibleProvider(ModelProvider):
                 tool_calls=[],
                 emotion="sad",
                 raw_output="",
+                error=f"URLError: {exc}",
             )
         except Exception as exc:
             logger.error("OpenAI API unexpected error: %s", exc)
@@ -175,6 +180,7 @@ class OpenAICompatibleProvider(ModelProvider):
                 tool_calls=[],
                 emotion="sad",
                 raw_output="",
+                error=f"{type(exc).__name__}: {exc}",
             )
 
 

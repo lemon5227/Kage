@@ -54,6 +54,10 @@
             "background_provider": "local",
             "fallback_provider": "cloud"
         },
+        "hybrid": {
+            "enabled": false,
+            "escalate_keywords": []
+        },
         "cloud_api": {
             "provider": "openai",
             "api_key": "",

@@ -369,6 +369,16 @@ def _with_config_defaults(cfg: dict) -> dict:
         "fallback_provider": "cloud",
     }
     broker_cfg = _deep_merge(broker_defaults, broker_cfg)
+
+    # Hybrid (local-with-cloud-fallback) mode. Disabled by default — when the
+    # user opts in we additionally require a cloud_api.api_key before the
+    # broker actually wraps providers. Pure-local default is preserved.
+    hybrid_cfg = dict(model_cfg.get("hybrid") or {})
+    hybrid_defaults = {
+        "enabled": False,
+        "escalate_keywords": [],
+    }
+    hybrid_cfg = _deep_merge(hybrid_defaults, hybrid_cfg)
     local_profiles = model_cfg.get("local_profiles")
     if not isinstance(local_profiles, list) or not local_profiles:
         local_profiles = [
@@ -387,6 +397,7 @@ def _with_config_defaults(cfg: dict) -> dict:
         ]
     model_cfg["local_runtime"] = local_runtime
     model_cfg["broker"] = broker_cfg
+    model_cfg["hybrid"] = hybrid_cfg
     model_cfg["local_profiles"] = local_profiles
     out["model"] = model_cfg
     return out
@@ -1014,6 +1025,76 @@ async def activate_model(payload: dict):
     }
     saved = _save_user_config_patch(patch)
     return {"status": "ok", "saved": saved}
+
+
+@app.get("/api/settings/hybrid")
+async def get_hybrid_settings():
+    """Return current hybrid + cloud_api configuration for the settings UI.
+
+    Never returns the raw API key; only a boolean indicating whether one is
+    configured. The UI shows a placeholder when a key is set.
+    """
+    cfg = _load_effective_config()
+    model_cfg = cfg.get("model", {}) if isinstance(cfg, dict) else {}
+    hybrid_cfg = model_cfg.get("hybrid", {}) if isinstance(model_cfg, dict) else {}
+    cloud_cfg = model_cfg.get("cloud_api", {}) if isinstance(model_cfg, dict) else {}
+    api_key = str(cloud_cfg.get("api_key") or "")
+    return {
+        "enabled": bool(hybrid_cfg.get("enabled", False)),
+        "escalate_keywords": list(hybrid_cfg.get("escalate_keywords") or []),
+        "cloud_model_name": str(cloud_cfg.get("model_name") or ""),
+        "cloud_base_url": str(cloud_cfg.get("base_url") or ""),
+        "cloud_key_configured": bool(api_key.strip()),
+    }
+
+
+@app.post("/api/settings/hybrid")
+async def update_hybrid_settings(payload: dict):
+    """Update hybrid mode + cloud_api settings.
+
+    Accepts:
+      - enabled (bool)
+      - escalate_keywords (list[str] | comma-separated str)
+      - cloud_api_key (str, optional)  — only updated when non-empty (so the
+        UI can avoid round-tripping the secret)
+      - cloud_model_name (str, optional)
+      - cloud_base_url (str, optional)
+    """
+    if not isinstance(payload, dict):
+        return {"error": "InvalidInput", "message": "expected object body"}
+
+    enabled = bool(payload.get("enabled", False))
+
+    raw_keywords = payload.get("escalate_keywords") or []
+    if isinstance(raw_keywords, str):
+        raw_keywords = [s.strip() for s in raw_keywords.split(",")]
+    keywords = [str(k).strip() for k in raw_keywords if str(k).strip()]
+
+    cloud_patch: dict = {}
+    api_key = str(payload.get("cloud_api_key") or "").strip()
+    if api_key:
+        cloud_patch["api_key"] = api_key
+    model_name = str(payload.get("cloud_model_name") or "").strip()
+    if model_name:
+        cloud_patch["model_name"] = model_name
+    base_url = str(payload.get("cloud_base_url") or "").strip()
+    if base_url:
+        cloud_patch["base_url"] = base_url
+
+    patch: dict = {
+        "model": {
+            "hybrid": {
+                "enabled": enabled,
+                "escalate_keywords": keywords,
+            },
+        }
+    }
+    if cloud_patch:
+        patch["model"]["cloud_api"] = cloud_patch
+
+    saved = _save_user_config_patch(patch)
+    return {"status": "ok", "saved": saved}
+
 
 class KageServer:
     def __init__(self, config: dict | None = None):

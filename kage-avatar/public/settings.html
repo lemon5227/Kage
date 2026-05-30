@@ -479,6 +479,28 @@
           </div>
         </div>
       </div>
+
+      <div class="form-group" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border, #333);">
+        <span class="label">Hybrid Mode (Local + Cloud)</span>
+        <div class="desc" style="margin-bottom: 8px;">
+          When enabled, Kage tries the local model first and falls back to a
+          cloud LLM only if local fails. Leave the API key blank to stay
+          fully local — your data never leaves the machine.
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <input type="checkbox" id="hybrid-enabled">
+          <span>Enable hybrid fallback to cloud</span>
+        </label>
+        <input type="password" id="cloud-api-key" placeholder="Cloud API key (e.g. sk-...)" style="width: 100%; margin-bottom: 8px;">
+        <input type="text" id="cloud-model-name" placeholder="Cloud model (default: gpt-4o-mini)" style="width: 100%; margin-bottom: 8px;">
+        <input type="text" id="cloud-base-url" placeholder="Base URL (default: https://api.openai.com/v1)" style="width: 100%; margin-bottom: 8px;">
+        <input type="text" id="hybrid-escalate-keywords" placeholder="Direct-to-cloud keywords (comma separated, optional)" style="width: 100%;">
+        <div class="desc" style="margin-top: 4px;">
+          If a user message contains any of these keywords, Kage skips local
+          and goes straight to cloud. Useful for explicit "deep analysis"
+          requests. Leave empty to never skip local on input alone.
+        </div>
+      </div>
     </div>
 
     <!-- Save Button (Fixed Bottom Right) -->
@@ -639,22 +661,69 @@
       const originalText = btn.innerText;
       btn.innerText = "Saving...";
 
-      // Mock Save
-      await new Promise(r => setTimeout(r, 600));
+      try {
+        // Persist hybrid mode + cloud API settings to the backend.
+        const enabled = document.getElementById('hybrid-enabled').checked;
+        const apiKey = document.getElementById('cloud-api-key').value.trim();
+        const modelName = document.getElementById('cloud-model-name').value.trim();
+        const baseUrl = document.getElementById('cloud-base-url').value.trim();
+        const keywords = document.getElementById('hybrid-escalate-keywords').value.trim();
 
-      btn.innerText = "Saved";
-      btn.style.backgroundColor = "#30d158"; // Success Green
+        const body = {
+          enabled,
+          escalate_keywords: keywords,
+        };
+        // Only send the key when the user actually typed one — otherwise
+        // we'd overwrite a previously stored key with empty.
+        if (apiKey) body.cloud_api_key = apiKey;
+        if (modelName) body.cloud_model_name = modelName;
+        if (baseUrl) body.cloud_base_url = baseUrl;
+
+        const res = await tauriFetch(API_URL + "/settings/hybrid", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const ok = res && res.ok;
+
+        btn.innerText = ok ? "Saved" : "Save Failed";
+        btn.style.backgroundColor = ok ? "#30d158" : "#ff453a";
+      } catch (err) {
+        console.error('Save failed:', err);
+        btn.innerText = "Save Failed";
+        btn.style.backgroundColor = "#ff453a";
+      }
 
       setTimeout(() => {
         btn.innerText = originalText;
         btn.style.backgroundColor = "";
       }, 2000);
+    }
 
-      console.log("Settings Saved");
+    // Populate the hybrid form on page load (does not echo the API key back
+    // — instead shows a placeholder when one is already configured).
+    async function loadHybridSettings() {
+      try {
+        const res = await tauriFetch(API_URL + "/settings/hybrid", { method: 'GET' });
+        if (!res || !res.ok) return;
+        const cfg = await res.json();
+        document.getElementById('hybrid-enabled').checked = !!cfg.enabled;
+        document.getElementById('cloud-model-name').value = cfg.cloud_model_name || "";
+        document.getElementById('cloud-base-url').value = cfg.cloud_base_url || "";
+        const kwInput = document.getElementById('hybrid-escalate-keywords');
+        kwInput.value = (cfg.escalate_keywords || []).join(", ");
+        const keyInput = document.getElementById('cloud-api-key');
+        if (cfg.cloud_key_configured) {
+          keyInput.placeholder = "•••• already set (leave blank to keep)";
+        }
+      } catch (err) {
+        console.warn('loadHybridSettings failed:', err);
+      }
     }
 
     // Init - Check backend ONCE on page load, no polling
     checkBackend();
+    loadHybridSettings();
   </script>
 </body>
 
