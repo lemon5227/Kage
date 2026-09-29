@@ -47,3 +47,7 @@ kage-avatar/node_modules/
 .kiro/
 
 *.wav
+
+# Evolution runs and artifacts
+runs/
+artifacts/

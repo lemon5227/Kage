@@ -359,11 +359,11 @@ search 可向进化器暴露详细反馈；dev 只用于选择版本并控制反
 **接入：** `core/model_broker.py`、`core/tool_executor.py`，尽量使用包装器而非大改主服务。
 **接口：** 实现第 4.3 节 RunSpec/RunResult、Runner.run、Budget.reserve/settle；journal 按 run_id 幂等写完成状态；按 4.5 节新增 `progress.py`，进度默认仅观察。
 
-- [ ] 建立 2 个确定性任务：字段归一化成功；缺字段返回可评分失败。假 provider 验证不调用真实 API。
-- [ ] 实现临时工作目录、进程超时、事件记录与评分；验证相同夹具重置后不得继承上次输出；超时需清理整个任务进程组，退出后检查没有残留子进程。
-- [ ] 实现 4.5 节进度观察：不同只读结果算新证据，相同动作/结果循环记 `stagnation`；不得仅因文件没变化就熔断。
-- [ ] 实现预算预留与断点恢复；预算耗尽返回明确状态，重启不重复已完成 run。
-- [ ] 通过 `python -m pytest tests/test_evolution_kernel.py -q`；CLI `python scripts/kage_evolve.py baseline --suite eval/evolution/smoke.json --provider fake` 生成可读 report。
+- [x] 建立 2 个确定性任务：字段归一化成功；缺字段返回可评分失败。假 provider 验证不调用真实 API。
+- [x] 实现临时工作目录、进程超时、事件记录与评分；验证相同夹具重置后不得继承上次输出；超时需清理整个任务进程组，退出后检查没有残留子进程。
+- [x] 实现 4.5 节进度观察：不同只读结果算新证据，相同动作/结果循环记 `stagnation`；不得仅因文件没变化就熔断。
+- [x] 实现预算预留与断点恢复；预算耗尽返回明确状态，重启不重复已完成 run。
+- [x] 通过 `python -m pytest tests/test_evolution_kernel.py -q`；CLI `python scripts/kage_evolve.py baseline --suite eval/evolution/smoke.json --provider fake` 生成可读 report。
 
 关键测试示意（配套 fixture 在本包实现）：
 

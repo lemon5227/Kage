@@ -1,0 +1,40 @@
+{
+  "suite_id": "smoke",
+  "description": "Deterministic baseline smoke suite for Kage EvoLab E0 evaluation",
+  "tasks": [
+    {
+      "task_id": "smoke_normalize_fields",
+      "family": "file_processing",
+      "instruction": "Read raw_records.json, normalize field names to id, name, and score, then save the result to normalized_records.json.",
+      "initial_files": {
+        "raw_records.json": "[{\"ID\": 101, \"Full_Name\": \"Alice Smith\", \"Points\": 95.5}, {\"ID\": 102, \"Full_Name\": \"Bob Jones\", \"Points\": 88.0}]"
+      },
+      "expected_output_file": "normalized_records.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "normalized_records.json",
+        "expected": [
+          {"id": 101, "name": "Alice Smith", "score": 95.5},
+          {"id": 102, "name": "Bob Jones", "score": 88.0}
+        ]
+      }
+    },
+    {
+      "task_id": "smoke_missing_field",
+      "family": "tool_fault",
+      "instruction": "Read incomplete_records.json, fill in missing score fields with default 0.0, then save to validated_records.json.",
+      "initial_files": {
+        "incomplete_records.json": "[{\"id\": 201, \"name\": \"Charlie\"}, {\"id\": 202, \"name\": \"David\", \"score\": 72.0}]"
+      },
+      "expected_output_file": "validated_records.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "validated_records.json",
+        "expected": [
+          {"id": 201, "name": "Charlie", "score": 0.0},
+          {"id": 202, "name": "David", "score": 72.0}
+        ]
+      }
+    }
+  ]
+}
