@@ -176,6 +176,8 @@ class IdentityStore:
         self.soul_path = os.path.join(self.workspace_dir, "SOUL.md")
         self.user_path = os.path.join(self.workspace_dir, "USER.md")
         self.tools_path = os.path.join(self.workspace_dir, "TOOLS.md")
+        self._memory_profile = None
+        self._syncing = False
 
     # ── 文件初始化 ────────────────────────────────────────
 
@@ -230,11 +232,137 @@ class IdentityStore:
 
     # ── 更新 ──────────────────────────────────────────────
 
-    def update_user(self, field: str, value: str) -> None:
+    def set_memory_profile(self, memory_profile) -> None:
+        """关联 MemoryProfile 实例并进行双向初始同步。"""
+        self._memory_profile = memory_profile
+        if memory_profile:
+            self.sync_from_profile(memory_profile)
+
+    def get_user_dict(self) -> dict[str, str]:
+        """解析 USER.md 中的键值对字典。"""
+        content = self.load_user()
+        result: dict[str, str] = {}
+        for line in content.splitlines():
+            line = line.strip()
+            m = re.match(r"^-\s*([^：:]+)[：:]\s*(.*)$", line)
+            if m:
+                k, v = m.group(1).strip(), m.group(2).strip()
+                if k:
+                    result[k] = v
+        return result
+
+    def get_unified_user_context(self, memory_profile=None) -> str:
+        """获取统一的用户上下文文本，合并 USER.md 与 MemoryProfile。"""
+        if memory_profile:
+            self.sync_from_profile(memory_profile)
+        return self.load_user()
+
+    def sync_from_profile(self, profile) -> None:
+        """从 MemoryProfile 或 UserProfile 同步字段至 USER.md。"""
+        if self._syncing:
+            return
+        self._syncing = True
+        try:
+            p = getattr(profile, "profile", profile)
+            field_mapping = [
+                ("name", "姓名", "基本信息"),
+                ("timezone", "时区", "基本信息"),
+                ("preferred_language", "常用语言", "基本信息"),
+                ("city", "所在城市", "基本信息"),
+                ("occupation", "职业", "基本信息"),
+                ("music_preference", "音乐偏好", "偏好"),
+                ("food_preference", "饮食偏好", "偏好"),
+                ("sleep_schedule", "作息", "习惯"),
+            ]
+            for attr, md_field, section in field_mapping:
+                val = getattr(p, attr, None) if not isinstance(p, dict) else p.get(attr)
+                if val and str(val).strip():
+                    self.update_user(md_field, str(val).strip(), create_if_missing=True, section=section)
+
+            app_prefs = getattr(p, "app_preferences", {}) if not isinstance(p, dict) else p.get("app_preferences", {})
+            if isinstance(app_prefs, dict):
+                if "default_browser" in app_prefs and app_prefs["default_browser"]:
+                    self.update_user("默认浏览器", str(app_prefs["default_browser"]).strip(), create_if_missing=True, section="偏好")
+                if "common_apps" in app_prefs and app_prefs["common_apps"]:
+                    self.update_user("常用应用", str(app_prefs["common_apps"]).strip(), create_if_missing=True, section="偏好")
+
+            habits = getattr(p, "work_habits", []) if not isinstance(p, dict) else p.get("work_habits", [])
+            if habits and isinstance(habits, list):
+                self.update_user("工作习惯", ", ".join(habits), create_if_missing=True, section="习惯")
+        finally:
+            self._syncing = False
+
+    def sync_to_profile(self, profile) -> None:
+        """从 USER.md 解析并补充 MemoryProfile 未设置的字段。"""
+        if self._syncing:
+            return
+        self._syncing = True
+        try:
+            user_dict = self.get_user_dict()
+            p = getattr(profile, "profile", profile)
+            rev_mapping = {
+                "姓名": "name",
+                "时区": "timezone",
+                "常用语言": "preferred_language",
+                "所在城市": "city",
+                "职业": "occupation",
+                "音乐偏好": "music_preference",
+                "饮食偏好": "food_preference",
+                "作息": "sleep_schedule",
+            }
+            updated = False
+            for md_field, attr in rev_mapping.items():
+                if md_field in user_dict and user_dict[md_field]:
+                    cur_val = getattr(p, attr, "") if not isinstance(p, dict) else p.get(attr, "")
+                    if not cur_val:
+                        if isinstance(p, dict):
+                            p[attr] = user_dict[md_field]
+                        else:
+                            setattr(p, attr, user_dict[md_field])
+                        updated = True
+            if updated and hasattr(profile, "save"):
+                profile.save()
+        finally:
+            self._syncing = False
+
+    def _reflect_field_to_profile(self, field: str, value: str) -> None:
+        """将单个字段更新反射到关联的 MemoryProfile。"""
+        if not self._memory_profile or self._syncing:
+            return
+        mapping = {
+            "姓名": "name",
+            "时区": "timezone",
+            "常用语言": "preferred_language",
+            "所在城市": "city",
+            "职业": "occupation",
+            "音乐偏好": "music_preference",
+            "饮食偏好": "food_preference",
+            "作息": "sleep_schedule",
+        }
+        attr = mapping.get(field)
+        if attr:
+            self._syncing = True
+            try:
+                p = getattr(self._memory_profile, "profile", self._memory_profile)
+                if hasattr(p, attr):
+                    setattr(p, attr, value)
+                    if hasattr(self._memory_profile, "save"):
+                        self._memory_profile.save()
+            finally:
+                self._syncing = False
+
+    def update_user(
+        self,
+        field: str,
+        value: str,
+        create_if_missing: bool = False,
+        section: str = "基本信息",
+    ) -> None:
         """更新 USER.md 中的指定字段值。
 
         查找格式为 ``- 字段名：旧值`` 的行并替换为 ``- 字段名：新值``。
-        如果字段不存在则不做修改。
+        如果字段不存在且 create_if_missing=True，则在指定分类下插入该行；
+        否则记录警告。
         """
         content = self.load_user()
         # 匹配 "- field：..." 或 "- field:" 格式（支持中英文冒号）
@@ -246,8 +374,19 @@ class IdentityStore:
         new_content, count = pattern.subn(rf"\g<1>{value}", content)
         if count > 0:
             self._write(self.user_path, new_content)
+        elif create_if_missing:
+            section_pattern = re.compile(r"^(##\s*" + re.escape(section) + r"\s*)$", re.MULTILINE)
+            if section_pattern.search(content):
+                new_content = section_pattern.sub(rf"\1\n- {field}：{value}", content, count=1)
+            else:
+                new_content = content.rstrip() + f"\n\n## {section}\n- {field}：{value}\n"
+            self._write(self.user_path, new_content)
         else:
             logger.warning("USER.md 中未找到字段: %s", field)
+
+        # 同步至关联的 memory_profile
+        if self._memory_profile and not self._syncing:
+            self._reflect_field_to_profile(field, value)
 
     def append_soul_adjustment(self, feedback: str) -> None:
         """将用户反馈追加到 SOUL.md 的「调整记录」区域。"""

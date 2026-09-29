@@ -1046,12 +1046,11 @@ class MemorySystem:
         query_vec = self._model.encode([query], show_progress_bar=False)
         sims = _cosine_similarity(query_vec, self._embeddings)[0]
         # Shift to [0, 1] range (cosine sim can be negative)
-        min_sim = sims.min()
-        max_sim = sims.max()
-        if max_sim - min_sim > 0:
-            sims = (sims - min_sim) / (max_sim - min_sim)
+        diff = max_sim - min_sim
+        if diff > 1e-5:
+            sims = (sims - min_sim) / diff
         else:
-            sims = np.zeros_like(sims)
+            sims = np.ones_like(sims) if max_sim > 0 else np.zeros_like(sims)
         return sims
 
 

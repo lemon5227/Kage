@@ -164,7 +164,7 @@ def _register_mcp_dynamic_aliases(registry: ToolRegistry, mcp_cfg_path: str | No
 def create_default_registry(memory_system=None) -> ToolRegistry:
     """创建并注册所有 7 个核心工具的 Registry。"""
     from core.tools_impl import (
-        tavily_search, web_fetch, exec_command,
+        tinyfish_search, tavily_search, web_fetch, exec_command,
         find_skills, memory_search, proactive_agent, open_url,
         skills_find_remote, skills_install, skills_list, skills_read,
         fs_move, fs_rename, fs_write, fs_trash, fs_undo_last,
@@ -178,6 +178,21 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
     import functools
 
     registry = ToolRegistry()
+
+    registry.register(ToolDefinition(
+        name="tinyfish_search",
+        description="使用 TinyFish 实时免费搜索网页信息。当用户想查找最新资料、新闻、技术文档等网络内容时首选使用。支持中英文实时检索。",
+        parameters={
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "搜索关键词"},
+                "max_results": {"type": "integer", "description": "最大结果数 (1-10)", "default": 5},
+            },
+            "required": ["query"],
+        },
+        handler=tinyfish_search,
+        safety_level="SAFE",
+    ))
 
     registry.register(ToolDefinition(
         name="tavily_search",

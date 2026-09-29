@@ -1,0 +1,88 @@
+[
+  {
+    "id": "command_volume_down",
+    "input": "把音量调低",
+    "expected_route": "command_fastpath",
+    "category": "command",
+    "notes": "Deterministic system control should avoid general LLM loop."
+  },
+  {
+    "id": "command_brightness_up",
+    "input": "把亮度调高一点",
+    "expected_route": "command_fastpath",
+    "category": "command"
+  },
+  {
+    "id": "command_wifi_on",
+    "input": "打开 Wi-Fi",
+    "expected_route": "command_fastpath",
+    "category": "command"
+  },
+  {
+    "id": "command_bluetooth_off",
+    "input": "关闭蓝牙",
+    "expected_route": "command_fastpath",
+    "category": "command"
+  },
+  {
+    "id": "info_weather_tokyo",
+    "input": "查一下东京天气",
+    "expected_route": "weather_fastpath",
+    "category": "weather"
+  },
+  {
+    "id": "video_youtube_latest",
+    "input": "找一下 YouTube 上 Andrej Karpathy 最新的视频",
+    "expected_route": "video_fastpath",
+    "category": "video"
+  },
+  {
+    "id": "video_bilibili",
+    "input": "搜一下 B 站 transformer 教程视频",
+    "expected_route": "video_fastpath",
+    "category": "video"
+  },
+  {
+    "id": "background_downloads",
+    "input": "帮我整理下载文件夹，把 PDF 和图片归类",
+    "expected_route": "multi_step_or_long_task",
+    "category": "background"
+  },
+  {
+    "id": "background_summary",
+    "input": "分析这些面试材料并总结重点",
+    "expected_route": "multi_step_or_long_task",
+    "category": "background"
+  },
+  {
+    "id": "agent_find_pdf",
+    "input": "帮我找桌面上最近下载的 pdf",
+    "expected_route": "general_case",
+    "category": "agent"
+  },
+  {
+    "id": "chat_casual",
+    "input": "今天有点累，陪我聊会儿",
+    "expected_route": "general_case",
+    "category": "chat"
+  },
+  {
+    "id": "pending_confirm",
+    "input": "确认",
+    "expected_route": "confirmation",
+    "category": "pending"
+  },
+  {
+    "id": "pending_cancel",
+    "input": "取消",
+    "expected_route": "confirmation",
+    "category": "pending"
+  },
+  {
+    "id": "pending_correction",
+    "input": "不是这个，是完整博主名",
+    "expected_route": "general_case",
+    "category": "pending",
+    "notes": "Higher-level pending video state can reinterpret this as a video follow-up. The static classifier has no prior context, so general_case is expected here."
+  }
+]

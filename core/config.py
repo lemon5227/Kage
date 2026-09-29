@@ -5,7 +5,7 @@ Kage 统一配置管理模块
 """
 import os
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, List
 import json
 
 
@@ -166,5 +166,77 @@ class Config:
             self.wakeword.sensitivity = data["wakeword"].get("sensitivity", self.wakeword.sensitivity)
 
 
+def _get_nested_val(data: dict, key: str) -> Any:
+    """Look up key in dict, supporting dotted paths and searching common sections."""
+    if not isinstance(data, dict):
+        return None
+    if key in data and data[key] is not None:
+        return data[key]
+    if "." in key:
+        cur = data
+        parts = key.split(".")
+        for part in parts:
+            if isinstance(cur, dict) and part in cur:
+                cur = cur[part]
+            else:
+                cur = None
+                break
+        if cur is not None:
+            return cur
+    for section in ("tools", "model", "voice", "server", "wakeword", "window", "live2d", "advanced"):
+        sec_dict = data.get(section)
+        if isinstance(sec_dict, dict) and key in sec_dict and sec_dict[key] is not None:
+            return sec_dict[key]
+    return None
+
+
+def get_config(key: str, default: Any = None) -> Any:
+    """Retrieve config value by key, checking env vars, user config, and repository settings.
+    
+    Resolution order:
+    1. Environment variable: KAGE_<KEY> or <KEY> (upper-cased, '.' replaced by '_')
+    2. ~/.kage/config.json or config/settings.json
+       - Direct dotted path: e.g. 'tools.tavily_api_key'
+       - Flat key in top-level: e.g. 'tavily_api_key'
+       - Common section search: e.g. tools.tavily_api_key
+    3. default value
+    """
+    key_clean = str(key or "").strip()
+    if not key_clean:
+        return default
+
+    # 1. Environment variables
+    env_candidates = []
+    env_suffix = key_clean.replace(".", "_").upper()
+    env_candidates.extend([f"KAGE_{env_suffix}", env_suffix])
+    if "." in key_clean:
+        last_seg = key_clean.split(".")[-1].upper()
+        env_candidates.extend([f"KAGE_{last_seg}", last_seg])
+    for env_var in env_candidates:
+        val = os.environ.get(env_var)
+        if val is not None and val != "":
+            return val
+
+    # 2. File-based settings
+    candidate_paths = [
+        os.path.expanduser("~/.kage/config.json"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "settings.json"),
+        "config/settings.json",
+    ]
+    for p in candidate_paths:
+        if os.path.isfile(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    cfg_data = json.load(f)
+                    val = _get_nested_val(cfg_data, key_clean)
+                    if val is not None and val != "":
+                        return val
+            except Exception:
+                continue
+
+    return default
+
+
 # 全局配置实例
 config = Config()
+

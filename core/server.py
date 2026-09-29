@@ -71,6 +71,15 @@ from core.chat_polisher import (
     structured_chat_followup,
 )
 from core.trace import log
+from core.weather_service import (
+    WeatherService,
+    fetch_open_meteo,
+    fetch_metno,
+    fetch_wttr,
+    fetch_wttr_j1,
+    resolve_coords,
+    normalize_city_for_weather,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +111,22 @@ _RE_LOCATION_SET = re.compile(r"我(?:现在)?在\s*([A-Za-z\u4e00-\u9fff]{2,})"
 # Fast-path cache bounds (per-query keys can grow unbounded otherwise).
 _FAST_CACHE_MAX = 256
 _FAST_CACHE_STALE_SEC = 600  # entries older than this get pruned first
+_FAST_CACHE_MODULE_LOCK = threading.Lock()
+
+
+class _FastCacheAdapter:
+    """Adapter bridging KageServer._fast_cache to weather_service CacheProtocol."""
+
+    def __init__(self, server: Any):
+        self._server = server
+
+    def get(self, key: str, ttl: int) -> str | None:
+        val = self._server._get_fast_cache(key, ttl=ttl)
+        return str(val) if val else None
+
+    def set(self, key: str, value: str) -> None:
+        self._server._set_fast_cache(key, value)
+
 
 
 def _env_truthy(name: str) -> bool:
@@ -471,6 +496,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Enable CORS — restrict to Tauri and local dev origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:1420",   # Tauri dev
+        "http://localhost:5173",   # Vite dev
+        "http://localhost:5174",   # Vite dev (alternate)
+        "tauri://localhost",       # Tauri production
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- Model Download Jobs (Control Plane) ---
 _download_jobs = InMemoryJobStore()
@@ -501,481 +539,10 @@ def _list_jobs() -> list[dict]:
     return _download_jobs.list()
 
 
-@app.get("/api/health")
-async def health():
-    mode = os.environ.get("KAGE_MODE", "runtime").strip().lower()
-    return {
-        "ok": True,
-        "mode": mode,
-        "runtime_started": kage_server is not None,
-    }
-
-
-@app.get("/api/config")
-async def get_config():
-    return _load_effective_config()
-
-
-@app.post("/api/config")
-async def set_config(payload: dict):
-    if not isinstance(payload, dict):
-        return {"error": "invalid payload"}
-    saved = _save_user_config_patch(payload)
-    return {"status": "ok", "saved": saved}
-
-
-@app.get("/api/runtime/status")
-async def runtime_status():
-    with _runtime_lock:
-        return dict(_runtime_state)
-
-
-@app.post("/api/runtime/start")
-async def runtime_start():
-    with _runtime_lock:
-        if kage_server is not None:
-            _runtime_state.update({
-                "status": "ready",
-                "stage": "ready",
-                "error": None,
-                "updated_at": time.time(),
-            })
-            return dict(_runtime_state)
-        if _runtime_state.get("status") == "booting":
-            return dict(_runtime_state)
-        _runtime_state.update({
-            "status": "booting",
-            "stage": "starting",
-            "started_at": time.time(),
-            "error": None,
-            "updated_at": time.time(),
-        })
-
-    def _boot():
-        global kage_server
-        try:
-            logger.info("Runtime boot requested")
-            with _runtime_lock:
-                _runtime_state.update({"stage": "loading_config", "updated_at": time.time()})
-            cfg = _load_effective_config()
-            with _runtime_lock:
-                _runtime_state.update({"stage": "initializing_runtime", "updated_at": time.time()})
-
-            kage_server = KageServer(config=cfg)
-            logger.info("Runtime initialized")
-
-            if _main_loop is not None:
-                with _runtime_lock:
-                    _runtime_state.update({"stage": "starting_main_loop", "updated_at": time.time()})
-
-                def _start_loop_and_mark_ready():
-                    try:
-                        if kage_server is None:
-                            raise RuntimeError("runtime not initialized")
-                        kage_server.ensure_main_loop_started()
-                        with _runtime_lock:
-                            _runtime_state.update({
-                                "status": "ready",
-                                "stage": "ready",
-                                "error": None,
-                                "updated_at": time.time(),
-                            })
-                        logger.info("Runtime ready")
-                    except Exception as e:
-                        with _runtime_lock:
-                            _runtime_state.update({
-                                "status": "error",
-                                "stage": "error",
-                                "error": str(e),
-                                "updated_at": time.time(),
-                            })
-                        logger.error("Runtime loop start failed: %s", e, exc_info=True)
-
-                _main_loop.call_soon_threadsafe(_start_loop_and_mark_ready)
-            else:
-                with _runtime_lock:
-                    _runtime_state.update({
-                        "status": "ready",
-                        "stage": "ready",
-                        "error": None,
-                        "updated_at": time.time(),
-                    })
-                logger.info("Runtime ready")
-        except Exception as e:
-            logger.error("Runtime boot failed: %s", e, exc_info=True)
-            with _runtime_lock:
-                _runtime_state.update({
-                    "status": "error",
-                    "stage": "error",
-                    "error": str(e),
-                    "updated_at": time.time(),
-                })
-
-    threading.Thread(target=_boot, daemon=True).start()
-    return dict(_runtime_state)
-
-
-@app.get("/api/models/download")
-async def list_model_downloads():
-    return _list_jobs()
-
-
-@app.get("/api/models/download/{job_id}")
-async def get_model_download(job_id: str):
-    job = _get_job(job_id)
-    if not job:
-        return {"error": "job not found"}
-    return job
-
-
-@app.post("/api/models/download")
-async def start_model_download(payload: dict):
-    repo_id = str(payload.get("repo_id") or "").strip()
-    revision = payload.get("revision")
-    filename = str(payload.get("filename") or "").strip() or None
-    variant = str(payload.get("variant") or "").strip() or None
-    if not repo_id:
-        return {"error": "repo_id required"}
-
-    if not filename and variant:
-        filename = _guess_qwen3_gguf_filename(repo_id, variant)
-    if not filename:
-        return {"error": "filename required (or provide variant for known repos)"}
-    if not str(filename).lower().endswith(".gguf"):
-        return {"error": "only .gguf downloads are supported by this endpoint"}
-
-    # Normalize known Qwen GGUF filenames when user sends old naming.
-    # Example: qwen3-4b-q4_k_m.gguf -> Qwen3-4B-Q4_K_M.gguf
-    m = re.match(r"^qwen3-(\d+(?:\.\d+)?)b-(q\d+_[a-z0-9_]+)\.gguf$", str(filename).strip(), flags=re.IGNORECASE)
-    if m and repo_id.startswith("Qwen/") and repo_id.endswith("-GGUF"):
-        size = m.group(1)
-        variant_guess = m.group(2).upper()
-        filename = f"Qwen3-{size}B-{variant_guess}.gguf"
-
-    target_dir = str(payload.get("target_dir") or "").strip() or _get_models_dir()
-    os.makedirs(target_dir, exist_ok=True)
-
-    # De-dupe: if the same repo is already downloading, return that job.
-    existing = _find_active_download_job(repo_id, revision=revision if isinstance(revision, str) else None, filename=filename)
-    if existing:
-        return {"job_id": existing, "status": "already_running"}
-
-    job_id = uuid4().hex
-    now = time.time()
-    _download_jobs.create(
-        job_id,
-        {
-            "repo_id": repo_id,
-            "revision": revision,
-            "filename": filename,
-            "variant": variant,
-            "target_dir": target_dir,
-            "status": "queued",
-            "stage": "queued",
-            "created_at": now,
-            "updated_at": now,
-            "current_file": None,
-            "file_downloaded": 0,
-            "file_total": None,
-            "error": None,
-            "model_id": None,
-            "local_path": None,
-        },
-    )
-
-    def _run():
-        try:
-            from huggingface_hub import hf_hub_download
-            from tqdm.auto import tqdm
-
-            class _JobTqdm(tqdm):
-                def __init__(self, *args, **kwargs):
-                    super().__init__(*args, **kwargs)
-                    _set_job(job_id, {"status": "running", "stage": "downloading", "updated_at": time.time()})
-
-                def set_description_str(self, desc=None, refresh=True):
-                    if desc:
-                        _set_job(job_id, {"current_file": str(desc), "updated_at": time.time()})
-                    return super().set_description_str(desc=desc, refresh=refresh)
-
-                def update(self, n=1):
-                    try:
-                        cur = int(getattr(self, "n", 0) or 0)
-                        _set_job(
-                            job_id,
-                            {
-                                "file_downloaded": cur,
-                                "file_total": int(self.total) if self.total is not None else None,
-                                "updated_at": time.time(),
-                            },
-                        )
-                    except Exception:
-                        pass
-                    return super().update(n)
-
-            # Download a single GGUF file so the frontend can manage variants deterministically.
-            model_id = _make_model_id(repo_id, filename=filename, revision=revision if isinstance(revision, str) else None)
-            local_dir = os.path.join(target_dir, model_id)
-            os.makedirs(local_dir, exist_ok=True)
-
-            local_path = hf_hub_download(
-                repo_id=repo_id,
-                filename=filename,
-                revision=revision,
-                local_dir=local_dir,
-                tqdm_class=_JobTqdm,
-            )
-            size_bytes = None
-            if os.path.exists(local_path) and os.path.isfile(local_path):
-                try:
-                    size_bytes = os.path.getsize(local_path)
-                except Exception:
-                    size_bytes = None
-
-            entry = {
-                "id": model_id,
-                "repo_id": repo_id,
-                "revision": revision if isinstance(revision, str) else None,
-                "filename": filename,
-                "variant": variant,
-                "format": "gguf",
-                "engine": "llama.cpp",
-                "path": local_path,
-                "size_bytes": size_bytes,
-                "created_at": time.time(),
-            }
-            try:
-                _register_managed_model(entry)
-            except Exception:
-                pass
-
-            _set_job(
-                job_id,
-                {
-                    "status": "completed",
-                    "stage": "completed",
-                    "updated_at": time.time(),
-                    "model_id": model_id,
-                    "local_path": local_path,
-                },
-            )
-        except Exception as e:
-            _set_job(job_id, {"status": "failed", "stage": "failed", "error": str(e), "updated_at": time.time()})
-
-    threading.Thread(target=_run, daemon=True).start()
-    return {"job_id": job_id}
-
-# Enable CORS — restrict to Tauri and local dev origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:1420",   # Tauri dev
-        "http://localhost:5173",   # Vite dev
-        "http://localhost:5174",   # Vite dev (alternate)
-        "tauri://localhost",       # Tauri production
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/api/models")
-async def list_models():
-    """List managed models (preferred) and legacy HF cache models."""
-
-    def _scan_hf_cache_models():
-        cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
-        if not os.path.exists(cache_dir):
-            return []
-
-        models = []
-        try:
-            for item in os.listdir(cache_dir):
-                if not item.startswith("models--"):
-                    continue
-                path = os.path.join(cache_dir, item)
-                if not os.path.isdir(path):
-                    continue
-
-                size_bytes = 0
-                for root, _, files in os.walk(path):
-                    for f in files:
-                        try:
-                            size_bytes += os.path.getsize(os.path.join(root, f))
-                        except Exception:
-                            pass
-
-                parts = item.split("--")
-                readable_name = item
-                if len(parts) >= 3:
-                    author = parts[1]
-                    repo = "-".join(parts[2:])
-                    readable_name = f"{author}/{repo}"
-
-                models.append(
-                    {
-                        "id": item,
-                        "name": readable_name,
-                        "size_bytes": size_bytes,
-                    }
-                )
-        except Exception:
-            logger.warning("Error listing models: %s", exc_info=True)
-
-        return models
-
-    managed = await asyncio.to_thread(_list_managed_models)
-    hf_cache = await asyncio.to_thread(_scan_hf_cache_models)
-    return {"managed": managed, "hf_cache": hf_cache}
-
-@app.delete("/api/models/{model_id}")
-async def delete_model(model_id: str):
-    """Delete a model from cache"""
-    mid = str(model_id or "").strip()
-    if not mid:
-        return {"error": "Invalid model ID"}
-
-    # Managed model deletion
-    if not mid.startswith("models--"):
-        return await asyncio.to_thread(_delete_managed_model, mid)
-
-    # Legacy HF cache deletion (kept for backward compatibility)
-    if ".." in mid or "/" in mid:
-        return {"error": "Invalid model ID"}
-
-    def _do_delete_hf_cache():
-        cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
-        target_path = os.path.join(cache_dir, mid)
-
-        if os.path.exists(target_path):
-            try:
-                shutil.rmtree(target_path)
-                return {"status": "success", "message": f"Deleted {mid}"}
-            except Exception as e:
-                return {"status": "error", "message": str(e)}
-        return {"status": "error", "message": "Model not found"}
-
-    return await asyncio.to_thread(_do_delete_hf_cache)
-
-
 _local_runtime = LocalModelRuntime(
     user_dir=_get_user_dir(),
     managed_model_getter=_get_managed_model,
 )
-
-
-# --- Memory API (Visualization & Management) ---
-
-@app.get("/api/memory/stats")
-async def memory_stats():
-    """Get memory system statistics."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "memory"):
-        return {"error": "memory system not available"}
-    return kage.memory.get_stats()
-
-
-@app.get("/api/memory/entries")
-async def memory_entries(limit: int = 50, offset: int = 0, category: str = ""):
-    """List memory entries with optional filtering."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "memory"):
-        return {"error": "memory system not available"}
-
-    entries, total = kage.memory.get_entries(limit=limit, offset=offset, category=category)
-
-    return {
-        "total": total,
-        "offset": offset,
-        "limit": limit,
-        "entries": entries,
-    }
-
-
-@app.post("/api/memory/deduplicate")
-async def memory_deduplicate(threshold: float = 0.85):
-    """Remove duplicate memory entries."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "memory"):
-        return {"error": "memory system not available"}
-
-    removed = kage.memory.deduplicate_memories(similarity_threshold=threshold)
-    return {"status": "success", "removed": removed}
-
-
-@app.post("/api/memory/merge")
-async def memory_merge(threshold: float = 0.75):
-    """Merge similar memory entries."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "memory"):
-        return {"error": "memory system not available"}
-
-    merged = kage.memory.merge_similar_facts(similarity_threshold=threshold)
-    return {"status": "success", "merged": merged}
-
-
-@app.get("/api/memory/profile")
-async def memory_profile():
-    """Get the user profile summary."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "prompt_builder") or not kage.prompt_builder.profile:
-        return {"error": "profile not available"}
-
-    return {
-        "profile": kage.prompt_builder.profile.to_dict(),
-        "summary": kage.prompt_builder.profile.get_profile_summary(),
-    }
-
-
-@app.get("/api/memory/profile/history")
-async def memory_profile_history():
-    """Get profile version history."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "prompt_builder") or not kage.prompt_builder.profile:
-        return {"error": "profile not available"}
-
-    versions = kage.prompt_builder.profile.get_version_history()
-    return {"versions": versions}
-
-
-@app.post("/api/memory/profile/restore/{version}")
-async def memory_profile_restore(version: int):
-    """Restore a previous profile version."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "prompt_builder") or not kage.prompt_builder.profile:
-        return {"error": "profile not available"}
-
-    success = kage.prompt_builder.profile.restore_version(version)
-    if success:
-        return {"status": "success", "restored_version": version}
-    return {"status": "error", "message": "version not found"}
-
-
-@app.post("/api/memory/forget")
-async def memory_forget(max_age_days: int = 90, min_importance: int = 2):
-    """Automatically forget old, low-importance memories."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "memory"):
-        return {"error": "memory system not available"}
-
-    forgotten = kage.memory.forget_old_memories(
-        max_age_days=max_age_days,
-        min_importance=min_importance,
-    )
-    return {"status": "success", "forgotten": forgotten}
-
-
-@app.delete("/api/memory/entries/{entry_id}")
-async def memory_delete_entry(entry_id: str):
-    """Delete a specific memory entry."""
-    kage = _get_kage_server()
-    if not kage or not hasattr(kage, "memory"):
-        return {"error": "memory system not available"}
-
-    success = kage.memory.delete_entry(entry_id)
-    if success:
-        return {"status": "success", "deleted": entry_id}
-    return {"status": "error", "message": "entry not found"}
 
 
 def _get_kage_server():
@@ -983,239 +550,49 @@ def _get_kage_server():
     return kage_server
 
 
-@app.get("/api/models/llama/status")
-async def llama_status():
-    return _local_runtime.status()
+# --- Mount Modular API Routers ---
+from core.routes.system import router as system_router
+from core.routes.models import router as models_router
+from core.routes.memory import router as memory_router
 
+app.include_router(system_router)
+app.include_router(models_router)
+app.include_router(memory_router)
 
-@app.post("/api/models/llama/start")
-async def llama_start(payload: dict):
-    req = payload if isinstance(payload, dict) else {}
-    cfg = _load_effective_config()
-    runtime_cfg = (
-        cfg.get("model", {}).get("local_runtime", {})
-        if isinstance(cfg.get("model", {}).get("local_runtime", {}), dict)
-        else {}
-    )
-    merged = _deep_merge(runtime_cfg, req)
-    result = _local_runtime.start(merged)
-    return result.payload
-
-
-@app.post("/api/models/llama/stop")
-async def llama_stop():
-    return _local_runtime.stop()
-
-
-@app.post("/api/models/activate")
-async def activate_model(payload: dict):
-    """Activate a model provider by writing a user config patch."""
-    provider = str(payload.get("provider") or "").strip() or "llama.cpp"
-    if provider not in ("llama.cpp", "openai"):
-        return {"error": "unsupported provider"}
-
-    base_url = str(payload.get("base_url") or "").strip()
-    model_name = str(payload.get("model_name") or "").strip() or "local-model"
-    api_key = str(payload.get("api_key") or "").strip() or "local"
-
-    if not base_url:
-        # Default to current llama-server status
-        st = _local_runtime.status()
-        if not st.get("running"):
-            return {"error": "base_url not provided and llama-server not running"}
-        base_url = f"http://{st.get('host') or '127.0.0.1'}:{st.get('port') or 8080}/v1"
-
-    timeout_sec = int(payload.get("timeout_sec") or 120)
-    patch = {
-        "model": {
-            "preferred_model": "openai",
-            "cloud_api": {
-                "base_url": base_url,
-                "api_key": api_key,
-                "model_name": model_name,
-                "timeout_sec": timeout_sec,
-            },
-        }
-    }
-    saved = _save_user_config_patch(patch)
-    return {"status": "ok", "saved": saved}
-
-
-@app.get("/api/settings/hybrid")
-async def get_hybrid_settings():
-    """Return current hybrid + cloud_api configuration for the settings UI.
-
-    Never returns the raw API key; only a boolean indicating whether one is
-    configured. The UI shows a placeholder when a key is set.
-    """
-    cfg = _load_effective_config()
-    model_cfg = cfg.get("model", {}) if isinstance(cfg, dict) else {}
-    hybrid_cfg = model_cfg.get("hybrid", {}) if isinstance(model_cfg, dict) else {}
-    cloud_cfg = model_cfg.get("cloud_api", {}) if isinstance(model_cfg, dict) else {}
-    api_key = str(cloud_cfg.get("api_key") or "")
-    return {
-        "enabled": bool(hybrid_cfg.get("enabled", False)),
-        "escalate_keywords": list(hybrid_cfg.get("escalate_keywords") or []),
-        "cloud_provider_type": str(cloud_cfg.get("provider_type") or "openai"),
-        "cloud_model_name": str(cloud_cfg.get("model_name") or ""),
-        "cloud_base_url": str(cloud_cfg.get("base_url") or ""),
-        "cloud_key_configured": bool(api_key.strip()),
-    }
-
-
-@app.get("/api/settings/providers/detect")
-async def detect_provider_credentials_endpoint():
-    """Report which cloud-LLM credentials Kage can pick up from the user's
-    environment. Returns booleans + source labels — never the actual key.
-
-    Useful for the settings UI: show a "Found Anthropic key (Claude Code)"
-    badge so the user can adopt it with one click.
-    """
-    from core.credential_helpers import detect_provider_credentials
-    return {"providers": detect_provider_credentials()}
-
-
-@app.post("/api/settings/hybrid")
-async def update_hybrid_settings(payload: dict):
-    """Update hybrid mode + cloud_api settings.
-
-    Accepts:
-      - enabled (bool)
-      - escalate_keywords (list[str] | comma-separated str)
-      - cloud_provider_type (str: "openai" | "anthropic"; default unchanged)
-      - cloud_api_key (str, optional)  — only updated when non-empty (so the
-        UI can avoid round-tripping the secret)
-      - cloud_model_name (str, optional)
-      - cloud_base_url (str, optional)
-      - use_env_key (str, optional)    — when set to a provider name like
-        "anthropic"/"openai", reads the key from environment (e.g.
-        ANTHROPIC_API_KEY) and stores it. Lets users adopt their existing
-        Claude Code / Codex key with one click.
-    """
-    if not isinstance(payload, dict):
-        return {"error": "InvalidInput", "message": "expected object body"}
-
-    enabled = bool(payload.get("enabled", False))
-
-    raw_keywords = payload.get("escalate_keywords") or []
-    if isinstance(raw_keywords, str):
-        raw_keywords = [s.strip() for s in raw_keywords.split(",")]
-    keywords = [str(k).strip() for k in raw_keywords if str(k).strip()]
-
-    cloud_patch: dict = {}
-
-    provider_type = str(payload.get("cloud_provider_type") or "").strip().lower()
-    if provider_type in ("openai", "anthropic"):
-        cloud_patch["provider_type"] = provider_type
-
-    # Explicit key in the request wins. Otherwise honour use_env_key.
-    api_key = str(payload.get("cloud_api_key") or "").strip()
-    if api_key:
-        cloud_patch["api_key"] = api_key
-    else:
-        env_provider = str(payload.get("use_env_key") or "").strip().lower()
-        if env_provider:
-            from core.credential_helpers import read_provider_credential
-            env_key = read_provider_credential(env_provider)
-            if env_key:
-                cloud_patch["api_key"] = env_key
-                # If the user picked an env provider but didn't pass an
-                # explicit provider_type, infer it.
-                if "provider_type" not in cloud_patch and env_provider in ("openai", "anthropic"):
-                    cloud_patch["provider_type"] = env_provider
-
-    model_name = str(payload.get("cloud_model_name") or "").strip()
-    if model_name:
-        cloud_patch["model_name"] = model_name
-    base_url = str(payload.get("cloud_base_url") or "").strip()
-    if base_url:
-        cloud_patch["base_url"] = base_url
-
-    patch: dict = {
-        "model": {
-            "hybrid": {
-                "enabled": enabled,
-                "escalate_keywords": keywords,
-            },
-        }
-    }
-    if cloud_patch:
-        patch["model"]["cloud_api"] = cloud_patch
-
-    saved = _save_user_config_patch(patch)
-
-    # Hot-reload the model broker so the new settings take effect on the
-    # next turn — no restart needed. Failure here is non-fatal: the save
-    # still succeeded; we just log and let the user restart manually.
-    server = _get_kage_server()
-    reload_status = "skipped"
-    if server is not None:
-        try:
-            server.reload_model_broker()
-            reload_status = "applied"
-        except Exception as exc:  # pragma: no cover (defensive)
-            logger.warning("model broker reload failed: %s", exc)
-            reload_status = f"failed: {exc}"
-
-    return {"status": "ok", "saved": saved, "reload": reload_status}
-
-
-@app.post("/api/settings/test_provider")
-async def test_provider_endpoint(payload: dict):
-    """Probe a cloud provider with a tiny ping to verify credentials.
-
-    Body:
-      {
-        "provider_type": "openai" | "anthropic",
-        "api_key":       str   (optional — if absent and `use_env_key`
-                                is set, the server reads from env)
-        "use_env_key":   "anthropic" | "openai" | ...
-        "model_name":    str   (optional)
-        "base_url":      str   (optional)
-        "use_stored":    bool  (optional — if true, ignores api_key/use_env_key
-                                and uses the currently saved config)
-      }
-
-    The endpoint NEVER returns the API key in its response. The result
-    contains only ok/provider/model/latency_ms/error/text_sample.
-    """
-    if not isinstance(payload, dict):
-        return {"ok": False, "error": "InvalidInput: expected object body"}
-
-    from core.provider_test import probe_provider as _probe
-
-    provider_type = str(payload.get("provider_type") or "").strip().lower() or "openai"
-    model_name = str(payload.get("model_name") or "").strip()
-    base_url = str(payload.get("base_url") or "").strip()
-
-    api_key = ""
-    if payload.get("use_stored"):
-        cfg = _load_effective_config()
-        cloud_cfg = (cfg.get("model") or {}).get("cloud_api") or {}
-        api_key = str(cloud_cfg.get("api_key") or "").strip()
-        if not provider_type or provider_type == "openai":
-            provider_type = str(cloud_cfg.get("provider_type") or "openai").strip().lower() or "openai"
-        if not model_name:
-            model_name = str(cloud_cfg.get("model_name") or "").strip()
-        if not base_url:
-            base_url = str(cloud_cfg.get("base_url") or "").strip()
-    else:
-        api_key = str(payload.get("api_key") or "").strip()
-        if not api_key:
-            env_provider = str(payload.get("use_env_key") or "").strip().lower()
-            if env_provider:
-                from core.credential_helpers import read_provider_credential
-                api_key = read_provider_credential(env_provider)
-                if api_key and provider_type == "openai" and env_provider in ("openai", "anthropic"):
-                    provider_type = env_provider
-
-    result = _probe(
-        provider_type=provider_type,
-        api_key=api_key,
-        model_name=model_name,
-        base_url=base_url,
-    )
-    return result.to_dict()
+# Re-exports for backward compatibility
+from core.routes.system import (
+    health,
+    get_config,
+    set_config,
+    runtime_status,
+    runtime_start,
+    get_hybrid_settings,
+    detect_provider_credentials_endpoint,
+    update_hybrid_settings,
+    test_provider_endpoint,
+)
+from core.routes.models import (
+    list_model_downloads,
+    get_model_download,
+    start_model_download,
+    list_models,
+    delete_model,
+    llama_status,
+    llama_start,
+    llama_stop,
+    activate_model,
+)
+from core.routes.memory import (
+    memory_stats,
+    memory_entries,
+    memory_deduplicate,
+    memory_merge,
+    memory_profile,
+    memory_profile_history,
+    memory_profile_restore,
+    memory_forget,
+    memory_delete_entry,
+)
 
 
 class KageServer:
@@ -1306,7 +683,8 @@ class KageServer:
 
         # --- Prompt Builder (使用新的 Tool_Registry) ---
         from core.memory_profile import MemoryProfile
-        memory_profile = MemoryProfile()
+        memory_profile = MemoryProfile(identity_store=self.identity_store)
+        self.identity_store.set_memory_profile(memory_profile)
 
         self.prompt_builder = PromptBuilder(
             identity_store=self.identity_store,
@@ -1338,18 +716,23 @@ class KageServer:
         )
         self._heartbeat_enabled = heartbeat_enabled
 
-        # Short-lived interactive dialog state.
-        from core.session_state import SessionState
-        self.session = SessionState()
+        # Short-lived interactive dialog state unified with SessionManager
+        self.session = self.session_manager
         self.dialog_state = DialogStateMachine(self.session)
         self.background_lane = BackgroundLane()
         self.audio_orchestrator = AudioOrchestrator(
             wakeword_enabled_cfg=self._wakeword_enabled_cfg,
         )
+        self.background_agentic_loop = self.agentic_loop.create_isolated_runner(
+            model_provider=self.background_model_provider,
+        )
         self.background_worker = BackgroundWorker(
             lane=self.background_lane,
             processor=self._process_background_job,
             on_event=self._notify_job_event,
+            context_factory=lambda: self.agentic_loop.create_isolated_runner(
+                model_provider=self.background_model_provider,
+            ),
         )
         
         self.active_websocket: WebSocket | None = None
@@ -1361,10 +744,20 @@ class KageServer:
         self.avatar_animation = AvatarAnimation()
         self._last_motion_time = 0.0  # kept for backward compat during transition
         self._fast_cache = {}
+        self._fast_cache_lock = threading.Lock()
+        self._weather_service = WeatherService(cache=_FastCacheAdapter(self))
         self._text_input_queue: asyncio.Queue = asyncio.Queue()
         self._active_turn_id: str | None = None
         threading.Thread(target=self._prefetch_local_city, daemon=True).start()
         logger.info("Kage Server Ready!")
+
+    @property
+    def weather_service(self) -> WeatherService:
+        ws = getattr(self, "_weather_service", None)
+        if ws is None:
+            ws = WeatherService(cache=_FastCacheAdapter(self))
+            self._weather_service = ws
+        return ws
 
     # ... (Rest of KageServer methods - same as before) ...
     async def connect(self, websocket: WebSocket):
@@ -1486,6 +879,25 @@ class KageServer:
         payload.update(fields)
         self._log_server_event("turn.done", **payload)
 
+    def _record_turn_completed(self, user_input: str, assistant_response: str) -> None:
+        """Record completed turn to both in-memory and file-backed session state."""
+        u = str(user_input or "").strip()
+        a = str(assistant_response or "").strip()
+        if not u or not a:
+            return
+        if hasattr(self, "session") and self.session is not None:
+            try:
+                self.session.add_turn("user", u)
+                self.session.add_turn("assistant", a)
+            except Exception:
+                pass
+        if hasattr(self, "session_manager") and self.session_manager is not None and self.session_manager is not getattr(self, "session", None):
+            try:
+                self.session_manager.add_turn("user", u)
+                self.session_manager.add_turn("assistant", a)
+            except Exception:
+                pass
+
     async def send_state(self, state: str):
         """States: IDLE, LISTENING, THINKING, SPEAKING"""
         self._ui_state = str(state or "IDLE")
@@ -1588,8 +1000,9 @@ class KageServer:
             return f"{label}完成了。你想听结果的话，我现在就可以继续说。"
         return f"{label}失败了。你要我重试的话，就直接告诉我。"
 
-    async def _process_background_job(self, job: dict[str, Any]) -> dict[str, Any]:
-        loop_result = await self.agentic_loop.run(
+    async def _process_background_job(self, job: dict[str, Any], context: Any = None) -> dict[str, Any]:
+        runner = context or getattr(self, "background_agentic_loop", self.agentic_loop)
+        loop_result = await runner.run(
             user_input=str(job.get("input_text") or ""),
             current_emotion="neutral",
         )
@@ -1725,6 +1138,7 @@ class KageServer:
                         if early_action.consume_turn:
                             self.dialog_state.clear_pending()
                             await self.mouth_speak(early_action.speech, current_emotion_str)
+                            self._record_turn_completed(user_input, early_action.speech)
                             self._log_turn_done(path="video_followup_cancel_early", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                             continue
                         if early_action.clear_pending and early_action.corrected_input:
@@ -1755,7 +1169,9 @@ class KageServer:
                         notify_on_finish=True,
                     )
                     await self._notify_job_event("created", job)
-                    await self.mouth_speak(self._background_ack_text(realtime_task.reason), current_emotion_str)
+                    ack_text = self._background_ack_text(realtime_task.reason)
+                    await self.mouth_speak(ack_text, current_emotion_str)
+                    self._record_turn_completed(user_input, ack_text)
                     self._log_turn_done(
                         path="background_enqueue",
                         route=route_hint,
@@ -1803,6 +1219,7 @@ class KageServer:
                     if not reply:
                         reply = "系统操作已执行。"
                     await self.mouth_speak(reply, current_emotion_str)
+                    self._record_turn_completed(user_input, reply)
                     self._log_turn_done(
                         path="command_fastpath",
                         route=route_hint,
@@ -1826,10 +1243,12 @@ class KageServer:
                         str(command_decision.tool_name or ""),
                         cmd_args,
                     )
+                    confirm_prompt = f"我理解你想{intent_desc}。确认就说‘确认’，如果不是这个就说‘不是这个，是…’。"
                     await self.mouth_speak(
-                        f"我理解你想{intent_desc}。确认就说‘确认’，如果不是这个就说‘不是这个，是…’。",
+                        confirm_prompt,
                         current_emotion_str,
                     )
+                    self._record_turn_completed(user_input, confirm_prompt)
                     self._log_turn_done(path="command_medium_confirm", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                     continue
 
@@ -1850,6 +1269,7 @@ class KageServer:
                     cached_video = self._get_fast_cache(video_cache_key, ttl=300)
                     if cached_video:
                         await self.mouth_speak(str(cached_video), current_emotion_str)
+                        self._record_turn_completed(user_input, str(cached_video))
                         self._log_turn_done(path="video_fastpath_cache", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
                     video_search_t0 = time.monotonic()
@@ -1882,10 +1302,12 @@ class KageServer:
                                 top = best_item
                                 matched = True
                             if not matched:
+                                no_match_msg = f"我暂时没在结果里命中“{subject}”这个博主名（检索耗时约{video_search_ms / 1000:.1f}秒）。你可以说‘不是这个，是完整博主名’让我重试。"
                                 await self.mouth_speak(
-                                    f"我暂时没在结果里命中“{subject}”这个博主名（检索耗时约{video_search_ms / 1000:.1f}秒）。你可以说‘不是这个，是完整博主名’让我重试。",
+                                    no_match_msg,
                                     current_emotion_str,
                                 )
+                                self._record_turn_completed(user_input, no_match_msg)
                                 self.dialog_state.set_pending(make_pending_video_followup(source=src, sort=sort))
                                 self._log_turn_done(
                                     path="video_fastpath_no_subject_match",
@@ -1915,6 +1337,7 @@ class KageServer:
                                 )
                             )
                             await self.mouth_speak(video_reply, current_emotion_str)
+                            self._record_turn_completed(user_input, video_reply)
                             if wants_open_after_lookup:
                                 open_t0 = time.monotonic()
                                 open_res = await self.tool_executor.execute("open_url", {"url": url})
@@ -1930,7 +1353,9 @@ class KageServer:
                             )
                             continue
                         if title:
-                            await self.mouth_speak(f"我找到一个最新视频候选：{title}。", current_emotion_str)
+                            title_reply = f"我找到一个最新视频候选：{title}。"
+                            await self.mouth_speak(title_reply, current_emotion_str)
+                            self._record_turn_completed(user_input, title_reply)
                             self._log_turn_done(
                                 path="video_fastpath",
                                 route=route_hint,
@@ -1955,6 +1380,7 @@ class KageServer:
                         )
                         if reply:
                             await self.mouth_speak(reply, current_emotion_str)
+                            self._record_turn_completed(user_input, reply)
                             self._log_turn_done(path="weather_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                             continue
                     except Exception:
@@ -1966,6 +1392,7 @@ class KageServer:
                     await self.send_state("THINKING")
                     reply = await undo_fastpath(self.tool_executor)
                     await self.mouth_speak(reply, current_emotion_str)
+                    self._record_turn_completed(user_input, reply)
                     self._log_turn_done(path="undo_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                     continue
 
@@ -1997,11 +1424,7 @@ class KageServer:
                                 print(f"👻 Kage: {final_speech}")
                             await self.mouth_speak(final_speech, current_emotion_str)
                             if pending_result.record_turn:
-                                try:
-                                    self.session.add_turn("user", user_input)
-                                    self.session.add_turn("assistant", str(final_speech))
-                                except Exception:
-                                    pass
+                                self._record_turn_completed(user_input, str(final_speech))
                         self._log_turn_done(path=pending_result.log_path or "pending_action", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
                     if pending_result.run_agent_loop:
@@ -2014,6 +1437,7 @@ class KageServer:
                         )
                         final_speech = loop_result.final_text
                         await self.mouth_speak(final_speech, current_emotion_str)
+                        self._record_turn_completed(user_input, final_speech)
                         self._log_turn_done(path="confirm_inferred_fallback", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
                     if pending_result.preserve_pending:
@@ -2046,7 +1470,9 @@ class KageServer:
                     self.dialog_state.set_pending(
                         make_pending_confirm_tool(tool_name, tool_args)
                     )
-                    await self.mouth_speak(f"要执行删除类操作：{preview}\n确认吗？回复‘确认’或‘取消’。", current_emotion_str)
+                    confirm_prompt = f"要执行删除类操作：{preview}\n确认吗？回复‘确认’或‘取消’。"
+                    await self.mouth_speak(confirm_prompt, current_emotion_str)
+                    self._record_turn_completed(user_input, confirm_prompt)
                     self._log_turn_done(path="need_confirmation", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                     continue
 
@@ -2054,20 +1480,8 @@ class KageServer:
 
                 print(f"👻 Kage: {final_speech}")
                 await self.mouth_speak(final_speech, current_emotion_str)
+                self._record_turn_completed(user_input, str(final_speech))
                 self._log_turn_done(path="agentic_loop", route=route_hint, elapsed_ms=_turn_elapsed_ms())
-
-                # Update short-term history
-                try:
-                    self.session.add_turn("user", user_input)
-                    self.session.add_turn("assistant", str(final_speech))
-                except Exception:
-                    pass
-                # Persist to session_manager (file-backed)
-                try:
-                    self.session_manager.add_turn("user", user_input)
-                    self.session_manager.add_turn("assistant", str(final_speech))
-                except Exception:
-                    pass
 
                 # Save memory only for chat
                 if not executed_tools:
@@ -2144,10 +1558,7 @@ class KageServer:
     def _fetch_weather_tool_call_quick(self, city: str) -> dict | None:
         """Fetch wttr JSON quickly and convert to tool-call-like payload."""
         try:
-            url = f"https://wttr.in/{quote(str(city or 'Shanghai'))}?format=j1"
-            req = urllib.request.Request(url, headers={"User-Agent": "Kage/1.0"})
-            with urllib.request.urlopen(req, timeout=2) as resp:
-                data = json.loads(resp.read().decode("utf-8", errors="replace"))
+            data = fetch_wttr_j1(str(city or "Shanghai"))
             if not isinstance(data, dict):
                 return None
             payload = {"success": True, "content": json.dumps(data, ensure_ascii=False)}
@@ -2374,24 +1785,11 @@ class KageServer:
         template = random.choice(template_list)
         return template.format(r=str(result).strip())
 
-    def _get_local_city(self):
-        cached = self._get_fast_cache("local_city", ttl=86400)
-        if cached:
-            return cached
-        city = ""
-        try:
-            req = urllib.request.Request(
-                "https://ipinfo.io/city",
-                headers={"User-Agent": "Kage/1.0"},
-            )
-            with urllib.request.urlopen(req, timeout=4) as resp:
-                city = (resp.read().decode("utf-8", errors="replace") or "").strip()
-        except Exception:
-            city = ""
-        if city:
-            self._set_fast_cache("local_city", city)
-            return city
-        return ""
+    def _get_local_city(self) -> str:
+        return self.weather_service.get_local_city()
+
+    async def _get_local_city_async(self) -> str:
+        return await asyncio.to_thread(self._get_local_city)
 
     def _set_location_override(self, city: str):
         c = str(city or "").strip().strip(" ：:，,。\n\t")
@@ -2406,159 +1804,16 @@ class KageServer:
         return self._get_local_city() or ""
 
     def _fetch_weather_open_meteo(self, city: str, day_offset: int = 0) -> str:
-        """Open-Meteo provider (no API key), supports today/tomorrow."""
-
-        name = str(city or "").strip()
-        if not name:
-            return ""
-
-        coords = self._resolve_weather_coords(name)
-        if not coords:
-            return ""
-        lat, lon, disp = coords
-
-        # 2) Forecast + daily
-        forecast_url = (
-            "https://api.open-meteo.com/v1/forecast?"
-            + urllib.parse.urlencode(
-                {
-                    "latitude": lat,
-                    "longitude": lon,
-                    "current_weather": "true",
-                    "daily": "weather_code,temperature_2m_max,temperature_2m_min",
-                    "timezone": "auto",
-                }
-            )
-        )
-        req2 = urllib.request.Request(forecast_url, headers={"User-Agent": "Kage/1.0"})
-        with urllib.request.urlopen(req2, timeout=3) as resp:
-            data2 = json.loads(resp.read().decode("utf-8", errors="replace"))
-        cw = data2.get("current_weather") or {}
-        temp = cw.get("temperature")
-        code = cw.get("weathercode")
-        if temp is None:
-            return ""
-
-        desc_map = {
-            0: "晴",
-            1: "多云",
-            2: "多云",
-            3: "阴",
-            45: "雾",
-            48: "雾",
-            51: "小毛毛雨",
-            53: "毛毛雨",
-            55: "大毛毛雨",
-            61: "小雨",
-            63: "中雨",
-            65: "大雨",
-            71: "小雪",
-            73: "中雪",
-            75: "大雪",
-            80: "阵雨",
-            81: "阵雨",
-            82: "强阵雨",
-            95: "雷阵雨",
-        }
-        try:
-            code_i = int(code) if code is not None else None
-        except Exception:
-            code_i = None
-        desc = desc_map.get(code_i, "天气") if code_i is not None else "天气"
-        try:
-            t = int(round(float(temp)))
-        except Exception:
-            t = temp
-        when = "明天" if int(day_offset or 0) == 1 else "今天"
-
-        daily = data2.get("daily") or {}
-        tmax = daily.get("temperature_2m_max") or []
-        tmin = daily.get("temperature_2m_min") or []
-        dcode = daily.get("weather_code") or []
-        idx = 1 if int(day_offset or 0) == 1 else 0
-        hi = tmax[idx] if isinstance(tmax, list) and len(tmax) > idx else None
-        lo = tmin[idx] if isinstance(tmin, list) and len(tmin) > idx else None
-        dc = dcode[idx] if isinstance(dcode, list) and len(dcode) > idx else code
-        try:
-            dc_i = int(dc) if dc is not None else None
-        except Exception:
-            dc_i = None
-        ddesc = desc_map.get(dc_i, desc) if dc_i is not None else desc
-
-        if hi is not None and lo is not None:
-            try:
-                hi_v = int(round(float(hi)))
-                lo_v = int(round(float(lo)))
-                return f"{disp}{when}，{ddesc}，气温{lo_v}到{hi_v}度，当前{t}度。"
-            except Exception:
-                pass
-        return f"{disp}{when}，{ddesc}，当前{t}度。"
+        """Open-Meteo provider (delegated to weather_service)."""
+        return fetch_open_meteo(city, day_offset=day_offset, cache=_FastCacheAdapter(self))
 
     def _fetch_weather_metno(self, city: str) -> str:
-        """MET Norway provider (no API key, requires User-Agent)."""
-
-        coords = self._resolve_weather_coords(str(city or ""))
-        if not coords:
-            return ""
-        lat, lon, disp = coords
-
-        url = "https://api.met.no/weatherapi/locationforecast/2.0/compact?" + urllib.parse.urlencode(
-            {"lat": lat, "lon": lon}
-        )
-        req = urllib.request.Request(url, headers={"User-Agent": "Kage/1.0 (kage assistant)"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8", errors="replace"))
-        ts = ((data.get("properties") or {}).get("timeseries") or [])
-        if not ts:
-            return ""
-        first = ts[0] if isinstance(ts[0], dict) else {}
-        details = (((first.get("data") or {}).get("instant") or {}).get("details") or {})
-        temp = details.get("air_temperature")
-        if temp is None:
-            return ""
-        try:
-            t = int(round(float(temp)))
-        except Exception:
-            t = temp
-        return f"{disp}今天，当前约{t}度。"
+        """MET Norway provider (delegated to weather_service)."""
+        return fetch_metno(city, cache=_FastCacheAdapter(self))
 
     def _resolve_weather_coords(self, city: str) -> tuple[float, float, str] | None:
-        """Resolve city to coordinates with cache."""
-
-        name = str(city or "").strip()
-        if not name:
-            return None
-        key = f"weather_coords:{name.lower()}"
-        cached = self._get_fast_cache(key, ttl=86400)
-        if cached:
-            try:
-                o = json.loads(str(cached))
-                lat = float(o.get("lat"))
-                lon = float(o.get("lon"))
-                disp = str(o.get("name") or name)
-                return (lat, lon, disp)
-            except Exception:
-                pass
-
-        geocode_url = (
-            "https://geocoding-api.open-meteo.com/v1/search?"
-            + urllib.parse.urlencode({"name": name, "count": 1, "language": "zh", "format": "json"})
-        )
-        req = urllib.request.Request(geocode_url, headers={"User-Agent": "Kage/1.0"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8", errors="replace"))
-        results = data.get("results") or []
-        if not results:
-            return None
-        r0 = results[0]
-        lat = r0.get("latitude")
-        lon = r0.get("longitude")
-        disp = r0.get("name") or name
-        if lat is None or lon is None:
-            return None
-        out = {"lat": lat, "lon": lon, "name": disp}
-        self._set_fast_cache(key, json.dumps(out, ensure_ascii=False))
-        return (float(lat), float(lon), str(disp))
+        """Resolve city to coordinates (delegated to weather_service)."""
+        return resolve_coords(city, cache=_FastCacheAdapter(self))
 
     def _prefetch_local_city(self):
         try:
@@ -2567,62 +1822,36 @@ class KageServer:
             pass
 
     def _get_fast_cache(self, key: str, ttl: int):
-        entry = self._fast_cache.get(key)
-        if not entry:
-            return ""
-        if time.time() - entry["timestamp"] > ttl:
-            self._fast_cache.pop(key, None)
-            return ""
-        return entry["value"]
+        lock = getattr(self, "_fast_cache_lock", _FAST_CACHE_MODULE_LOCK)
+        with lock:
+            entry = self._fast_cache.get(key)
+            if not entry:
+                return ""
+            if time.time() - entry["timestamp"] > ttl:
+                self._fast_cache.pop(key, None)
+                return ""
+            return entry["value"]
 
     def _set_fast_cache(self, key: str, value: str):
-        # Bounded cache: prune expired entries when size grows beyond threshold
-        # to prevent unbounded growth from per-query cache keys (e.g. video search).
-        if len(self._fast_cache) >= _FAST_CACHE_MAX:
-            now = time.time()
-            stale = [k for k, v in self._fast_cache.items() if now - v["timestamp"] > _FAST_CACHE_STALE_SEC]
-            for k in stale:
-                self._fast_cache.pop(k, None)
-            # If still oversized, drop the oldest 25%
+        lock = getattr(self, "_fast_cache_lock", _FAST_CACHE_MODULE_LOCK)
+        with lock:
             if len(self._fast_cache) >= _FAST_CACHE_MAX:
-                ordered = sorted(self._fast_cache.items(), key=lambda kv: kv[1]["timestamp"])
-                for k, _ in ordered[: len(ordered) // 4]:
+                now = time.time()
+                items = list(self._fast_cache.items())
+                stale = [k for k, v in items if now - v["timestamp"] > _FAST_CACHE_STALE_SEC]
+                for k in stale:
                     self._fast_cache.pop(k, None)
-        self._fast_cache[key] = {"timestamp": time.time(), "value": value}
+                if len(self._fast_cache) >= _FAST_CACHE_MAX:
+                    ordered = sorted(list(self._fast_cache.items()), key=lambda kv: kv[1]["timestamp"])
+                    for k, _ in ordered[: len(ordered) // 4]:
+                        self._fast_cache.pop(k, None)
+            self._fast_cache[key] = {"timestamp": time.time(), "value": value}
 
     def _fetch_weather(self, city: str) -> str:
-        local_city = self._get_local_city() or ""
-        cache_key = "weather:local" if city == local_city else f"weather:{city.lower()}"
-        cached_weather = self._get_fast_cache(cache_key, ttl=1800)
-        if cached_weather:
-            return cached_weather
-        weather = ""
-        try:
-            url = f"https://wttr.in/{quote(city)}?format=3"
-            req = urllib.request.Request(url, headers={"User-Agent": "Kage/1.0"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                weather = (resp.read().decode("utf-8", errors="replace") or "").strip()
-        except Exception:
-            weather = ""
-        # Handle timeouts / curl failures / empty output gracefully.
-        if (
-            not weather
-        ):
-            # Fallback: use a second provider (Open-Meteo) if available.
-            try:
-                alt = self._fetch_weather_open_meteo(city)
-                if alt:
-                    self._set_fast_cache(cache_key, alt)
-                    return alt
-            except Exception:
-                pass
-            fallback = self._get_fast_cache(cache_key, ttl=86400)
-            return fallback or "天气查询超时了，等会儿再试。"
-        if weather:
-            self._set_fast_cache(cache_key, weather)
-            return weather
-        fallback = self._get_fast_cache(cache_key, ttl=86400)
-        return fallback or "天气查询失败，请稍后再试"
+        return self.weather_service.get_weather(city)
+
+    async def _fetch_weather_async(self, city: str) -> str:
+        return await asyncio.to_thread(self._fetch_weather, city)
 
     def _extract_city(self, text: str) -> str:
         # If the user already corrected location, prefer that mention.

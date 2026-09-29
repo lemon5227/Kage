@@ -21,6 +21,7 @@ import logging
 import json
 import re
 import hashlib
+import threading
 import time
 import urllib.parse
 from dataclasses import dataclass, field
@@ -108,6 +109,7 @@ _READ_ONLY_TOOLS = frozenset({
     "smart_search",
     "search",
     "web_fetch",
+    "tinyfish_search",
     "tavily_search",
     "web_search",
     "get_time",
@@ -142,11 +144,32 @@ class AgenticLoop:
         self.profile = memory_profile
         # Memory write frequency control: batch facts
         self._pending_facts: list[dict] = []
+        self._pending_facts_lock = threading.Lock()
         self._fact_batch_size = 3  # Write to memory every N facts
         self._fact_batch_timeout = 300  # Or every 5 minutes (not yet implemented)
         # LLM-assisted fact extraction
         self._llm_extractor = None
         self._use_llm_extraction = True  # Enable LLM extraction by default
+
+    def create_isolated_runner(
+        self,
+        session_manager=None,
+        model_provider=None,
+        tool_executor=None,
+        prompt_builder=None,
+        memory_system=None,
+        memory_profile=None,
+    ) -> "AgenticLoop":
+        """Create an isolated AgenticLoop runner for background jobs or concurrent tasks."""
+        from core.session_state import SessionState
+        return AgenticLoop(
+            model_provider=model_provider or self.model,
+            tool_executor=tool_executor or self.tools,
+            prompt_builder=prompt_builder or self.prompt,
+            session_manager=session_manager if session_manager is not None else SessionState(),
+            memory_system=memory_system or self.memory,
+            memory_profile=memory_profile or self.profile,
+        )
 
     async def run(self, user_input: str,
                   current_emotion: str = "neutral") -> LoopResult:
@@ -872,7 +895,8 @@ class AgenticLoop:
 
             # Batch tracking
             if facts:
-                self._pending_facts.extend(facts)
+                with self._pending_facts_lock:
+                    self._pending_facts.extend(facts)
                 self._flush_facts_if_needed()
 
         except Exception as exc:
@@ -884,14 +908,16 @@ class AgenticLoop:
         Persists each batched fact via memory.add_fact() before clearing the buffer
         so that LLM-extracted facts are not silently dropped.
         """
-        if len(self._pending_facts) < self._fact_batch_size:
-            return
+        with self._pending_facts_lock:
+            if len(self._pending_facts) < self._fact_batch_size:
+                return
         self._persist_pending_facts(forced=False)
 
     def flush_pending_facts(self) -> None:
         """Force flush all pending facts. Call during shutdown."""
-        if not self._pending_facts:
-            return
+        with self._pending_facts_lock:
+            if not self._pending_facts:
+                return
         self._persist_pending_facts(forced=True)
 
     def _persist_pending_facts(self, *, forced: bool) -> None:
@@ -900,9 +926,12 @@ class AgenticLoop:
         If self.memory is None, the queue is still cleared so it doesn't
         grow unboundedly when persistence is disabled.
         """
-        count = len(self._pending_facts)
+        with self._pending_facts_lock:
+            facts_to_persist = list(self._pending_facts)
+            self._pending_facts.clear()
+        count = len(facts_to_persist)
         if self.memory:
-            for fact in self._pending_facts:
+            for fact in facts_to_persist:
                 if not isinstance(fact, dict):
                     continue
                 content = fact.get("content")
@@ -917,7 +946,6 @@ class AgenticLoop:
                     )
                 except Exception as exc:
                     logger.warning("Failed to persist batched fact: %s", exc)
-        self._pending_facts.clear()
         prefix = "Force flushed" if forced else "Flushed"
         logger.info("%s %d pending facts to memory", prefix, count)
 

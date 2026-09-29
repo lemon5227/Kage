@@ -11,27 +11,54 @@ import json
 import logging
 import os
 import time
+from collections import deque
 from datetime import datetime, timezone
+from typing import Any
+
+from core.constants import (
+    SESSION_MAX_HISTORY as MAX_HISTORY,
+    SESSION_IDLE_TIMEOUT_SEC as IDLE_TIMEOUT_SEC,
+    SESSION_CURRENT_FILENAME as CURRENT_FILENAME,
+)
+from core.exceptions import SessionError, SessionCorruptedError
 
 logger = logging.getLogger(__name__)
 
-# ── 常量 ──────────────────────────────────────────────────
 
-MAX_HISTORY = 20
-IDLE_TIMEOUT_SEC = 1800  # 30 分钟
-CURRENT_FILENAME = "current.jsonl"
+class _HistoryDeque(deque):
+    """Deque subclass that proxies appends to SessionManager.add_turn."""
+
+    def __init__(self, manager: "SessionManager", items=(), maxlen: int = MAX_HISTORY):
+        super().__init__(items, maxlen=maxlen)
+        self._manager = manager
+
+    def append(self, x):
+        super().append(x)
+        if isinstance(x, dict) and "role" in x and "content" in x:
+            self._manager.add_turn(x["role"], x["content"])
+
+    def clear(self):
+        super().clear()
+        self._manager._history.clear()
 
 
 class SessionManager:
-    """会话管理：持久化到文件，支持恢复。"""
+    """会话管理：持久化到文件，支持恢复与短期动作状态。"""
 
-    def __init__(self, workspace_dir: str = "~/.kage"):
-        self.workspace_dir = os.path.expanduser(workspace_dir)
-        self.sessions_dir = os.path.join(self.workspace_dir, "sessions")
-        os.makedirs(self.sessions_dir, exist_ok=True)
+    def __init__(self, workspace_dir: str = "~/.kage", persist: bool = True):
+        self.workspace_dir = os.path.expanduser(workspace_dir) if workspace_dir else ""
+        self.persist = persist and bool(self.workspace_dir)
+        if self.persist:
+            self.sessions_dir = os.path.join(self.workspace_dir, "sessions")
+            os.makedirs(self.sessions_dir, exist_ok=True)
+            self.current_file = os.path.join(self.sessions_dir, CURRENT_FILENAME)
+        else:
+            self.sessions_dir = ""
+            self.current_file = ""
 
-        self.current_file = os.path.join(self.sessions_dir, CURRENT_FILENAME)
         self._history: list[dict] = []
+        self.pending_action: Any | None = None
+        self.last_action: Any | None = None
 
     # ── 对话轮次 ──────────────────────────────────────────
 
@@ -67,6 +94,27 @@ class SessionManager:
         recent = self._history[-MAX_HISTORY:]
         return [{"role": t["role"], "content": t["content"]} for t in recent]
 
+    def as_history_list(self) -> list[dict[str, str]]:
+        """与 SessionState 兼容的会话历史列表接口。"""
+        return self.get_history()
+
+    @property
+    def history(self) -> _HistoryDeque:
+        """与 SessionState.history deque 兼容的属性视图。"""
+        return _HistoryDeque(self, self.get_history(), maxlen=MAX_HISTORY)
+
+    # ── 交互动作状态（兼容 SessionState） ─────────────────────
+
+    def has_pending_action(self) -> bool:
+        return self.pending_action is not None
+
+    def set_pending_action(self, pending: Any) -> Any:
+        self.pending_action = pending
+        return pending
+
+    def clear_pending_action(self) -> None:
+        self.pending_action = None
+
     # ── 持久化 ────────────────────────────────────────────
 
     def load_from_file(self) -> None:
@@ -75,7 +123,7 @@ class SessionManager:
         逐行解析 JSON，跳过损坏行。
         如果整个文件无法读取，重命名为 .bak 并创建新文件。
         """
-        if not os.path.isfile(self.current_file):
+        if not self.persist or not self.current_file or not os.path.isfile(self.current_file):
             return
 
         try:
@@ -114,6 +162,8 @@ class SessionManager:
 
     def _append_to_file(self, turn: dict) -> None:
         """将一轮对话追加写入 current.jsonl。"""
+        if not self.persist or not self.current_file:
+            return
         try:
             with open(self.current_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(turn, ensure_ascii=False) + "\n")
@@ -122,6 +172,9 @@ class SessionManager:
 
     def _handle_corrupted_file(self) -> None:
         """处理损坏文件：重命名为 .bak 并创建新空文件。"""
+        if not self.persist or not self.current_file:
+            self._history = []
+            return
         bak_path = self.current_file + ".bak"
         try:
             # 如果已有 .bak 文件，覆盖它
@@ -148,6 +201,9 @@ class SessionManager:
         Returns:
             True 如果执行了归档，False 如果未归档。
         """
+        if not self.persist or not self.current_file:
+            return False
+
         last_time = self.get_last_user_time()
         if last_time is None:
             return False

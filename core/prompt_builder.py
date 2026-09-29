@@ -205,8 +205,19 @@ class PromptBuilder:
                 - tool_schemas: OpenAI Function Calling 格式的工具 Schema 列表
         """
         # 1. System prompt sections (in order)
-        soul = self.identity.load_soul()
-        user_info = self.identity.load_user()
+        soul = str(self.identity.load_soul() or "")
+        user_info = ""
+        if hasattr(self.identity, "get_unified_user_context"):
+            try:
+                res = self.identity.get_unified_user_context(self.profile)
+                if isinstance(res, str):
+                    user_info = res
+                else:
+                    user_info = str(self.identity.load_user() or "")
+            except Exception:
+                user_info = str(self.identity.load_user() or "")
+        else:
+            user_info = str(self.identity.load_user() or "")
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M (%A)")
 
         span = Span("prompt", "build", user_len=len(str(user_input or "")), history=len(history or []))
@@ -321,7 +332,7 @@ class PromptBuilder:
             system_parts.append(self.INFO_RULE)
         elif route == "chat":
             system_parts.append(self.CHAT_RULE)
-        system_content = "\n\n".join(p for p in system_parts if p.strip())
+        system_content = "\n\n".join(str(p) for p in system_parts if str(p).strip())
 
         # 2. Build messages
         messages = [{"role": "system", "content": system_content}]

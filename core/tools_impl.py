@@ -14,7 +14,7 @@ New code should import from core.tools directly:
 from core.tools import (
     fs_move, fs_rename, fs_write, fs_trash, fs_undo_last,
     fs_search, fs_preview, fs_apply,
-    tavily_search, web_fetch, smart_search, search, search_and_open,
+    tinyfish_search, tavily_search, web_fetch, smart_search, search, search_and_open,
     parse_duckduckgo_html, exec_command, open_url, open_app,
     open_website, take_screenshot, get_time,
     system_control, system_capabilities,
@@ -31,7 +31,7 @@ from core.tools import (
 __all__ = [
     "fs_move", "fs_rename", "fs_write", "fs_trash", "fs_undo_last",
     "fs_search", "fs_preview", "fs_apply",
-    "tavily_search", "web_fetch", "smart_search", "search", "search_and_open",
+    "tinyfish_search", "tavily_search", "web_fetch", "smart_search", "search", "search_and_open",
     "parse_duckduckgo_html", "exec_command", "open_url", "open_app",
     "open_website", "take_screenshot", "get_time",
     "system_control", "system_capabilities",

@@ -207,6 +207,14 @@ def fetch_wttr(city: str) -> str:
         return ""
 
 
+def fetch_wttr_j1(city: str) -> dict | None:
+    """wttr.in provider: j1 JSON format."""
+    from urllib.parse import quote
+    url = f"https://wttr.in/{quote(str(city or 'Shanghai'))}?format=j1"
+    return _fetch_json(url, timeout=2)
+
+
+
 class WeatherService:
     """High-level weather service with provider fallback chain."""
 

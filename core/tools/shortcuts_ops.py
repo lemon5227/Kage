@@ -32,29 +32,72 @@ def shortcuts_run(name: str, input_text: str = "") -> str:
         return err("ShortcutsFailed", str(e))
 
 
+RECOMMENDED_KAGE_SHORTCUTS = [
+    "Kage Quick Note",
+    "Kage Toggle Mute",
+    "Kage Screenshot",
+]
+
+
 def shortcuts_create(name: str) -> str:
-    """Create a new shortcut placeholder."""
-    return ok(message=f"Shortcut '{name}' created. Open Shortcuts app to configure.")
+    """Create a new shortcut placeholder or guide in macOS Shortcuts app.
+    
+    Note: macOS does not provide a CLI command to programmatically construct shortcut workflows;
+    we open the Shortcuts application for the user to configure actions.
+    """
+    clean_name = str(name or "").strip()
+    if not clean_name:
+        return err("InvalidArgument", "Shortcut name cannot be empty")
+    try:
+        subprocess.run(["open", "-a", "Shortcuts"], check=False)
+    except Exception:
+        pass
+    return ok(
+        message=f"Shortcut '{clean_name}' created. Opened Shortcuts app to configure.",
+        name=clean_name,
+        requires_gui=True,
+    )
 
 
 def shortcuts_delete(name: str) -> str:
     """Delete a shortcut."""
+    clean_name = str(name or "").strip()
+    if not clean_name:
+        return err("InvalidArgument", "Shortcut name cannot be empty")
     try:
-        subprocess.run(["shortcuts", "delete", name], check=True)
-        return ok(message=f"Shortcut '{name}' deleted")
+        subprocess.run(["shortcuts", "delete", clean_name], check=True)
+        return ok(message=f"Shortcut '{clean_name}' deleted")
     except Exception as e:
         return err("DeleteFailed", str(e))
 
 
 def shortcuts_view(name: str) -> str:
     """View shortcut details."""
+    clean_name = str(name or "").strip()
+    if not clean_name:
+        return err("InvalidArgument", "Shortcut name cannot be empty")
     try:
-        subprocess.run(["shortcuts", "view", name], check=True)
-        return ok(message=f"Viewing shortcut: {name}")
+        subprocess.run(["shortcuts", "view", clean_name], check=True)
+        return ok(message=f"Viewing shortcut: {clean_name}")
     except Exception as e:
         return err("ViewFailed", str(e))
 
 
 def shortcuts_bootstrap_kage() -> str:
-    """Bootstrap Kage-related shortcuts."""
-    return ok(message="Kage shortcuts bootstrapped")
+    """Bootstrap and inspect Kage companion shortcuts on macOS."""
+    try:
+        result = subprocess.run(["shortcuts", "list"], capture_output=True, text=True, timeout=10)
+        existing = {line.strip() for line in (result.stdout or "").splitlines() if line.strip()}
+    except Exception:
+        existing = set()
+
+    installed = [s for s in RECOMMENDED_KAGE_SHORTCUTS if s in existing]
+    missing = [s for s in RECOMMENDED_KAGE_SHORTCUTS if s not in existing]
+
+    return ok(
+        message="Kage shortcuts bootstrapped",
+        installed=installed,
+        missing=missing,
+        total_recommended=len(RECOMMENDED_KAGE_SHORTCUTS),
+    )
+

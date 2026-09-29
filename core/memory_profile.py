@@ -53,9 +53,37 @@ class UserProfile:
 class MemoryProfile:
     """结构化用户档案管理"""
 
-    def __init__(self, profile_path: str = "~/.kage/memory/profile.json"):
+    def __init__(
+        self,
+        profile_path: str = "~/.kage/memory/profile.json",
+        identity_store=None,
+        sync_identity: bool = True,
+    ):
         self.profile_path = os.path.expanduser(profile_path)
+        self.identity_store = identity_store
+        self.sync_identity = sync_identity
+        self._syncing = False
         self.profile = self._load_or_create()
+        if self.identity_store and self.sync_identity:
+            self._do_sync()
+
+    def set_identity_store(self, store) -> None:
+        """关联 IdentityStore 实例并触发双向同步。"""
+        self.identity_store = store
+        if store and self.sync_identity:
+            self._do_sync()
+
+    def _do_sync(self) -> None:
+        if self._syncing:
+            return
+        self._syncing = True
+        try:
+            if hasattr(self.identity_store, "sync_to_profile"):
+                self.identity_store.sync_to_profile(self)
+            if hasattr(self.identity_store, "sync_from_profile"):
+                self.identity_store.sync_from_profile(self.profile)
+        finally:
+            self._syncing = False
 
     def _load_or_create(self) -> UserProfile:
         """加载已有档案或创建新档案"""
@@ -80,6 +108,14 @@ class MemoryProfile:
 
         with open(self.profile_path, "w", encoding="utf-8") as f:
             json.dump(asdict(self.profile), f, ensure_ascii=False, indent=2)
+
+        if self.identity_store and self.sync_identity and not self._syncing:
+            self._syncing = True
+            try:
+                if hasattr(self.identity_store, "sync_from_profile"):
+                    self.identity_store.sync_from_profile(self.profile)
+            finally:
+                self._syncing = False
 
     def _save_version_history(self) -> None:
         """Save current profile to version history before updating."""

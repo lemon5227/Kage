@@ -1,6 +1,33 @@
 import pyaudio
 import wave
-import audioop
+import math
+import struct
+
+
+class _AudioOpFallback:
+    """Pure Python fallback for audioop.rms on 16-bit PCM audio (PEP 594 Python 3.13+ compat)."""
+
+    @staticmethod
+    def rms(fragment: bytes, width: int) -> int:
+        if not fragment or width != 2:
+            return 0
+        count = len(fragment) // 2
+        if count == 0:
+            return 0
+        shorts = struct.unpack(f"<{count}h", fragment[:count * 2])
+        sum_sq = sum(s * s for s in shorts)
+        return int(math.sqrt(sum_sq / count))
+
+
+try:
+    import audioop
+except ImportError:
+    try:
+        import audioop_lts as audioop
+    except ImportError:
+        audioop = _AudioOpFallback()
+
+
 import os
 from funasr import AutoModel
 # Suppress heavy logging from FunASR/ModelScope

@@ -53,6 +53,27 @@ MEMORY_FACT_BATCH_SIZE = 3
 CHAT_MAX_RESPONSE_LEN = 40
 
 # ============================================================================
+# Session
+# ============================================================================
+SESSION_MAX_HISTORY = 20
+SESSION_IDLE_TIMEOUT_SEC = 1800
+SESSION_CURRENT_FILENAME = "current.jsonl"
+
+# ============================================================================
+# Audio
+# ============================================================================
+AUDIO_SAMPLE_RATE = 16000
+AUDIO_CHANNELS = 1
+AUDIO_SAMPLE_WIDTH = 2  # 16-bit PCM
+
+# ============================================================================
+# Agentic Loop
+# ============================================================================
+AGENTIC_MAX_STEPS = 10
+AGENTIC_MAX_TOKENS_TEXT = 200
+AGENTIC_MAX_TOKENS_TOOLS = 300
+
+# ============================================================================
 # Motion / Expression
 # ============================================================================
 MOTION_COOLDOWN_SEC = 4.0
@@ -62,3 +83,5 @@ EXPRESSION_DURATION_BASE_SEC = 2.5
 EXPRESSION_DURATION_PER_CHAR = 0.04
 EXPRESSION_DURATION_MIN_SEC = 2.0
 EXPRESSION_DURATION_MAX_SEC = 6.0
+
+

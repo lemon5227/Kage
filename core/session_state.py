@@ -1,42 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Any
-from collections import deque
+from core.session_manager import SessionManager
 
 
-@dataclass
-class SessionState:
+class SessionState(SessionManager):
     """Short-term session state for multi-turn conversation.
 
-    This state should be cheap to update and safe to reset.
+    Unified with SessionManager as Single Source of Truth (SSOT).
+    When created without workspace_dir, operates purely in-memory.
     """
 
-    history: deque[dict[str, str]] = field(default_factory=lambda: deque(maxlen=12))
-    pending_action: Any | None = None
-    last_action: Any | None = None
-
-    def add_turn(self, role: str, content: str) -> None:
-        role = str(role or "").strip()
-        if role not in ("user", "assistant"):
-            return
-        content = str(content or "").strip()
-        if not content:
-            return
-        self.history.append({"role": role, "content": content})
-
-    def as_history_list(self) -> list[dict[str, str]]:
-        try:
-            return list(self.history)
-        except Exception:
-            return []
-
-    def has_pending_action(self) -> bool:
-        return self.pending_action is not None
-
-    def set_pending_action(self, pending: Any) -> Any:
-        self.pending_action = pending
-        return pending
-
-    def clear_pending_action(self) -> None:
-        self.pending_action = None
+    def __init__(
+        self,
+        workspace_dir: str | None = None,
+        history: Any = None,
+        pending_action: Any | None = None,
+        last_action: Any | None = None,
+        persist: bool | None = None,
+    ):
+        should_persist = persist if persist is not None else bool(workspace_dir)
+        super().__init__(workspace_dir=workspace_dir or "", persist=should_persist)
+        self.pending_action = pending_action
+        self.last_action = last_action
+        if history:
+            for item in history:
+                if isinstance(item, dict) and "role" in item and "content" in item:
+                    self.add_turn(item["role"], item["content"])

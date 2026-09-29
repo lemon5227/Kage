@@ -46,6 +46,26 @@ class ToolExecutionError(KageError):
     """A tool call failed to execute."""
 
 
+class ToolNotFoundError(ToolExecutionError):
+    """Requested tool was not found in the registry."""
+
+
+class ToolArgumentError(ToolExecutionError):
+    """Tool arguments are invalid or missing required keys."""
+
+
+class ProviderError(ModelError):
+    """Model provider encountered an error."""
+
+
+class SessionError(KageError):
+    """Session state or persistence operation failed."""
+
+
+class SessionCorruptedError(SessionError):
+    """Session history file is corrupted."""
+
+
 class NetworkError(KageError):
     """Network request failed (timeout, DNS, connection refused, etc.)."""
 

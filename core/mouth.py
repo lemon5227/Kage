@@ -3,6 +3,7 @@ import edge_tts
 import pygame
 import os
 import re
+import tempfile
 import threading
 
 
@@ -18,7 +19,8 @@ class KageMouth:
         # zh-CN-YunxiNeural (活泼少年)
         # zh-CN-XiaoxiaoNeural (温柔女性)
         self.voice = voice
-        self.temp_audio_file="temp_kage_speech.mp3"
+        self.temp_audio_file = "temp_kage_speech.mp3"
+        self._active_temp_files: set[str] = set()
         self._stop_event = threading.Event()
 
         # init speaker
@@ -46,8 +48,12 @@ class KageMouth:
                  rate = "+10%"; pitch = "+30Hz"; volume = "-10%"
     
             communicate = edge_tts.Communicate(cleaned_text, self.voice, rate=rate, volume=volume, pitch=pitch)
-            await communicate.save(self.temp_audio_file)
-            return self.temp_audio_file
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+                temp_path = tmp.name
+            self._active_temp_files.add(temp_path)
+            self.temp_audio_file = temp_path
+            await communicate.save(temp_path)
+            return temp_path
             
         except Exception as e:
             print(f"Error generating audio: {e}")
@@ -69,18 +75,31 @@ class KageMouth:
                     break
                 pygame.time.Clock().tick(10)
             
-            pygame.mixer.music.unload()
-            
-            # Clean up immediately? Or later? 
-            # Safe to clean up here as we are blocking.
-            try:
-                os.remove(file_path)
-            except OSError:
-                pass
             return not self._stop_event.is_set()
         except Exception as e:
             print(f"Error playing audio: {e}")
             return False
+        finally:
+            try:
+                pygame.mixer.music.unload()
+            except Exception:
+                pass
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                self._active_temp_files.discard(file_path)
+            except OSError:
+                pass
+
+    def cleanup_temp_files(self):
+        """Clean up all active temporary audio files."""
+        for p in list(self._active_temp_files):
+            try:
+                if os.path.exists(p):
+                    os.remove(p)
+            except OSError:
+                pass
+        self._active_temp_files.clear()
 
     def stop_playback(self):
         self._stop_event.set()

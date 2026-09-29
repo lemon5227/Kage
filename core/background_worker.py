@@ -20,11 +20,13 @@ class BackgroundWorker:
         processor: JobProcessor,
         on_event: JobEventSink | None = None,
         idle_sleep_sec: float = 0.2,
+        context_factory: Callable[[], Any] | None = None,
     ):
         self._lane = lane
         self._processor = processor
         self._on_event = on_event
         self._idle_sleep_sec = max(0.01, float(idle_sleep_sec))
+        self._context_factory = context_factory
         self._task: asyncio.Task | None = None
         self._running = False
 
@@ -57,7 +59,14 @@ class BackgroundWorker:
         await self._emit("started", job)
         job_id = str(job.get("job_id") or "")
         try:
-            result = await self._processor(job)
+            if self._context_factory is not None:
+                ctx = self._context_factory()
+                try:
+                    result = await self._processor(job, context=ctx)
+                except TypeError:
+                    result = await self._processor(job)
+            else:
+                result = await self._processor(job)
         except Exception as exc:
             failed = self._lane.fail(job_id, str(exc))
             if failed is not None:

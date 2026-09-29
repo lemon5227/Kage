@@ -1,18 +1,58 @@
 <div align="center">
 
 # Kage (影)
-### Your Intelligent Desktop Companion
-#### 傲娇又元气的二次元终端精灵
+### Local LLM Agent Runtime for macOS
+#### Route-based desktop automation with local inference, tools, ASR/TTS, and Live2D
 
 [🌐 官方网站](https://kage.lemony.eu.org) | [📖 文档](https://github.com/lemon5227/Kage) | [🐛 报告问题](https://github.com/lemon5227/Kage/issues)
 
 ---
 
-**Kage** 不仅仅是一个桌面助手，她是你的数字伙伴。
-运行在 Apple Silicon (Mac) 本地，拥有极速的响应能力、生动的 Live2D 形象和独特的个性。
-她能听懂你的语音，管理你的系统，陪你聊天，甚至编写代码——而且这一切都完全在本地运行，保护你的隐私。
+**Kage** is a local LLM Agent Runtime that turns voice/text input into controllable desktop actions.
+It combines local model inference, route-based task classification, structured tool execution,
+dialog state, safety confirmation, ASR/TTS, and a Tauri + Live2D interface.
+
+Unlike a pure chatbot, Kage separates deterministic commands from general agent work:
+
+- **Command fast path** for low-latency system controls such as volume, brightness, Wi-Fi, Bluetooth, screenshots, and app launch.
+- **Weather/video fast paths** for common information workflows where template responses and deterministic fallbacks reduce empty turns.
+- **Background lane** for long-running file organization, summarization, and multi-step tasks.
+- **AgenticLoop** for complex tool-using workflows with model -> tool -> observation -> response iterations.
+- **Pending action state** for confirmation, cancellation, follow-up, and correction flows.
 
 </div>
+
+## System At A Glance
+
+```mermaid
+flowchart TD
+    A[Voice / Text Input] --> B[ASR / WebSocket]
+    B --> C[Realtime Lane Classifier]
+    C -->|high confidence| D[Command Fast Path]
+    C -->|weather / video| E[Info Fast Path]
+    C -->|long task| F[Background Queue]
+    C -->|complex / low confidence| G[AgenticLoop]
+    G --> H[ToolRegistry / ToolExecutor]
+    H --> I[Observation + Response]
+    D --> I
+    E --> I
+    F --> I
+    I --> J[TTS + Live2D + UI State]
+```
+
+## Engineering Focus
+
+- **Routing over prompt sprawl**: route + confidence decides whether a request should execute directly, ask for confirmation, or enter the general agent loop.
+- **Structured tools**: ToolRegistry defines capability boundaries; ToolExecutor normalizes calls, executes handlers, records logs, and gates risky actions.
+- **Stateful desktop UX**: pending confirmation and follow-up state handles real user turns such as "confirm", "cancel", "open this", and "not this one".
+- **Local-first privacy**: the model, speech stack, memory, and desktop control path run on the user's Mac by default.
+- **Eval-ready runtime**: benchmark work tracks route accuracy, latency, fallback rate, empty response rate, and tool success rate.
+
+Interview and evaluation docs:
+
+- [docs/INTERVIEW_DEEP_DIVE.md](docs/INTERVIEW_DEEP_DIVE.md)
+- [docs/BENCHMARK_PLAN.md](docs/BENCHMARK_PLAN.md)
+- [eval/eval_cases.json](eval/eval_cases.json)
 
 ## ✨ 核心特性 (Features)
 
