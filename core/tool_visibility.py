@@ -66,16 +66,15 @@ CORE: frozenset[str] = EXPERIMENT_SLOTS | frozenset({
 
 # BASE: CORE plus the tools any tool-requiring conversational turn may legitimately
 # need, including the local skill reuse loop (find -> read -> save).
-BASE: frozenset[str] = CORE | frozenset({
+LOCAL_SKILL_TOOLS: frozenset[str] = frozenset({"find_skills", "skills_read", "skills_save_local"})
+
+BASE: frozenset[str] = CORE | LOCAL_SKILL_TOOLS | frozenset({
     "exec",
     "fs_search",
     "fs_preview",
     "fs_apply",
     "fs_undo_last",
     "system_control",
-    "find_skills",
-    "skills_read",
-    "skills_save_local",
 })
 
 # Capability groups, selected by intent keywords on top of the route baseline.
@@ -87,8 +86,7 @@ GROUPS: dict[str, frozenset[str]] = {
         "system_capabilities", "take_screenshot",
         "shortcuts_list", "shortcuts_run", "shortcuts_view",
     }),
-    "skills": frozenset({
-        "find_skills", "skills_read", "skills_save_local",
+    "skills": LOCAL_SKILL_TOOLS | frozenset({
         "skills_find_remote", "skills_list", "skills_install", "proactive_agent",
     }),
 }
@@ -97,7 +95,10 @@ GROUPS: dict[str, frozenset[str]] = {
 # hardcoded set forgot, so "查一下再整理成文件" could not search at all).
 CMD_BASE: frozenset[str] = (BASE | GROUPS["browse"] | GROUPS["system"]) - {"take_screenshot"}
 
-# Info route: minimal, search-only surface.
+# Info route includes recall and candidate execution slots, with a bounded surface.
+# Local skill discovery/read/save requires skill intent on info queries; chat and
+# command keep them resident. This limits schema cost for ordinary lookups while
+# permitting reuse when requested. INFO_DEFAULT grows with CORE; tests bound it.
 INFO_DEFAULT: tuple[str, ...] = tuple(sorted(CORE))
 INFO_WEATHER: tuple[str, ...] = tuple(sorted(EXPERIMENT_SLOTS | {"smart_search", "web_fetch", "memory_search"}))
 

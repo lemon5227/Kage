@@ -366,6 +366,8 @@ class KageChainProvider:
             "name": str(tc.get("name") or ""),
             "arguments": tc.get("arguments") if isinstance(tc.get("arguments"), dict) else {},
             "success": bool(tc.get("success")),
+            "outcome": tc.get("outcome") or ("ok" if tc.get("success") else "error"),
+            "tool_reported_success": tc.get("tool_reported_success"),
             "result": str(tc.get("result") or "")[:MAX_TOOL_RESULT_CHARS],
             "error_type": tc.get("error_type"),
             "error_message": tc.get("error_message"),

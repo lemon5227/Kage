@@ -18,7 +18,7 @@ def ok(**payload: Any) -> str:
     return json.dumps({"success": True, **payload}, ensure_ascii=False)
 
 
-def err(error: str, message: str = "") -> str:
+def err(error: str, message: str = "", *, outcome: str | None = None) -> str:
     """Build an error JSON response.
 
     Args:
@@ -26,6 +26,8 @@ def err(error: str, message: str = "") -> str:
         message: Human-readable explanation.
     """
     payload: dict[str, Any] = {"success": False, "error": error}
+    if outcome is not None:
+        payload["outcome"] = outcome
     if message:
         payload["message"] = message
     return json.dumps(payload, ensure_ascii=False)

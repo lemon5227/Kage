@@ -62,8 +62,7 @@ def _first_value(d: dict, keys: tuple) -> object:
     return None
 
 
-# Tool-reported codes that mean "the tool ran fine and the answer is: nothing / already
-# there". These are domain outcomes, not execution failures, so they must not be
+# Tool-reported codes that mean "the tool ran fine and the answer is: nothing". These are domain outcomes, not execution failures, so they must not be
 # reported to the model as tool errors (and must not trigger retry/fallback logic).
 _BENIGN_OUTCOME_CODES = frozenset({
     "NoResults", "NotFound", "FileNotFound", "Empty", "NothingFound",
@@ -74,7 +73,7 @@ _BENIGN_OUTCOME_CODES = frozenset({
 _REJECTED_OUTCOME_CODES = frozenset({
     "InvalidArgument", "InvalidInput", "Blocked", "PathBlocked", "NotAvailable",
     "NodeNotFound", "UserDenied", "NeedConfirmation", "TooManyInstalls", "SaveFailed",
-    "AlreadyExists",
+    "AlreadyExists", "UnknownSkill", "DigestMismatch",
 })
 
 
@@ -82,7 +81,7 @@ def classify_tool_payload(payload: object) -> tuple[str, bool | None, str | None
     """Classify a handler return value.
 
     Returns ``(outcome, tool_reported_success, error_type, error_message)`` where
-    outcome is one of ``ok | no_results | rejected | tool_error | unknown_payload``.
+    outcome preserves explicit state semantics or falls back to legacy error codes.
     A *known* rejection code means the caller can fix something; an unknown failure
     code means the tool broke in a way the taxonomy does not describe, which is worth
     distinguishing in logs and for the Agent's next move.
@@ -96,6 +95,16 @@ def classify_tool_payload(payload: object) -> tuple[str, bool | None, str | None
     reported = bool(payload.get("success"))
     code = str(payload.get("error") or "")
     message = str(payload.get("message") or "")
+    explicit = payload.get("outcome")
+    if explicit is not None:
+        # Explicit state semantics win, but an inconsistent declaration must not
+        # turn a failed write into a success. Legacy payloads retain the code table.
+        allowed = {"ok": {True}, "unchanged": {True}, "no_results": {True, False},
+                   "not_applied": {False}, "rejected": {False}, "tool_error": {False},
+                   "error": {False}}
+        if not isinstance(explicit, str) or reported not in allowed.get(explicit, set()):
+            return "tool_error", reported, "InvalidOutcome", "inconsistent or unknown outcome"
+        return explicit, reported, (code or None), message
     if reported:
         return "ok", True, None, None
     if code in _BENIGN_OUTCOME_CODES:
@@ -115,8 +124,11 @@ def render_history_line(name: str, success: bool, result: str = "",
     answer, a rejection needs fixing, an error needs a different approach.
     """
     if outcome == "no_results":
-        label = "已存在" if error_type == "AlreadyExists" else "无结果"
-        return f"[Tool: {name}] （{label}）{result}"
+        return f"[Tool: {name}] （无结果）{result}"
+    if outcome == "unchanged":
+        return f"[Tool: {name}] （未变更：目标已满足）{result}"
+    if outcome == "not_applied":
+        return f"[Tool: {name}] （未应用）{error_message or result}"
     if success:
         return f"[Tool: {name}] {result}"
     if outcome == "denied":
@@ -140,8 +152,8 @@ class ToolResult:
     error_type: Optional[str] = None
     error_message: Optional[str] = None
     elapsed_ms: float = 0.0
-    # "ok" | "no_results" | "rejected" | "error" | "denied" | "unknown_payload".
-    # `success` is True for ok/no_results (the tool answered); the Agent renders
+    # ok/unchanged/no_results/rejected/not_applied/tool_error/error/denied/needs_confirmation/unknown_payload.
+    # `success` is True for ok/unchanged/no_results (the tool answered); the Agent renders
     # each outcome differently instead of treating "found nothing" as a failure.
     outcome: str = "ok"
     # What the tool's own JSON reported (None when it reported nothing).
@@ -658,7 +670,7 @@ class ToolExecutor:
             result = ToolResult(
                 name=name,
                 # "found nothing" is a valid answer, not a failure
-                success=outcome in ("ok", "no_results", "unknown_payload"),
+                success=outcome in ("ok", "unchanged", "no_results", "unknown_payload"),
                 result=result_text,
                 error_type=err_type,
                 error_message=err_message,
@@ -709,6 +721,8 @@ class ToolExecutor:
             "name": result.name,
             "arguments": arguments or {},
             "success": result.success,
+            "outcome": result.outcome,
+            "tool_reported_success": result.tool_reported_success,
             "result_summary": result.result[:200] if result.result else "",
             "elapsed_ms": result.elapsed_ms,
         }

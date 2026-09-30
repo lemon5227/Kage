@@ -188,11 +188,14 @@ def skills_save_local(name: str, description: str = "", body: str = "",
         return err("InvalidArgument", f"target_dir 无效: {e}")
 
     skill_file = skills_dir / f"{clean}.md"
-    if skill_file.exists() and not overwrite:
-        return err("AlreadyExists", f"技能已存在: {skill_file}（覆盖请传 overwrite=true）")
-
     rendered = _render_skill_markdown(clean, desc, body)
     try:
+        if skill_file.exists() and not overwrite:
+            if skill_file.read_bytes() == rendered.encode("utf-8"):
+                return ok(path=str(skill_file), name=clean, outcome="unchanged",
+                          message="已有技能内容相同，目标已满足，文件未变更")
+            return err("AlreadyExists", f"技能已存在且内容不同: {skill_file}（覆盖请传 overwrite=true）",
+                       outcome="not_applied")
         skills_dir.mkdir(parents=True, exist_ok=True)
         skill_file.write_text(rendered, encoding="utf-8")
         return ok(path=str(skill_file), name=clean,

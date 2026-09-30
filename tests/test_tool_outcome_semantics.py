@@ -7,12 +7,13 @@ Two real defects motivate this file:
     to the Agent as a success — the Agent could believe a skill was saved when it was
     not;
   * the first fix collapsed every ``success: false`` payload into "tool failed", which
-    also mislabels *domain-negative* answers such as ``NoResults`` / ``AlreadyExists``:
+    also mislabels *domain-negative* answers such as ``NoResults``:
     those are legitimate answers, not execution failures, and should not push the Agent
     into retry/fallback behaviour.
 
 The model is a contract: ``success`` means "the tool answered trustworthily",
-``outcome`` says how, and ``tool_reported_success`` preserves the payload's own verdict.
+``outcome`` preserves state semantics, and ``tool_reported_success`` preserves the payload's own verdict.
+Identical saves are unchanged/successful; conflicting saves are not_applied/unsuccessful.
 """
 
 from __future__ import annotations
@@ -89,8 +90,6 @@ def test_render_history_line_phrasing():
     assert render_history_line("t", True, "body") == "[Tool: t] body"
     assert render_history_line("t", True, "body", "NoResults", "未找到结果", "no_results") \
         == "[Tool: t] （无结果）body"
-    assert render_history_line("t", True, "body", "AlreadyExists", "已存在", "no_results") \
-        == "[Tool: t] （已存在）body"
     rejected = render_history_line("t", False, "", "InvalidArgument", "参数无效", "rejected")
     assert "调用被拒绝" in rejected and "尝试替代方案" not in rejected
     errored = render_history_line("t", False, "", "RuntimeError", "boom", "error")
@@ -149,8 +148,8 @@ def test_real_skill_save_reports_success_then_already_exists(tmp_path):
     saved = asyncio.run(executor.execute("skills_save_local", dict(args)))
     assert saved.success is True and saved.outcome == "ok"
 
-    again = asyncio.run(executor.execute("skills_save_local", dict(args)))
-    assert again.outcome == "rejected" and again.error_type == "AlreadyExists"
+    again = asyncio.run(executor.execute("skills_save_local", {**args, "body": "different"}))
+    assert again.outcome == "not_applied" and again.error_type == "AlreadyExists"
     assert again.success is False, "a refused write must not look like a completed write"
     assert (tmp_path / "demo-skill.md").read_text().endswith("b\n")
 

@@ -474,7 +474,10 @@ class EvolutionRunner:
                         act = {"name": item.get("name", ""),
                                "arguments": item.get("arguments") or {}}
                         obs = {
-                            "status": "ok" if item.get("success") else "error",
+                            "status": item.get("outcome") or ("ok" if item.get("success") else "error"),
+                            "outcome": item.get("outcome") or ("ok" if item.get("success") else "error"),
+                            "success": bool(item.get("success")),
+                            "tool_reported_success": item.get("tool_reported_success"),
                             "content": str(item.get("result") or item.get("error_message") or ""),
                             "executed_by": "kage_chain",
                         }
