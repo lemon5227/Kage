@@ -1,0 +1,40 @@
+{
+  "experiment_id": "pilot",
+  "provider": "live",
+  "settings": "config/settings.json",
+  "output_dir": "runs/evolution/search",
+  "seed": 42,
+  "max_candidates": 2,
+  "execution_mode": "docker",
+  "image": "kage-evolution:local",
+  "skill_timeout_s": 10,
+  "task_timeout_s": 120,
+  "budget": {
+    "max_input_tokens_total": 150000,
+    "max_output_tokens_total": 30000,
+    "max_api_calls": 50,
+    "max_cost_usd": 0.25,
+    "input_cost_per_million": 0.5,
+    "output_cost_per_million": 2.0
+  },
+  "tasks": [
+    {
+      "task_id": "repair-whitespace", "split": "dev",
+      "instruction": "Read input.json, trim surrounding whitespace from every name while preserving other fields, and write output.json. Use a reusable executable skill if one is available.",
+      "initial_files": {"input.json": "[{\"name\": \" Ada \"}]"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "output.json", "expected": [{"name": "Ada"}]}
+    },
+    {
+      "task_id": "preserve-valid", "split": "dev",
+      "instruction": "Read input.json, trim surrounding whitespace from every name while preserving other fields, and write output.json. Use a reusable executable skill if one is available.",
+      "initial_files": {"input.json": "[{\"name\": \"Grace\", \"id\": 8}]"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "output.json", "expected": [{"name": "Grace", "id": 8}]}
+    },
+    {
+      "task_id": "reuse-unseen", "split": "reuse",
+      "instruction": "Read input.json, trim surrounding whitespace from every name while preserving other fields, and write output.json. Use a reusable executable skill if one is available.",
+      "initial_files": {"input.json": "[{\"name\": \" Lin \", \"id\": 29}]"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "output.json", "expected": [{"name": "Lin", "id": 29}]}
+    }
+  ]
+}

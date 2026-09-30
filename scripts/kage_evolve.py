@@ -355,6 +355,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Kage EvoLab CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    search_parser = subparsers.add_parser("search", help="Generate and evaluate executable skill candidates")
+    search_parser.add_argument("--config", default="eval/evolution/pilot.json")
+    search_parser.add_argument("--provider", choices=["live", "fixture"], default=None)
+
     baseline_parser = subparsers.add_parser("baseline", help="Run baseline candidate on a test suite")
     baseline_parser.add_argument("--suite", default="eval/evolution/smoke.json", help="Path to evaluation suite JSON")
     baseline_parser.add_argument("--provider", default="fake", choices=["fake", "live"], help="LLM provider mode")
@@ -383,6 +387,26 @@ def main() -> None:
                                       "inline = run in-process (needed where fork() is unsafe)")
 
     args = parser.parse_args()
+
+    if args.command == "search":
+        from core.evolution.search import run_search, report_outcome
+        from core.evolution.agent_provider import ProviderUnavailableError
+        try:
+            report = run_search(args.config, args.provider)
+            print(json.dumps({key: report[key] for key in
+                  ("provider_mode", "execution_mode", "stop_reason", "estimated_cost_usd", "report_path")}, indent=2))
+        except ProviderUnavailableError as exc:
+            print(f"Provider unavailable: {exc}", file=sys.stderr)
+            sys.exit(EXIT_PROVIDER_UNAVAILABLE)
+        except (ValueError, OSError) as exc:
+            print(f"Configuration/artifact error: {exc}", file=sys.stderr)
+            sys.exit(EXIT_CONFIG)
+        except RuntimeError as exc:
+            print(f"Infrastructure failure: {exc}", file=sys.stderr)
+            sys.exit(EXIT_INFRA_FAILURE)
+        if report_outcome(report) == "infrastructure_failure":
+            sys.exit(EXIT_INFRA_FAILURE)
+        sys.exit(EXIT_OK)
 
     if args.command == "baseline":
         code = run_baseline(
