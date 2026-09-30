@@ -1,12 +1,23 @@
 import json
 
 
-def test_open_app_returns_json():
+def test_open_app_returns_json(monkeypatch):
+    """Empty app name → canonical JSON error, and no process is launched.
+
+    This previously executed `open -a ""` for real on every pytest run.
+    """
+    from core.tools import web_ops
     from core.tools_impl import open_app
 
+    recorded: list[list[str]] = []
+    monkeypatch.setattr(web_ops.subprocess, "run",
+                        lambda cmd, **kw: recorded.append(list(cmd)))
+
     out = json.loads(open_app(""))
-    # open_app always returns valid JSON regardless of input
+
     assert isinstance(out, dict)
+    assert out["success"] is False
+    assert recorded == []
 
 
 def test_smart_search_empty_query():

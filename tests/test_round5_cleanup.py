@@ -124,11 +124,20 @@ class TestToolResponseShape:
         assert out.get("success") is False
         assert out.get("error") == "NotAvailable"
 
-    def test_shortcuts_create_returns_canonical_success(self):
-        from core.tools.shortcuts_ops import shortcuts_create
-        out = json.loads(shortcuts_create("MyShortcut"))
+    def test_shortcuts_create_returns_canonical_success(self, monkeypatch):
+        from core.tools import shortcuts_ops
+
+        # shortcuts_create opens the Shortcuts app so the user can configure the
+        # workflow; assert on the command instead of really launching the GUI.
+        recorded: list[list[str]] = []
+        monkeypatch.setattr(shortcuts_ops.subprocess, "run",
+                            lambda cmd, **kw: recorded.append(list(cmd)))
+
+        out = json.loads(shortcuts_ops.shortcuts_create("MyShortcut"))
+
         assert out.get("success") is True
         assert "MyShortcut" in out.get("message", "")
+        assert recorded == [["open", "-a", "Shortcuts"]], "must not really open the app"
 
     def test_get_time_returns_canonical_success(self):
         from core.tools.web_ops import get_time

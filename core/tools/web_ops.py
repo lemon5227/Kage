@@ -307,18 +307,25 @@ def exec_command(command: str, timeout: int = 30) -> str:
 
 def open_url(url: str) -> str:
     """Open URL in default browser."""
+    target = str(url or "").strip()
+    if not target:
+        return err("InvalidArgument", "URL 不能为空")
     try:
-        subprocess.run(["open", url], check=False)
-        return ok(opened=url)
+        subprocess.run(["open", target], check=False)
+        return ok(opened=target)
     except Exception as e:
         return err("OpenFailed", str(e))
 
 
 def open_app(app_name: str) -> str:
     """Open an application by name."""
+    name = str(app_name or "").strip()
+    if not name:
+        # Without this check, `open -a ""` was issued and reported as success.
+        return err("InvalidArgument", "应用名不能为空")
     try:
-        subprocess.run(["open", "-a", app_name], check=False)
-        return ok(opened=app_name)
+        subprocess.run(["open", "-a", name], check=False)
+        return ok(opened=name)
     except Exception as e:
         return err("OpenFailed", str(e))
 
