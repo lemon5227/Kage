@@ -406,11 +406,11 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 **修改：** `core/tools/skill_ops.py`、`core/tool_registry.py`、`core/prompt_builder.py`；CLI 增加 `search`。
 **消费：** E0 runner、budget、journal；**产出：** Mutator.propose、Promoter.compare、skill_search/skill_call；新技能先绑定候选私有 manifest，不修改其他运行的工具集合。
 
-- [ ] 用预制候选验证 manifest → 注册入口 → 模型可见 schema → 子进程调用 → 真实输出完整链路。
-- [ ] 实现技能生成器：根据失败轨迹与重试逻辑，自动合成具名 Python Tool，生成独立 `manifest.json`（含 JSON Schema）并绑定该候选的技能映射；注册表只暴露稳定 search/call 入口。
-- [ ] 实现 ARM64 容器 runner 与环境重置；process 模式仍可用于本地测试。
-- [ ] 加入云模型生成 patch、附带可检验的修改假说（`hypothesis`）、2 次修复上限、配对 dev 比较和原子激活指针。
-- [ ] 验证失败 → 新技能结晶晋级 → 原任务重试 → 未见输入复用；重启后 digest 相同且可调用。
+- [x] 用预制候选验证 manifest → 注册入口 → 模型可见 schema → 子进程调用 → 真实输出完整链路（2026-09-30，见 §16–17）。
+- [x] 实现技能生成器：根据失败轨迹与重试逻辑，自动合成具名 Python Tool，生成独立 `manifest.json`（含 JSON Schema）并绑定该候选的技能映射；注册表只暴露稳定 search/call 入口（fixture 与真实 HTTP provider 接口已验收，付费云端试验仍待完成）。
+- [x] 实现 ARM64 容器 runner 与环境重置；process 模式仍可用于可信本地夹具测试。
+- [x] 加入云模型生成 patch 接口、附带可检验的修改假说（`hypothesis`）、2 次修复上限、配对 dev 比较和原子激活指针。
+- [x] 验证失败 → 新技能结晶晋级 → 原任务重试 → 未见输入复用；重启后 digest 相同且可调用（确定性 fixture 驱动，真实执行与外部评分）。
 - [ ] 运行 `python -m pytest tests/test_evolution_skills.py -q`，再用 `search --config eval/evolution/pilot.json` 做 2 候选真实试验；先在本包创建该配置并填费用上限。
 
 验收必须覆盖：评分退化不激活、超时后下一任务正常、两个候选环境互不污染、生成局部测试通过但外部评分失败时不晋级、parent 看不到 child 新技能、方法/种子之间技能库独立。
@@ -651,7 +651,7 @@ fetch_content、memory_search、proactive_agent、search_and_open、tavily_searc
 - [ ] 已知偏差（本轮发现，未做）：**回合内工具观察不会跨回合留存**。实际 `SessionManager.get_history()` 返回新列表，不论会话是否为空，循环内追加的工具观察都不会自动写回 session；`core/server.py` 只在回合结束后记录最终 user/assistant。此前 `_RecordingSession` 返回共享列表，不能代表实际会话行为；§16 已把结果语义测试改为检查模型下一次调用收到的 messages。跨回合持久化属于独立的 transcript 语义变更，尚未实现。
 - [ ] 已知偏差（沿用）：元测试只保证 description 非空与长度上限，未审计其**语义准确性**（本轮顺手修正了两个搜索后端的描述，其余未逐一核对）
 
-## 16. DeepSeek 基础设施改动复核（2026-09-30）
+## 16. DeepSeek 改动复核与 E1 首个验收点（2026-09-30）
 
 ### 16.1 复核发现与修复
 
@@ -662,8 +662,119 @@ fetch_content、memory_search、proactive_agent、search_and_open、tavily_searc
 - `skills_save_local` 拒绝覆盖时返回 `AlreadyExists`；原分类却把它改成 `success=True`。这是一次没有完成的写操作，应为 `rejected/success=False`，模型可读取既有内容或明确请求覆盖。`NoResults` 的正常空查询语义保留。
 - 原结果语义测试读取特制 session 的共享列表，未验证模型真正收到观察。现使用真实 `SessionState`，检查下一次 `generate(messages=...)` 中的工具结果，不依赖 session 被循环直接修改。
 
-§15 中 info 面“5 个工具”、`AlreadyExists` 属于成功、`_RecordingSession` 能代表真实会话的说法均由本节修正。桌面默认注册表的普通 info 面现在为 6 个有效工具。
+§15 中 info 面“5 个工具”、`AlreadyExists` 属于成功、`_RecordingSession` 能代表真实会话的说法均由本节修正。桌面默认注册表的普通 info 面现在为 6 个有效工具；候选注册表若绑定可执行技能，还可提供两个稳定执行入口。
 
-### 16.2 E0 调用预算修正
+### 16.2 E1 已交付：候选绑定的可执行技能
 
-链式执行可能包含多次模型调用。预算现预留调用上限、按实际调用数结算并持久化；缺失 provider token usage 时按预留上限保守结算，避免计为零。旧记录无法重建历史真实调用数，研究测量应使用新实验目录。相关回归在 `tests/test_evolution_call_budget.py`。
+新增 `core/evolution/skills.py`、`sandbox.py`、`tests/test_evolution_skills.py`；`requirements.txt` 显式声明 JSON Schema 校验依赖 `jsonschema>=4.18,<5`。
+
+manifest v1 格式：
+
+```json
+{
+  "version": 1,
+  "skills": [{
+    "skill_id": "normalize",
+    "description": "normalize record fields",
+    "parameters": {"type": "object", "properties": {}, "required": []},
+    "entrypoint": "normalize.py:run",
+    "digest": "<sha256>"
+  }]
+}
+```
+
+`digest` 算法：对 `skill_id/description/parameters/entrypoint` 四项按 `sort_keys=True, separators=(',', ':')` 规范化 JSON 编码，接一个换行和入口 Python 文件原始字节，再算 SHA-256。当前支持单文件、标准库技能；其他文件与依赖封装留给后续 bundle/container 实现。
+
+`SkillCatalog.from_bundle()` 校验 manifest、schema 与 digest，并快照代码字节。每个候选注册表只注册 `skill_search/skill_call`；搜索返回描述、参数 schema 和 digest，调用必须指定同一 digest，参数先经 JSON Schema 验证。目录后续被修改不会改变已加载的技能；重新加载则拒绝摘要不匹配。
+
+`ProcessSkillRunner` 使用独立 Python 子进程和 JSON 文件协议，任务工作目录作为 context；结果与 stdout/stderr 分离，限定墙钟时间和结果读取大小，完成或超时后清理子进程组。这是可信预制技能的 process 模式，**容器模式尚未实现，不能把它记为生成代码的 OS 沙箱**。
+
+`KageChainProvider(..., skill_catalog=catalog)` 将候选私有技能加入每次任务的注册表。记录实际 `skill_id/digest`，metadata 保留完整技能映射。E0 resume fingerprint 现在包含模型、模式、调用限额及实际技能映射；换技能代码后复用同一 run_id 会被拒绝，不返回其他版本的旧评分。
+
+### 16.3 验收证据与下一执行包
+
+6 个 E1 行为用例覆盖：manifest → 模型读到发现结果 → 子进程实际写文件；重载后在未见输入复用；父候选不可见子技能；代码篡改与运行快照；参数与 digest 错误不执行；超时后下一调用正常；真实 KageChainProvider 接入；外部评分为 1.0；相同 run 不重复执行；换实际技能版本拒绝缓存命中。模型由确定性 fixture 驱动，Python 技能执行、文件输出、执行器、评分器与 journal 均使用真实实现。
+
+验证：`python -m pytest -q` → **778 passed, 1 skipped, 1 xfailed**，54.25 秒；结果语义测试随后再跑 **17 passed**；`git diff --check` 无错误。没有运行付费 API，也没有宣称完成自动进化。
+
+下一包继续 E1：实现模型生成器 `mutator.py`、失败轨迹 → 修改假说 → Python/manifest 候选；接 ARM64 容器执行；再做配对 dev 评分与 `promotion.py` 原子激活。必须保留本轮已打通的真实执行与外部评分链，不用模型总结或文件落盘代替能力晋级证据。
+
+## 17. E1 生成、容器执行、评分晋级与 CLI（2026-09-30）
+
+### 17.1 当前交付状态
+
+E1 代码链路已完成，§16 的下一执行包现由本节交付。**付费云端的两候选试验尚未通过**：本机现有配置指向不可达的测试端点，实测连接拒绝；已记录为基础设施失败，CLI 返回退出码 3，不切换到 fixture。不将本节的演示结果作为真实模型自主发现技能的研究证据。
+
+新增 `core/evolution/mutator.py`、`promotion.py`、`artifacts.py`、`search.py`、`fixtures.py`、`sandbox/evolution/Dockerfile`、`eval/evolution/pilot.json` 和对应行为测试；CLI 已支持 `search`。
+
+### 17.2 实现机制
+
+- `Mutator.propose(parent, feedback)` 调用项目现有 ModelProvider。只发送用户指令、Agent 可见的 action/observation 与失败摘要，剔除隐藏评分字段；输出必须包含修改假说、技能名、描述、参数 schema 和 Python 源码。先校验语法、manifest 与 schema，再生成内容摘要绑定的候选目录。父候选文件不被改写。
+- 初始生成后最多修复两次；无效响应、校验错误、usage 和修改事件都保留。optimizer 与 execution 共用预算，分账户记录。每个生成槽位保留请求摘要、尝试日志与已完成候选；恢复不重生成已完成候选，修复次数也不会因重启归零。
+- `DockerSkillRunner` 每次调用创建一个独立 ARM64 容器；任务目录与临时运行协议目录作为挂载。容器禁止网络、根文件系统只读、限制 CPU/内存/进程数。按实际 image ID 执行，超时会停止容器而不仅是 Docker CLI；下次调用创建新容器。generated live 模式不回退到宿主 process。
+- `Promoter.compare` 只接受显式 `split=dev` 的任务，父子使用同一任务、seed、步骤和超时配置，由 E0 评分器检查真实文件。只有平均分严格提高、每项任务不退化、且不存在超时/崩溃/预算中断，才原子更新活跃指针。比较记录持久化；外部评分失败的候选不会因 Python 能运行或局部示例成功而晋级。
+- `search` 先运行基线，选择失败 dev 任务生成候选，再配对比较、激活与原任务重试；`reuse` 任务只在候选搜索结束后评价，不进入优化器或晋级判据。报告、日志、预算和 active 指针按 provider/experiment/seed 隔离。
+- 恢复检查锁定任务协议、有效模型配置摘要、技能 digest、执行后端/超时/结果限制与容器 image ID。凭据不写入协议。基础设施失败退出码为 3，任务评分失败仍是实验数据。更换实验条件须使用新的 experiment_id/输出目录，保留原始失败记录。
+
+本轮同时修复两处预算问题：一条 Agent 链包含多次模型调用时，之前只记一次；缺失 provider usage 时，之前聚合为零 token。现预留链的调用上限、结算实际调用数，并持久化；缺失用量按 token 预留上限结算，保留实际调用次数。旧数据库兼容迁移中已有记录只能保留原有单次计数假设，不能据此声称重建了历史实际调用数；研究测量使用新实验目录重跑。
+
+### 17.3 实际验证与报告
+
+本机 OrbStack 已启动，`docker info` 确认 `linux aarch64`。实际构建并执行 `kage-evolution:local`，image ID 为 `sha256:8e525133f765d7b7fef855c007f43bfcaf7fa6dc6e91f7ec705be6b60877f418`。容器测试验证真实文件输出、两个工作区隔离、每次调用模块状态重置、超时清理和下一次调用正常；验证结束无残留 `kage-skill-*` 容器。
+
+真实命令：
+
+```bash
+docker build --platform linux/arm64 -t kage-evolution:local sandbox/evolution
+python scripts/kage_evolve.py search --config eval/evolution/pilot.json --provider fixture
+```
+
+报告：`runs/evolution/search/fixture/pilot/seed-42/report.json`。测得 dev 平均分 **0.5 → 1.0**；一项未见输入 reuse 分数 **1.0**；实际执行链共 **17 次模型 fixture 调用 + 1 次 optimizer fixture 调用**。达到 dev 全通过后提前停止，没有为了凑“两候选”再生成无必要候选。活跃技能重启后 digest 一致；再次执行同命令不增加预算调用数。
+
+最终回归：`python -m pytest -q` → **790 passed, 1 skipped, 1 xfailed**，59.98 秒；真实 Docker 集成用例本次实际执行，未被跳过。`git diff --check` 无错误。
+
+这里的模型决策和生成代码由明确命名的 fixture 提供，Python、容器、Kage AgenticLoop、文件副作用、外部评分、晋级与恢复均真实执行。另有真实 `OpenAICompatibleProvider` + 本地 HTTP 端点的优化器测试：API 响应生成可执行候选，provider 上报 113/71 tokens，账本精确记录为 optimizer 账户，实际技能处理未见输入成功。
+
+`pilot.json` 设置 max_candidates=2、max_api_calls=50、input=150000/output=30000、费用规划上限 $0.25。其输入/输出费率是规划系数，非官方报价；fixture 报告金额没有真实 API 支出。live 连接拒绝记录中的保守预算金额也不是已确认的账单。
+
+### 17.4 后续执行顺序
+
+1. 将现有不可达测试端点替换为可用云模型配置，核对计价并用新的 experiment_id 跑小规模 live 试验；如果基线本来就全部通过，报告“无需生成”，不人为降级基线制造成长。
+2. E2 建立候选/失败经验档案与按环境版本过滤的检索，保留本轮完整谱系、假说、费用和外部评分证据。
+3. E3 抽出可修改 recovery 模块，让能力成长从“新增技能”进一步进入 Agent 自身策略演化；真实外部评分改进后才激活。
+
+E1 已验证单文件标准库技能；依赖安装、多文件模块、并发搜索和跨回合工具观察持久化未实现。当前恢复和原子指针按单搜索 worker 设计，未宣称多进程并发更新安全。
+
+## 18. E0/E1 提交前复审与状态语义修复（2026-09-30）
+
+### 18.1 评审结论与范围
+
+DeepSeek 提出的死分支、测试 docstring 漂移、本地技能重复定义成立；已删除旧的 `no_results+AlreadyExists` 渲染与手工断言，修正文档并抽出 `LOCAL_SKILL_TOOLS`。info 路由仅在技能意图下开放本地三件套，chat/command 常驻，原因已写入策略注释。`len(INFO_DEFAULT)<=8` 原本已有断言，不新增重复测试。
+
+当前 E1 得分由外部评测器检查输出文件决定，晋级不按工具错误次数扣分，且执行技能使用 `skill_search/skill_call`；“AlreadyExists 系统性低估 E1 得分”已撤回。修复解决的是诊断证据丢失，不声称提高外部分数。
+
+### 18.2 状态语义端到端
+
+工具载荷可显式声明 `outcome`，分类器优先采纳已知且与 success 一致的值，否则返回可观察的 `InvalidOutcome/tool_error`；没有显式值的旧载荷仍使用错误码表。`ok` 已允许附加载荷字段，`err` 新增可选 outcome。
+
+`skills_save_local` 将现有文件字节与待写入的完整 frontmatter/正文比较：相同返回 `unchanged/success=True`，文件内容与修改时间不变；不同且未允许覆盖返回 `not_applied/success=False`，提示 overwrite=true。它不会将任意重复保存自动判为成功。
+
+Agent 串行、并行与自动技能操作保留 outcome 和 tool_reported_success；`KageChainProvider` 归一化不再丢弃这些字段，runner 的 observation/journal 保留明确状态、success 与载荷原始 verdict，ToolExecutor 的 JSONL 日志同样记录。外部评分方法保持原样。E1 的 `UnknownSkill/DigestMismatch/InvalidArgument` 显式声明 rejected，旧错误码表兼容这些代码。
+
+`tests/test_tool_state_outcomes.py` 使用真实保存、AgenticLoop、ToolExecutor、KageChainProvider 和 journal，断言模型实际读到状态、磁盘未重写与落库字段一致；在修复前的独立 E0 快照三个用例均失败，修复后通过。
+
+### 18.3 E1 独立审查发现与修复
+
+独立审查复现：模型响应已保存但 proposal.json 尚未发布时中断，原 Mutator 重启把有效响应误当失败，可能再次付费；若是第三次响应则直接丢弃有效候选。尝试记录更新也原本使用非原子写入。
+
+现尝试记录均原子写入；重启先重新校验尚未完成发布的已保存响应，再决定是否进行下一次模型调用。首次和第三次有效响应均可恢复，保留原预算与修复次数上限。四个回归覆盖“响应保存后中断”和“发布前中断”，恢复后实际执行技能处理未见输入成功，调用次数不增加。独立复审另注入比较记录、激活指针及搜索进度之间的中断，恢复后活跃候选与报告一致，未重复调用模型。
+
+E1 的真实 Docker 隔离、外部配对评分、拒绝退化、未见输入复用与显式 fixture/live 区分保持验收；付费云端试验仍未完成，不能将工程闭环或 fixture 成绩作为模型自主进化有效的研究结论。
+
+### 18.4 最终验收与提交边界
+
+不含 E1 的语义修复暂存快照全量回归：**777 passed, 1 skipped, 1 xfailed**，63.22 秒。技能执行/ARM64 容器子提交的独立快照：**22 passed**。完整 E1 暂存快照全量回归：**799 passed, 1 skipped, 1 xfailed**，83.32 秒；包含真实 Docker 用例，本次未跳过。现有 pygame/pkg_resources 弃用告警不影响测试结果。
+
+本轮另在新实验目录实际复跑 Docker fixture CLI，报告位于 `runs/evolution/search/fixture/e1-prepush-2026-09-30/seed-42/report.json`。配对 dev 平均分 0.5→1.0，未见输入 reuse=1.0，模型 fixture 调用 17 次、optimizer fixture 调用 1 次。新目录的这些结果来自本轮执行，不是旧报告缓存；金额为合成用量与规划费率的估算，没有付费 API 支出。
+
+提交分成：状态语义修复；候选技能与容器执行；生成/评分晋级/断点恢复/CLI；规划与复审记录。E0 既有五个提交保持独立，便于按依赖顺序回退。实际实验报告是本机产物，不提交 journal、私有设置或凭据。
