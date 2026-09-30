@@ -6,9 +6,12 @@ and progress observation per master plan v2.1.
 
 from __future__ import annotations
 
-import asyncio
+import hashlib
 import json
+import multiprocessing
 import os
+import re
+import signal
 import shutil
 import tempfile
 import time
@@ -19,6 +22,34 @@ from core.evolution.budget import BudgetExhaustedError, BudgetTracker
 from core.evolution.contracts import Candidate, EvolutionEvent, RunResult, RunSpec, RunStatus
 from core.evolution.journal import Journal
 from core.evolution.progress import ProgressTracker
+
+
+class StepTimeoutError(TimeoutError):
+    pass
+
+
+def _workspace_file(workspace_dir: Path, relative: str) -> Path:
+    if not isinstance(relative, str) or not relative or Path(relative).is_absolute():
+        raise ValueError("workspace path must be relative")
+    root = workspace_dir.resolve()
+    target = (root / relative).resolve()
+    if not target.is_relative_to(root):
+        raise ValueError("workspace path escapes task directory")
+    return target
+
+
+def _provider_worker(provider: Any, task_def: dict[str, Any], step: int,
+                     history: list[dict[str, Any]], workspace_dir: Path, pipe: Any) -> None:
+    """One process group per model step, so a timeout can stop descendants too."""
+    try:
+        if hasattr(os, "setsid"):
+            os.setsid()
+        result = provider.generate_step(task_def, step, history, workspace_dir)
+        pipe.send(("ok", result, getattr(provider, "calls", None), getattr(provider, "call_log", None)))
+    except BaseException as exc:
+        pipe.send(("error", f"{type(exc).__name__}: {exc}", None, None))
+    finally:
+        pipe.close()
 
 
 class Evaluator:
@@ -33,7 +64,10 @@ class Evaluator:
         if not target_file:
             return 0.0
 
-        output_path = workspace_dir / target_file
+        try:
+            output_path = _workspace_file(workspace_dir, target_file)
+        except ValueError:
+            return 0.0
         if not output_path.exists():
             return 0.0
 
@@ -46,8 +80,15 @@ class Evaluator:
                     return 1.0
                 # Granular partial score if both are lists
                 if isinstance(actual, list) and isinstance(expected, list) and len(expected) > 0:
-                    matched = sum(1 for item in actual if item in expected)
-                    return round(matched / len(expected), 2)
+                    # A duplicate output must not match the same expected item twice.
+                    remaining = expected.copy()
+                    matched = 0
+                    for item in actual:
+                        if item in remaining:
+                            remaining.remove(item)
+                            matched += 1
+                    precision_recall_score = 2 * matched / (len(actual) + len(expected))
+                    return min(0.99, round(precision_recall_score, 2))
                 return 0.0
             except Exception:
                 return 0.0
@@ -96,14 +137,15 @@ class FakeEvolutionProvider:
                 }
             elif step == 2:
                 # Write normalized records
+                raw = json.loads((workspace_dir / "raw_records.json").read_text())
                 normalized = [
-                    {"id": 101, "name": "Alice Smith", "score": 95.5},
-                    {"id": 102, "name": "Bob Jones", "score": 88.0},
+                    {"id": row["ID"], "name": row["Full_Name"], "score": row["Points"]}
+                    for row in raw
                 ]
                 return {
                     "action": {
                         "name": "write_file",
-                        "path": "normalized_records.json",
+                        "path": task_def.get("output_file", "normalized_records.json"),
                         "content": json.dumps(normalized, indent=2),
                     },
                     "usage": usage,
@@ -120,10 +162,8 @@ class FakeEvolutionProvider:
             elif step == 2:
                 if self.mode == "fixed":
                     # Fixed version correctly fills in missing score
-                    validated = [
-                        {"id": 201, "name": "Charlie", "score": 0.0},
-                        {"id": 202, "name": "David", "score": 72.0},
-                    ]
+                    raw = json.loads((workspace_dir / "incomplete_records.json").read_text())
+                    validated = [dict(row, score=row.get("score", 0.0)) for row in raw]
                     return {
                         "action": {
                             "name": "write_file",
@@ -134,10 +174,7 @@ class FakeEvolutionProvider:
                     }
                 else:
                     # Baseline mode misses the missing field handling
-                    incomplete = [
-                        {"id": 201, "name": "Charlie"},
-                        {"id": 202, "name": "David", "score": 72.0},
-                    ]
+                    incomplete = json.loads((workspace_dir / "incomplete_records.json").read_text())
                     return {
                         "action": {
                             "name": "write_file",
@@ -164,6 +201,7 @@ class EvolutionRunner:
         budget: BudgetTracker,
         base_dir: str | Path | None = None,
         provider: Any = None,
+        step_isolation: str = "fork",
     ) -> None:
         self.journal = journal
         self.budget = budget
@@ -171,6 +209,14 @@ class EvolutionRunner:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self.provider = provider or FakeEvolutionProvider()
         self.evaluator = Evaluator()
+        if step_isolation not in ("fork", "inline"):
+            raise ValueError("step_isolation must be 'fork' or 'inline'")
+        # 'fork' (default, production-like): one process group per model step so a
+        # timeout can stop descendants. 'inline': call the provider in-process;
+        # used by tests and by callers on platforms where fork() is unsafe
+        # (macOS with active Objective-C/threaded runtimes). 'inline' forfeits
+        # hard timeout interruption of a hung provider call.
+        self.step_isolation = step_isolation
 
     def _setup_workspace(self, run_id: str, task_def: dict[str, Any]) -> Path:
         """Create a clean isolated workspace and populate initial fixtures."""
@@ -180,7 +226,7 @@ class EvolutionRunner:
         ws.mkdir(parents=True, exist_ok=True)
 
         for filename, content in task_def.get("initial_files", {}).items():
-            file_path = ws / filename
+            file_path = _workspace_file(ws, filename)
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
@@ -197,7 +243,10 @@ class EvolutionRunner:
         name = action.get("name")
         if name == "read_file":
             rel_path = action.get("path", "")
-            target = workspace_dir / rel_path
+            try:
+                target = _workspace_file(workspace_dir, rel_path)
+            except ValueError as exc:
+                return {"status": "error", "message": str(exc)}
             if target.exists():
                 try:
                     with open(target, "r", encoding="utf-8") as f:
@@ -209,7 +258,10 @@ class EvolutionRunner:
         elif name == "write_file":
             rel_path = action.get("path", "")
             content = action.get("content", "")
-            target = workspace_dir / rel_path
+            try:
+                target = _workspace_file(workspace_dir, rel_path)
+            except ValueError as exc:
+                return {"status": "error", "message": str(exc)}
             try:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with open(target, "w", encoding="utf-8") as f:
@@ -223,6 +275,83 @@ class EvolutionRunner:
 
         return {"status": "unknown_action", "action": name}
 
+    def _generate_step(self, task_view: dict[str, Any], step: int,
+                       history: list[dict[str, Any]], ws: Path, remaining_s: float) -> dict[str, Any]:
+        if remaining_s <= 0:
+            raise StepTimeoutError("task deadline exceeded")
+        if self.step_isolation == "inline":
+            return self.provider.generate_step(task_view, step, history, ws)
+        # E0 is a single-worker local experiment. Fork is used here so the
+        # provider callable stays compatible with test doubles on macOS.
+        ctx = multiprocessing.get_context("fork")
+        parent, child = ctx.Pipe(duplex=False)
+        proc = ctx.Process(target=_provider_worker,
+                           args=(self.provider, task_view, step, history, ws, child))
+        proc.start()
+        child.close()
+        try:
+            if not parent.poll(remaining_s):
+                raise StepTimeoutError("model step timed out")
+            if not parent.poll():
+                raise RuntimeError("model process exited without a result")
+            kind, value, calls, call_log = parent.recv()
+            proc.join(timeout=1)
+            if kind != "ok":
+                raise RuntimeError(value)
+            if calls is not None:
+                self.provider.calls = calls
+            if call_log is not None:
+                self.provider.call_log = call_log
+            return value
+        finally:
+            parent.close()
+            # The provider may have spawned children that outlive its result.
+            # They belong to the worker's dedicated session/process group.
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                if proc.is_alive():
+                    proc.kill()
+            proc.join(timeout=1)
+
+    def _reservation_hint(self) -> tuple[int, int]:
+        """Per-step reservation caps, overridable by the provider.
+
+        Chain providers make several model calls per step, so the default
+        single-call caps would under-reserve. Reported usage above the cap is
+        still settled in full (never truncated).
+        """
+        hint = getattr(self.provider, "reservation_hint", None)
+        if callable(hint):
+            try:
+                value = hint()
+                if (isinstance(value, (tuple, list)) and len(value) == 2
+                        and all(isinstance(v, int) and v > 0 for v in value)):
+                    return int(value[0]), int(value[1])
+            except Exception:  # noqa: BLE001 - fall back to defaults
+                pass
+        return 2000, 1000
+
+    def _run_metadata(self, chain_log: list[dict[str, Any]], *, steps_taken: int) -> dict[str, Any]:
+        """Provenance for the run: provider identity, chain records, environment."""
+        metadata: dict[str, Any] = {"kernel_steps": steps_taken}
+        getter = getattr(self.provider, "metadata", None)
+        if callable(getter):
+            try:
+                provider_meta = getter()
+                if isinstance(provider_meta, dict):
+                    metadata.update(provider_meta)
+            except Exception as exc:  # noqa: BLE001 - provenance must not break a run
+                metadata["metadata_error"] = f"{type(exc).__name__}: {exc}"
+        provider_mode = getattr(self.provider, "provider_mode", None)
+        metadata.setdefault("provider_mode", provider_mode or "fake")
+        if chain_log:
+            metadata["chain"] = chain_log
+            metadata["chain_model_calls"] = sum(int(c.get("model_calls", 0)) for c in chain_log)
+            metadata["chain_tool_calls"] = sum(int(c.get("tool_calls", 0)) for c in chain_log)
+            metadata["chain_steps"] = sum(int(c.get("chain_steps", 0)) for c in chain_log)
+        return metadata
+
     def run(
         self,
         candidate: Candidate,
@@ -235,33 +364,61 @@ class EvolutionRunner:
         If already completed in journal, skips execution to preserve budget.
         """
         # 1. Check if already completed in journal (Idempotent Resume)
+        if spec.candidate_id != candidate.candidate_id or spec.task_id != task_def.get("task_id"):
+            raise ValueError("RunSpec candidate_id/task_id does not match inputs")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", spec.run_id):
+            raise ValueError("run_id must be a simple filename-safe identifier")
+        fingerprint_payload = {"candidate_digest": candidate.digest, "task": task_def,
+                               "spec": vars(spec), "provider": type(self.provider).__name__,
+                               "mode": getattr(self.provider, "mode", None)}
+        cache_identity = getattr(self.provider, "cache_identity", None)
+        if callable(cache_identity):
+            fingerprint_payload["provider_settings"] = cache_identity()
+        fingerprint = hashlib.sha256(json.dumps(fingerprint_payload, sort_keys=True,
+                                                 default=str).encode()).hexdigest()
         if self.journal.is_run_completed(spec.run_id):
+            if self.journal.get_run_fingerprint(spec.run_id) != fingerprint:
+                raise ValueError("run_id was already used with different or unverifiable inputs")
             cached = self.journal.get_run(spec.run_id)
             if cached is not None:
                 return cached
+
+        if spec.run_id in self.budget.interrupted_run_ids:
+            result = RunResult(spec.run_id, "crashed", 0.0, "",
+                               self.budget.get_run_usage(spec.run_id), "")
+            self.journal.record_run_completion(result, candidate.candidate_id,
+                                               spec.task_id, fingerprint)
+            return result
 
         # 2. Setup isolated workspace
         ws = self._setup_workspace(spec.run_id, task_def)
         progress = ProgressTracker()
         history: list[dict[str, Any]] = []
         step_events: list[dict[str, Any]] = []
-        total_usage: dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
+        chain_log: list[dict[str, Any]] = []
+        input_cap, output_cap = self._reservation_hint()
 
         status: RunStatus = "failed"
         stagnant_detected = False
-        start_time = time.time()
+        steps_taken = 0
+        deadline = time.monotonic() + spec.timeout_s
+        task_view = {key: task_def[key] for key in ("task_id", "instruction", "family", "output_file")
+                     if key in task_def}
 
         try:
             for step in range(1, spec.max_steps + 1):
+                steps_taken = step
                 # Check timeout
-                if time.time() - start_time > spec.timeout_s:
+                if time.monotonic() >= deadline:
                     status = "timeout"
                     break
 
                 # Reserve budget for model call
                 res_id = None
                 try:
-                    res_id = self.budget.reserve(input_cap=2000, output_cap=1000, call_type="execution")
+                    res_id = self.budget.reserve(input_cap=input_cap, output_cap=output_cap,
+                                                 call_type="execution", run_id=spec.run_id,
+                                                 api_call_cap=int(getattr(self.provider, "max_model_calls", 1)))
                 except BudgetExhaustedError:
                     status = "budget_exhausted"
                     self.journal.record_event(
@@ -278,20 +435,86 @@ class EvolutionRunner:
 
                 # Model step invocation
                 try:
-                    step_out = self.provider.generate_step(task_def, step, history, ws)
+                    step_out = self._generate_step(task_view, step, history, ws,
+                                                   deadline - time.monotonic())
                     action = step_out.get("action", {})
                     call_usage = step_out.get("usage", {})
                     self.budget.settle(res_id, call_usage)
-                except Exception as ex:
+                except StepTimeoutError:
+                    self.budget.settle(res_id, None)
+                    status = "timeout"
+                    break
+                except Exception:
                     # Settle conservatively upon error
                     self.budget.settle(res_id, None)
                     status = "crashed"
                     break
 
-                total_usage["input_tokens"] += call_usage.get("input_tokens", 0)
-                total_usage["output_tokens"] += call_usage.get("output_tokens", 0)
+                # Real-chain providers execute tools themselves (through the frozen
+                # ToolExecutor) and report the results here. The kernel records them
+                # instead of re-executing, so no side effect happens twice.
+                chain_info = step_out.get("chain")
+                if isinstance(chain_info, dict) and chain_info:
+                    chain_log.append(chain_info)
+                    self.journal.record_event(
+                        EvolutionEvent(
+                            run_id=spec.run_id,
+                            candidate_id=candidate.candidate_id,
+                            task_id=spec.task_id,
+                            step=step,
+                            event_type="diagnosis",
+                            payload={"chain": chain_info},
+                        )
+                    )
+                tool_results = step_out.get("tool_results")
+                if isinstance(tool_results, list) and tool_results:
+                    for item in tool_results:
+                        if not isinstance(item, dict):
+                            continue
+                        act = {"name": item.get("name", ""),
+                               "arguments": item.get("arguments") or {}}
+                        obs = {
+                            "status": "ok" if item.get("success") else "error",
+                            "content": str(item.get("result") or item.get("error_message") or ""),
+                            "executed_by": "kage_chain",
+                        }
+                        history.append({"step": step, "action": act, "observation": obs})
+                        self.journal.record_event(
+                            EvolutionEvent(
+                                run_id=spec.run_id,
+                                candidate_id=candidate.candidate_id,
+                                task_id=spec.task_id,
+                                step=step,
+                                event_type="action",
+                                payload={"action": act, "source": "kage_chain"},
+                            )
+                        )
+                        self.journal.record_event(
+                            EvolutionEvent(
+                                run_id=spec.run_id,
+                                candidate_id=candidate.candidate_id,
+                                task_id=spec.task_id,
+                                step=step,
+                                event_type="observation",
+                                payload={"observation": obs},
+                            )
+                        )
+                        prog_result = progress.observe(act, obs)
+                        if prog_result["stagnant"]:
+                            stagnant_detected = True
+                            self.journal.record_event(
+                                EvolutionEvent(
+                                    run_id=spec.run_id,
+                                    candidate_id=candidate.candidate_id,
+                                    task_id=spec.task_id,
+                                    step=step,
+                                    event_type="stagnation",
+                                    payload=prog_result,
+                                )
+                            )
 
-                # Record Action Event
+                # Record the kernel-level step action (intent for the legacy path,
+                # completion marker for the chain path).
                 self.journal.record_event(
                     EvolutionEvent(
                         run_id=spec.run_id,
@@ -303,6 +526,11 @@ class EvolutionRunner:
                         usage=call_usage,
                     )
                 )
+
+                if isinstance(tool_results, list) and tool_results:
+                    if action.get("name") == "finish":
+                        break
+                    continue
 
                 if action.get("name") == "finish":
                     break
@@ -354,14 +582,16 @@ class EvolutionRunner:
                 status=status,
                 score=score,
                 trace_path=trace_path,
-                usage=total_usage,
+                usage=self.budget.get_run_usage(spec.run_id),
                 final_state_path=str(ws),
                 progress_stagnant=stagnant_detected,
                 rollback_count=0,
+                metadata=self._run_metadata(chain_log, steps_taken=steps_taken),
             )
 
             # Record completion in journal
-            self.journal.record_run_completion(result, candidate.candidate_id, spec.task_id)
+            self.journal.record_run_completion(result, candidate.candidate_id,
+                                               spec.task_id, fingerprint)
             return result
 
         finally:

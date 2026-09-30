@@ -47,6 +47,7 @@ class Journal:
                     final_state_path TEXT NOT NULL,
                     progress_stagnant INTEGER NOT NULL DEFAULT 0,
                     rollback_count INTEGER NOT NULL DEFAULT 0,
+                    input_fingerprint TEXT,
                     created_at REAL NOT NULL
                 );
                 """
@@ -68,6 +69,16 @@ class Journal:
             )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_events_run_id ON events (run_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_runs_candidate ON runs (candidate_id);")
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(runs)")}
+            if "input_fingerprint" not in columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN input_fingerprint TEXT")
+            if "metadata_json" not in columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN metadata_json TEXT")
+
+    def get_run_fingerprint(self, run_id: str) -> str | None:
+        with self._get_connection() as conn:
+            row = conn.execute("SELECT input_fingerprint FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+            return row[0] if row else None
 
     def is_run_completed(self, run_id: str) -> bool:
         """Check if a specific run has already completed and recorded its final state."""
@@ -86,6 +97,7 @@ class Journal:
         result: RunResult,
         candidate_id: str,
         task_id: str,
+        input_fingerprint: str | None = None,
     ) -> None:
         """Idempotently insert or update a run result."""
         with self._get_connection() as conn:
@@ -94,8 +106,9 @@ class Journal:
                 INSERT OR REPLACE INTO runs (
                     run_id, candidate_id, task_id, status, score,
                     trace_path, usage_json, final_state_path,
-                    progress_stagnant, rollback_count, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    progress_stagnant, rollback_count, input_fingerprint,
+                    metadata_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
                     result.run_id,
@@ -108,6 +121,8 @@ class Journal:
                     result.final_state_path,
                     1 if result.progress_stagnant else 0,
                     result.rollback_count,
+                    input_fingerprint,
+                    json.dumps(result.metadata or {}),
                     time.time(),
                 ),
             )
@@ -151,7 +166,18 @@ class Journal:
                 final_state_path=row["final_state_path"],
                 progress_stagnant=bool(row["progress_stagnant"]),
                 rollback_count=row["rollback_count"],
+                metadata=json.loads(row["metadata_json"]) if row["metadata_json"] else {},
             )
+
+    def delete_run(self, run_id: str) -> None:
+        """Remove a run and its events so an infrastructure failure can be retried.
+
+        Used by explicit ``--retry-crashed`` handling only: a crashed run is not a
+        measurement, so it must not block a later, corrected attempt.
+        """
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM events WHERE run_id = ?", (run_id,))
+            conn.execute("DELETE FROM runs WHERE run_id = ?", (run_id,))
 
     def get_events(self, run_id: str) -> list[EvolutionEvent]:
         """Retrieve all events belonging to a run in chronological order."""

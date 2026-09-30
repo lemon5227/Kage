@@ -25,7 +25,7 @@ import logging
 import time
 from typing import Any, Optional
 
-from core.model_provider import ModelProvider, ModelResponse
+from core.model_provider import ModelProvider, ModelResponse, extract_usage
 from core.trace import log
 
 logger = logging.getLogger(__name__)
@@ -235,6 +235,7 @@ class AnthropicProvider(ModelProvider):
                 emotion="neutral",
                 raw_output=json.dumps(body, ensure_ascii=False),
                 error=None,
+                usage=extract_usage(body.get("usage")),
             )
         except urllib.error.URLError as exc:
             logger.error("Anthropic API call failed: %s", exc)

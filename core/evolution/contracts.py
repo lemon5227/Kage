@@ -55,6 +55,9 @@ class RunResult:
     final_state_path: str = ""
     progress_stagnant: bool = False  # ByteDance Aime: observation flag for stagnation
     rollback_count: int = 0  # Tencent WebCoT: number of rollbacks executed
+    # Provenance for E0 baselines: provider mode/class/model, chain step records,
+    # environment revision. Empty for synthetic/fake runs that do not report it.
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

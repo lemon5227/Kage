@@ -63,6 +63,29 @@ def _extract_message_text(message: dict[str, Any]) -> str:
     return ""
 
 
+def extract_usage(usage: Any) -> dict[str, int]:
+    """Normalize provider-reported token usage into {input_tokens, output_tokens}.
+
+    Accepts OpenAI style (prompt_tokens/completion_tokens) and Anthropic style
+    (input_tokens/output_tokens). Returns {} when the provider reported nothing,
+    so callers can distinguish "unknown" from "zero" and settle conservatively.
+    """
+    if not isinstance(usage, dict):
+        return {}
+    raw_in = usage.get("input_tokens", usage.get("prompt_tokens"))
+    raw_out = usage.get("output_tokens", usage.get("completion_tokens"))
+    if raw_in is None and raw_out is None:
+        return {}
+    try:
+        input_tokens = int(raw_in or 0)
+        output_tokens = int(raw_out or 0)
+    except (TypeError, ValueError):
+        return {}
+    if input_tokens < 0 or output_tokens < 0:
+        return {}
+    return {"input_tokens": input_tokens, "output_tokens": output_tokens}
+
+
 @dataclass
 class ModelResponse:
     text: str
@@ -73,6 +96,9 @@ class ModelResponse:
     # Successful responses always have error=None. The hybrid provider uses
     # this to decide whether to escalate to a cloud model.
     error: Optional[str] = None
+    # Provider-reported token usage for this single call (EvoLab E0 accounting).
+    # Empty dict means the provider did not report usage.
+    usage: dict[str, int] = field(default_factory=dict)
 
 
 class ModelProvider:
@@ -163,6 +189,7 @@ class OpenAICompatibleProvider(ModelProvider):
                 tool_calls=tool_calls,
                 emotion="neutral",
                 raw_output=json.dumps(body, ensure_ascii=False),
+                usage=extract_usage(body.get("usage")),
             )
         except urllib.error.URLError as exc:
             logger.error("OpenAI API call failed: %s", exc)
