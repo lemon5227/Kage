@@ -28,7 +28,10 @@ import platform
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.evolution.skills import SkillCatalog
 
 from core.agentic_loop import AgenticLoop
 from core.model_provider import ModelProvider, ModelResponse
@@ -239,12 +242,14 @@ class KageChainProvider:
         provider_label: str = "",
         max_model_calls: int = 6,
         agentic_loop_cls: type[AgenticLoop] = AgenticLoop,
+        skill_catalog: SkillCatalog | None = None,
     ) -> None:
         self.provider_mode = provider_mode
         self.model_label = model_label or type(model_provider).__name__
         self.provider_label = provider_label or type(model_provider).__name__
         self.max_model_calls = max(1, int(max_model_calls))
         self.agentic_loop_cls = agentic_loop_cls
+        self.skill_catalog = skill_catalog
         self._model = MeteredProvider(model_provider, label=self.provider_label,
                                       max_calls=self.max_model_calls)
         # Kept for interface parity with the fake provider.
@@ -264,6 +269,13 @@ class KageChainProvider:
             "model": self.model_label,
             "max_model_calls": self.max_model_calls,
             "agentic_loop": self.agentic_loop_cls.__name__,
+            "skills": self.skill_catalog.digests if self.skill_catalog else {},
+            "skill_runtime": ({
+                "runner": type(self.skill_catalog.runner).__name__,
+                "timeout_s": self.skill_catalog.runner.timeout_s,
+                "max_output_bytes": self.skill_catalog.runner.max_output_bytes,
+                "image_id": getattr(self.skill_catalog.runner, "image_id", None),
+            } if self.skill_catalog else None),
         }
 
     def metadata(self) -> dict[str, Any]:
@@ -278,6 +290,7 @@ class KageChainProvider:
             "tool_registry": "ToolRegistry(workspace-scoped: read_file/write_file/list_files)",
             "prompt_builder": "PromptBuilder(prune_tools=False, frozen experiment identity)",
             "tool_executor": "ToolExecutor",
+            "skills": self.skill_catalog.digests if self.skill_catalog else {},
             "environment": environment_info(),
         }
 
@@ -297,6 +310,8 @@ class KageChainProvider:
             raise RuntimeError("task has no instruction for the agent chain")
 
         registry = build_workspace_registry(workspace_dir)
+        if self.skill_catalog is not None:
+            self.skill_catalog.register_tools(registry, workspace_dir)
         executor = ToolExecutor(tool_registry=registry, workspace_dir=str(workspace_dir))
         prompt_builder = PromptBuilder(
             identity_store=ExperimentIdentityStore(),

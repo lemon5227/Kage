@@ -19,6 +19,7 @@ Pillow
 pystray>=0.19.5; sys_platform != 'darwin'
 rumps>=0.4.0; sys_platform == 'darwin'
 defusedxml
+jsonschema>=4.18,<5
 lxml
 openpyxl
 pdf2image
