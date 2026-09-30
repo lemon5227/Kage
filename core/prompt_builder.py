@@ -28,43 +28,35 @@ logger = logging.getLogger(__name__)
 _AVG_CHARS_PER_TOKEN = 3
 
 # Keyword sets for route classification (frozen for O(1) membership + no rebuild)
-_FILE_KEYWORDS = frozenset(("文件", "目录", "文件夹", "路径", "代码", "项目", "仓库", "readme", ".py", ".ts", ".md"))
-_SYSTEM_KEYWORDS = frozenset((
-    "打开", "启动", "关闭", "调高", "调低", "音量", "亮度", "wifi", "蓝牙", "截图", "截屏", "undo", "撤销",
-    "太暗", "太亮", "太小声", "太大声", "太吵", "听不清", "看不清", "静音",
-))
-_INFO_KEYWORDS = frozenset(("天气", "新闻", "查", "搜索", "搜", "资料", "官网", "网页", "网站", "链接", "汇率", "股价", "价格", "机票"))
-_WEB_KEYWORDS = frozenset(("天气", "新闻", "查", "搜索", "搜", "资料", "官网", "网页", "网站", "链接"))
-_OPEN_KEYWORDS = frozenset(("打开", "open", "launch"))
-_SYSTEM_CTRL_KEYWORDS = frozenset(("音量", "亮度", "wifi", "蓝牙", "静音", "截屏", "截图", "screenshot"))
+# Visibility policy (which tool schemas the model may see) lives in core.tool_visibility;
+# the frozensets below are derived aliases kept for import compatibility and tests.
+from core.tool_visibility import (
+    BASE as _VIS_BASE,
+    FILE_KEYWORDS,
+    INFO_KEYWORDS,
+    OPEN_KEYWORDS,
+    SYSTEM_CTRL_KEYWORDS,
+    SYSTEM_KEYWORDS,
+    WEB_KEYWORDS,
+    CMD_BASE as _VIS_CMD_BASE,
+    CORE as _VIS_CORE,
+    GROUPS as _VIS_GROUPS,
+    select as _select_visibility,
+)
 
-# Tool name sets (frozen constants)
-_TOOLS_CMD = frozenset({
-    "exec", "get_time", "open_url", "open_website", "open_app",
-    "fs_search", "fs_preview", "fs_apply", "fs_undo_last",
-    "system_control", "shortcuts_run", "shortcuts_list", "shortcuts_view",
-})
-_TOOLS_BASE = frozenset({
-    "exec", "get_time", "smart_search", "web_fetch", "web_search",
-    "open_url", "open_website", "open_app",
-    "fs_search", "fs_preview", "fs_apply", "fs_undo_last",
-    "system_control", "system_capabilities",
-    "shortcuts_list", "shortcuts_view", "shortcuts_run",
-})
+# Keyword sets are owned by core.tool_visibility (single source of truth for both
+# route classification and capability-group activation). The underscore-prefixed
+# aliases remain for import compatibility.
+_FILE_KEYWORDS = FILE_KEYWORDS
+_SYSTEM_KEYWORDS = SYSTEM_KEYWORDS
+_INFO_KEYWORDS = INFO_KEYWORDS
+_WEB_KEYWORDS = WEB_KEYWORDS
+_OPEN_KEYWORDS = OPEN_KEYWORDS
+_SYSTEM_CTRL_KEYWORDS = SYSTEM_CTRL_KEYWORDS
 
-# Pre-built tool subsets used by _select_tool_names. Hoisted so the function
-# does not allocate a fresh set per call. Lists are sorted to match the
-# previous `return sorted(core)` contract.
-_TOOLS_INFO_DEFAULT = sorted(("smart_search", "web_fetch", "web_search", "get_time"))
-_TOOLS_INFO_WEATHER = sorted(("smart_search", "web_fetch"))
-_TOOLS_WEB = frozenset({"smart_search", "web_fetch"})
-_TOOLS_OPEN = frozenset({"open_url", "open_website", "open_app"})
-_TOOLS_FILE = frozenset({
-    "fs_search", "fs_preview", "fs_apply", "fs_move", "fs_rename", "fs_write", "fs_trash",
-})
-_TOOLS_SYSTEM = frozenset({"system_control", "take_screenshot"})
-
-
+# Tool-name sets now live in core.tool_visibility (single source of truth). No
+# compatibility aliases are kept here: they had become dead names that could drift
+# from the policy, which is exactly how tools silently disappeared before.
 class PromptBuilder:
     """动态提示词组装，管理 token 预算，双通道工具呈现"""
 
@@ -78,7 +70,7 @@ class PromptBuilder:
         "当用户只是想获得信息（例如天气/百科/新闻摘要）时，优先使用 smart_search + web_fetch 直接给出结论，"
         "不要打开浏览器，除非用户明确要求‘打开网页/在浏览器里看’。"
         "涉及 macOS 系统级动作时，如果本机存在对应 Shortcut 则优先 shortcuts_run；否则直接用 system_control 的 fallback。"
-        "如果用户重复请求同一个可工具化的流程，考虑调用 skills_save_local 自动保存一个本地 SKILL.md 以便复用。"
+        "如果用户重复请求同一个可工具化的流程，考虑调用 skills_save_local 保存为本地技能文件以便复用。"
     )
 
     COMMAND_RULE = (
@@ -116,6 +108,8 @@ class PromptBuilder:
         self.prune_tools = bool(prune_tools)
         self.last_route: str = "chat"
         self.profile = memory_profile
+        # Names already reported as unclassified (warn once, not every request).
+        self._warned_unclassified: set[str] = set()
 
     def classify_route(self, user_input: str) -> str:
         """Classify request into command/info/chat for routing."""
@@ -134,59 +128,30 @@ class PromptBuilder:
         return "chat"
 
     def _select_tool_names(self, user_input: str, route: str = "") -> list[str] | None:
-        """Best-effort tool pruning to reduce prompt size and latency."""
+        """Tool names the model may see for this request (see core.tool_visibility).
+
+        Returns None when the request is empty, which disables pruning entirely.
+        Any registered tool the policy has not classified is still returned
+        (fail-open) and logged, so an omission cannot silently hide a capability.
+        """
         text = str(user_input or "").strip().lower()
         if not text:
             return None
 
-        if not route:
-            route = self.classify_route(text)
-
-        if route == "info":
-            if "天气" in text:
-                return ["smart_search", "web_fetch"]
-            return ["smart_search", "web_fetch", "web_search", "get_time"]
-
-        if route == "command":
-            return sorted(_TOOLS_CMD)
-
-        is_web = any(k in text for k in _WEB_KEYWORDS)
-        is_open = any(k in text for k in _OPEN_KEYWORDS)
-        is_file = any(k in text for k in _FILE_KEYWORDS)
-        is_system = any(k in text for k in _SYSTEM_CTRL_KEYWORDS)
-        is_weather = "天气" in text
-
-        # Pure info queries should keep tool schemas minimal.
-        if is_web and not is_file and not is_system and not is_open:
-            if "天气" in text:
-                return list(_TOOLS_INFO_WEATHER)
-            return list(_TOOLS_INFO_DEFAULT)
-
-        chosen = set(_TOOLS_BASE)
-
-        if is_web:
-            chosen |= _TOOLS_WEB
-            # Only open browser when explicitly asked.
-            if (not is_open) or is_weather:
-                chosen.discard("open_url")
-                chosen.discard("open_website")
-
-        if is_open and not is_weather:
-            # Weather queries should always answer inline (no browser opening),
-            # even when the user said "打开天气".
-            chosen |= _TOOLS_OPEN
-
-        if is_file:
-            chosen |= _TOOLS_FILE
-
-        if is_system:
-            chosen |= _TOOLS_SYSTEM
-
-        # Skills (only include when user asks about skills explicitly)
-        if any(k in text for k in ("skill", "技能")):
-            chosen.update({"find_skills", "skills_find_remote", "skills_list", "skills_read", "skills_install", "skills_save_local"})
-
-        return sorted(chosen)
+        route = route or self.classify_route(text)
+        registered = set(self.registry.get_tool_names()) if self.registry else set()
+        decision = _select_visibility(text, route, registered)
+        newly_unclassified = [n for n in decision.unclassified
+                             if n not in self._warned_unclassified]
+        if newly_unclassified:
+            self._warned_unclassified.update(newly_unclassified)
+            logger.warning(
+                "tool visibility: %d registered tool(s) not classified by the policy, "
+                "offering them anyway (fail-open): %s. Add them to core.tool_visibility "
+                "so their visibility is deliberate.",
+                len(newly_unclassified), ", ".join(newly_unclassified),
+            )
+        return list(decision.names)
 
     def build(
         self,

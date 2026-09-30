@@ -27,6 +27,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 
 from core.trace import Span, log
+from core.tool_executor import render_history_line
 from core.weather_service import normalize_city_for_weather
 
 logger = logging.getLogger(__name__)
@@ -210,6 +211,55 @@ class AgenticLoop:
         )
 
         last_step = 0
+
+        async def maybe_autosave(tool_defs: list[dict]) -> None:
+            nonlocal autosave_done
+            registered = getattr(getattr(self.tools, "registry", None), "has_tool", None)
+            save_available = (
+                bool(registered("skills_save_local")) if callable(registered)
+                else self._tool_available(tool_defs, "skills_save_local")
+            )
+            if (
+                autosave_done
+                or repeat_count < 2
+                or not did_non_skill_tool
+                or not save_available
+                or any(tc.get("name") == "skills_save_local" for tc in tool_calls_executed)
+            ):
+                return
+            autosave_done = True
+            try:
+                base = base_user_input.strip()
+                digest = hashlib.md5(base.encode("utf-8")).hexdigest()[:6]
+                last_tool = "workflow"
+                for tc in reversed(tool_calls_executed):
+                    name = str(tc.get("name") or "").strip()
+                    if name and name not in _SKILL_LIFECYCLE_TOOLS:
+                        last_tool = name
+                        break
+                skill_name = f"auto-{last_tool}-{digest}"
+                body = "\n".join([
+                    "## Goal", base, "", "## Steps",
+                    f"1. Use `{last_tool}` to complete the request.",
+                    "2. Review results and respond concisely.", "", "## Notes",
+                    "- Avoid destructive file operations unless explicitly requested.",
+                ])
+                save_args = {
+                    "name": skill_name,
+                    "description": f"重复请求自动沉淀：{base}",
+                    "body": body,
+                }
+                save_res = await self.tools.execute("skills_save_local", save_args)
+                tool_calls_executed.append({
+                    "name": "skills_save_local",
+                    "arguments": save_args,
+                    "success": save_res.success,
+                    "result": save_res.result,
+                    "error_type": getattr(save_res, "error_type", None),
+                    "error_message": getattr(save_res, "error_message", None),
+                })
+            except Exception as exc:
+                logger.warning("Skill autosave failed: %s", exc)
 
         try:
             for step in range(1, self.MAX_STEPS + 1):
@@ -458,11 +508,17 @@ class AgenticLoop:
                                 "error_message": getattr(weather_res, "error_message", None),
                             }
                             tool_calls_executed.append(weather_tc)
-                            if weather_res.success:
-                                history.append({
-                                    "role": "assistant",
-                                    "content": f"[Tool: web_fetch] {weather_res.result}",
-                                })
+                            history.append({
+                                "role": "assistant",
+                                "content": render_history_line(
+                                    "web_fetch",
+                                    bool(getattr(weather_res, "success", False)),
+                                    str(getattr(weather_res, "result", "") or ""),
+                                    getattr(weather_res, "error_type", None),
+                                    getattr(weather_res, "error_message", None),
+                                    str(getattr(weather_res, "outcome", "ok") or "ok"),
+                                ),
+                            })
                             resp_text = self._format_weather_from_wttr_result(weather_tc, city, day_offset)
                             if not resp_text:
                                 resp_text = self._fallback_text_from_tools(tool_calls_executed, base_user_input)
@@ -496,19 +552,17 @@ class AgenticLoop:
                         }
                         tool_calls_executed.append(info_tc)
 
-                        if info_res.success:
-                            history.append({
-                                "role": "assistant",
-                                "content": f"[Tool: smart_search] {info_res.result}",
-                            })
-                        else:
-                            history.append({
-                                "role": "assistant",
-                                "content": (
-                                    f"[Tool Error: smart_search] {getattr(info_res, 'error_type', None)}: "
-                                    f"{getattr(info_res, 'error_message', None)}."
-                                ),
-                            })
+                        history.append({
+                            "role": "assistant",
+                            "content": render_history_line(
+                                "smart_search",
+                                bool(getattr(info_res, "success", False)),
+                                str(getattr(info_res, "result", "") or ""),
+                                getattr(info_res, "error_type", None),
+                                getattr(info_res, "error_message", None),
+                                str(getattr(info_res, "outcome", "ok") or "ok"),
+                            ),
+                        })
 
                         # Avoid another heavy model call for info fallback path.
                         resp_text = self._fallback_text_from_tools(tool_calls_executed, base_user_input)
@@ -532,50 +586,7 @@ class AgenticLoop:
                     if not str(raw_text or "").strip():
                         raw_text = "我这次没有拿到有效结果。要我立刻重试并换一个来源吗？"
 
-                    if (
-                        not autosave_done
-                        and repeat_count >= 2
-                        and did_non_skill_tool
-                        and self._tool_available(tool_defs, "skills_save_local")
-                        and not any(tc.get("name") == "skills_save_local" for tc in tool_calls_executed)
-                    ):
-                        autosave_done = True
-                        try:
-                            base = base_user_input.strip()
-                            digest = hashlib.md5(base.encode("utf-8")).hexdigest()[:6]
-                            last_tool = "workflow"
-                            for tc in reversed(tool_calls_executed):
-                                n = str(tc.get("name") or "").strip()
-                                if n and n not in _SKILL_LIFECYCLE_TOOLS:
-                                    last_tool = n
-                                    break
-                            skill_name = f"auto-{last_tool}-{digest}"
-                            desc = f"重复请求自动沉淀：{base}"
-                            body = "\n".join(
-                                [
-                                    "## Goal",
-                                    base,
-                                    "",
-                                    "## Steps",
-                                    f"1. Use `{last_tool}` to complete the request.",
-                                    "2. Review results and respond concisely.",
-                                    "",
-                                    "## Notes",
-                                    "- Avoid destructive file operations unless explicitly requested.",
-                                ]
-                            )
-                            save_args = {"name": skill_name, "description": desc, "body": body}
-                            save_res = await self.tools.execute("skills_save_local", save_args)
-                            tool_calls_executed.append({
-                                "name": "skills_save_local",
-                                "arguments": save_args,
-                                "success": save_res.success,
-                                "result": save_res.result,
-                                "error_type": getattr(save_res, "error_type", None),
-                                "error_message": getattr(save_res, "error_message", None),
-                            })
-                        except Exception as exc:
-                            logger.warning("Skill autosave failed: %s", exc)
+                    await maybe_autosave(tool_defs)
 
                     emotion = self._determine_emotion(tool_calls_executed)
                     return LoopResult(
@@ -633,18 +644,14 @@ class AgenticLoop:
                         step_tool_calls.append(item)
                         if name not in _SKILL_LIFECYCLE_TOOLS:
                             did_non_skill_tool = True
-                        if success:
-                            history.append({"role": "assistant", "content": f"[Tool: {name}] {item['result']}"})
-                        else:
-                            history.append(
-                                {
-                                    "role": "assistant",
-                                    "content": (
-                                        f"[Tool Error: {name}] {item['error_type']}: "
-                                        f"{item['error_message']}. 请尝试替代方案。"
-                                    ),
-                                }
-                            )
+                        history.append({
+                            "role": "assistant",
+                            "content": render_history_line(
+                                name, success, item.get("result", ""),
+                                item.get("error_type"), item.get("error_message"),
+                                str(row.get("outcome") or "ok"),
+                            ),
+                        })
                 else:
                     for tc in tool_calls:
                         name = tc.get("name", "")
@@ -679,7 +686,14 @@ class AgenticLoop:
                                 if preview_res.success and preview_res.result:
                                     history.append({
                                         "role": "assistant",
-                                        "content": f"[Tool: fs_preview] {preview_res.result}",
+                                        "content": render_history_line(
+                                            "fs_preview",
+                                            True,
+                                            str(preview_res.result),
+                                            getattr(preview_res, "error_type", None),
+                                            getattr(preview_res, "error_message", None),
+                                            str(getattr(preview_res, "outcome", "ok") or "ok"),
+                                        ),
                                     })
                             except Exception:
                                 pass
@@ -780,20 +794,20 @@ class AgenticLoop:
                                                 f"用户请求: {base_user_input}"
                                             )
 
-                        # Append tool result to history
-                        if result.success:
-                            history.append({
-                                "role": "assistant",
-                                "content": f"[Tool: {name}] {result.result}",
-                            })
-                        else:
-                            history.append({
-                                "role": "assistant",
-                                "content": (
-                                    f"[Tool Error: {name}] {result.error_type}: "
-                                    f"{result.error_message}. 请尝试替代方案。"
-                                ),
-                            })
+                        # Append tool result to history (outcome-aware rendering).
+                        # Uses the shared renderer with getattr defaults: the loop accepts
+                        # duck-typed result objects (test doubles, alternative executors).
+                        history.append({
+                            "role": "assistant",
+                            "content": render_history_line(
+                                name,
+                                bool(getattr(result, "success", False)),
+                                str(getattr(result, "result", "") or ""),
+                                getattr(result, "error_type", None),
+                                getattr(result, "error_message", None),
+                                str(getattr(result, "outcome", "ok") or "ok"),
+                            ),
+                        })
 
                 # Phase B (responder): for info route, generate final answer from tool outputs
                 # instead of doing another full tool-decision round.
@@ -811,6 +825,7 @@ class AgenticLoop:
                         if not resp_text:
                             resp_text = self._fallback_text_from_tools(step_tool_calls, base_user_input)
                     if resp_text:
+                        await maybe_autosave(tool_defs)
                         emotion = self._determine_emotion(tool_calls_executed)
                         return LoopResult(
                             final_text=resp_text,
@@ -824,6 +839,7 @@ class AgenticLoop:
                     if not resp_text:
                         resp_text = self._fallback_text_from_tools(step_tool_calls, base_user_input)
                     if resp_text:
+                        await maybe_autosave(tool_defs)
                         emotion = self._determine_emotion(tool_calls_executed)
                         return LoopResult(
                             final_text=resp_text,
@@ -1126,6 +1142,7 @@ class AgenticLoop:
                 "error_type": getattr(r, "error_type", None),
                 "error_message": getattr(r, "error_message", None),
                 "elapsed_ms": float(getattr(r, "elapsed_ms", 0.0) or 0.0),
+                "outcome": str(getattr(r, "outcome", "ok") or "ok"),
             }
         except Exception as exc:
             return {
@@ -1136,6 +1153,7 @@ class AgenticLoop:
                 "error_type": type(exc).__name__,
                 "error_message": str(exc),
                 "elapsed_ms": 0.0,
+                "outcome": "error",
             }
 
     @staticmethod

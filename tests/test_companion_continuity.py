@@ -362,7 +362,7 @@ class TestRouteAwarePromptSizing:
         assert builder.classify_route("帮我截个屏") == "command"
 
     def test_info_route_returns_minimal_tool_set(self):
-        from core.prompt_builder import _TOOLS_INFO_DEFAULT
+        from core.tool_visibility import INFO_DEFAULT
         builder = _make_prompt_builder()
         tools = builder._select_tool_names("查一下汇率", route="info")
         # Only the search/get_time tools, no fs_*, system_control, etc.
@@ -370,13 +370,24 @@ class TestRouteAwarePromptSizing:
             assert forbidden not in tools, (
                 f"info route leaked unrelated tool {forbidden}: {tools}"
             )
-        for required in _TOOLS_INFO_DEFAULT:
+        for required in INFO_DEFAULT:
             assert required in tools
 
-    def test_command_route_excludes_search_tools(self):
+    def test_command_route_keeps_lookup_tools_available(self):
+        """Command route must be able to look something up before acting.
+
+        Reversal of an earlier expectation ("command route is for actions; search
+        tools would just add noise"). That kept `search`/`smart_search` out of the
+        command surface entirely, so a request like "查一下资料并整理成文件" — which
+        classifies as command because it mentions 文件 — could not search at all.
+        The command route now carries the search core; the *browser* tools remain
+        intent-gated so a command does not silently gain the ability to open apps.
+        """
         builder = _make_prompt_builder()
-        tools = builder._select_tool_names("打开 Safari", route="command")
-        # Command route is for actions; search tools would just add noise
-        assert "smart_search" not in tools, (
-            f"command route should not include smart_search: {tools}"
+        tools = set(builder._select_tool_names("打开 Safari", route="command"))
+        assert {"search", "smart_search", "web_fetch"} <= tools, (
+            f"command route lost its lookup tools: {sorted(tools)}"
         )
+        # Actions stay available; a screenshot is still opt-in by intent.
+        assert {"fs_apply", "system_control", "exec"} <= tools
+        assert "take_screenshot" not in tools

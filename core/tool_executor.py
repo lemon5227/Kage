@@ -62,6 +62,76 @@ def _first_value(d: dict, keys: tuple) -> object:
     return None
 
 
+# Tool-reported codes that mean "the tool ran fine and the answer is: nothing / already
+# there". These are domain outcomes, not execution failures, so they must not be
+# reported to the model as tool errors (and must not trigger retry/fallback logic).
+_BENIGN_OUTCOME_CODES = frozenset({
+    "NoResults", "NotFound", "FileNotFound", "Empty", "NothingFound",
+})
+
+# Everything else a tool reports as success=false is a rejection the agent must see:
+# bad arguments, refused preconditions, missing dependencies, denied operations.
+_REJECTED_OUTCOME_CODES = frozenset({
+    "InvalidArgument", "InvalidInput", "Blocked", "PathBlocked", "NotAvailable",
+    "NodeNotFound", "UserDenied", "NeedConfirmation", "TooManyInstalls", "SaveFailed",
+    "AlreadyExists",
+})
+
+
+def classify_tool_payload(payload: object) -> tuple[str, bool | None, str | None, str | None]:
+    """Classify a handler return value.
+
+    Returns ``(outcome, tool_reported_success, error_type, error_message)`` where
+    outcome is one of ``ok | no_results | rejected | tool_error | unknown_payload``.
+    A *known* rejection code means the caller can fix something; an unknown failure
+    code means the tool broke in a way the taxonomy does not describe, which is worth
+    distinguishing in logs and for the Agent's next move.
+
+    ``success`` on ToolResult answers "did the tool produce a trustworthy answer",
+    while the payload's own ``success`` is preserved separately so nothing is lost.
+    """
+    if not isinstance(payload, dict) or "success" not in payload:
+        return "unknown_payload", None, None, None
+
+    reported = bool(payload.get("success"))
+    code = str(payload.get("error") or "")
+    message = str(payload.get("message") or "")
+    if reported:
+        return "ok", True, None, None
+    if code in _BENIGN_OUTCOME_CODES:
+        return "no_results", False, code or "NoResults", message
+    if code in _REJECTED_OUTCOME_CODES or not code:
+        return "rejected", False, code or "ToolFailed", message
+    return "tool_error", False, code, message
+
+
+def render_history_line(name: str, success: bool, result: str = "",
+                        error_type: Optional[str] = None, error_message: Optional[str] = None,
+                        outcome: str = "ok") -> str:
+    """Render one tool outcome for the conversation history.
+
+    Shared by the serial path (``ToolResult.history_line``) and the parallel batch path
+    (plain dict rows), so both tell the model the same thing: "no results" is an
+    answer, a rejection needs fixing, an error needs a different approach.
+    """
+    if outcome == "no_results":
+        label = "已存在" if error_type == "AlreadyExists" else "无结果"
+        return f"[Tool: {name}] （{label}）{result}"
+    if success:
+        return f"[Tool: {name}] {result}"
+    if outcome == "denied":
+        return f"[Tool: {name}] 用户拒绝了该操作：{error_message or result}"
+    if outcome == "needs_confirmation":
+        return f"[Tool: {name}] 该操作需要用户确认后才能执行：{error_message or result}"
+    if outcome == "rejected":
+        return (f"[Tool Error: {name}] {error_type}: {error_message}"
+                "（调用被拒绝：请修正参数或改用其他方式）")
+    if outcome == "tool_error":
+        return (f"[Tool Error: {name}] {error_type}: {error_message}"
+                "（工具报出未分类的失败码，请改用其他工具或方式）")
+    return f"[Tool Error: {name}] {error_type}: {error_message}. 请尝试替代方案。"
+
+
 @dataclass
 class ToolResult:
     name: str
@@ -70,7 +140,24 @@ class ToolResult:
     error_type: Optional[str] = None
     error_message: Optional[str] = None
     elapsed_ms: float = 0.0
+    # "ok" | "no_results" | "rejected" | "error" | "denied" | "unknown_payload".
+    # `success` is True for ok/no_results (the tool answered); the Agent renders
+    # each outcome differently instead of treating "found nothing" as a failure.
+    outcome: str = "ok"
+    # What the tool's own JSON reported (None when it reported nothing).
+    tool_reported_success: Optional[bool] = None
+    # Set when an unclassified registered tool was offered to the model (fail-open).
+    unclassified_tool: bool = False
 
+    def history_line(self) -> str:
+        """How this result is shown to the model in the conversation history.
+
+        Callers holding a real ToolResult should use this; AgenticLoop uses the
+        module-level :func:`render_history_line` instead because it also accepts
+        duck-typed result objects (test doubles, alternative executors).
+        """
+        return render_history_line(self.name, self.success, self.result,
+                                   self.error_type, self.error_message, self.outcome)
 
 class ToolExecutor:
     """工具执行器：通过 Tool_Registry 查找和执行工具"""
@@ -499,6 +586,7 @@ class ToolExecutor:
                 error_type="UnknownTool",
                 error_message=f"未知工具: {orig_name}",
                 elapsed_ms=elapsed,
+                outcome="rejected",
             )
             self.log_execution(result, arguments)
             return result
@@ -521,6 +609,7 @@ class ToolExecutor:
                             name=name, success=False,
                             result="用户拒绝执行该操作",
                             error_type="UserDenied",
+                            outcome="denied",
                             error_message="用户拒绝执行危险操作",
                             elapsed_ms=elapsed,
                         )
@@ -537,6 +626,7 @@ class ToolExecutor:
                     success=False,
                     result="",
                     error_type="NeedConfirmation",
+                    outcome="needs_confirmation",
                     error_message=f"需要确认后才能执行: {name} {preview}",
                     elapsed_ms=elapsed,
                 )
@@ -554,10 +644,27 @@ class ToolExecutor:
             else:
                 raw_result = await asyncio.to_thread(handler, **arguments)
             elapsed = (time.monotonic() - start) * 1000
+            result_text = str(raw_result)
+            structured = raw_result if isinstance(raw_result, dict) else None
+            # Only attempt JSON parsing when the text plausibly is JSON: tool results
+            # can be large documents and re-parsing every one of them is wasted work.
+            if structured is None and isinstance(raw_result, str) and raw_result.lstrip()[:1] == "{":
+                try:
+                    parsed = json.loads(raw_result)
+                    structured = parsed if isinstance(parsed, dict) else None
+                except (TypeError, ValueError):
+                    structured = None
+            outcome, reported, err_type, err_message = classify_tool_payload(structured)
             result = ToolResult(
-                name=name, success=True,
-                result=str(raw_result),
+                name=name,
+                # "found nothing" is a valid answer, not a failure
+                success=outcome in ("ok", "no_results", "unknown_payload"),
+                result=result_text,
+                error_type=err_type,
+                error_message=err_message,
                 elapsed_ms=elapsed,
+                outcome=outcome,
+                tool_reported_success=reported,
             )
         except Exception as exc:
             elapsed = (time.monotonic() - start) * 1000
@@ -567,6 +674,7 @@ class ToolExecutor:
                 error_type=type(exc).__name__,
                 error_message=str(exc),
                 elapsed_ms=elapsed,
+                outcome="error",
             )
 
         # Log execution

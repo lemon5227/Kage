@@ -72,24 +72,27 @@ class TestModuleLevelConstants:
             {"name": "fs_apply"},
         ]) is False
 
-    def test_prompt_builder_tool_subsets_hoisted(self):
-        from core.prompt_builder import (
-            _TOOLS_INFO_DEFAULT, _TOOLS_INFO_WEATHER,
-            _TOOLS_WEB, _TOOLS_OPEN, _TOOLS_FILE, _TOOLS_SYSTEM,
-        )
-        # Pre-sorted lists for early-return paths
-        assert _TOOLS_INFO_DEFAULT == sorted(_TOOLS_INFO_DEFAULT)
-        assert _TOOLS_INFO_WEATHER == sorted(_TOOLS_INFO_WEATHER)
+    def test_tool_visibility_subsets_hoisted(self):
+        """Visibility sets live in core.tool_visibility as hoisted constants.
+
+        (Previously asserted against PromptBuilder._TOOLS_* aliases; those aliases were
+        removed because they could silently drift from the policy.)
+        """
+        from core import tool_visibility as tv
+
+        # Sorted tuples for the early-return (info) paths
+        assert tuple(sorted(tv.INFO_DEFAULT)) == tv.INFO_DEFAULT
+        assert tuple(sorted(tv.INFO_WEATHER)) == tv.INFO_WEATHER
         # Frozensets for set-union operations
-        assert isinstance(_TOOLS_WEB, frozenset)
-        assert isinstance(_TOOLS_OPEN, frozenset)
-        assert isinstance(_TOOLS_FILE, frozenset)
-        assert isinstance(_TOOLS_SYSTEM, frozenset)
-        # Sanity: set membership preserved
-        assert "smart_search" in _TOOLS_WEB
-        assert "open_url" in _TOOLS_OPEN
-        assert "fs_apply" in _TOOLS_FILE
-        assert "system_control" in _TOOLS_SYSTEM
+        for group in ("web", "browse", "files", "system", "skills"):
+            assert isinstance(tv.GROUPS[group], frozenset), group
+        assert isinstance(tv.CORE, frozenset)
+        assert isinstance(tv.BASE, frozenset)
+        # Sanity: set membership
+        assert "smart_search" in tv.CORE
+        assert "open_url" in tv.GROUPS["browse"]
+        assert "fs_apply" in tv.BASE
+        assert "system_control" in tv.BASE
 
     def test_tool_executor_helpers_hoisted(self):
         from core.tool_executor import _first_value, _FS_APPLY_KIND_MAP
