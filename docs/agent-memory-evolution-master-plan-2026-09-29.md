@@ -355,15 +355,33 @@ search 可向进化器暴露详细反馈；dev 只用于选择版本并控制反
 
 ### E0 — 固定实验内核与一个冻结基线（P0，约 2–3 天）
 
-**新增：** `core/evolution/contracts.py`、`runner.py`、`budget.py`、`journal.py`、`scripts/kage_evolve.py`、`eval/evolution/smoke.json`、`tests/test_evolution_kernel.py`。
-**接入：** `core/model_broker.py`、`core/tool_executor.py`，尽量使用包装器而非大改主服务。
+**新增：** `core/evolution/contracts.py`、`runner.py`、`budget.py`、`journal.py`、`agent_provider.py`、`scripts/kage_evolve.py`、`eval/evolution/smoke.json`、`tests/test_evolution_kernel.py`、`tests/test_evolution_agent_chain.py`。
+**接入：** `core/model_broker.py`、`core/model_provider.py`、`core/anthropic_provider.py`、`core/tool_executor.py`，尽量使用包装器而非大改主服务。
 **接口：** 实现第 4.3 节 RunSpec/RunResult、Runner.run、Budget.reserve/settle；journal 按 run_id 幂等写完成状态；按 4.5 节新增 `progress.py`，进度默认仅观察。
 
+**当前状态（E0 接入完成后复核）：** 真实 Kage 执行链已接入并通过验收。`core/evolution/agent_provider.py` 提供 `KageChainProvider`：每个 kernel step 调用一次冻结的 `AgenticLoop.run()`，其内部使用真实 `PromptBuilder`（冻结实验身份、关闭 memory 召回、`prune_tools=False`）、真实 `ToolExecutor` 与工作区受限的 `ToolRegistry`（`read_file`/`write_file`/`list_files`，拒绝绝对路径与越界路径）；provider 由 `ModelBroker` 按角色构建，token 用量来自 provider 上报值（新增 `ModelResponse.usage`，OpenAI/Anthropic 两条路径均已接线），工具调用与版本随 `RunResult.metadata` 落库。`--provider live` 已可运行：无凭据时以退出码 2 明确拒绝且不执行任何 run，传输/模型不可用时以退出码 3 记为 `infrastructure_failure`，两种情况下都不会静默退回假 provider；`fake` 与 `live` 使用不同输出目录与不同 `provider_mode` 标记。**尚未完成的部分：** 本机没有可用的云凭据（`config/settings.json` 的 `cloud_api.api_key` 与相关环境变量均为空），因此 live 路径是用本地 OpenAI 兼容 stub 端点（真实 HTTP、真实 provider 类、真实上报 usage）验证的，尚未对付费端点做过一次真实小试验；这一步需要用户提供凭据后再执行。本地 `fork` 步骤进程仅供可信 E0 CLI 使用（macOS 上存在活跃 Objective-C/线程运行时时 fork 不安全，已提供 `--step-isolation inline` 逃生阀）；E1 的生成代码须在独立容器/执行环境运行。
+
 - [x] 建立 2 个确定性任务：字段归一化成功；缺字段返回可评分失败。假 provider 验证不调用真实 API。
-- [x] 实现临时工作目录、进程超时、事件记录与评分；验证相同夹具重置后不得继承上次输出；超时需清理整个任务进程组，退出后检查没有残留子进程。
+- [x] 实现临时工作目录、进程超时、事件记录与评分；验证相同夹具重置后不得继承上次输出；超时需清理整个任务进程组，退出后确认没有残留子进程。
 - [x] 实现 4.5 节进度观察：不同只读结果算新证据，相同动作/结果循环记 `stagnation`；不得仅因文件没变化就熔断。
 - [x] 实现预算预留与断点恢复；预算耗尽返回明确状态，重启不重复已完成 run。
 - [x] 通过 `python -m pytest tests/test_evolution_kernel.py -q`；CLI `python scripts/kage_evolve.py baseline --suite eval/evolution/smoke.json --provider fake` 生成可读 report。
+- [x] 接入真实 Kage 执行链：在相同夹具中以冻结的 `AgenticLoop`、`ModelBroker` 和 `ToolExecutor` 运行，记录模型实际 usage、工具调用与版本；与假 provider 报表分别标记。增加网络/模型不可用时的可观察失败测试，禁止静默退回假 provider。
+
+**E0 验收记录（新增 `tests/test_evolution_agent_chain.py`，11 个用例）：**
+
+| 验收点 | 证据 |
+| :--- | :--- |
+| 真实链条跑通两个 smoke 任务 | `--provider live` + 本地 OpenAI 兼容 stub：`Outcome: pass | 2/2 passed`，每任务 `read_file,write_file`（真实 `ToolExecutor` 执行），`chain_steps=3` |
+| 记录模型实际 usage | stub 上报 831/47 tokens/次 × 3 次 → 报表 `in=2493, out=141`（与上报值精确一致，非预留上限） |
+| 记录工具调用与版本 | `RunResult.metadata`：`provider_mode`、`model`、`provider_class`、`agentic_loop=AgenticLoop`、`tool_executor=ToolExecutor`、`environment.kage_revision/python/platform`；journal 中 `action(source=kage_chain)` + `observation` + `diagnosis` 事件 |
+| 假/live 报表分别标记 | `provider_mode=fake`（`chain=bypassed`，仍为 1/2 的夹具基线）与 `provider_mode=live`（`chain=AgenticLoop + PromptBuilder + ToolExecutor (frozen)`）写入不同目录与不同字段 |
+| 网络/模型不可用可观察 | 无凭据 → 退出码 2 且 journal 无任何完成 run（不退回假 provider）；端点不可达 → 退出码 3、`outcome=infrastructure_failure`、按预留上限保守入账 |
+| 答案不外泄 | 用例断言进入模型的 prompt 中不含 `scoring_criteria`/`initial_files`/答案内容 |
+| 工作区限制 | `read_file`/`write_file` 拒绝 `../`、绝对路径与越界写入 |
+| 基础设施失败可重试 | 崩溃/超时/预算耗尽会被 journal 幂等缓存（防重复花钱），`--retry-crashed` 显式清掉这些 run 与其保守预算记账后重新执行；已在 CLI 上实测「先死端点失败 → 再补跑成功 2/2」 |
+
+回归结果：`python -m pytest -q` → **714 passed, 1 skipped, 1 xfailed**（新增 11 个用例；`test_cli_live_mode_is_explicitly_unavailable` 已按新语义改写为「无凭据必须显式失败且不执行」）。
 
 关键测试示意（配套 fixture 在本包实现）：
 
@@ -504,3 +522,148 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 - 保留假说、技能持久化、进度观察与夹具回溯；取消首期强制分岛和两步无文件变化熔断。复杂搜索与世界模型预检不阻塞核心自修改。
 - 补齐 checkpoint 恢复范围、计费不回退、bundle 技能锁定、方法间隔离、异步接入、崩溃恢复、drift 拆分及基线公平性。
 - 验收应以行为测试和真实轨迹为准；不要把“采用某论文机制”作为测试通过条件。
+
+## 14. 基础设施修复记录：测试卫生与工具契约（2026-09-29，E0 复核期间）
+
+E0 接入真实执行链、复跑全量回归时发现两类与演化主线无关、但会污染实验结论的基础设施缺陷（测试会真实操作桌面；工具 schema 与实现签名不符导致模型调用必失败）。均已修复并验证，记录如下，避免后续把“测试通过”当作能力可用。
+
+### 14.1 测试真实操作桌面（浏览器 / 捷径 / 空应用名）
+
+症状：每轮 `pytest` 会真实打开 YouTube、Bilibili、一个示例网址、快捷键 App，并执行 `open -a ""`。定位方法：用 PATH 垫片（假 `open`/`osascript`/`shortcuts`/`screencapture` 记录调用）跑全量，实测每轮 5 次真实副作用。
+
+| 触发点 | 根因 | 修复 |
+| :--- | :--- | :--- |
+| `tests/test_open_website.py`（3 例） | `patch.object(tools_impl, "open_url")` 打错模块：`open_website` 定义在 `core.tools.web_ops`，调用的是该模块自己的 `open_url`，补丁完全未生效；测试还因真实函数返回同值而“通过” | 改为 patch 定义模块并断言构造出的命令 |
+| `tests/test_round5_cleanup.py::test_shortcuts_create_*` | `shortcuts_create()` 的实现就是 `open -a Shortcuts` 打开 GUI，测试未 mock | mock `shortcuts_ops.subprocess.run` 并断言 `[["open","-a","Shortcuts"]]` |
+| `tests/test_tools_impl_primitives.py::test_open_app_returns_json` | `open_app("")` 直接发出 `open -a ""` 且返回 `success: true`（生产 bug） | 生产侧对空输入返回 `InvalidArgument`；测试侧 mock 并断言“不发命令” |
+| 全仓兜底 | —— | `tests/conftest.py` 新增 autouse 夹具：拦截 `subprocess.run/Popen/check_output/check_call` 中的桌面类命令（`open/osascript/shortcuts/screencapture/networksetup/pmset/brightness/displayplacer/caffeinate`），**记录后在 teardown 断言失败**（不用抛异常，因为工具函数里广泛的 `except Exception` 会吞掉）；显式人工测试可用 `@pytest.mark.allow_desktop_side_effects` |
+
+验证：全量跑完后垫片日志为空（零真实副作用）；反向探针（真的调用 `open_url`/`open_app`）能稳定失败并打印具体命令，证明兜底非空转。
+
+### 14.2 工具 schema 与实现签名不一致（模型的动作空间失效）
+
+实测（`create_default_registry()` 34 个工具，1 个检查脚本发现 2 处）：
+
+| 工具 | schema 宣传 | 实现签名 | 实测后果 |
+| :--- | :--- | :--- | :--- |
+| `search` | `query / source(auto\|web\|youtube\|bilibili) / sort / max_results / filters` | `search(query, max_results, strategy, sort)` | 模型按 schema 传 `source="youtube"` → `TypeError: unexpected keyword argument 'source'`。视频检索能力对 agent 完全不可用；`filters` 是纯属虚构的字段 |
+| `skills_save_local` | `name / description / body / target_dir / overwrite` | `skills_save_local(skill_name, content, workspace_dir)` | 模型一调用必 `TypeError`。而这是 agent 自动沉淀技能的唯一入口（`core/agentic_loop.py:567`），意味着**自我沉淀技能一直静默失败**；另外名称未消毒，`../../x` 可越界写入 |
+
+修复：
+- `core/tools/web_ops.py::search` 接受 `source`（含 enum 校验，非法值返回 `InvalidArgument` 而非静默回退），保留 `strategy` 作为 `smart_search` 的旧内部别名，`max_results` 归一到 1–10；从 schema 移除不存在的 `filters`。
+- `core/tools/skill_ops.py::skills_save_local` 改为与 schema 一致的 `(name, description, body, target_dir="~/.kage/skills", overwrite=False)`，写 frontmatter + 正文（JSON 引号标量，合法 YAML，不引入 PyYAML 依赖），技能名白名单校验（封堵路径穿越），`overwrite=False` 时拒绝覆盖已存在技能。
+- `core/tool_registry.py` 同步两个 schema（`source` 加 enum、去掉 `filters`、更新 `skills_save_local` 描述）；`core/prompt_builder.py` 行为准则里“保存 SKILL.md”的措辞改为“保存为本地技能文件”。
+
+### 14.3 新增元测试（替代逐个工具的重复用例）
+
+- 新增 `tests/test_tool_contracts.py`：对**注册表里全部工具**（含以后新增的）检查 ① 名字可用于 function calling ② `parameters` 为 object schema 且 `required ⊆ properties` ③ description 非空且 ≤200 字符（会进入每次请求）④ **schema 声明的参数 ⊆ handler 形参** ⑤ **handler 无默认值的形参必须在 schema 中声明为 required**。每条检查一次性列出所有违规工具名，不做按工具的参数化堆量；另附两个 bug 的显式回归钉子（`search` 的 `source` 真的到达实现；`skills_save_local` 接受模型侧参数名、拒绝覆盖与穿越）。
+- 删除了低价值的“查字典”用例（`b站 → bilibili` 之类），只保留有安全含义的断言（坏输入不发命令 / 只发一条 argv 列表）。判断依据：宿主适配层的字符串映射坏了用户一眼可见，而 schema↔实现一致性才是 agent 能力是否可用的判据。
+- `tests/test_skills_save_local.py` 按新契约重写（含 frontmatter、覆盖语义、穿越拒绝、以及 `agentic_loop` 实际传参形状）。
+
+### 14.4 状态
+
+- [x] 测试不再真实操作桌面；全量跑完垫片日志为空
+- [x] `search` / `skills_save_local` 契约缺陷修复，模型侧调用可用
+- [x] 新增全注册表契约元测试；两个历史 bug 有显式回归钉子
+- [x] 回归：`python -m pytest -q` → **734 passed, 1 skipped, 1 xfailed**（含纵向 Agent 工具链测试；E0 期间为 703 passed）
+- [x] `skills_save_local` 的平铺 `.md` 格式已由现有 `skill_parser` 支持；注册工具现在能完成“保存 → 本地发现 → 本地读取”，不再把这项能力误记为未接入
+- [ ] 已知偏差（未做）：本次只修了 `search`/`skills_save_local` 两处**签名级**不一致；`filters` 之外未审计各工具 description 的语义准确性（元测试只保证非空与长度上限）
+
+### 14.5 Agent 能力纵向验证（本轮补充）
+
+契约测试只能说明 schema 与函数签名一致，不能证明模型真的能使用能力。本轮增加了从 PromptBuilder 到 ToolExecutor 再到真实 handler 的纵向回归：
+
+- 普通信息请求的生产裁剪路径现在能暴露 `search`；模型发出的 `source="youtube"` 会穿过 AgenticLoop 和 ToolExecutor 到达 YouTube 后端，测试断言真实参数为 query/sort/limit，而不是只检查注册表字典。
+- handler 返回 `{"success": false}` 时，ToolExecutor 会把失败传回 Agent（`ToolResult.success=False` 与错误类型），避免模型把结构化失败误判成成功。
+- 重复任务触发自动沉淀时，测试经过真实 PromptBuilder/AgenticLoop，并验证 `skills_save_local` 实际落盘；同时覆盖 info/command 路由的提前返回分支。
+- 保存后的技能通过注册工具 `find_skills` 本地发现，再通过 `skills_read` 本地读取正文，形成最小可验证的复用闭环。
+
+这些测试仍不等同于真实云模型质量评估：模型决策由确定性 fake provider 驱动，网络搜索后端在测试中只替换为参数捕获函数。它们验证的是 Agent 执行链和能力接口确实连通，真实模型的选择质量需要后续离线评测集单独衡量。
+
+## 15. 工具可见性策略与执行结果语义（2026-09-29，结构性修复）
+
+§14 修了 `search` 被裁剪与执行器误报成功；本轮把这两点从"逐个打补丁"升级为**有不变量的策略**，因为同类缺陷是成批存在的。
+
+### 15.1 发现：可见性缺陷不是一处，而是六处
+
+对 34 个注册工具做覆盖审计（`registered − 所有路由可达集合`），结果是 **6 个工具在任何路由都不可见**：
+
+```
+fetch_content、memory_search、proactive_agent、search_and_open、tavily_search、tinyfish_search
+```
+
+其中 `memory_search` 是本项目（agent-memory）的记忆检索工具——模型从来没机会调用它；`tinyfish_search`/`tavily_search` 的描述却写着"首选使用"。根因是所有可见性都写死在 `PromptBuilder._select_tool_names` 的名字字面量里，新增/遗漏都无提示。
+
+### 15.2 修复：可见性策略成为单一事实来源
+
+新增 `core/tool_visibility.py`：`CORE`（每路由可见，含 `memory_search`）+ `BASE`（会话基线，含本地技能复用三件套）+ 能力组 `GROUPS`（web/browse/files/system/skills，按意图关键词激活）+ `CMD_BASE`/`INFO_DEFAULT`/`INFO_WEATHER`。`PromptBuilder._select_tool_names` 退化为策略调用，路由关键词与策略关键词合并为同一来源（消除此前两处关键词表漂移）。
+
+三条结构性保证：
+
+1. **全量分类**：`CLASSIFIED ⊇ 注册表`，未分类即测试失败；
+2. **可达性**：每个注册工具都能被某个 (路由, 意图) 看到，不可达即测试失败；
+3. **fail-open**：真的出现未分类工具时，仍然提供给模型（并 `logger.warning` + 在返回值里报告），使"漏登记"退化为多给一个工具，而不是静默删除能力。
+
+结果：可达 34/34（修复前 28/34）；常驻面 `BASE` 15 个工具、`CMD_BASE` 22 个、info 面 5 个，均远低于工具选择准确率劣化的 30–50 区间。
+
+### 15.3 修复：执行结果语义（ok / no_results / rejected / error）
+
+§14.5 的第一版修复把所有 `success: false` 载荷一律记为调用失败，这会误伤**领域负结果**（`NoResults`/`NotFound`/`AlreadyExists`）：它们不是执行失败，不该把 Agent 推向重试/降级。现在 `ToolResult` 携带：
+
+| 字段 | 含义 |
+| :--- | :--- |
+| `success` | 工具是否给出了可信答案（`ok`/`no_results` 为 True） |
+| `outcome` | `ok` / `no_results` / `rejected` / `error` / `denied` / `needs_confirmation` |
+| `tool_reported_success` | 载荷自身的 `success`，信息不丢失 |
+| `error_type` | 工具错误码或异常类名 |
+
+渲染统一收敛到 `render_history_line()`（串行路径与并行批次共用）：`no_results` → `[Tool: x] （无结果）…`；`rejected` → `[Tool Error: x] …（调用被拒绝：请修正参数或改用其他方式）`；`error` → 保留"请尝试替代方案"；`denied`/`needs_confirmation` 单独措辞。JSON 解析改为仅当结果以 `{` 开头时才尝试（工具结果可能是大文档）。
+
+### 15.4 有意的行为反转（已在测试中标注理由）
+
+- **command 路由现在包含 `search`/`smart_search`/`web_fetch`**。旧测试 `test_command_route_excludes_search_tools` 明确断言"命令路由不该有搜索工具"，导致"查一下资料并整理成文件"这类被分类为 command 的请求完全无法检索。该测试已改名为 `test_command_route_keeps_lookup_tools_available` 并写明反转理由；浏览器类工具仍由意图关键词控制，不会随命令路由静默放开。
+- **纯 info 请求保持最小面**（5 个工具，且永不包含 `open_*`）；但**特定意图**（技能/文件/系统）不会再被一个"搜索"关键词吞掉——"帮我搜索并安装一个技能"会带上技能工具。
+- `tinyfish_search`/`tavily_search` 的描述不再自称"首选"，改为说明它们是 `search`/`smart_search` 的后端，模型侧入口与 `BEHAVIOR_RULE` 一致。
+
+### 15.5 新增测试与状态
+
+- [x] `tests/test_tool_visibility.py`（17 项）：分类完整性、可达性、fail-open、日志、常驻面预算、route×tool 矩阵（search 三路由可见 / memory_search 可见 / 本地技能三件套可见 / 远程安装与截图仅特定意图 / 天气不给浏览器 / command 能搜索）、经真实 `PromptBuilder.build()` 的端到端可见性
+- [x] `tests/test_tool_outcome_semantics.py`（16 项）：载荷分类表、真实工具经执行器的语义（拒绝 / 无结果 / 异常 / 保存→已存在）、渲染措辞、以及经真实 `AgenticLoop` 断言**模型实际读到的文本**（拒绝是错误、无结果是正常答复）
+- [x] 回归：`python -m pytest -q` → **770 passed, 1 skipped, 1 xfailed**；PATH 垫片日志为空（零真实桌面副作用）
+
+### 15.6 对 §15 修复本身的自审（对抗性复核）
+
+本轮改动完成后又做了一次针对自己产出的审计，发现并关闭 6 个问题：
+
+| # | 自审发现 | 性质 | 处置 |
+| :--- | :--- | :--- | :--- |
+| 1 | 可达性测试对每条语料硬算 info/command/chat 三条路由，可能"自证"（某工具只在 `classify_route` 永不产生的路由下可达） | 测试有效性 | 改为用真实 `classify_route` 计算；复算仍 34/34，且确认无"仅假路由可达"的工具 |
+| 2 | `CLASSIFIED` 含未注册的 `web_search`（幽灵项） | 策略卫生 | 显式声明 `ALIAS_SLOTS`（MCP 别名槽）并加断言：`CLASSIFIED − 注册表 ⊆ ALIAS_SLOTS` |
+| 3 | `_REJECTED_OUTCOME_CODES` 定义后从未使用 | 死代码 | 让其生效：已知拒绝码 → `rejected`，未知失败码 → 新增 `tool_error`（渲染措辞不同，便于监控区分"可修正"与"工具坏了"） |
+| 4 | 未分类工具的 fail-open 告警每次请求都打一次 | 运行期噪声 | 改为每个工具名告警一次，并加测试断言 5 次调用只出 1 条 |
+| 5 | `prompt_builder` 里 `_TOOLS_CMD/_TOOLS_BASE/_TOOLS_WEB/_TOOLS_OPEN/_TOOLS_FILE/_TOOLS_SYSTEM` 已成死常量（仅测试引用） | 死代码 + 漂移风险 | 删除，测试改从 `core.tool_visibility` 断言策略常量（兼容别名本身就是上次漂移的温床） |
+| 6 | `history_line()` 定义了但 loop 未用；另有三处特化分支（weather/web_fetch、info/smart_search、fs_apply 预览）仍手写 `[Tool: …]`/`[Tool Error: …]` | 语义分叉 | 三处统一走共享渲染器；`history_line()` 保留为 ToolResult 的公开 API 并注明 loop 为何用模块级函数（需兼容 duck-typed 结果）；现"直写工具行"残留为 0 |
+
+复审计结果：真实路由可达 34/34、幽灵项 0、死常量 0、告警 1 次/5 次调用、分类表 `rejected|no_results|tool_error` 三态齐备、渲染分叉已消除、直写工具行 0。
+
+同时确认影响面受限：当前只有 2 个工具会发出"良性码"（`search_and_open` → `NoResults`，`skills_save_local` → `AlreadyExists`），其余良性码是预留词汇；info 回退路径调用的是 `smart_search`，其失败码属 `rejected`，语义未变。
+
+- [ ] 已知偏差（本轮发现，未做）：**回合内工具观察不会跨回合留存**。实际 `SessionManager.get_history()` 返回新列表，不论会话是否为空，循环内追加的工具观察都不会自动写回 session；`core/server.py` 只在回合结束后记录最终 user/assistant。此前 `_RecordingSession` 返回共享列表，不能代表实际会话行为；§16 已把结果语义测试改为检查模型下一次调用收到的 messages。跨回合持久化属于独立的 transcript 语义变更，尚未实现。
+- [ ] 已知偏差（沿用）：元测试只保证 description 非空与长度上限，未审计其**语义准确性**（本轮顺手修正了两个搜索后端的描述，其余未逐一核对）
+
+## 16. DeepSeek 基础设施改动复核（2026-09-30）
+
+### 16.1 复核发现与修复
+
+§15 的可见性策略和结果渲染统一可以保留，但针对性测试通过并不代表所有具体任务可用。本轮先写回归，观察到 4 项失败，再修正：
+
+- `CORE` 宣称每条路由都可见，但 info/weather 分支没有使用它，`查一下我之前提过的研究方向` 看不到 `memory_search`。现在信息路由也保留记忆入口。
+- `搜索视频处理技能` 会被分类为 info，只暴露远程安装工具，没有本地 `find_skills/skills_read/skills_save_local`。技能意图组现在包含这三个本地入口。
+- `skills_save_local` 拒绝覆盖时返回 `AlreadyExists`；原分类却把它改成 `success=True`。这是一次没有完成的写操作，应为 `rejected/success=False`，模型可读取既有内容或明确请求覆盖。`NoResults` 的正常空查询语义保留。
+- 原结果语义测试读取特制 session 的共享列表，未验证模型真正收到观察。现使用真实 `SessionState`，检查下一次 `generate(messages=...)` 中的工具结果，不依赖 session 被循环直接修改。
+
+§15 中 info 面“5 个工具”、`AlreadyExists` 属于成功、`_RecordingSession` 能代表真实会话的说法均由本节修正。桌面默认注册表的普通 info 面现在为 6 个有效工具。
+
+### 16.2 E0 调用预算修正
+
+链式执行可能包含多次模型调用。预算现预留调用上限、按实际调用数结算并持久化；缺失 provider token usage 时按预留上限保守结算，避免计为零。旧记录无法重建历史真实调用数，研究测量应使用新实验目录。相关回归在 `tests/test_evolution_call_budget.py`。
