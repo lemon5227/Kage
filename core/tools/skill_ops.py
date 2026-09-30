@@ -1,11 +1,14 @@
 """Skill management tools — find, install, list, read, save."""
 
+import json
 import os
 import re
 import shutil
 import subprocess
 import logging
+from pathlib import Path
 
+from core.skill_parser import default_skill_sources, scan_skill_sources
 from core.tools._response import ok, err
 
 logger = logging.getLogger(__name__)
@@ -65,7 +68,29 @@ def parse_skills_find_output(text: str, max_results: int = 5) -> list[dict]:
 
 
 def find_skills(query: str, max_results: int = 5, skills_dir: str = "skills") -> str:
-    """Find skills locally and via npx."""
+    """Find locally available skills by name or description."""
+    terms = str(query or "").strip().casefold().split()
+    if not terms:
+        return err("InvalidArgument", "query 不能为空")
+    sources = [*default_skill_sources(), skills_dir]
+    matches = []
+    for skill in scan_skill_sources(sources):
+        haystack = f"{skill.name} {skill.title} {skill.description}".casefold()
+        if all(term in haystack for term in terms):
+            matches.append({
+                "name": skill.name,
+                "description": skill.description,
+                "source": "local",
+            })
+    try:
+        limit = max(1, min(5, int(max_results)))
+    except (TypeError, ValueError):
+        return err("InvalidArgument", f"max_results 必须为整数，收到 {max_results!r}")
+    return ok(skills=matches[:limit])
+
+
+def skills_find_remote(query: str, max_results: int = 5) -> str:
+    """Find skills from the remote registry."""
     have_node, msg = ensure_node_tools()
     if not have_node:
         return err("NodeNotFound", msg)
@@ -74,11 +99,6 @@ def find_skills(query: str, max_results: int = 5, skills_dir: str = "skills") ->
         return err("NPXFailed", stderr or "npx skills find failed")
     skills = parse_skills_find_output(stdout, max_results)
     return ok(skills=skills)
-
-
-def skills_find_remote(query: str, max_results: int = 5) -> str:
-    """Find skills from remote registry."""
-    return find_skills(query, max_results)
 
 
 def skills_install(repo: str, skill: str, global_install: bool = True, agent: str = "opencode") -> str:
@@ -111,6 +131,16 @@ def skills_list(global_install: bool = True, agent: str = "opencode") -> str:
 
 def skills_read(skill_name: str, workspace_dir: str = "~/.kage") -> str:
     """Read skill content."""
+    clean = str(skill_name or "").strip()
+    if SKILL_NAME_RE.fullmatch(clean):
+        for source in default_skill_sources(workspace_dir):
+            directory = Path(source).expanduser()
+            for candidate in (directory / f"{clean}.md", directory / clean / "SKILL.md"):
+                if candidate.is_file():
+                    try:
+                        return ok(skill=clean, content=candidate.read_text(encoding="utf-8"))
+                    except OSError as exc:
+                        return err("ReadFailed", str(exc))
     have_node, msg = ensure_node_tools()
     if not have_node:
         return err("NodeNotFound", msg)
@@ -120,15 +150,52 @@ def skills_read(skill_name: str, workspace_dir: str = "~/.kage") -> str:
     return ok(skill=skill_name, content=stdout)
 
 
-def skills_save_local(skill_name: str, content: str, workspace_dir: str = "~/.kage") -> str:
-    """Save a skill locally."""
-    ws = os.path.expanduser(workspace_dir)
-    skills_dir = os.path.join(ws, "skills")
-    os.makedirs(skills_dir, exist_ok=True)
-    skill_file = os.path.join(skills_dir, f"{skill_name}.md")
+SKILL_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+DEFAULT_SKILLS_DIR = "~/.kage/skills"
+
+
+def _render_skill_markdown(name: str, description: str, body: str) -> str:
+    """Frontmatter + body. Scalars are JSON-quoted, which is valid YAML, so this
+    does not add a PyYAML dependency (it is not declared in requirements.txt)."""
+    desc = json.dumps(str(description or "").strip(), ensure_ascii=False)
+    text = str(body or "")
+    return f"---\nname: {name}\ndescription: {desc}\n---\n\n{text.rstrip()}\n"
+
+
+def skills_save_local(name: str, description: str = "", body: str = "",
+                      target_dir: str = DEFAULT_SKILLS_DIR, overwrite: bool = False) -> str:
+    """Save a local skill markdown file.
+
+    Signature matches the registered tool schema (name/description/body/target_dir/
+    overwrite). It previously read (skill_name, content, workspace_dir) while the
+    schema advertised the former names, so *every* model-issued call raised
+    ``TypeError: unexpected keyword argument 'name'``.
+
+    The skill name is validated instead of interpolated into a path: the old
+    implementation accepted ``../../x`` and wrote outside the skills directory.
+    """
+    clean = str(name or "").strip().lower()
+    if not clean or not SKILL_NAME_RE.match(clean):
+        return err("InvalidArgument", "技能名需为 1-64 位字母/数字/. _ -，且不能包含路径分隔符")
+
+    desc = str(description or "").strip()
+    if not desc:
+        return err("InvalidArgument", "description 不能为空")
+
     try:
-        with open(skill_file, "w", encoding="utf-8") as f:
-            f.write(content)
-        return ok(path=skill_file)
+        skills_dir = Path(str(target_dir or DEFAULT_SKILLS_DIR)).expanduser().resolve()
+    except Exception as e:
+        return err("InvalidArgument", f"target_dir 无效: {e}")
+
+    skill_file = skills_dir / f"{clean}.md"
+    if skill_file.exists() and not overwrite:
+        return err("AlreadyExists", f"技能已存在: {skill_file}（覆盖请传 overwrite=true）")
+
+    rendered = _render_skill_markdown(clean, desc, body)
+    try:
+        skills_dir.mkdir(parents=True, exist_ok=True)
+        skill_file.write_text(rendered, encoding="utf-8")
+        return ok(path=str(skill_file), name=clean,
+                  bytes_written=len(rendered.encode("utf-8")))
     except Exception as e:
         return err("SaveFailed", str(e))

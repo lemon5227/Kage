@@ -181,7 +181,7 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
 
     registry.register(ToolDefinition(
         name="tinyfish_search",
-        description="使用 TinyFish 实时免费搜索网页信息。当用户想查找最新资料、新闻、技术文档等网络内容时首选使用。支持中英文实时检索。",
+        description="TinyFish 搜索后端（供 search/smart_search 调用）。需要单点直连时使用，支持中英文。",
         parameters={
             "type": "object",
             "properties": {
@@ -196,7 +196,7 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
 
     registry.register(ToolDefinition(
         name="tavily_search",
-        description="搜索网页信息。当用户想查找资料、新闻、技术文档、视频等网络内容时使用。支持中英文搜索。",
+        description="Tavily 搜索后端（供 search/smart_search 调用）。需要单点直连时使用，支持中英文。",
         parameters={
             "type": "object",
             "properties": {
@@ -409,10 +409,11 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "搜索关键词"},
-                "source": {"type": "string", "description": "auto|web|youtube|bilibili", "default": "auto"},
-                "sort": {"type": "string", "description": "relevance|latest", "default": "relevance"},
-                "max_results": {"type": "integer", "default": 5},
-                "filters": {"type": "object", "default": {}},
+                "source": {"type": "string", "enum": ["auto", "web", "youtube", "bilibili"],
+                           "description": "检索来源，默认 auto", "default": "auto"},
+                "sort": {"type": "string", "enum": ["relevance", "latest"],
+                         "description": "排序方式", "default": "relevance"},
+                "max_results": {"type": "integer", "description": "最大结果数 (1-10)", "default": 5},
             },
             "required": ["query"],
         },
@@ -736,17 +737,19 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
     registry.register(ToolDefinition(
         name="skills_save_local",
         description=(
-            "保存一个本地 markdown 技能（SKILL.md）。"
+            "保存一个本地技能文件（frontmatter + 正文）。"
             "用于把重复出现的工作流沉淀成可复用的技能模板。"
         ),
         parameters={
             "type": "object",
             "properties": {
-                "name": {"type": "string", "description": "技能名称（建议小写短横线）"},
+                "name": {"type": "string", "description": "技能名称（小写字母/数字/. _ -）"},
                 "description": {"type": "string", "description": "一句话描述"},
-                "body": {"type": "string", "description": "markdown 内容", "default": ""},
-                "target_dir": {"type": "string", "description": "保存目录", "default": "~/.kage/skills"},
-                "overwrite": {"type": "boolean", "description": "是否覆盖", "default": False},
+                "body": {"type": "string", "description": "markdown 正文", "default": ""},
+                "target_dir": {"type": "string", "description": "保存目录",
+                               "default": "~/.kage/skills"},
+                "overwrite": {"type": "boolean", "description": "是否覆盖已存在的技能",
+                              "default": False},
             },
             "required": ["name", "description"],
         },

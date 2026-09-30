@@ -527,16 +527,46 @@ def _search_provider_bilibili(query: str, sort: str, max_results: int) -> str:
         return err("SearchFailed", str(e))
 
 
-def search(query: str, max_results: int = 5, strategy: str = "auto", sort: str = "relevance") -> str:
-    """Unified search across multiple providers."""
+SEARCH_SOURCES = ("auto", "web", "youtube", "bilibili")
+SEARCH_SORTS = ("relevance", "latest")
+
+
+def search(query: str, max_results: int = 5, source: str = "auto",
+           sort: str = "relevance", strategy: str | None = None) -> str:
+    """Unified search across multiple providers.
+
+    ``source`` is the model-facing parameter declared in the tool schema;
+    ``strategy`` is the legacy internal alias still used by ``smart_search``.
+    Invalid values are rejected (instead of silently falling back) so the model
+    gets a usable correction. The schema used to advertise ``source`` and
+    ``filters`` while this function accepted neither, so every model-issued call
+    with a source raised ``TypeError``.
+    """
     q = str(query or "").strip()
     if not q:
         return err("InvalidInput", "query 不能为空")
 
-    if strategy == "youtube":
-        return _search_provider_youtube(q, sort, max_results)
-    if strategy == "bilibili":
-        return _search_provider_bilibili(q, sort, max_results)
+    mode = str(strategy or source or "auto").strip().lower()
+    if mode == "web":
+        mode = "auto"  # "web" is the default multi-tier path
+    if mode not in SEARCH_SOURCES:
+        return err("InvalidArgument",
+                   f"source 必须是 {'/'.join(SEARCH_SOURCES)} 之一，收到 {mode!r}")
+
+    sort_mode = str(sort or "relevance").strip().lower()
+    if sort_mode not in SEARCH_SORTS:
+        return err("InvalidArgument",
+                   f"sort 必须是 {'/'.join(SEARCH_SORTS)} 之一，收到 {sort!r}")
+
+    try:
+        limit = max(1, min(10, int(max_results if max_results is not None else 5)))
+    except (TypeError, ValueError):
+        return err("InvalidArgument", f"max_results 必须为整数，收到 {max_results!r}")
+
+    if mode == "youtube":
+        return _search_provider_youtube(q, sort_mode, limit)
+    if mode == "bilibili":
+        return _search_provider_bilibili(q, sort_mode, limit)
 
     # Auto strategy: detect video intent
     if _is_video_intent_query(q):
@@ -545,18 +575,18 @@ def search(query: str, max_results: int = 5, strategy: str = "auto", sort: str =
         for variant in variants[:3]:
             # Use raw helpers to avoid 4 redundant json.dumps + json.loads per variant.
             try:
-                all_items.extend(_youtube_html_search_raw(variant, max_results))
+                all_items.extend(_youtube_html_search_raw(variant, limit))
             except Exception:
                 pass
             try:
-                all_items.extend(_search_provider_bilibili_raw(variant, max_results))
+                all_items.extend(_search_provider_bilibili_raw(variant, limit))
             except Exception:
                 pass
-        items = _postprocess_items(all_items, q, "video", sort, max_results)
+        items = _postprocess_items(all_items, q, "video", sort_mode, limit)
         return json.dumps({"success": True, "results": items, "strategy": "video_auto"}, ensure_ascii=False)
 
     # Default: web search (delegates to multi-tier search via tavily_search -> tinyfish_search)
-    return tavily_search(q, max_results)
+    return tavily_search(q, limit)
 
 
 def search_and_open(query: str, prefer_domains: list[str] | None = None, max_results: int = 5) -> str:
