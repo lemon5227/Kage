@@ -1,6 +1,6 @@
 # 自主演化研究路线（E0–E7）
 
-从原总规划§1–12保留的详细设计。原编号用于历史引用；实施状态以[总规划](../agent-memory-evolution-master-plan-2026-09-29.md)为准。设计中的模块、命令与示例不等于已经实现。
+从原总规划§1–12保留的详细设计。原编号用于历史引用；实施状态以[总规划](../agent-memory-evolution-master-plan-2026-09-29.md)为准。设计中的模块、命令与示例不等于已经实现。原日期估算与阶段排序是设计参考，最新领取顺序见[当前任务队列](task-queue-2026-10-01.md)。
 
 ## 1. 重新决定项目的核心价值
 
@@ -405,7 +405,8 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 - [x] 实现 ARM64 容器 runner 与环境重置；process 模式仍可用于可信本地夹具测试。
 - [x] 加入云模型生成 patch 接口、附带可检验的修改假说（`hypothesis`）、2 次修复上限、配对 dev 比较和原子激活指针。
 - [x] 验证失败 → 新技能结晶晋级 → 原任务重试 → 未见输入复用；重启后 digest 相同且可调用（确定性 fixture 驱动，真实执行与外部评分）。
-- [ ] 运行 `python -m pytest tests/test_evolution_skills.py -q`，再用 `search --config eval/evolution/pilot.json` 做 2 候选真实试验；先在本包创建该配置并填费用上限。
+- [x] 技能相关工程测试已执行并纳入既有全量验证；历史证据见E0/E1实施复核记录，不把测试通过当作真实云模型生成成绩。
+- [ ] 用真实云生成器与实际本地Agent做候选试验、父子外部评分及未见输入复验；先创建pilot配置与费用上限。该项由C4.3补齐，不能用确定性fixture或只有教师救场代替。
 
 验收必须覆盖：评分退化不激活、超时后下一任务正常、两个候选环境互不污染、生成局部测试通过但外部评分失败时不晋级、parent 看不到 child 新技能、方法/种子之间技能库独立。
 
@@ -471,7 +472,9 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 - [ ] `python -m pytest tests/test_evolution_eval.py -q` 验证分组无重叠、候选无法读取测试答案、计算费用含优化器、报表可从原始日志重算。
 - [ ] 写清相关工作、假设、方法、资源、结果、消融、失败案例与局限。没有跑的实验写“未运行”，不写预期数字。
 
-### E7 — Colab 小模型蒸馏支线（P2，可选 1–2 周）
+### E7 — Colab 小模型蒸馏支线（数据成熟后，可选）
+
+云教师示范的权重蒸馏归入本包，C4/E2先完成已验证轨迹与技能迁移。当前学生为Agents-A1-4B；训练库/T4支持未验收，若更小学生用于训练可行性试验，须标明它不是当前主模型权重升级。细节见学习闭环设计与任务队列。
 
 **新增：** `scripts/export_evolution_traces.py`、`notebooks/evolution_distill.ipynb`、`eval/evolution/distill_protocol.json`。
 **前提：** 至少积累 100–500 条有独立验证证据的训练轨迹，并有按任务族隔离的留出集；这些数量只是启动目标。
@@ -503,7 +506,7 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 
 本详细设计保留原总规划的演化排序，覆盖 [原架构提案](../self-evolving-skill-architecture-proposal.md) 和 [第七章评审](../self-evolving-skill-architecture-proposal-ch7-peer-review.md) 中与当前优先级冲突的排序；两份原文保留为讨论材料。旧 [v1 记忆规划](../agent-memory-evolution-master-plan-2026-09-29-v1-memory-foundation.md) 的可靠性证据可以复用，但不再要求先完成 T0–T7 才开始执行代码进化。
 
-交给实施模型的首条任务：**只做 E0 与 E1 的最小纵向闭环，默认假 provider，用户配置真实预算后再执行小试验。交付真实可运行命令、失败与成功日志以及实际代码 diff；然后完成 E2 所需最小档案，立即推进 E3 recovery 模块自修改。** E4 的研究结果必须等实验，不能在实现时预先宣布有效。
+最新交接：E0/E1工程已经完成，不重做。下一项领取C2.0，随后C4.1–4.4补真实接管/技能迁移与E2最小档案，再推进E3.0恢复模块自修改。详见当前任务队列。E4的研究结果必须等实验，不能预先宣布有效。
 
-本次完成的是文献核验、仓库衔接分析和规划改写；没有安装容器环境、调用付费模型、微调或跑上述 benchmark。
+上文未勾选的内容仍属设计；历史设计写作时的“未运行”不代表后来工程没有实现。已运行事实以总规划和独立实验报告为准。
 
