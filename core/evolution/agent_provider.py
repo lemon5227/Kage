@@ -196,8 +196,16 @@ class MeteredProvider(ModelProvider):
                 f"model call guard reached ({self.max_calls}) for chain invocation"
             )
         started = time.monotonic()
-        response = self.inner.generate(messages=messages, tools=tools,
-                                       max_tokens=max_tokens, temperature=temperature)
+        try:
+            response = self.inner.generate(messages=messages, tools=tools,
+                                           max_tokens=max_tokens, temperature=temperature)
+        except Exception as exc:
+            # Raised requests still consume an attempt. Token usage may be
+            # unknown after dispatch; leave it unknown for conservative settlement.
+            self.calls.append({"index":len(self.calls)+1,"usage":{},
+                               "error":f"{type(exc).__name__}: {exc}","tool_calls":0,
+                               "elapsed_ms":round((time.monotonic()-started)*1000,1)})
+            raise
         self.calls.append({
             "index": len(self.calls) + 1,
             "usage": dict(getattr(response, "usage", {}) or {}),

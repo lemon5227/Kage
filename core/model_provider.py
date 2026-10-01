@@ -130,6 +130,19 @@ class OpenAICompatibleProvider(ModelProvider):
         self.base_url = base_url.rstrip("/")
         self.timeout_sec = int(timeout_sec) if timeout_sec else 120
 
+    def _request_payload(self, messages, tools=None, max_tokens=200, temperature=0.7):
+        payload = {"model":self.model_name,"messages":messages,
+                   "max_tokens":max_tokens,"temperature":temperature}
+        if self.thinking is not None:
+            payload["thinking"] = {"type":"enabled" if self.thinking else "disabled"}
+        if tools:
+            payload["tools"] = tools
+        return payload
+
+    @staticmethod
+    def _serialize_request(payload):
+        return json.dumps(payload).encode("utf-8")
+
     def generate(
         self,
         messages: list[dict],
@@ -141,16 +154,7 @@ class OpenAICompatibleProvider(ModelProvider):
         import urllib.error
 
         url = f"{self.base_url}/chat/completions"
-        payload = {
-            "model": self.model_name,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        }
-        if self.thinking is not None:
-            payload["thinking"] = {"type": "enabled" if self.thinking else "disabled"}
-        if tools:
-            payload["tools"] = tools
+        payload = self._request_payload(messages,tools,max_tokens,temperature)
 
         headers = {
             "Content-Type": "application/json",
@@ -159,7 +163,7 @@ class OpenAICompatibleProvider(ModelProvider):
 
         try:
             t0 = time.monotonic()
-            data = json.dumps(payload).encode("utf-8")
+            data = self._serialize_request(payload)
             req = urllib.request.Request(url, data=data, headers=headers, method="POST")
             with urllib.request.urlopen(req, timeout=self.timeout_sec) as resp:
                 body = json.loads(resp.read().decode("utf-8"))

@@ -448,3 +448,19 @@ def test_crashed_run_is_cached_but_retryable_with_flag(tmp_path, stub_endpoint):
     report = json.loads((out_dir / "report.json").read_text(encoding="utf-8"))
     assert report["outcome"] == "pass"
     assert report["totals"]["passed"] == 2
+
+
+def test_metered_call_guard_counts_raised_attempts_and_preserves_unknown_usage():
+    from core.evolution.agent_provider import MeteredProvider
+    from core.model_provider import ModelCallLimitExceeded
+    class BrokenProvider(ModelProvider):
+        def __init__(self): self.attempts=0
+        def generate(self,**kwargs):
+            self.attempts+=1
+            raise TimeoutError('request failed after dispatch')
+    inner=BrokenProvider();meter=MeteredProvider(inner,max_calls=2)
+    for _ in range(2):
+        with pytest.raises(TimeoutError): meter.generate([])
+    with pytest.raises(ModelCallLimitExceeded): meter.generate([])
+    assert inner.attempts==2 and len(meter.calls)==2
+    assert all(c['usage']=={} and 'TimeoutError' in c['error'] for c in meter.calls)

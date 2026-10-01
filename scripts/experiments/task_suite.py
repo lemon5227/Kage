@@ -28,9 +28,9 @@ class RecordedLocalProvider(OpenAICompatibleProvider):
     def generate(self, messages, **kwargs):
         kwargs["temperature"] = 0
         if self.thinking is False:
-            if len(json.dumps({"messages": messages, "model": self.model_name, **kwargs}, ensure_ascii=False).encode()) > 12000:
-                raise RuntimeError("teacher input byte cap reached")
             kwargs["max_tokens"] = self.output_limit or min(300, kwargs.get("max_tokens", 300))
+            if len(self._serialize_request(self._request_payload(messages,**kwargs))) > 12000:
+                raise RuntimeError("teacher input byte cap reached")
         response = super().generate(messages=messages, **kwargs)
         with self.trace_path.open("a") as out:
             out.write(json.dumps({"messages": messages, "request": kwargs,

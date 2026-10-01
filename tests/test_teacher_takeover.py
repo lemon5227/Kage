@@ -1,5 +1,6 @@
 """A task-level teacher continues real failed state; hidden answers stay outside prompts."""
 import json
+import pytest
 from pathlib import Path
 from core.evolution.agent_provider import KageChainProvider
 from core.evolution.takeover import TeacherTakeoverProvider
@@ -47,3 +48,19 @@ def test_failed_teacher_is_not_accepted_as_a_demonstration(tmp_path):
     result = provider.generate_step(task, 1, [], tmp_path)
     assert result["chain"]["takeover"]["teacher_check"]["check_passed"] is False
     assert not (tmp_path / "out.json").exists()
+
+
+def test_teacher_byte_cap_checks_exact_transmitted_json_before_network(monkeypatch,tmp_path):
+    import urllib.request
+    from scripts.experiments.task_suite import RecordedLocalProvider
+    dispatched=[]
+    def forbidden(*args,**kwargs):
+        dispatched.append(True)
+        raise AssertionError('oversized request dispatched')
+    monkeypatch.setattr(urllib.request,'urlopen',forbidden)
+    teacher=RecordedLocalProvider(tmp_path/'trace.jsonl',api_key='test-only',model_name='deepseek-flash',
+        thinking=False,output_limit=1024)
+    # UTF-8 was <12k, but the actual ASCII-escaped wire body is >12k.
+    with pytest.raises(RuntimeError,match='byte cap'):
+        teacher.generate([{'role':'user','content':'猫'*2100}])
+    assert not dispatched

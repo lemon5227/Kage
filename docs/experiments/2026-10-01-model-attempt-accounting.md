@@ -1,0 +1,11 @@
+# 模型尝试计量与教师请求边界修复
+
+日期：2026-10-01。C2.1-B1审查中发现的两项底层问题，单独提交，便于回退。
+
+问题一：MeteredProvider只记录正常返回。实际provider抛TimeoutError时，同一个max_calls=2包装器第三次仍调用了底层，绕过上限。回归先红（第三次TimeoutError而非ModelCallLimitExceeded），修复后异常也记录一次attempt、error和elapsed，usage={}保留未知，再原样抛出。未知不能写成零费用；原runner仍按预留保守结算。
+
+问题二：教师12000字节检查使用ensure_ascii=False并遗漏thinking，且检查后才改max_tokens；真实发送默认Unicode转义，检查与网络载荷不一致。独立审查指出后，中文重复2100次回归证明旧实现会调用网络入口；使用拦截器阻止真实网络，不产生云费。修复为OpenAICompatibleProvider共用payload构造与序列化函数，教师先确定输出额度，再检查实际完整发送bytes。旧OpenAI接口/序列化默认不变。
+
+验证：tests/test_evolution_agent_chain.py与tests/test_teacher_takeover.py共17 passed，2.02秒。没有用测试替身成绩冒称真实教师执行；同页浏览器接管另有报告。新增断言分别验证异常尝试真正占上限、未知usage不丢失、超限JSON在网络前被拒绝。
+
+限制：本地preflight拒绝也保守计作一次尝试与未知usage，可能高估预留，但不会低估未知费用。已返回response.error的原路径不变。费用估计仍需按actor区分，不能把全局按云价结算的本地token写成实际账单。
