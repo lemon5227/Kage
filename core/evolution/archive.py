@@ -57,13 +57,21 @@ class ExperienceArchive:
             rows = conn.execute("SELECT payload_json, status FROM episodes ORDER BY created_at, episode_id").fetchall()
         return [{**json.loads(r[0]), "status": r[1]} for r in rows]
 
-    def retrieve(self, family, limit=3):
+    def retrieve(self, family, limit=3, *, failure_status=None, environment=None):
         if limit < 1:
             return []
         matches = []
         seen = set()
         for episode in self.list_episodes():
             if episode["status"] != "verified" or episode["split"] != "dev" or episode["family"] != family:
+                continue
+            metadata = episode["run"]["metadata"]
+            recorded_environment = metadata.get("environment") or metadata.get("student", {}).get("environment", {})
+            if environment and any(recorded_environment.get(key) != value for key, value in environment.items()):
+                continue
+            if failure_status is not None and not any(
+                chain.get("takeover", {}).get("student_check", {}).get("status") == failure_status
+                for chain in metadata.get("chain", [])):
                 continue
             try:
                 intact = all(hashlib.sha256(Path(ref["path"]).read_bytes()).hexdigest() == ref["sha256"]

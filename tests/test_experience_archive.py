@@ -31,3 +31,14 @@ def test_changed_or_missing_evidence_is_stale_and_not_used_for_learning(tmp_path
     (ws / "out.json").write_text("[9]")
     assert archive.retrieve("csv") == []
     assert archive.list_episodes()[0]["status"] == "stale"
+
+
+def test_retrieval_requires_matching_failure_and_environment_when_requested(tmp_path):
+    archive = ExperienceArchive(Journal(tmp_path / "journal.sqlite"))
+    for run_id, failure, platform in [("a", "call_limit", "mac-v1"), ("b", "incomplete", "mac-v2"), ("c", "call_limit", "mac-v2")]:
+        ws = tmp_path / run_id; ws.mkdir(); (ws / "out.json").write_text("[2]")
+        run = result(ws, run_id)
+        run.metadata.update(environment={"platform": platform}, chain=[{"takeover": {"student_check": {"status": failure}}}])
+        archive.record({"task_id": run_id, "family": "code", "split": "dev"}, run)
+    matches = archive.retrieve("code", failure_status="call_limit", environment={"platform": "mac-v2"})
+    assert [e["task_id"] for e in matches] == ["c"]

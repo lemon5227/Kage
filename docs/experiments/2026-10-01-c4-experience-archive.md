@@ -22,3 +22,7 @@ python scripts/experiments/index_episodes.py --results artifacts/c4-takeover-mee
 ```
 
 原始数据工作树位置：`/Users/wenbo/.codex/worktrees/c2-learning-loop/Kage/artifacts/`。工作树保留以维持SQLite里的绝对引用。归档/迁移前必须迁移证据并重建索引，否则检索会按设计标stale。结果和报告没有声称本地权重改变，也尚未运行技能迁移及关闭云端对照。
+
+## 接口补齐：失败类型与环境过滤
+
+领取下一包时复核队列发现，仅家族过滤不足以覆盖原C4.2验收中的失败类别/环境过滤。补可选failure_status与environment过滤，后者精确匹配记录的环境字段；验证无误匹配才进入证据去重。先写三个环境/失败类别组合的实际SQLite检索回归，旧实现因不接受参数失败；修复后3项档案测试通过。未声称精确字段匹配可以代替跨版本兼容性测试。全量结果待C4.4结束后的空闲检查另记。

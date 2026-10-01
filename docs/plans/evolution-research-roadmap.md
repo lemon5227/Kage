@@ -353,7 +353,7 @@ search 可向进化器暴露详细反馈；dev 只用于选择版本并控制反
 **接入：** `core/model_broker.py`、`core/model_provider.py`、`core/anthropic_provider.py`、`core/tool_executor.py`，尽量使用包装器而非大改主服务。
 **接口：** 实现第 4.3 节 RunSpec/RunResult、Runner.run、Budget.reserve/settle；journal 按 run_id 幂等写完成状态；按 4.5 节新增 `progress.py`，进度默认仅观察。
 
-**当前状态（E0 接入完成后复核）：** 真实 Kage 执行链已接入并通过验收。`core/evolution/agent_provider.py` 提供 `KageChainProvider`：每个 kernel step 调用一次冻结的 `AgenticLoop.run()`，其内部使用真实 `PromptBuilder`（冻结实验身份、关闭 memory 召回、`prune_tools=False`）、真实 `ToolExecutor` 与工作区受限的 `ToolRegistry`（`read_file`/`write_file`/`list_files`，拒绝绝对路径与越界路径）；provider 由 `ModelBroker` 按角色构建，token 用量来自 provider 上报值（新增 `ModelResponse.usage`，OpenAI/Anthropic 两条路径均已接线），工具调用与版本随 `RunResult.metadata` 落库。`--provider live` 已可运行：无凭据时以退出码 2 明确拒绝且不执行任何 run，传输/模型不可用时以退出码 3 记为 `infrastructure_failure`，两种情况下都不会静默退回假 provider；`fake` 与 `live` 使用不同输出目录与不同 `provider_mode` 标记。**尚未完成的部分：** 本机没有可用的云凭据（`config/settings.json` 的 `cloud_api.api_key` 与相关环境变量均为空），因此 live 路径是用本地 OpenAI 兼容 stub 端点（真实 HTTP、真实 provider 类、真实上报 usage）验证的，尚未对付费端点做过一次真实小试验；这一步需要用户提供凭据后再执行。本地 `fork` 步骤进程仅供可信 E0 CLI 使用（macOS 上存在活跃 Objective-C/线程运行时时 fork 不安全，已提供 `--step-isolation inline` 逃生阀）；E1 的生成代码须在独立容器/执行环境运行。
+**历史状态（E0初验时，后续实施以队列与报告为准）：** 真实 Kage 执行链已接入并通过验收。`core/evolution/agent_provider.py` 提供 `KageChainProvider`：每个 kernel step 调用一次冻结的 `AgenticLoop.run()`，其内部使用真实 `PromptBuilder`（冻结实验身份、关闭 memory 召回、`prune_tools=False`）、真实 `ToolExecutor` 与工作区受限的 `ToolRegistry`（`read_file`/`write_file`/`list_files`，拒绝绝对路径与越界路径）；provider 由 `ModelBroker` 按角色构建，token 用量来自 provider 上报值（新增 `ModelResponse.usage`，OpenAI/Anthropic 两条路径均已接线），工具调用与版本随 `RunResult.metadata` 落库。`--provider live` 已可运行：无凭据时以退出码 2 明确拒绝且不执行任何 run，传输/模型不可用时以退出码 3 记为 `infrastructure_failure`，两种情况下都不会静默退回假 provider；`fake` 与 `live` 使用不同输出目录与不同 `provider_mode` 标记。**尚未完成的部分：** 本机没有可用的云凭据（`config/settings.json` 的 `cloud_api.api_key` 与相关环境变量均为空），因此 live 路径是用本地 OpenAI 兼容 stub 端点（真实 HTTP、真实 provider 类、真实上报 usage）验证的，尚未对付费端点做过一次真实小试验；这一步需要用户提供凭据后再执行。本地 `fork` 步骤进程仅供可信 E0 CLI 使用（macOS 上存在活跃 Objective-C/线程运行时时 fork 不安全，已提供 `--step-isolation inline` 逃生阀）；E1 的生成代码须在独立容器/执行环境运行。
 
 - [x] 建立 2 个确定性任务：字段归一化成功；缺字段返回可评分失败。假 provider 验证不调用真实 API。
 - [x] 实现临时工作目录、进程超时、事件记录与评分；验证相同夹具重置后不得继承上次输出；超时需清理整个任务进程组，退出后确认没有残留子进程。
@@ -506,7 +506,7 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 
 本详细设计保留原总规划的演化排序，覆盖 [原架构提案](../self-evolving-skill-architecture-proposal.md) 和 [第七章评审](../self-evolving-skill-architecture-proposal-ch7-peer-review.md) 中与当前优先级冲突的排序；两份原文保留为讨论材料。旧 [v1 记忆规划](../agent-memory-evolution-master-plan-2026-09-29-v1-memory-foundation.md) 的可靠性证据可以复用，但不再要求先完成 T0–T7 才开始执行代码进化。
 
-最新交接：E0/E1工程已经完成，不重做。下一项领取C2.0，随后C4.1–4.4补真实接管/技能迁移与E2最小档案，再推进E3.0恢复模块自修改。详见当前任务队列。E4的研究结果必须等实验，不能预先宣布有效。
+最新交接：E0/E1工程已经完成，不重做。C2.0、C4.1–3与E2最小档案已完成，E1真实cloud生成pilot已经本地执行通过；当前执行C4.4独立多臂留出，再推进E3.0恢复模块自修改。详见当前任务队列。E4的研究结果必须等实验，不能预先宣布有效。
 
 上文未勾选的内容仍属设计；历史设计写作时的“未运行”不代表后来工程没有实现。已运行事实以总规划和独立实验报告为准。
 
