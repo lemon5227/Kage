@@ -1,13 +1,20 @@
 {
     "model": {
-        "path": "Jackrong/Qwopus3.5-9B-v3-GGUF",
+        "path": "InternScience/Agents-A1-4B-Q4_K_M-GGUF",
         "preferred_model": "local",
         "available_models": [
+            "InternScience/Agents-A1-4B-Q4_K_M-GGUF",
             "Qwen/Qwen3-4B-GGUF",
             "Qwen/Qwen3-8B-GGUF",
             "Jackrong/Qwopus3.5-9B-v3-GGUF"
         ],
         "local_profiles": [
+            {
+                "id": "agents-a1-4b",
+                "label": "Agents-A1 4B (agentic)",
+                "model": "InternScience/Agents-A1-4B-Q4_K_M-GGUF",
+                "description": "Long-horizon tool-use candidate; official Q4_K_M weights, locally verified"
+            },
             {
                 "id": "qwen3-4b-fast",
                 "label": "Qwen3 4B",
@@ -31,22 +38,25 @@
         "temperature": 0.7,
         "max_tokens": 120,
         "local_runtime": {
-            "engine": "llama.cpp-turboquant",
-            "binary_path": "/Users/wenbo/.local/bin/llama-server-turboquant",
+            "engine": "llama.cpp",
+            "binary_path": "/opt/homebrew/bin/llama-server",
             "host": "127.0.0.1",
             "port": 8080,
-            "ctx": 4096,
+            "ctx": 8192,
             "max_tokens": 1024,
-            "temperature": 0.7,
-            "top_p": 0.8,
+            "temperature": 0.85,
+            "top_p": 0.95,
             "top_k": 20,
             "min_p": 0.0,
-            "presence_penalty": 1.5,
+            "presence_penalty": 1.1,
             "ngl": 99,
             "reasoning": "off",
             "cache_type_k": "q8_0",
-            "cache_type_v": "turbo4",
-            "timeout_sec": 120
+            "cache_type_v": "q8_0",
+            "timeout_sec": 120,
+            "model_name": "agents-a1-4b",
+            "model_path": "/Users/wenbo/.kage/models/agents-a1-4b/Agents-A1-4B-Q4_K_M.gguf",
+            "temp": 0.85
         },
         "broker": {
             "routing_provider": "local",

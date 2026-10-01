@@ -71,7 +71,7 @@ def main():
                 (workspace / name).write_text(content)
             provider = FixedProvider(api_key="local", model_name=args.model,
                 base_url=f"http://127.0.0.1:{args.port}/v1", timeout_sec=90)
-            chain = KageChainProvider(provider, model_label="Qwen3-4B", max_model_calls=6)
+            chain = KageChainProvider(provider, model_label=args.model, max_model_calls=6)
             started = time.monotonic()
             error = None
             record = {}
