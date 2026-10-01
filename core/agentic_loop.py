@@ -856,10 +856,11 @@ class AgenticLoop:
                             steps=step,
                         )
 
-                if route == "command" and step_tool_calls:
+                # A route selects tools; it does not prove a task is complete.
+                # Only a recognized single system request has a deterministic
+                # completion reply. File/search/intermediate actions continue.
+                if route == "command" and self._is_single_system_command(base_user_input) and len(step_tool_calls) == 1:
                     resp_text = self._command_reply_from_tools(step_tool_calls)
-                    if not resp_text:
-                        resp_text = self._fallback_text_from_tools(step_tool_calls, base_user_input)
                     if resp_text:
                         await maybe_autosave(tool_defs)
                         emotion = self._determine_emotion(tool_calls_executed)
@@ -1438,6 +1439,21 @@ class AgenticLoop:
             return ({"name": "system_control", "arguments": {"target": "wifi", "action": action}}, _confidence(0.75))
 
         return (None, 0.0)
+
+    @staticmethod
+    def _is_single_system_command(user_input: str) -> bool:
+        """Conservative fast path: unmatched/compound requests keep the loop."""
+        text = str(user_input or "").strip().rstrip("。.!！").strip()
+        return bool(re.fullmatch(
+            r"(?:请|帮我|麻烦)?(?:把)?(?:"
+            r"(?:屏幕)?(?:亮度|音量)(?:调)?(?:高|低|大|小)(?:一点|一些)?|"
+            r"(?:调高|调低|增大|减小)(?:屏幕)?(?:亮度|音量)(?:一点|一些)?|"
+            r"(?:打开|关闭|开启|关掉)(?:蓝牙|Wi-?Fi|无线网)|"
+            r"(?:蓝牙|Wi-?Fi|无线网)(?:打开|关闭|开启|关掉)|静音|"
+            r"(?:turn|switch) (?:on|off) (?:wi-?fi|bluetooth)|"
+            r"(?:increase|decrease|raise|lower) (?:the )?(?:brightness|volume)|mute"
+            r")", text, flags=re.IGNORECASE,
+        ))
 
     @staticmethod
     def _command_reply_from_tools(tool_calls: list[dict]) -> str:
