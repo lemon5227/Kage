@@ -182,3 +182,71 @@ def test_changed_form_destination_rejects_old_submit_button():
                 assert result['error']=='StaleObservation' and requests==[]
             finally: await browser.close()
     asyncio.run(run())
+
+
+def test_compact_observation_preserves_real_save_and_full_guard(profile_server, tmp_path):
+    async def run():
+        from core.computer_use.browser import BrowserAdapter
+        from core.tool_registry import ToolRegistry
+        from core.tool_executor import ToolExecutor
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            try:
+                page = await browser.new_page()
+                adapter = BrowserAdapter(page, compact_observations=True, trace_path=tmp_path/'trace.jsonl')
+                registry = ToolRegistry(); adapter.register_tools(registry)
+                tools = ToolExecutor(registry, str(tmp_path))
+                opened = await tools.execute('browser_open', {'url':profile_server[0]})
+                obs = json.loads(opened.result)['observation']
+                assert obs['observation_format'] == 'compact-v1'
+                assert len(json.dumps(obs)) < len(json.dumps(adapter.current))
+                name = next(t for t in obs['targets'] if t['label']=='Name')
+                assert name['value']=='' and name['operations']==['fill','click'] and 'bounds' in name
+                assert 'href' not in name and adapter.current['targets'][0]['href'] is None
+                filled = await tools.execute('browser_act', {'observation_id':obs['observation_id'], 'operation':'fill', 'target_ref':name['target_ref'], 'value':'Compact 实验'})
+                obs = json.loads(filled.result)['observation']
+                assert next(t for t in obs['targets'] if t['label']=='Name')['value']=='Compact 实验'
+                saved = await tools.execute('browser_act', {'observation_id':obs['observation_id'], 'operation':'click', 'target_ref':target(obs,'Save profile')})
+                obs = json.loads(saved.result)['observation']
+                waited = await adapter.act(obs['observation_id'],'wait',value='Saved: Compact 实验')
+                assert waited['success']
+                record = await (await page.request.get(profile_server[0]+'/record')).json()
+                assert record == {'name':'Compact 实验'} and profile_server[1]['posts']==1
+                traces=[json.loads(line) for line in (tmp_path/'trace.jsonl').read_text().splitlines()]
+                full=next(t['observation'] for t in traces if t['phase']=='observe')
+                assert full['targets'][0]['href'] is None and 'observation_format' not in full
+                # Compact projection must never replace the full revision guard.
+                await page.evaluate('document.querySelector("form").action="/wrong"')
+                obs=waited['observation']
+                rejected=await adapter.act(obs['observation_id'],'click',target(obs,'Save profile'))
+                assert rejected['error']=='StaleObservation' and profile_server[1]['posts']==1
+            finally:
+                await browser.close()
+    asyncio.run(run())
+
+
+def test_compact_nondefault_checkbox_and_disabled_state_are_actionable():
+    async def run():
+        from core.computer_use.browser import BrowserAdapter, TARGET_DEFAULTS
+        async with async_playwright() as p:
+            browser=await p.chromium.launch(headless=True)
+            try:
+                page=await browser.new_page()
+                await page.set_content('<label>Notify<input type="checkbox" checked></label><button disabled>Unavailable</button><a href="https://example.test/path">Destination</a>')
+                adapter=BrowserAdapter(page,compact_observations=True)
+                obs=await adapter.observe()
+                for row,full in zip(obs['targets'],adapter.current['targets']):
+                    assert {**TARGET_DEFAULTS,**row} == full
+                checkbox=next(t for t in obs['targets'] if t['label']=='Notify')
+                assert checkbox['checked'] is True
+                disabled=next(t for t in obs['targets'] if t['label']=='Unavailable')
+                assert disabled['disabled'] is True and disabled['operations']==[]
+                assert next(t for t in obs['targets'] if t['label']=='Destination')['href']=='https://example.test/path'
+                result=await adapter.act(obs['observation_id'],'click',checkbox['target_ref'])
+                assert result['success'] and not await page.locator('input').is_checked()
+                obs=result['observation']
+                assert 'checked' not in next(t for t in obs['targets'] if t['label']=='Notify')
+                result=await adapter.act(obs['observation_id'],'click',target(obs,'Unavailable'))
+                assert result['error']=='InvalidArgument'
+            finally: await browser.close()
+    asyncio.run(run())

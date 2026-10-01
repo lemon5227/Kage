@@ -56,14 +56,33 @@ def revision(snapshot):
     return hashlib.sha256(json.dumps(snapshot,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 
+TARGET_DEFAULTS = {
+    'checked': False, 'disabled': False, 'href': None, 'input_type': None,
+    'name': None, 'form_action': None, 'target': None, 'form_method': None,
+    'form_target': None, 'form_enctype': None, 'form': None,
+    'role': None, 'aria_expanded': None,
+}
+
+
 class BrowserAdapter:
     """One owned Page, one current observation; no global browser or selector API."""
-    def __init__(self, page, trace_path=None):
+    def __init__(self, page, trace_path=None, *, compact_observations=False):
         self.page = page
         self.surface_id = 'browser:' + uuid.uuid4().hex
         self.trace_path = Path(trace_path) if trace_path else None
         self.current = None
+        self.compact_observations = compact_observations
         self._lock = asyncio.Lock()
+
+    def _model_observation(self):
+        if not self.compact_observations:
+            return self.current
+        # Projection only: full snapshots remain authoritative for guards and
+        # trace evidence. Never drop an actual value, destination or geometry.
+        targets = [{key: value for key, value in target.items()
+                    if key not in TARGET_DEFAULTS or value != TARGET_DEFAULTS[key]}
+                   for target in self.current['targets']]
+        return {**self.current, 'targets': targets, 'observation_format': 'compact-v1'}
 
     def _record(self, phase, start, **data):
         row = {'phase':phase,'elapsed_ms':round((time.monotonic()-start)*1000,3),**data}
@@ -78,7 +97,7 @@ class BrowserAdapter:
         self.current={'observation_id':uuid.uuid4().hex,'surface_id':self.surface_id,
                       'revision':revision(snapshot),'source':'dom',**snapshot}
         self._record('observe',start,observation=self.current)
-        return self.current
+        return self._model_observation()
 
     async def observe(self):
         async with self._lock:
@@ -160,17 +179,22 @@ class BrowserAdapter:
             return result
 
     def register_tools(self,registry):
+        format_hint = (' Compact-v1 omits false checked/disabled and null target properties.'
+                       if self.compact_observations else '')
+        def serialize(payload):
+            return json.dumps(payload, ensure_ascii=False,
+                              separators=(',', ':') if self.compact_observations else None)
         async def browser_observe():
-            return json.dumps({'success':True,'observation':await self.observe()},ensure_ascii=False)
+            return serialize({'success':True,'observation':await self.observe()})
         async def browser_open(url):
-            return json.dumps(await self.open(url),ensure_ascii=False)
+            return serialize(await self.open(url))
         async def browser_act(observation_id,operation,target_ref=None,value=None,amount=500,timeout_ms=2000):
-            return json.dumps(await self.act(observation_id,operation,target_ref,value,amount,timeout_ms),ensure_ascii=False)
-        registry.register(ToolDefinition('browser_observe','Observe current DOM text and actionable node references.',
+            return serialize(await self.act(observation_id,operation,target_ref,value,amount,timeout_ms))
+        registry.register(ToolDefinition('browser_observe','Observe current DOM text and actionable node references.' + format_hint,
             {'type':'object','properties':{}},browser_observe))
-        registry.register(ToolDefinition('browser_open','Navigate this browser session to an HTTP(S) URL and observe.',
+        registry.register(ToolDefinition('browser_open','Navigate this browser session to an HTTP(S) URL and observe.' + format_hint,
             {'type':'object','properties':{'url':{'type':'string'}},'required':['url']},browser_open))
-        registry.register(ToolDefinition('browser_act','Act on current observed nodes, or scroll/wait; returns a fresh observation.',
+        registry.register(ToolDefinition('browser_act','Act on current observed nodes, or scroll/wait; returns a fresh observation.' + format_hint,
             {'type':'object','properties':{'observation_id':{'type':'string'},'operation':{'type':'string','enum':['click','fill','scroll','wait']},
              'target_ref':{'type':'string'},'value':{'type':'string'},'amount':{'type':'integer','minimum':-2000,'maximum':2000},
              'timeout_ms':{'type':'integer','minimum':1,'maximum':10000}},'required':['observation_id','operation']},browser_act))
