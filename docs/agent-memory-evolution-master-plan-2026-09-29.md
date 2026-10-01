@@ -10,7 +10,7 @@
 |---|---|---|
 | E0 基础设施 | 工具契约、可见性、结果语义与测试卫生已实现；属于工程基础 | [E0/E1历史复核](experiments/e0-e1-implementation-review-2026-09-30.md) |
 | E1 技能演化实验框架 | 候选私有技能、容器执行、外部评分、生成/搜索/晋级与CLI已实现；fixture通过不等于真实模型已证明自主进化 | 同上 |
-| 本地推理 | 真实Qwen3-4B在llama.cpp和MLX运行过；MLX有兼容服务，尚未更换默认引擎 | [9月推理与Colab报告](runtime-engine-experiment-2026-09-30.md) |
+| 本地推理 | 已安装并切换默认到Agents-A1-4B官方Q4_K_M，真实三任务9/9；GUI与能力提升尚未证明 | [模型升级报告](experiments/2026-10-01-agentic-local-model-upgrade.md) |
 | C0-A 停止策略 | 已修复任意中间工具成功就退出；真实复测仍有失败，已记录 | [停止策略报告](experiments/2026-10-01-c0-stop-policy.md) |
 | C0-B 工具历史 | 已保留原生调用/结果关联与参数、修复裁剪和Anthropic转换；真实任务3/9，另定位重复检测误判 | [工具协议报告](experiments/2026-10-01-c0-tool-conversation.md) |
 | C0-C 重复检测 | 已修复动作误杀和普通解释误报；MLX三类文件任务各3次，共9/9；全量805 passed | [动作处理报告](experiments/2026-10-01-c0-repetition-guard.md) |
@@ -28,7 +28,7 @@ C0的局部修复、模型是否结束和任务是否真正完成是不同事实
 - 自行训练Jev暂缓；Jev API为可选后端，不阻塞主线。SGLang先吸收候选分数与缓存思想，不部署CUDA服务。
 - LocateAnything-3B保留为视觉定位实验，不能当完整规划模型；SoL-Pi吸收动作合并、观察打包和证据保留的上下文机制。
 - oMLX保留为后续通用引擎对照，先验证同权重、工具协议与内存；Husky不进入当前实施队列。
-- Colab已验证T4可用，登录时compute units为0；资源不保证随时可得。微调不作为当前前置条件。
+- Colab已验证T4可用，登录时compute units为0；资源不保证随时可得。微调不作为当前前置条件。云教师纠正→技能迁移→批量适配器训练的分阶段建议见[学习闭环设计](plans/cloud-teacher-local-student-2026-10-01.md)，尚未实施。
 
 ## 推进顺序
 
