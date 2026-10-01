@@ -6,10 +6,12 @@
 
 默认teacher_context_pack=False；仅teacher开启，默认学生和历史成绩不变。metadata/cache/config记录开关和实现hash。包装器在CompletionGate内、MeteredProvider前处理请求；每次保存原始输入与投影统计，实际provider日志记录投影后的真正输入。
 
-- [ ] 写真实浏览器回归：学生失败，教师动作经过真实wire长度预检，原协议超限失败，新协议正确保存；错误和调用关联保留、输入不变、最新观察完整、无新观察不裁剪。
-- [ ] 新建core/computer_use/context_pack.py，纯消息投影和模型包装；BrowserChainProvider提供actor model hook，teacher_takeover仅在显式开关包装教师；脚本增加开关与源码hash。
-- [ ] 聚焦测试、独立审查、全量回归、单独代码提交。
-- [ ] 冻结3次dev真实pilot，沿用B2.0同任务/学生/教师/上限，仅新增teacher_context_pack；每次完整保留，教师未触发时明确未验证新增真实教师效果。
-- [ ] 报告记录问题/失败/费用/源码/测试/限制，短队列与总规划更新；独立报告提交并快进main。
+- [x] 写真实浏览器回归：学生失败，教师动作经过真实wire长度预检，原协议超限失败，新协议正确保存；错误和调用关联保留、输入不变、最新观察完整、无新观察不裁剪。
+- [x] 新建core/computer_use/context_pack.py，纯消息投影和模型包装；BrowserChainProvider提供actor model hook，teacher_takeover仅在显式开关包装教师；脚本增加开关与源码hash。
+- [x] 聚焦测试、独立审查、全量回归、单独代码提交。
+- [x] 冻结3次dev真实pilot，沿用B2.0同任务/学生/教师/上限，仅新增teacher_context_pack；每次完整保留，教师未触发时明确未验证新增真实教师效果。
+- [x] 报告记录问题/失败/费用/源码/测试/限制，短队列与总规划更新；独立报告提交并快进main。
 
 本包不生成技能、不训练权重、不比较学习收益。后续B2.1/2.2全部方法须采用同一打包协议。
+
+验收：代码b650ecd；聚焦24项/全量860项通过，后补最新大DOM回归3项通过。真实固定三次2/3，教师1次首请求超时，未新增多步云打包成功样本；不能宣称真实接管提升。报告见../experiments/2026-10-01-c21-browser-context.md；下一包B2.1，沿用统一协议和已有成功开发轨迹。
