@@ -17,6 +17,7 @@ Agentic Loop — 多步智能循环
 """
 
 import asyncio
+import copy
 import logging
 import json
 import re
@@ -141,13 +142,15 @@ class AgenticLoop:
     MAX_STEPS = 5
 
     def __init__(self, model_provider, tool_executor, prompt_builder,
-                 session_manager, memory_system=None, memory_profile=None):
+                 session_manager, memory_system=None, memory_profile=None, recovery_policy=None):
         self.model = model_provider
         self.tools = tool_executor
         self.prompt = prompt_builder
         self.session = session_manager
         self.memory = memory_system
         self.profile = memory_profile
+        self.recovery_policy = recovery_policy
+        self.recovery_events = []
         # Memory write frequency control: batch facts
         self._pending_facts: list[dict] = []
         self._pending_facts_lock = threading.Lock()
@@ -196,6 +199,8 @@ class AgenticLoop:
         task_input = base_user_input
         history = self.session.get_history() or []
         tool_calls_executed: list[dict] = []
+        recovery_used = False
+        self.recovery_events = []
         emotion = "thinking"
         last_text = ""
 
@@ -594,6 +599,27 @@ class AgenticLoop:
                     except Exception:
                         pass
 
+                # A versioned recovery policy may supply one action using already
+                # observed evidence. It consumes this loop step, never a new budget.
+                if not tool_calls and tool_calls_executed and self.recovery_policy is not None and not recovery_used:
+                    recovery_used = True
+                    event = {"step": step, "trigger": "no_tool_calls"}
+                    try:
+                        decision = self.recovery_policy.recover(
+                            {"reason": "no_tool_calls", "goal": base_user_input},
+                            copy.deepcopy(tool_calls_executed), [])
+                        event["decision"] = decision
+                        if not isinstance(decision, dict) or decision.get("action") not in {"stop", "switch_tool"}:
+                            raise ValueError("unsupported recovery action")
+                        if decision["action"] == "switch_tool":
+                            action = decision.get("tool_call")
+                            if not isinstance(action, dict) or not isinstance(action.get("name"), str) or not isinstance(action.get("arguments"), dict):
+                                raise ValueError("invalid recovery tool call")
+                            tool_calls = [{**action, "actor": "recovery_policy"}]
+                    except Exception as exc:
+                        event["error"] = f"{type(exc).__name__}: {exc}"
+                    self.recovery_events.append(event)
+
                 # 3.5) If still no tool calls, return pure text
                 if not tool_calls:
                     if not str(raw_text or "").strip() and tool_calls_executed:
@@ -741,6 +767,7 @@ class AgenticLoop:
                         tool_calls_executed.append({
                             "name": name,
                             "arguments": args,
+                            "actor": tc.get("actor", "student"),
                             "success": result.success,
                             "outcome": getattr(result, "outcome", "ok" if result.success else "error"),
                             "tool_reported_success": getattr(result, "tool_reported_success", None),
