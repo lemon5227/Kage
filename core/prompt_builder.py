@@ -13,6 +13,7 @@ Prompt Builder — 动态提示词构建 + 双通道工具呈现
 """
 
 import datetime
+import json
 import logging
 import time
 from typing import Optional, TYPE_CHECKING
@@ -311,11 +312,21 @@ class PromptBuilder:
             history_in = history_in[-10:]
         elif route == "chat" and len(history_in) > 16:
             history_in = history_in[-16:]
+        if any(h.get("tool_calls") or h.get("role") == "tool" for h in history):
+            # A rolling window must not begin with an orphan tool result.
+            while history_in and history_in[0].get("role") == "tool":
+                history_in.pop(0)
+            latest_user = next((h for h in reversed(history) if h.get("role") == "user"), None)
+            if latest_user is not None and latest_user not in history_in:
+                history_in.insert(0, latest_user)
         for turn in history_in:
-            messages.append({"role": turn["role"], "content": turn["content"]})
+            messages.append(dict(turn))
 
         # Add current user input
-        messages.append({"role": "user", "content": user_input})
+        latest_user = next((m for m in reversed(messages) if m.get("role") == "user"), None)
+        continuing_tools = bool(messages[-1].get("role") == "tool" or any(m.get("tool_calls") for m in messages))
+        if not (continuing_tools and latest_user and latest_user.get("content") == user_input):
+            messages.append({"role": "user", "content": user_input})
 
         # 3. Token budget enforcement
         budget = int(self.max_context_tokens * 0.8)
@@ -330,7 +341,9 @@ class PromptBuilder:
 
     def count_tokens(self, messages: list[dict]) -> int:
         """Estimate token count for a message list."""
-        total_chars = sum(len(m.get("content", "")) for m in messages)
+        total_chars = sum(len(m.get("content") or "") +
+                          (len(json.dumps(m["tool_calls"], ensure_ascii=False)) if m.get("tool_calls") else 0)
+                          for m in messages)
         return max(1, total_chars // _AVG_CHARS_PER_TOKEN)
 
     def _enforce_budget(self, messages: list[dict], budget: int) -> list[dict]:
@@ -338,6 +351,26 @@ class PromptBuilder:
 
         Preserves: system prompt (index 0) + last 3 conversation turns + current user input.
         """
+        if any(m.get("tool_calls") for m in messages):
+            # Call and results are indivisible when trimming. Keep the latest
+            # goal and three recent exchanges even if this minimum exceeds budget.
+            groups = []
+            for message in messages[1:]:
+                if message.get("role") == "tool" and groups and groups[-1][0].get("tool_calls"):
+                    groups[-1].append(message)
+                else:
+                    groups.append([message])
+            latest_user = next((g for g in reversed(groups) if g[0].get("role") == "user"), None)
+            protected = {id(g) for g in groups[-3:]}
+            if latest_user is not None:
+                protected.add(id(latest_user))
+            while self.count_tokens([messages[0], *(m for g in groups for m in g)]) > budget:
+                removable = next((i for i, g in enumerate(groups) if id(g) not in protected), None)
+                if removable is None:
+                    break
+                groups.pop(removable)
+            return [messages[0], *(m for g in groups for m in g)]
+
         # Track per-message token counts so we can update the running total
         # incrementally instead of summing from scratch each pop (was O(n^2)).
         per_msg = [

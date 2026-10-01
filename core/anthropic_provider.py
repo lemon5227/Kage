@@ -78,18 +78,34 @@ def _convert_messages(messages: list[dict]) -> tuple[str, list[dict]]:
             if text:
                 system_parts.append(text)
             continue
+        content = text
+        if role == "tool" and msg.get("tool_call_id"):
+            role = "user"
+            content = [{"type": "tool_result", "tool_use_id": msg["tool_call_id"], "content": text}]
+        elif role == "assistant" and msg.get("tool_calls"):
+            content = [{"type": "text", "text": text}] if text else []
+            for call in msg["tool_calls"]:
+                function = call["function"]
+                arguments = function.get("arguments", {})
+                content.append({"type": "tool_use", "id": call["id"], "name": function["name"],
+                                "input": json.loads(arguments) if isinstance(arguments, str) else arguments})
         if role not in ("user", "assistant"):
-            # Tool-result and other roles are ignored at this layer; the
-            # agentic loop already includes tool output in user messages.
+            # Legacy unlinked tool text and unsupported roles remain ignored.
             continue
-        if not text:
+        if not content:
             continue
 
         if anthropic_msgs and anthropic_msgs[-1]["role"] == role:
             # Same role twice in a row — merge into the previous message.
-            anthropic_msgs[-1]["content"] += "\n" + text
+            previous = anthropic_msgs[-1]["content"]
+            if isinstance(previous, str) and isinstance(content, str):
+                anthropic_msgs[-1]["content"] += "\n" + content
+            else:
+                blocks = previous if isinstance(previous, list) else [{"type": "text", "text": previous}]
+                blocks += content if isinstance(content, list) else [{"type": "text", "text": content}]
+                anthropic_msgs[-1]["content"] = blocks
         else:
-            anthropic_msgs.append({"role": role, "content": text})
+            anthropic_msgs.append({"role": role, "content": content})
 
     system_prompt = "\n\n".join(p for p in system_parts if p)
     return system_prompt, anthropic_msgs

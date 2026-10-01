@@ -24,6 +24,7 @@ import hashlib
 import threading
 import time
 import urllib.parse
+import uuid
 from dataclasses import dataclass, field
 
 from core.trace import Span, log
@@ -609,6 +610,13 @@ class AgenticLoop:
                 # 4) Execute tool calls
                 last_text = raw_text
                 step_tool_calls: list[dict] = []
+                # Keep the current request once, then a native call/result turn.
+                last_user = next((h.get("content") for h in reversed(history)
+                                  if h.get("role") == "user"), None)
+                if last_user != task_input:
+                    history.append({"role": "user", "content": task_input})
+                history_start = len(history)
+                execution_start = len(tool_calls_executed)
 
                 if self._can_parallelize_tool_calls(tool_calls):
                     names = [str((tc or {}).get("name") or "") for tc in tool_calls if isinstance(tc, dict)]
@@ -830,6 +838,29 @@ class AgenticLoop:
                                 str(getattr(result, "outcome", "ok") or "ok"),
                             ),
                         })
+
+                # Framework-added preview/skill operations are real executions too.
+                # Pair every executed operation with its own result; retain skill
+                # guidance after the complete exchange, never between call/results.
+                executed = tool_calls_executed[execution_start:]
+                guidance = [h for h in history[history_start:]
+                            if str(h.get("content", "")).startswith("[Skill Guidance Loaded:")]
+                calls = []
+                results = []
+                for item in executed:
+                    call_id = "call_" + uuid.uuid4().hex
+                    calls.append({"id": call_id, "type": "function", "function": {
+                        "name": item["name"],
+                        "arguments": json.dumps(item.get("arguments", {}), ensure_ascii=False),
+                    }})
+                    results.append({"role": "tool", "tool_call_id": call_id,
+                                    "content": render_history_line(
+                                        item["name"], item.get("success", False), item.get("result", ""),
+                                        item.get("error_type"), item.get("error_message"), item.get("outcome", "ok"),
+                                    )})
+                if calls:
+                    history[history_start:] = [{"role": "assistant", "content": raw_text,
+                                               "tool_calls": calls}, *results, *guidance]
 
                 # Phase B (responder): for info route, generate final answer from tool outputs
                 # instead of doing another full tool-decision round.
