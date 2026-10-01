@@ -63,6 +63,7 @@ def browser_task_server(fixture,workspace):
                 backend={'record':record,'posts':state['posts']+1}
                 # Revoke old proof before committing a new backend record. A
                 # killed worker must never leave a passing stale checkpoint.
+                atomic_json(workspace/'browser-outcome.json',{'record':record,'readback_matches_backend':False})
                 atomic_json(workspace/'browser-check.json',backend|{'readback_matches_backend':False})
                 state['saved']=record;state['posts']=backend['posts']
                 atomic_json(workspace/'backend.json',backend)
@@ -96,5 +97,6 @@ async def checkpoint(page,url,workspace):
         # A POST may land while the awaited HTTP/DOM reads are in flight.
         # In that case preserve the latest backend and fail closed until reread.
         check=current|{'readback_matches_backend':backend==current and current['record'] is not None and rendered==current['record']}
+        atomic_json(Path(workspace)/'browser-outcome.json',{k:check[k] for k in ['record','readback_matches_backend']})
         atomic_json(Path(workspace)/'browser-check.json',check)
     return check

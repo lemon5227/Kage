@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import time
 
-from core.agentic_loop import AgenticLoop
+from core.agentic_loop import AgenticLoop,LoopResult
 from core.computer_use.browser import BrowserAdapter
 from core.computer_use.task_environment import browser_task_server,checkpoint,atomic_json
 from core.evolution.agent_provider import KageChainProvider,ExperimentIdentityStore,HistorySession,run_sync
@@ -39,9 +39,14 @@ class CheckpointExecutor(ToolExecutor):
     def __init__(self,registry,workspace,page,url):
         super().__init__(registry,str(workspace))
         self.workspace,self.page,self.url=workspace,page,url
+        self.actor="student"
+        self.entries=[]
 
     async def execute(self,name,arguments,require_confirmation=None):
         result=await super().execute(name,arguments,require_confirmation)
+        self.entries.append({**asdict(result),"arguments":arguments,"actor":self.actor})
+        with (self.workspace/"actor-tools.jsonl").open("a") as stream:
+            stream.write(json.dumps(self.entries[-1],ensure_ascii=False)+"\n")
         try:
             await checkpoint(self.page,self.url,self.workspace)
         except Exception as exc:
@@ -80,6 +85,46 @@ class BrowserChainProvider(KageChainProvider):
         self.call_log.append({'task_id':task_def['task_id'],'step':step})
         return output
 
+    async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice=''):
+        executor.actor=actor
+        builder=PromptBuilder(ExperimentIdentityStore(soul),None,registry,
+                              prune_tools=False,memory_cfg={'recall_enabled':False})
+        loop=self.agentic_loop_cls(model,executor,builder,HistorySession())
+        started=time.monotonic()
+        observation=await adapter.observe()
+        atomic_json(workspace/(actor+'-initial-observation.json'),observation)
+        if actor=='student': atomic_json(workspace/'initial-observation.json',observation)
+        await checkpoint(adapter.page,executor.url,workspace)
+        instruction=task['instruction']+notice+'\nInitial browser observation supplied by runtime:\n'+json.dumps(observation,ensure_ascii=False,separators=(',',':'))
+        before=len(model.calls)
+        tools_before=len(executor.entries)
+        try:
+            result=await loop.run(instruction)
+        except Exception as exc:
+            # Keep the live page and already executed actions for teacher recovery.
+            result=LoopResult(final_text='',tool_calls_executed=executor.entries[tools_before:],
+                              steps=len(model.calls)-before,stop_reason='call_error')
+            atomic_json(workspace/(actor+'-error.json'),{'error':f'{type(exc).__name__}: {exc}'})
+        elapsed_ms=(time.monotonic()-started)*1000
+        await checkpoint(adapter.page,executor.url,workspace)
+        atomic_json(workspace/(actor+'-loop-result.json'),asdict(result))
+        if actor=='student': atomic_json(workspace/'loop-result.json',asdict(result))
+        calls=model.calls[before:]
+        usage={'api_calls':len(calls)}
+        if all('input_tokens' in c['usage'] and 'output_tokens' in c['usage'] for c in calls):
+            usage.update({key:sum(c['usage'][key] for c in calls) for key in ['input_tokens','output_tokens']})
+        chain={'task_id':task['task_id'],'runner_step':step,'actor':actor,'chain_steps':result.steps,
+               'stop_reason':result.stop_reason,'model_calls':len(calls),'tool_calls':len(result.tool_calls_executed),
+               'call_usage':[c['usage'] for c in calls],'model_errors':[c['error'] for c in calls if c['error']],
+               'model_elapsed_ms':round(sum(c['elapsed_ms'] for c in calls),3),
+               'agent_elapsed_ms':round(elapsed_ms,3),'final_text':result.final_text[:2000],
+               'browser_version':adapter.page.context.browser.version}
+        return {'usage':usage,'chain':chain,
+                'tool_results':[dict(self._normalize_tool_call(tc),actor=actor) for tc in result.tool_calls_executed]}
+
+    async def _after_student(self,task,step,workspace,adapter,registry,executor,student):
+        return student
+
     async def _run(self,task,step,history,workspace):
         from playwright.async_api import async_playwright
         with browser_task_server(self.task_def['fixture'],workspace) as (url,state):
@@ -92,40 +137,17 @@ class BrowserChainProvider(KageChainProvider):
                     adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True)
                     registry=ToolRegistry();adapter.register_tools(registry)
                     executor=CheckpointExecutor(registry,workspace,page,url)
-                    builder=PromptBuilder(ExperimentIdentityStore(self._experiment_soul()),None,registry,
-                                          prune_tools=False,memory_cfg={'recall_enabled':False})
-                    loop=self.agentic_loop_cls(self._model,executor,builder,HistorySession())
-                    started=time.monotonic()
-                    observation=await adapter.observe()
-                    atomic_json(workspace/'initial-observation.json',observation)
+                    student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,'student',self._experiment_soul())
+                    output=await self._after_student(task,step,workspace,adapter,registry,executor,student)
                     await checkpoint(page,url,workspace)
-                    instruction=task['instruction']+'\nInitial browser observation supplied by runtime:\n'+json.dumps(observation,ensure_ascii=False,separators=(',',':'))
-                    before=len(self._model.calls)
-                    result=await loop.run(instruction)
-                    agent_elapsed_ms=(time.monotonic()-started)*1000
-                    await checkpoint(page,url,workspace)
-                    atomic_json(workspace/'loop-result.json',asdict(result))
                     screenshot_error=None
                     try:
                         await page.screenshot(path=str(workspace/'final.png'),timeout=5000)
                     except Exception as exc:
                         screenshot_error=f'{type(exc).__name__}: {exc}'
                         (workspace/'screenshot-error.txt').write_text(screenshot_error)
-                    calls=self._model.calls[before:]
-                    usage={'api_calls':len(calls)}
-                    if all('input_tokens' in c['usage'] and 'output_tokens' in c['usage'] for c in calls):
-                        usage.update({key:sum(c['usage'][key] for c in calls) for key in ['input_tokens','output_tokens']})
-                    chain={'task_id':task['task_id'],'runner_step':step,'chain_steps':result.steps,
-                           'stop_reason':result.stop_reason,'model_calls':len(calls),
-                           'tool_calls':len(result.tool_calls_executed),'call_usage':[c['usage'] for c in calls],
-                           'model_errors':[c['error'] for c in calls if c['error']],
-                           'model_elapsed_ms':round(sum(c['elapsed_ms'] for c in calls),3),
-                           'agent_elapsed_ms':round(agent_elapsed_ms,3),
-                           'final_text':result.final_text[:2000],'browser_version':browser.version,
-                           'screenshot_error':screenshot_error}
-                    self.last_chain=chain
-                    return {'action':{'name':'finish','reason':f"browser chain stopped: {result.stop_reason}"},
-                            'usage':usage,'chain':chain,
-                            'tool_results':[self._normalize_tool_call(tc) for tc in result.tool_calls_executed]}
+                    output['chain']['screenshot_error']=screenshot_error
+                    self.last_chain=output['chain']
+                    return {'action':{'name':'finish','reason':f"browser chain stopped: {output['chain']['stop_reason']}"},**output}
                 finally:
                     await browser.close()

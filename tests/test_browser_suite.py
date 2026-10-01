@@ -69,6 +69,9 @@ def test_four_task_families_save_real_records_and_reset(tmp_path):
                         # checkpoint, including when the worker is then killed.
                         await page.request.post(url+'/save',data=expected)
                         assert state['posts']==2 and Evaluator.score(task,ws)==0
+                        learning_task={**task,'scoring_criteria':{'type':'json_exact_match','file':'browser-outcome.json',
+                            'expected':{'record':expected,'readback_matches_backend':True}}}
+                        assert Evaluator.score(learning_task,ws)==0
                         # Simulate a GET snapshot captured before that POST.
                         # Its later DOM read must not resurrect the old proof.
                         from types import SimpleNamespace
@@ -79,6 +82,9 @@ def test_four_task_families_save_real_records_and_reset(tmp_path):
                         stale_check=await checkpoint(stale_page,url,ws)
                         assert stale_check['posts']==2 and not stale_check['readback_matches_backend']
                         assert Evaluator.score(task,ws)==0
+                        assert Evaluator.score(learning_task,ws)==0
+                        await checkpoint(page,url,ws)
+                        assert Evaluator.score(learning_task,ws)==1 and Evaluator.score(task,ws)==0
                         await page.close()
             finally: await browser.close()
     asyncio.run(run())
