@@ -6,6 +6,7 @@ history go to models; expected answers and evaluator cases never enter prompts.
 from __future__ import annotations
 import hashlib
 import json
+import shutil
 from pathlib import Path
 
 from core.evolution.completion import completion_summary
@@ -81,6 +82,11 @@ class TeacherTakeoverProvider:
                     "student_usage": local["usage"]}
         rows, usage, final_chain = local_rows, dict(local["usage"]), local["chain"]
         if local_score < 1:
+            snapshot = ws.parent / (ws.name + ".student-state")
+            if snapshot.exists():
+                shutil.rmtree(snapshot)
+            shutil.copytree(ws, snapshot)
+            takeover["failure_state_ref"] = str(snapshot.resolve())
             # Checker verdict is exposed; hidden expected output/cases are not.
             observed_history = history + tool_history(local_rows) + [{"observation": {
                 "actor": "external_checker", "completion": local_check,

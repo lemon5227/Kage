@@ -15,6 +15,7 @@ from core.evolution.contracts import Candidate, RunSpec
 from core.evolution.journal import Journal
 from core.evolution.runner import EvolutionRunner
 from core.evolution.takeover import TeacherTakeoverProvider
+from core.evolution.archive import ExperienceArchive
 from core.model_provider import OpenAICompatibleProvider
 
 
@@ -71,6 +72,7 @@ def main():
               "suite_sha256": hashlib.sha256(suite_bytes).hexdigest(), "protocol": protocol}
     (args.output_dir / "config.json").write_text(json.dumps(config, indent=2))
     journal = Journal(args.output_dir / "journal.sqlite")
+    archive = ExperienceArchive(journal)
     cap = len(tasks) * args.runs * protocol["max_model_calls"] * (2 if cloud else 1)
     budget = BudgetTracker(BudgetConfig(max_api_calls=cap, max_input_tokens_total=cap*8000,
                           max_output_tokens_total=cap*2000, max_cost_usd=args.max_cost_usd if cloud else None,
@@ -96,6 +98,7 @@ def main():
             start = time.monotonic()
             result = runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task["task_id"],
                         max_steps=1, timeout_s=protocol["timeout_s"]), retain_workspace=True)
+            archive.record(task, result)
             row = {"task": task["task_id"], "family": task["family"], "split": task["split"],
                    "repeat": repeat, "seconds": round(time.monotonic()-start, 3), **asdict(result)}
             rows.append(row)

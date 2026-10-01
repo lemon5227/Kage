@@ -17,6 +17,8 @@ def test_teacher_reads_student_partial_state_and_corrects_same_workspace(tmp_pat
     provider = TeacherTakeoverProvider(student, teacher, task)
     result = provider.generate_step({"task_id": "repair", "instruction": task["instruction"]}, 1, [], tmp_path)
     assert (tmp_path / "out.json").read_text() == "14"
+    snapshot = Path(result["chain"]["takeover"]["failure_state_ref"])
+    assert (snapshot / "out.json").read_text() == "7"
     assert result["chain"]["takeover"]["student_check"]["check_passed"] is False
     assert result["chain"]["takeover"]["teacher_check"]["check_passed"] is True
     assert [t["actor"] for t in result["tool_results"]] == ["student", "teacher", "teacher"]
