@@ -63,3 +63,63 @@ def test_real_same_page_revision_and_teacher_skipped_when_already_correct(tmp_pa
         assert 'input_tokens' not in takeover['student_usage']
     actors=[json.loads(x)['actor'] for x in (ws/'actor-tools.jsonl').read_text().splitlines()]
     assert ('teacher' in actors)==(not student_ok)
+
+
+@pytest.mark.parametrize('student_ok',[True,False])
+def test_external_completion_waits_for_real_saved_readback_and_skips_extra_calls(tmp_path,student_ok):
+    from core.computer_use.teacher_takeover import BrowserTeacherTakeoverProvider
+    from core.evolution.budget import BudgetConfig,BudgetTracker
+    from core.evolution.contracts import Candidate,RunSpec
+    from core.evolution.journal import Journal
+    from core.evolution.runner import EvolutionRunner
+    definition=task();definition['fixture']['readback_delay_ms']=150
+    class NoSummary(Actions):
+        def generate(self,*args,**kwargs):
+            if not self.labels: raise AssertionError('unnecessary model summary requested')
+            return super().generate(*args,**kwargs)
+    labels=['Email notifications','SMS notifications','Save settings'] if student_ok else ['SMS notifications','Save settings']
+    provider=BrowserTeacherTakeoverProvider(NoSummary(labels),NoSummary(['Email notifications','Save settings']),definition,
+        model_label='test-student',teacher_label='test-teacher',external_completion=True)
+    runner=EvolutionRunner(Journal(tmp_path/'j.sqlite'),BudgetTracker(BudgetConfig(max_api_calls=12,max_input_tokens_total=200000,max_output_tokens_total=20000),tmp_path/'b.sqlite'),tmp_path/'runs',provider)
+    r=runner.run(Candidate('browser',(),'workflow',str(ROOT),'external-completion'),definition,RunSpec('complete','browser',definition['task_id'],max_steps=1,timeout_s=20))
+    assert r.status=='passed' and r.score==1
+    t=r.metadata['chain'][0]['takeover']
+    assert t['student_check_passed']==student_ok and t['triggered']==(not student_ok)
+    if student_ok:
+        assert t['student_usage']['api_calls']==3 and t['teacher_usage']['api_calls']==0
+        assert t['student_chain']['stop_reason']=='external_check' and not t['student_chain']['model_errors']
+    else:
+        assert t['student_usage']['api_calls']==3 # Wrong saved state must not trigger early completion.
+        assert t['teacher_usage']['api_calls']==2 and t['teacher_check_passed']
+        assert t['teacher_chain']['stop_reason']=='external_check' and not t['teacher_chain']['model_errors']
+    check=json.loads((Path(r.final_state_path)/'browser-check.json').read_text())
+    assert check['posts']==(1 if student_ok else 2) and check['readback_matches_backend']
+    assert provider.cache_identity()['external_completion'] is True
+
+
+def test_save_settlement_deadline_keeps_live_page_and_unconfirmed_evidence(tmp_path):
+    import asyncio
+    from playwright.async_api import async_playwright
+    from core.computer_use.experiment import CheckpointExecutor
+    from core.computer_use.browser import BrowserAdapter
+    from core.computer_use.task_environment import browser_task_server
+    from core.tool_registry import ToolRegistry
+    async def run():
+        definition=task();definition['fixture']['readback_delay_ms']=1500
+        with browser_task_server(definition['fixture'],tmp_path) as (url,state):
+            async with async_playwright() as p:
+                browser=await p.chromium.launch(headless=True)
+                try:
+                    page=await browser.new_page();await page.goto(url)
+                    adapter=BrowserAdapter(page);registry=ToolRegistry();adapter.register_tools(registry)
+                    executor=CheckpointExecutor(registry,tmp_path,page,url,settle_saves=True)
+                    await executor.checkpoint()
+                    obs=await adapter.observe();ref=next(t['target_ref'] for t in obs['targets'] if t['label']=='Save settings')
+                    await adapter.act(obs['observation_id'],'click',ref)
+                    checked=await executor.checkpoint()
+                    assert checked['posts']==1 and not checked['readback_matches_backend'] and not page.is_closed()
+                    assert (tmp_path/'checkpoint-errors.jsonl').exists()
+                    await page.wait_for_function('document.querySelector("[data-result]").textContent.length>0')
+                    assert (await executor.checkpoint())['readback_matches_backend']
+                finally: await browser.close()
+    asyncio.run(run())

@@ -39,7 +39,8 @@ def render_fixture(fixture):
         show(items.filter(i=>i.city===applied.city && (!applied.category || i.category===applied.category)));};show(items);'''.replace('ITEMS',json.dumps(fixture['items'],ensure_ascii=False).replace('<','\\u003c')).replace('CATEGORY',json.dumps(fixture['category']))
     else:
         raise ValueError('unknown browser fixture kind')
-    common="""async function save(record){const response=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});document.querySelector('[data-result]').textContent=JSON.stringify(await response.json());}"""
+    delay=int(fixture.get('readback_delay_ms',0))
+    common="""async function save(record){const response=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});const saved=await response.json();if(DELAY>0)await new Promise(resolve=>setTimeout(resolve,DELAY));document.querySelector('[data-result]').textContent=JSON.stringify(saved);}""".replace('DELAY',str(delay))
     return f'<!doctype html><meta charset="utf-8"><title>{esc(fixture["title"])}</title><style>label,article{{display:block;margin:12px}}table td{{padding:8px}}</style><h1>{esc(fixture["title"])}</h1>{body}<pre data-result></pre><script>{common}{script}</script>'.encode()
 
 
@@ -82,6 +83,18 @@ def atomic_json(path,value):
     temporary=path.with_suffix('.tmp')
     temporary.write_text(json.dumps(value,ensure_ascii=False,indent=2))
     temporary.replace(path)
+
+
+def unconfirmed_checkpoint(workspace):
+    """Preserve actual backend state while revoking an unverified readback."""
+    workspace=Path(workspace)
+    with _CHECKPOINT_LOCK:
+        path=workspace/'backend.json'
+        backend=json.loads(path.read_text()) if path.exists() else {'record':None,'posts':0}
+        check=backend|{'readback_matches_backend':False}
+        atomic_json(workspace/'browser-outcome.json',{'record':backend['record'],'readback_matches_backend':False})
+        atomic_json(workspace/'browser-check.json',check)
+        return check
 
 
 async def checkpoint(page,url,workspace):

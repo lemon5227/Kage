@@ -10,11 +10,13 @@ import time
 
 from core.agentic_loop import AgenticLoop,LoopResult
 from core.computer_use.browser import BrowserAdapter
-from core.computer_use.task_environment import browser_task_server,checkpoint,atomic_json
+from core.computer_use.task_environment import browser_task_server,checkpoint,atomic_json,unconfirmed_checkpoint
 from core.evolution.agent_provider import KageChainProvider,ExperimentIdentityStore,HistorySession,run_sync
 from core.prompt_builder import PromptBuilder
 from core.tool_executor import ToolExecutor
 from core.tool_registry import ToolRegistry
+from core.model_provider import ModelProvider,ModelCallLimitExceeded
+from core.evolution.runner import Evaluator
 
 BROWSER_SOUL='''You are Kage, completing a browser task through the provided tools.
 The runtime supplies an initial DOM observation. Use only current observation_id and target_ref.
@@ -35,12 +37,57 @@ def descendant_pids(root):
         found.update(added)
 
 
+class CompletionGate(ModelProvider):
+    """Trusted external check; no expected values enter model messages."""
+    def __init__(self,model,task,workspace):
+        self.model,self.task,self.workspace=model,task,workspace
+        self.completed=False
+
+    def generate(self,**kwargs):
+        if Evaluator.score(self.task,self.workspace)>=1:
+            self.completed=True
+            raise ModelCallLimitExceeded('external task check passed; no further model request')
+        return self.model.generate(**kwargs)
+
+
 class CheckpointExecutor(ToolExecutor):
-    def __init__(self,registry,workspace,page,url):
+    def __init__(self,registry,workspace,page,url,*,settle_saves=False):
         super().__init__(registry,str(workspace))
         self.workspace,self.page,self.url=workspace,page,url
         self.actor="student"
         self.entries=[]
+        self.settle_saves=settle_saves
+        self.pending_saves=[]
+        if settle_saves:
+            page.on('request',self._capture_save)
+
+    def _capture_save(self,request):
+        if request.method=='POST' and request.url==self.url+'/save':
+            unconfirmed_checkpoint(self.workspace)
+            self.pending_saves.append(request)
+
+    async def checkpoint(self):
+        if not self.settle_saves:
+            return await checkpoint(self.page,self.url,self.workspace)
+        deadline=time.monotonic()+1
+        pending,self.pending_saves=self.pending_saves,[]
+        async def finish_requests():
+            for request in pending:
+                response=await request.response()
+                if response is not None: await response.finished()
+        def unconfirmed(error):
+            with (self.workspace/'checkpoint-errors.jsonl').open('a') as stream:
+                stream.write(json.dumps({'actor':self.actor,'phase':'save_settle','error':error})+'\n')
+            return unconfirmed_checkpoint(self.workspace)
+        try:
+            if pending: await asyncio.wait_for(finish_requests(),timeout=max(.001,deadline-time.monotonic()))
+            while deadline-time.monotonic()>.01:
+                checked=await asyncio.wait_for(checkpoint(self.page,self.url,self.workspace),timeout=deadline-time.monotonic())
+                if checked['readback_matches_backend'] or (not pending and checked['record'] is None): return checked
+                await asyncio.sleep(min(.02,max(0,deadline-time.monotonic())))
+        except Exception as exc:
+            return unconfirmed(f'{type(exc).__name__}: {exc}')
+        return unconfirmed('SaveReadbackTimeout: one-second settlement window exhausted')
 
     async def execute(self,name,arguments,require_confirmation=None):
         result=await super().execute(name,arguments,require_confirmation)
@@ -48,7 +95,7 @@ class CheckpointExecutor(ToolExecutor):
         with (self.workspace/"actor-tools.jsonl").open("a") as stream:
             stream.write(json.dumps(self.entries[-1],ensure_ascii=False)+"\n")
         try:
-            await checkpoint(self.page,self.url,self.workspace)
+            await self.checkpoint()
         except Exception as exc:
             # Do not mask the real action result; preserve evidence-check errors.
             with (self.workspace/'checkpoint-errors.jsonl').open('a') as stream:
@@ -60,20 +107,21 @@ class BrowserChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,**kwargs):
         super().__init__(model_provider,**kwargs)
         self.task_def=json.loads(json.dumps(task_def))
+        self.external_completion=bool(external_completion)
 
     def _experiment_soul(self):
         return BROWSER_SOUL
 
     def cache_identity(self):
-        return {**super().cache_identity(),'browser_task':self.task_def,
+        return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
                 'adapter_sha256':hashlib.sha256(Path(__file__).with_name('browser.py').read_bytes()).hexdigest(),
                 'environment_sha256':hashlib.sha256(Path(__file__).with_name('task_environment.py').read_bytes()).hexdigest()}
 
     def metadata(self):
-        return {**super().metadata(),'tool_registry':'ToolRegistry(page-scoped browser tools only)',
+        return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.external_completion else 0,'tool_registry':'ToolRegistry(page-scoped browser tools only)',
                 'environment_kind':'resettable-local-http-browser','compact_observations':True,
                 'initial_observation':'runtime bootstrap; no simulated model call'}
 
@@ -89,12 +137,13 @@ class BrowserChainProvider(KageChainProvider):
         executor.actor=actor
         builder=PromptBuilder(ExperimentIdentityStore(soul),None,registry,
                               prune_tools=False,memory_cfg={'recall_enabled':False})
-        loop=self.agentic_loop_cls(model,executor,builder,HistorySession())
+        gate=CompletionGate(model,self.task_def,workspace) if self.external_completion else None
+        loop=self.agentic_loop_cls(gate or model,executor,builder,HistorySession())
         started=time.monotonic()
         observation=await adapter.observe()
         atomic_json(workspace/(actor+'-initial-observation.json'),observation)
         if actor=='student': atomic_json(workspace/'initial-observation.json',observation)
-        await checkpoint(adapter.page,executor.url,workspace)
+        await executor.checkpoint()
         instruction=task['instruction']+notice+'\nInitial browser observation supplied by runtime:\n'+json.dumps(observation,ensure_ascii=False,separators=(',',':'))
         before=len(model.calls)
         tools_before=len(executor.entries)
@@ -106,7 +155,8 @@ class BrowserChainProvider(KageChainProvider):
                               steps=len(model.calls)-before,stop_reason='call_error')
             atomic_json(workspace/(actor+'-error.json'),{'error':f'{type(exc).__name__}: {exc}'})
         elapsed_ms=(time.monotonic()-started)*1000
-        await checkpoint(adapter.page,executor.url,workspace)
+        await executor.checkpoint()
+        if gate and gate.completed: result.stop_reason='external_check'
         atomic_json(workspace/(actor+'-loop-result.json'),asdict(result))
         if actor=='student': atomic_json(workspace/'loop-result.json',asdict(result))
         calls=model.calls[before:]
@@ -136,7 +186,7 @@ class BrowserChainProvider(KageChainProvider):
                     atomic_json(workspace/'worker-processes.json',descendant_pids(os.getpid()))
                     adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True)
                     registry=ToolRegistry();adapter.register_tools(registry)
-                    executor=CheckpointExecutor(registry,workspace,page,url)
+                    executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.external_completion)
                     student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,'student',self._experiment_soul())
                     output=await self._after_student(task,step,workspace,adapter,registry,executor,student)
                     await checkpoint(page,url,workspace)
