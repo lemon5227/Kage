@@ -1,0 +1,181 @@
+{
+  "suite_id": "c2-files-v1",
+  "protocol": {
+    "version": 1,
+    "split": "family-disjoint",
+    "repeats": 3,
+    "max_model_calls": 6,
+    "max_loop_steps": 5,
+    "timeout_s": 150,
+    "temperature": 0
+  },
+  "tasks": [
+    {
+      "task_id": "csv_totals",
+      "family": "csv_aggregation",
+      "split": "dev",
+      "instruction": "Read sales.csv. Sum signed integer amounts per region; write out.json mapping each region to its total.",
+      "initial_files": {
+        "sales.csv": "region,amount\nEast,12\nWest,7\nEast,-2\nWest,3\n"
+      },
+      "expected_output_file": "out.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "out.json",
+        "expected": {
+          "East": 10,
+          "West": 10
+        }
+      }
+    },
+    {
+      "task_id": "inventory_join",
+      "family": "multi_file_reconciliation",
+      "split": "dev",
+      "instruction": "Read stock.json and orders.json. For each stocked SKU, subtract all ordered quantities (missing orders count as zero); preserve stock order. Write out.json as a list of objects with sku and remaining.",
+      "initial_files": {
+        "stock.json": "[{\"sku\": \"A\", \"quantity\": 8}, {\"sku\": \"B\", \"quantity\": 4}, {\"sku\": \"C\", \"quantity\": 2}]",
+        "orders.json": "[{\"sku\": \"A\", \"quantity\": 3}, {\"sku\": \"A\", \"quantity\": 2}, {\"sku\": \"C\", \"quantity\": 1}]"
+      },
+      "expected_output_file": "out.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "out.json",
+        "expected": [
+          {
+            "sku": "A",
+            "remaining": 3
+          },
+          {
+            "sku": "B",
+            "remaining": 4
+          },
+          {
+            "sku": "C",
+            "remaining": 1
+          }
+        ]
+      }
+    },
+    {
+      "task_id": "repair_discount",
+      "family": "code_repair",
+      "split": "dev",
+      "instruction": "Read pricing.py. Fix discounted(price, percent): return price * (1 - percent / 100); raise ValueError if price is negative or percent outside 0..100. Save pricing.py.",
+      "initial_files": {
+        "pricing.py": "def discounted(price, percent):\n    return price - percent\n"
+      },
+      "expected_output_file": "pricing.py",
+      "scoring_criteria": {
+        "type": "python_function",
+        "file": "pricing.py",
+        "function": "discounted",
+        "cases": [
+          {
+            "args": [
+              80,
+              25
+            ],
+            "expected": 60
+          },
+          {
+            "args": [
+              12,
+              0
+            ],
+            "expected": 12
+          },
+          {
+            "args": [
+              19,
+              100
+            ],
+            "expected": 0
+          },
+          {
+            "args": [
+              -1,
+              10
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              9,
+              -1
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              9,
+              101
+            ],
+            "raises": "ValueError"
+          }
+        ]
+      }
+    },
+    {
+      "task_id": "incident_counts",
+      "family": "log_analysis",
+      "split": "holdout",
+      "instruction": "Read events.log. Count only ERROR events by service; ignore INFO and WARN. Write out.json mapping service to count, excluding services with no ERROR.",
+      "initial_files": {
+        "events.log": "09:00 api ERROR timeout\n09:01 web INFO start\n09:02 api ERROR retry\n09:03 worker WARN busy\n09:04 worker ERROR crash\n09:05 web ERROR unavailable\n"
+      },
+      "expected_output_file": "out.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "out.json",
+        "expected": {
+          "api": 2,
+          "worker": 1,
+          "web": 1
+        }
+      }
+    },
+    {
+      "task_id": "meeting_slot",
+      "family": "constraint_scheduling",
+      "split": "holdout",
+      "instruction": "Read calendar.json. On a 0..120 minute timeline, find the earliest common free interval of duration 20, treating busy intervals as half-open [start,end). Write out.json as {\"start\": integer, \"end\": integer}.",
+      "initial_files": {
+        "calendar.json": "{\"A\": [[0, 30], [70, 90]], \"B\": [[20, 40], [60, 80]], \"C\": [[0, 10], [100, 120]]}"
+      },
+      "expected_output_file": "out.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "out.json",
+        "expected": {
+          "start": 40,
+          "end": 60
+        }
+      }
+    },
+    {
+      "task_id": "extract_actions",
+      "family": "document_extraction",
+      "split": "holdout",
+      "instruction": "Read notes.md. Extract only unchecked task items with an explicit owner, preserving order. Write out.json as a list of {\"task\": task text without owner tag, \"owner\": owner name}. Ignore completed tasks and tasks with no owner; owner tags are [owner:Name].",
+      "initial_files": {
+        "notes.md": "# Sprint\n- [ ] Fix login [owner:Mia]\n- [x] Deploy [owner:Noah]\n- [ ] Write tests [owner:Leo]\n- [ ] Discuss roadmap\n"
+      },
+      "expected_output_file": "out.json",
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "out.json",
+        "expected": [
+          {
+            "task": "Fix login",
+            "owner": "Mia"
+          },
+          {
+            "task": "Write tests",
+            "owner": "Leo"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -22,6 +22,7 @@ from core.evolution.budget import BudgetExhaustedError, BudgetTracker
 from core.evolution.contracts import Candidate, EvolutionEvent, RunResult, RunSpec, RunStatus
 from core.evolution.journal import Journal
 from core.evolution.progress import ProgressTracker
+from core.evolution.completion import completion_summary, check_python_function
 
 
 class StepTimeoutError(TimeoutError):
@@ -70,6 +71,9 @@ class Evaluator:
             return 0.0
         if not output_path.exists():
             return 0.0
+
+        if ctype == "python_function":
+            return check_python_function(output_path, criteria)
 
         if ctype == "json_exact_match":
             try:
@@ -580,6 +584,15 @@ class EvolutionRunner:
                 for h in history:
                     f.write(json.dumps(h) + "\n")
 
+            metadata = self._run_metadata(chain_log, steps_taken=steps_taken)
+            stop_reason = chain_log[-1].get("stop_reason", "model_returned") if chain_log else "kernel_stopped"
+            metadata["completion"] = completion_summary(
+                score, stop_reason, stagnant=stagnant_detected, run_status=status)
+            self.journal.record_event(EvolutionEvent(
+                run_id=spec.run_id, candidate_id=candidate.candidate_id, task_id=spec.task_id,
+                step=steps_taken, event_type="evaluation",
+                payload={"score": score, "completion": metadata["completion"]}))
+
             result = RunResult(
                 run_id=spec.run_id,
                 status=status,
@@ -589,7 +602,7 @@ class EvolutionRunner:
                 final_state_path=str(ws),
                 progress_stagnant=stagnant_detected,
                 rollback_count=0,
-                metadata=self._run_metadata(chain_log, steps_taken=steps_taken),
+                metadata=metadata,
             )
 
             # Record completion in journal
