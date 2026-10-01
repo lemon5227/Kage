@@ -1,6 +1,6 @@
 # C2.0-B 外部完成检查与六任务起步套件
 
-状态：工程检查通过；本地18次评测进行中，成绩随后追加，不提前勾选C2.0。
+状态：C2.0完成（完成检查、六族起步评测、自然失败证据），不代表通用电脑能力已完成。
 
 ## 目标与实现
 
@@ -24,4 +24,21 @@
 python scripts/experiments/task_suite.py --port 18082 --model agents-a1-4b --runs 3 --output-dir artifacts/c2-files-v1
 ```
 
-服务：官方Agents-A1-4B Q4_K_M，llama.cpp，8192上下文、单slot、Metal99层、q8 KV、reasoning off；权重版本和hash沿用本地模型升级报告。真实实验结果待运行结束追加；没有触发云调用或学习，不把工程测试冒充模型成绩。
+服务：官方Agents-A1-4B Q4_K_M，llama.cpp，8192上下文、单slot、Metal99层、q8 KV、reasoning off；权重版本和hash沿用本地模型升级报告。本次基线没有云调用或学习，不把工程测试冒充模型成绩。
+
+## 真实结果：全部18次
+
+| 任务族 | 通过/总数 | 耗时中位数（秒） |
+|---|---|---|
+| CSV聚合（dev） | 3/3 | 19.633 |
+| 多文件对账（dev） | 3/3 | 39.564 |
+| 代码修复（dev） | 3/3 | 40.506 |
+| 日志分析（holdout） | 0/3 | 34.241 |
+| 排期约束（holdout） | 0/3 | 40.041 |
+| 行动项提取（holdout） | 3/3 | 18.319 |
+
+总计12/18，dev 9/9、holdout 3/9。三次温度0重复主要检验执行稳定性，不是三个独立任务，也不能给泛化能力或统计显著性结论。
+
+自然失败之一：日志分析声称完成，计数正确但写到output.json，任务要求out.json，外部检查因此失败；没有迁就模型改路径或把错误文件算通过。另一失败：排期读到calendar.json后用300输出token逐步描述，结束在截断文本且没有写出文件。六次失败全部是incomplete/model_returned，没有伪造网络故障来制造接管案例。后续可单独研究路径保真、截断后续执行，但不修改本轮冻结基线。
+
+原始证据保存在本任务工作树 `artifacts/c2-files-v1/`：results.json、config.json、每运行模型jsonl、workspaces、journal.sqlite和budget.sqlite，均被Git忽略。报告/套件/脚本进入Git，原始数据保留在本机，后续归档时需先迁移这些忽略文件。C4接管对本留出题只能用于评估，不允许进入检索或技能训练材料。
