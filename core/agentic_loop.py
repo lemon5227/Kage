@@ -33,6 +33,8 @@ from core.weather_service import normalize_city_for_weather
 
 logger = logging.getLogger(__name__)
 
+from core.model_provider import ModelCallLimitExceeded
+
 VALID_EMOTIONS = frozenset({
     "neutral", "happy", "sad", "angry", "surprised", "thinking", "shy",
 })
@@ -46,6 +48,7 @@ class LoopResult:
     emotion: str = "neutral"
     tool_calls_executed: list[dict] = field(default_factory=list)
     steps: int = 0
+    stop_reason: str = "model_returned"
 
 
 def detect_repetition(text: str, substr_len: int = 10, threshold: int = 3) -> bool:
@@ -184,6 +187,7 @@ class AgenticLoop:
                 final_text=DEFAULT_REPLY,
                 emotion="neutral",
                 steps=0,
+                stop_reason="empty_input",
             )
 
         base_user_input = str(user_input or "").strip()
@@ -329,6 +333,7 @@ class AgenticLoop:
                         emotion="neutral",
                         tool_calls_executed=tool_calls_executed,
                         steps=step,
+                        stop_reason="repetition",
                     )
 
                 # Forced tool-call retry (file/system intents) to reduce model "chatting".
@@ -911,6 +916,13 @@ class AgenticLoop:
                 emotion=emotion,
                 tool_calls_executed=tool_calls_executed,
                 steps=self.MAX_STEPS,
+                stop_reason="step_limit",
+            )
+        except ModelCallLimitExceeded:
+            return LoopResult(
+                final_text=last_text or self._summarize_steps(tool_calls_executed),
+                emotion=emotion, tool_calls_executed=tool_calls_executed,
+                steps=last_step, stop_reason="call_limit",
             )
         finally:
             try:

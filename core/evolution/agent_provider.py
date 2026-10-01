@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from core.evolution.skills import SkillCatalog
 
 from core.agentic_loop import AgenticLoop
-from core.model_provider import ModelProvider, ModelResponse
+from core.model_provider import ModelProvider, ModelResponse, ModelCallLimitExceeded
 from core.prompt_builder import PromptBuilder
 from core.tool_executor import ToolExecutor
 from core.tool_registry import ToolDefinition, ToolRegistry
@@ -56,10 +56,6 @@ MAX_TOOL_RESULT_CHARS = 20_000
 
 class ProviderUnavailableError(RuntimeError):
     """Raised before a live run starts when the configured provider cannot be used."""
-
-
-class ModelCallLimitExceeded(RuntimeError):
-    """Raised when a single chain invocation exceeds its model-call guard."""
 
 
 # ---------------------------------------------------------------------------
@@ -350,6 +346,7 @@ class KageChainProvider:
             "task_id": task_id,
             "runner_step": step,
             "chain_steps": int(getattr(result, "steps", 0) or 0),
+            "stop_reason": getattr(result, "stop_reason", "model_returned"),
             "model_calls": len(call_slice),
             "tool_calls": len(tool_results),
             "model_errors": [c["error"] for c in call_slice if c["error"]],
@@ -368,7 +365,7 @@ class KageChainProvider:
             # The kernel conservatively settles token caps while retaining call count.
             totals = {"api_calls": len(call_slice)}
         return {
-            "action": {"name": "finish", "reason": "agent chain completed"},
+            "action": {"name": "finish", "reason": f"agent chain stopped: {chain_info['stop_reason']}"},
             "usage": totals,
             "tool_results": tool_results,
             "chain": chain_info,

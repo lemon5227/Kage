@@ -18,6 +18,10 @@ from core.trace import log
 logger = logging.getLogger(__name__)
 
 
+
+class ModelCallLimitExceeded(RuntimeError):
+    """A bounded execution stopped before making another model call."""
+
 def _coerce_message_text(value: Any) -> str:
     if value is None:
         return ""
