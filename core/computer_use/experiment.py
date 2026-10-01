@@ -58,29 +58,36 @@ class CheckpointExecutor(ToolExecutor):
         self.entries=[]
         self.settle_saves=settle_saves
         self.pending_saves=[]
+        self.saves_finished=asyncio.Event()
+        self.saves_finished.set()
         if settle_saves:
             page.on('request',self._capture_save)
+            page.on('requestfinished',self._complete_save)
+            page.on('requestfailed',self._complete_save)
 
     def _capture_save(self,request):
         if request.method=='POST' and request.url==self.url+'/save':
             unconfirmed_checkpoint(self.workspace)
             self.pending_saves.append(request)
+            self.saves_finished.clear()
+
+    def _complete_save(self,request):
+        if request in self.pending_saves:
+            self.pending_saves.remove(request)
+            if not self.pending_saves:
+                self.saves_finished.set()
 
     async def checkpoint(self):
         if not self.settle_saves:
             return await checkpoint(self.page,self.url,self.workspace)
         deadline=time.monotonic()+1
-        pending,self.pending_saves=self.pending_saves,[]
-        async def finish_requests():
-            for request in pending:
-                response=await request.response()
-                if response is not None: await response.finished()
+        pending=bool(self.pending_saves)
         def unconfirmed(error):
             with (self.workspace/'checkpoint-errors.jsonl').open('a') as stream:
                 stream.write(json.dumps({'actor':self.actor,'phase':'save_settle','error':error})+'\n')
             return unconfirmed_checkpoint(self.workspace)
         try:
-            if pending: await asyncio.wait_for(finish_requests(),timeout=max(.001,deadline-time.monotonic()))
+            if pending: await asyncio.wait_for(self.saves_finished.wait(),timeout=max(.001,deadline-time.monotonic()))
             while deadline-time.monotonic()>.01:
                 checked=await asyncio.wait_for(checkpoint(self.page,self.url,self.workspace),timeout=deadline-time.monotonic())
                 if checked['readback_matches_backend'] or (not pending and checked['record'] is None): return checked

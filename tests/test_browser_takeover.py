@@ -105,6 +105,8 @@ def test_save_settlement_deadline_keeps_live_page_and_unconfirmed_evidence(tmp_p
     from core.computer_use.task_environment import browser_task_server
     from core.tool_registry import ToolRegistry
     async def run():
+        loop=asyncio.get_running_loop();errors=[]
+        loop.set_exception_handler(lambda loop,context: errors.append(context))
         definition=task();definition['fixture']['readback_delay_ms']=1500
         with browser_task_server(definition['fixture'],tmp_path) as (url,state):
             async with async_playwright() as p:
@@ -121,5 +123,8 @@ def test_save_settlement_deadline_keeps_live_page_and_unconfirmed_evidence(tmp_p
                     assert (tmp_path/'checkpoint-errors.jsonl').exists()
                     await page.wait_for_function('document.querySelector("[data-result]").textContent.length>0')
                     assert (await executor.checkpoint())['readback_matches_backend']
-                finally: await browser.close()
+                finally:
+                    await browser.close()
+                    await asyncio.sleep(.01)
+                    assert not errors, errors
     asyncio.run(run())
