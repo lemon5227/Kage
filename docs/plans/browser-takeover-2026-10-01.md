@@ -12,8 +12,8 @@
 - [x] task_environment.py增加独立outcome，保留A检查语义；browser-learning-v2.json冻结最终状态评分。
 - [x] experiment.py共享actor执行、接管hook与工具actor日志；teacher_takeover.py实现同页失败状态观察、计量与元数据。
 - [x] scripts/experiments/browser_takeover.py读取私有凭据路径（不复制/打印key），冻结配置/hash并通过原runner执行3次；保留实际费用和未知费用上限。
-- [ ] 全量测试/独立审查，代码单独提交；caffeinate真实模型试验与完整报告另提交；短总规划保持B部分完成，下一包浏览器技能/重复迁移。
+- [x] 全量测试/独立审查，代码单独提交；caffeinate真实模型试验与完整报告另提交；短总规划保持B部分完成，下一包浏览器技能/重复迁移。
 
 限制：本包不会在学生被整个worker硬杀后凭空恢复浏览器；整体timeout保持失败，教师只能接管仍存活会话里的步骤耗尽、调用错误或外部检查失败。不改checkbox观察表达，以免混淆接管与提示收益。技能生成仅允许dev成功教师轨迹，留出不用于本pilot。
 
-工程验收：853 passed、1 skipped、1 xfailed；浏览器17项通过；独立审查两个P2均修复复审通过。真实三次pilot待运行；代码测试不计作模型成绩。
+工程验收：853 passed、1 skipped、1 xfailed；浏览器17项通过；独立审查两个P2均修复复审通过。真实三次最终3/3，学生独立2/3、教师接管1/1；有本地超时与教师preflight总结拒绝，全部保留。代码测试不计作模型成绩。详见[报告](../experiments/2026-10-01-c21-browser-takeover.md)。B2技能/迁移尚未实施。
