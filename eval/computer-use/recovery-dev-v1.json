@@ -1,0 +1,117 @@
+{
+  "suite_id": "recovery-dev-v1",
+  "description": "E3 recovery dev: same observed development failure, fixed skill and prompt.",
+  "protocol": {
+    "version": 1,
+    "repeats": 3,
+    "max_model_calls": 6,
+    "max_loop_steps": 5,
+    "timeout_s": 150,
+    "temperature": 0
+  },
+  "tasks": [
+    {
+      "task_id": "recovery-selection-dev",
+      "family": "code_repair",
+      "split": "dev",
+      "instruction": "Read selection.py and fix choose(jobs, capacity). Each job has id (unique string), weight (positive integer), value (nonnegative integer). Return a sorted list of selected IDs with maximum total value and total weight <= capacity. On equal value choose the lexicographically smallest ID list. Empty selection is allowed. Raise ValueError for negative capacity or nonpositive job weight. Do not mutate inputs. Save selection.py.",
+      "initial_files": {
+        "selection.py": "def choose(jobs, capacity):\n    return [j['id'] for j in jobs]\n"
+      },
+      "expected_output_file": "selection.py",
+      "scoring_criteria": {
+        "type": "python_function",
+        "file": "selection.py",
+        "function": "choose",
+        "cases": [
+          {
+            "args": [
+              [
+                {
+                  "id": "a",
+                  "weight": 2,
+                  "value": 3
+                },
+                {
+                  "id": "b",
+                  "weight": 3,
+                  "value": 4
+                },
+                {
+                  "id": "c",
+                  "weight": 4,
+                  "value": 6
+                }
+              ],
+              5
+            ],
+            "expected": [
+              "a",
+              "b"
+            ]
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "b",
+                  "weight": 2,
+                  "value": 3
+                },
+                {
+                  "id": "a",
+                  "weight": 2,
+                  "value": 3
+                }
+              ],
+              2
+            ],
+            "expected": [
+              "a"
+            ]
+          },
+          {
+            "args": [
+              [],
+              0
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [],
+              -1
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "a",
+                  "weight": 0,
+                  "value": 1
+                }
+              ],
+              2
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "a",
+                  "weight": 1,
+                  "value": 0
+                }
+              ],
+              3
+            ],
+            "expected": []
+          }
+        ]
+      }
+    }
+  ]
+}

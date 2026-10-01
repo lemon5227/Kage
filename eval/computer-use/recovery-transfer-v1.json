@@ -1,0 +1,117 @@
+{
+  "suite_id": "recovery-transfer-v1",
+  "description": "Frozen E3 variant; not sent to recovery optimizer; new filename/function and hidden cases.",
+  "protocol": {
+    "version": 1,
+    "repeats": 3,
+    "max_model_calls": 6,
+    "max_loop_steps": 5,
+    "timeout_s": 150,
+    "temperature": 0
+  },
+  "tasks": [
+    {
+      "task_id": "recovery-scheduler-test",
+      "family": "code_repair",
+      "split": "test",
+      "instruction": "Read scheduler.py and fix select_tasks(jobs, capacity). Each job has id (unique string), weight (positive integer), value (nonnegative integer). Return a sorted list of selected IDs with maximum total value and total weight <= capacity. On equal value choose the lexicographically smallest ID list. Empty selection is allowed. Raise ValueError for negative capacity or nonpositive job weight. Do not mutate inputs. Save scheduler.py.",
+      "initial_files": {
+        "scheduler.py": "def select_tasks(jobs, capacity):\n    return []\n"
+      },
+      "expected_output_file": "scheduler.py",
+      "scoring_criteria": {
+        "type": "python_function",
+        "file": "scheduler.py",
+        "function": "select_tasks",
+        "cases": [
+          {
+            "args": [
+              [
+                {
+                  "id": "north",
+                  "weight": 3,
+                  "value": 5
+                },
+                {
+                  "id": "south",
+                  "weight": 4,
+                  "value": 8
+                },
+                {
+                  "id": "west",
+                  "weight": 7,
+                  "value": 11
+                }
+              ],
+              7
+            ],
+            "expected": [
+              "north",
+              "south"
+            ]
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "omega",
+                  "weight": 2,
+                  "value": 6
+                },
+                {
+                  "id": "delta",
+                  "weight": 2,
+                  "value": 6
+                }
+              ],
+              2
+            ],
+            "expected": [
+              "delta"
+            ]
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "zero",
+                  "weight": 1,
+                  "value": 0
+                }
+              ],
+              1
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [],
+              0
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [],
+              -1
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "invalid",
+                  "weight": 0,
+                  "value": 1
+                }
+              ],
+              2
+            ],
+            "raises": "ValueError"
+          }
+        ]
+      }
+    }
+  ]
+}

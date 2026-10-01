@@ -58,8 +58,10 @@ Bundle增加字段，不改变已有version=1技能契约：
 
 Files: scripts/experiments/recovery_evolution.py，eval/computer-use/recovery-dev-v1.json，eval/computer-use/recovery-transfer-v1.json，docs/experiments/2026-10-01-e3-recovery-self-modification.md。
 
-- [ ] 独立dev/新变体，不使用C4.4留出结果作为生成反馈；使用已有dev代码失败与固定C4技能，先确认默认恢复仍失败。
-- [ ] 真实云生成最多一个候选（允许两次格式修复），记录所有失败尝试及源码diff。
-- [ ] 同预算父子外部比较；新任务在固定候选上执行，核对实际module path/hash、恢复事件、真实ToolExecutor action与产物。
-- [ ] 只有dev改善且新变体外部通过才在实验active.json启用；否则保留负结果。本包不自动改变生产桌面配置。
-- [ ] 运行必要回归、空闲全量检查，更新报告/队列/轻量总规划并独立提交。
+- [x] 独立dev/新变体，不使用C4.4留出结果作为生成反馈；使用已有dev代码失败与固定C4技能，先确认默认恢复仍失败。
+- [x] 真实云生成最多一个候选（允许两次格式修复），记录所有失败尝试及源码diff。
+- [x] 同预算父子外部比较；新任务在固定候选上执行，核对实际module path/hash、恢复事件、真实ToolExecutor action与产物。
+- [x] 只有dev改善且新变体外部通过才在实验active.json启用；否则保留负结果。本包不自动改变生产桌面配置。
+- [x] 运行必要回归、空闲全量检查，更新报告/队列/轻量总规划并独立提交。
+
+实际结果与策略已知限制见[真实pilot报告](../experiments/2026-10-01-e3-recovery-self-modification.md)。
