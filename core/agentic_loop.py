@@ -9,7 +9,7 @@ Agentic Loop — 多步智能循环
 5. 最多循环 MAX_STEPS 次
 
 特性：
-- 重复检测：10 字符子串出现 3 次以上时停止
+- 重复检测：仅无工具动作时检测连续重复生成
 - 动态 max_tokens：文本 200、工具 300
 - 情绪标签：thinking / happy / sad
 - 工具失败时反馈给模型请求替代方案
@@ -49,17 +49,18 @@ class LoopResult:
 
 
 def detect_repetition(text: str, substr_len: int = 10, threshold: int = 3) -> bool:
-    """Return True if any 10-char substring appears >= 3 times."""
-    if len(text) < substr_len:
+    """Detect a contiguous repeated run, rather than recurring words in prose.
+
+    Require at least ``threshold`` copies and ``substr_len * threshold``
+    characters in the run. Tool-bearing responses bypass this text heuristic.
+    """
+    if threshold < 2 or substr_len < 1:
+        raise ValueError("threshold must be >= 2 and substr_len >= 1")
+    minimum_run = substr_len * threshold
+    if len(text) < minimum_run:
         return False
-    counts: dict[str, int] = {}
-    for i in range(len(text) - substr_len + 1):
-        sub = text[i:i + substr_len]
-        c = counts.get(sub, 0) + 1
-        if c >= threshold:
-            return True
-        counts[sub] = c
-    return False
+    pattern = re.compile(r"(.+?)\1{" + str(threshold - 1) + r",}", re.DOTALL)
+    return any(len(match.group(0)) >= minimum_run for match in pattern.finditer(text))
 
 
 # Precompiled regex constants for hot-path heuristics. These are called on every
@@ -306,17 +307,6 @@ class AgenticLoop:
                     tool_calls=len(response.tool_calls or []),
                 )
 
-                # Repetition detection
-                if detect_repetition(raw_text):
-                    logger.warning("Repetition detected at step %d, stopping", step)
-                    clean = self._remove_repetition(raw_text)
-                    return LoopResult(
-                        final_text=clean or last_text or DEFAULT_REPLY,
-                        emotion="neutral",
-                        tool_calls_executed=tool_calls_executed,
-                        steps=step,
-                    )
-
                 # 3) Determine tool calls
                 tool_calls = response.tool_calls or []
                 if not tool_calls:
@@ -328,6 +318,17 @@ class AgenticLoop:
                         step=step,
                         elapsed_ms=f"{(time.monotonic()-t2)*1000:.1f}",
                         count=len(tool_calls or []),
+                    )
+
+                # Repetition guard applies only when no executable action was returned.
+                if not tool_calls and detect_repetition(raw_text):
+                    logger.warning("Repetition detected at step %d, stopping", step)
+                    clean = self._remove_repetition(raw_text)
+                    return LoopResult(
+                        final_text=clean or last_text or DEFAULT_REPLY,
+                        emotion="neutral",
+                        tool_calls_executed=tool_calls_executed,
+                        steps=step,
                     )
 
                 # Forced tool-call retry (file/system intents) to reduce model "chatting".

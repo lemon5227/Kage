@@ -75,3 +75,24 @@ def test_system_action_does_not_end_compound_request(tmp_path):
     asyncio.run(loop.run("把亮度调高，然后把操作记录写入 receipt.txt 文件。"))
     assert (tmp_path / "receipt.txt").read_text() == "brightness changed"
     assert len(model.messages) == 3
+
+
+def test_repeated_prose_does_not_discard_a_valid_tool_call(tmp_path):
+    # Ordinary explanation can repeat a phrase; the structured action still matters.
+    response = call("write_file", path="totals.json", content='{"East":10,"West":10}')
+    response.text = "Sum the amounts per region. Group the amounts per region. Write the amounts per region."
+    loop, model, _ = make_loop(tmp_path, [response, ModelResponse(text="written")])
+    result = asyncio.run(loop.run("读取文件并将汇总写入 totals.json 文件。"))
+    assert (tmp_path / "totals.json").read_text() == '{"East":10,"West":10}'
+    assert result.tool_calls_executed[0]["name"] == "write_file"
+    assert len(model.messages) == 2
+
+
+def test_normal_explanation_with_recurring_terms_is_not_a_generation_loop():
+    from core.agentic_loop import detect_repetition
+    text = (
+        "The function should return low if the value is below low, high if the value "
+        "is above high, and the value itself otherwise. Additionally, I need to raise "
+        "a ValueError if low is greater than high."
+    )
+    assert not detect_repetition(text)
