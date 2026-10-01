@@ -20,16 +20,17 @@ from core.model_provider import OpenAICompatibleProvider
 
 
 class RecordedLocalProvider(OpenAICompatibleProvider):
-    def __init__(self, trace_path, **kwargs):
+    def __init__(self, trace_path, output_limit=None, **kwargs):
         super().__init__(**kwargs)
         self.trace_path = trace_path
+        self.output_limit = output_limit
 
     def generate(self, messages, **kwargs):
         kwargs["temperature"] = 0
         if self.thinking is False:
             if len(json.dumps({"messages": messages, "model": self.model_name, **kwargs}, ensure_ascii=False).encode()) > 12000:
                 raise RuntimeError("teacher input byte cap reached")
-            kwargs["max_tokens"] = min(300, kwargs.get("max_tokens", 300))
+            kwargs["max_tokens"] = self.output_limit or min(300, kwargs.get("max_tokens", 300))
         response = super().generate(messages=messages, **kwargs)
         with self.trace_path.open("a") as out:
             out.write(json.dumps({"messages": messages, "request": kwargs,
@@ -48,6 +49,7 @@ def main():
     parser.add_argument("--task", help="Run only this task ID")
     parser.add_argument("--teacher-config", type=Path, help="Private DeepSeek settings; never copied into artifacts")
     parser.add_argument("--max-cost-usd", type=float, default=0.03)
+    parser.add_argument("--teacher-output-tokens", type=int, choices=[300, 1024], default=300)
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be positive")
@@ -60,15 +62,16 @@ def main():
             parser.error("teacher credential missing")
         if args.runs != 1 or not args.task:
             parser.error("teacher pilot is limited to one selected task/run")
-        if args.max_cost_usd < 0.02376:
-            parser.error("budget must cover the conservative 6-call teacher ceiling of $0.02376")
+        teacher_ceiling = 6 * (12000 * 0.3 + args.teacher_output_tokens * 1.2) / 1_000_000
+        if args.max_cost_usd < teacher_ceiling:
+            parser.error(f"budget must cover the conservative teacher ceiling of ${teacher_ceiling}")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     suite_bytes = args.suite.read_bytes()
     suite = json.loads(suite_bytes)
     protocol = suite["protocol"]
     tasks = [t for t in suite["tasks"] if (args.split == "all" or t["split"] == args.split) and (not args.task or t["task_id"] == args.task)]
     config = {"model": args.model, "port": args.port, "runs": args.runs, "split": args.split,
-              "task": args.task, "teacher": ({"model": cloud["model_name"], "thinking": False, "max_calls": 6, "max_request_input_bytes": 12000, "max_output_tokens": 300, "cost_ceiling_usd": 0.02376} if cloud else None),
+              "task": args.task, "teacher": ({"model": cloud["model_name"], "thinking": False, "max_calls": 6, "max_request_input_bytes": 12000, "max_output_tokens": args.teacher_output_tokens, "cost_ceiling_usd": teacher_ceiling} if cloud else None),
               "suite_sha256": hashlib.sha256(suite_bytes).hexdigest(), "protocol": protocol}
     (args.output_dir / "config.json").write_text(json.dumps(config, indent=2))
     journal = Journal(args.output_dir / "journal.sqlite")
@@ -90,9 +93,10 @@ def main():
             if cloud:
                 teacher_model = RecordedLocalProvider(args.output_dir / f"{run_id}-teacher.jsonl",
                     api_key=cloud["api_key"], model_name=cloud["model_name"],
-                    base_url=cloud["base_url"], timeout_sec=60, thinking=False)
+                    base_url=cloud["base_url"], timeout_sec=60, thinking=False, output_limit=args.teacher_output_tokens)
                 teacher = KageChainProvider(teacher_model, model_label=cloud["model_name"],
                     provider_mode="cloud", max_model_calls=6)
+                teacher.RESERVATION_OUTPUT_CAP = args.teacher_output_tokens * 6
                 chain = TeacherTakeoverProvider(chain, teacher, task)
             runner = EvolutionRunner(journal, budget, args.output_dir / "workspaces", chain)
             start = time.monotonic()

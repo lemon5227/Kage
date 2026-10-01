@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import hashlib
 import json
 import os
 import platform
@@ -49,6 +50,13 @@ EXPERIMENT_SOUL = (
     "All file paths are relative to the task workspace; never use absolute paths.\n"
     "Call one tool at a time. When the requested output file is written and correct, "
     "reply with a short summary and stop calling tools."
+)
+
+SKILL_DISCOVERY_GUIDANCE = (
+    "\nWhen skill_search is available, search for a reusable skill for this task before "
+    "writing a replacement implementation. If a relevant skill is found, call skill_call "
+    "using the returned digest and its documented parameters, then verify the actual output. "
+    "If no matching skill exists, solve the task with the file tools.\n"
 )
 
 MAX_TOOL_RESULT_CHARS = 20_000
@@ -239,6 +247,7 @@ class KageChainProvider:
         max_model_calls: int = 6,
         agentic_loop_cls: type[AgenticLoop] = AgenticLoop,
         skill_catalog: SkillCatalog | None = None,
+        skill_context_mode: str = "search",
     ) -> None:
         self.provider_mode = provider_mode
         self.model_label = model_label or type(model_provider).__name__
@@ -246,6 +255,9 @@ class KageChainProvider:
         self.max_model_calls = max(1, int(max_model_calls))
         self.agentic_loop_cls = agentic_loop_cls
         self.skill_catalog = skill_catalog
+        if skill_context_mode not in {"search", "preview"}:
+            raise ValueError("skill_context_mode must be search or preview")
+        self.skill_context_mode = skill_context_mode
         self._model = MeteredProvider(model_provider, label=self.provider_label,
                                       max_calls=self.max_model_calls)
         # Kept for interface parity with the fake provider.
@@ -266,6 +278,8 @@ class KageChainProvider:
             "max_model_calls": self.max_model_calls,
             "agentic_loop": self.agentic_loop_cls.__name__,
             "skills": self.skill_catalog.digests if self.skill_catalog else {},
+            "skill_context_mode": self.skill_context_mode,
+            "experiment_prompt_sha256": hashlib.sha256(self._experiment_soul().encode()).hexdigest(),
             "skill_runtime": ({
                 "runner": type(self.skill_catalog.runner).__name__,
                 "timeout_s": self.skill_catalog.runner.timeout_s,
@@ -286,9 +300,20 @@ class KageChainProvider:
             "tool_registry": "ToolRegistry(workspace-scoped: read_file/write_file/list_files)",
             "prompt_builder": "PromptBuilder(prune_tools=False, frozen experiment identity)",
             "tool_executor": "ToolExecutor",
+            "skill_context_mode": self.skill_context_mode,
+            "experiment_prompt_sha256": hashlib.sha256(self._experiment_soul().encode()).hexdigest(),
             "skills": self.skill_catalog.digests if self.skill_catalog else {},
             "environment": environment_info(),
         }
+
+    def _experiment_soul(self):
+        soul = EXPERIMENT_SOUL + (SKILL_DISCOVERY_GUIDANCE if self.skill_catalog is not None else "")
+        if self.skill_catalog is not None and self.skill_context_mode == "preview":
+            skills = self.skill_catalog.search("", limit=3)["skills"]
+            preview = [{**item, "description": item["description"][:200]} for item in skills]
+            soul += "\nLocal reusable skill preview (descriptors only, not source code): " + json.dumps(preview, ensure_ascii=False)
+            soul += "\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual editing.\n"
+        return soul
 
     def generate_step(
         self,
@@ -304,13 +329,15 @@ class KageChainProvider:
         instruction = str(task_def.get("instruction") or "").strip()
         if not instruction:
             raise RuntimeError("task has no instruction for the agent chain")
+        if self.skill_catalog is not None and self.skill_context_mode == "preview":
+            instruction += "\nFirst use a matching skill_call from the provided local skill preview if available; otherwise use the file tools."
 
         registry = build_workspace_registry(workspace_dir)
         if self.skill_catalog is not None:
             self.skill_catalog.register_tools(registry, workspace_dir)
         executor = ToolExecutor(tool_registry=registry, workspace_dir=str(workspace_dir))
         prompt_builder = PromptBuilder(
-            identity_store=ExperimentIdentityStore(),
+            identity_store=ExperimentIdentityStore(self._experiment_soul()),
             memory_system=None,
             tool_registry=registry,
             # prune_tools MUST stay False here: the production pruning allowlist is
