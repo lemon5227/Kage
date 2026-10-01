@@ -1,0 +1,117 @@
+{
+  "suite_id": "learning-transfer-v1",
+  "description": "Frozen post-promotion transfer task: unseen file/function names and behavioral inputs; never used for candidate generation.",
+  "protocol": {
+    "version": 1,
+    "repeats": 3,
+    "max_model_calls": 6,
+    "max_loop_steps": 5,
+    "timeout_s": 150,
+    "temperature": 0
+  },
+  "tasks": [
+    {
+      "task_id": "transfer_selection",
+      "family": "code_repair",
+      "split": "holdout",
+      "instruction": "Read variant.py and fix pick_jobs(jobs, capacity). Each job has id (unique string), weight (positive integer), value (nonnegative integer). Return a sorted list of selected IDs with maximum total value and total weight <= capacity. On equal value choose the lexicographically smallest ID list. Empty selection is allowed. Raise ValueError for negative capacity or nonpositive job weight. Do not mutate inputs. Save variant.py.",
+      "initial_files": {
+        "variant.py": "def pick_jobs(jobs, capacity):\n    return []\n"
+      },
+      "expected_output_file": "variant.py",
+      "scoring_criteria": {
+        "type": "python_function",
+        "file": "variant.py",
+        "function": "pick_jobs",
+        "cases": [
+          {
+            "args": [
+              [
+                {
+                  "id": "p",
+                  "weight": 2,
+                  "value": 5
+                },
+                {
+                  "id": "q",
+                  "weight": 4,
+                  "value": 8
+                },
+                {
+                  "id": "r",
+                  "weight": 6,
+                  "value": 11
+                }
+              ],
+              6
+            ],
+            "expected": [
+              "p",
+              "q"
+            ]
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "beta",
+                  "weight": 3,
+                  "value": 4
+                },
+                {
+                  "id": "alpha",
+                  "weight": 3,
+                  "value": 4
+                }
+              ],
+              3
+            ],
+            "expected": [
+              "alpha"
+            ]
+          },
+          {
+            "args": [
+              [],
+              0
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "p",
+                  "weight": 1,
+                  "value": 0
+                }
+              ],
+              2
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [],
+              -3
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "p",
+                  "weight": -1,
+                  "value": 2
+                }
+              ],
+              3
+            ],
+            "raises": "ValueError"
+          }
+        ]
+      }
+    }
+  ]
+}
