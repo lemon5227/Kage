@@ -8,7 +8,7 @@
 
 父子都采用search发现协议（不是C4.3预览协议），提示SHA256均为`4d703ee82f82eed647abafcb1fb923419b07fc266bc6d3cb538a5aabde794366`。冻结技能digest均为`6ecb72febf4945a385909abdd49e8fbed038ae6a74647b87e874a0dda022d69d`，技能代码没有改变。恢复代码从读文件的真实历史推断路径/函数，选择运行时descriptor中的skill ID/digest，再返回工具动作。原5循环步/6模型调用/150秒上限不增加。
 
-父bundle digest：`3963d3f2a0611705b65c7b40`为实际完整digest的前24位（完整值见report.json）。子bundle digest：`66cf3af5eefae1450bf45109877cdf24481ef7e57ee862cf4851f9802366c4ff`。新模块SHA256：`6a57906701e15aaf6e7ffacce9e65b369dfc9ec63d21014bbea580595458f1bb`；固定adapter合并后的实际执行源码SHA256：`5017bc748ffa636ab1194fa95596bae66874e6962f721e29c1d8184604282712`。实际模块文件位于当前worktree的`artifacts/e3-recovery-pilot-v1/mutation/bundles/<子digest>/recovery-<模块hash>.py`；Docker worker为/runtime/skill.py，恢复源码只挂载scratch目录，不直接挂载任务工作区。
+父bundle digest：`3963d3f2a0611705b65c7b401b5420b191772ed44b0e5726369702e069260569`。子bundle digest：`66cf3af5eefae1450bf45109877cdf24481ef7e57ee862cf4851f9802366c4ff`。新模块SHA256：`6a57906701e15aaf6e7ffacce9e65b369dfc9ec63d21014bbea580595458f1bb`；固定adapter合并后的实际执行源码SHA256：`5017bc748ffa636ab1194fa95596bae66874e6962f721e29c1d8184604282712`。实际模块文件位于当前worktree的`artifacts/e3-recovery-pilot-v1/mutation/bundles/<子digest>/recovery-<模块hash>.py`；Docker worker为/runtime/skill.py，恢复源码只挂载scratch目录，不直接挂载任务工作区。
 
 ## 冻结任务与实际成绩
 
