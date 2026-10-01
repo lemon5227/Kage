@@ -123,7 +123,8 @@ class OpenAICompatibleProvider(ModelProvider):
 
     def __init__(self, api_key: str, model_name: str = "gpt-4o-mini",
                  base_url: str = "https://api.openai.com/v1",
-                 timeout_sec: int = 120):
+                 timeout_sec: int = 120, thinking: bool | None = None):
+        self.thinking = thinking
         self.api_key = api_key
         self.model_name = model_name
         self.base_url = base_url.rstrip("/")
@@ -146,6 +147,8 @@ class OpenAICompatibleProvider(ModelProvider):
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if self.thinking is not None:
+            payload["thinking"] = {"type": "enabled" if self.thinking else "disabled"}
         if tools:
             payload["tools"] = tools
 

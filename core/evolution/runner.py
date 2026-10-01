@@ -484,6 +484,7 @@ class EvolutionRunner:
                             "tool_reported_success": item.get("tool_reported_success"),
                             "content": str(item.get("result") or item.get("error_message") or ""),
                             "executed_by": "kage_chain",
+                            "actor": item.get("actor", "agent"),
                         }
                         history.append({"step": step, "action": act, "observation": obs})
                         self.journal.record_event(

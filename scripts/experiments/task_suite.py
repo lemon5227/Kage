@@ -14,6 +14,7 @@ from core.evolution.budget import BudgetConfig, BudgetTracker
 from core.evolution.contracts import Candidate, RunSpec
 from core.evolution.journal import Journal
 from core.evolution.runner import EvolutionRunner
+from core.evolution.takeover import TeacherTakeoverProvider
 from core.model_provider import OpenAICompatibleProvider
 
 
@@ -24,6 +25,10 @@ class RecordedLocalProvider(OpenAICompatibleProvider):
 
     def generate(self, messages, **kwargs):
         kwargs["temperature"] = 0
+        if self.thinking is False:
+            if len(json.dumps({"messages": messages, "model": self.model_name, **kwargs}, ensure_ascii=False).encode()) > 12000:
+                raise RuntimeError("teacher input byte cap reached")
+            kwargs["max_tokens"] = min(300, kwargs.get("max_tokens", 300))
         response = super().generate(messages=messages, **kwargs)
         with self.trace_path.open("a") as out:
             out.write(json.dumps({"messages": messages, "request": kwargs,
@@ -39,22 +44,38 @@ def main():
     parser.add_argument("--runs", type=int, default=3)
     parser.add_argument("--split", choices=["dev", "holdout", "all"], default="all")
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--task", help="Run only this task ID")
+    parser.add_argument("--teacher-config", type=Path, help="Private DeepSeek settings; never copied into artifacts")
+    parser.add_argument("--max-cost-usd", type=float, default=0.03)
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be positive")
+    cloud = None
+    if args.teacher_config:
+        cloud = json.loads(args.teacher_config.read_text())["model"]["cloud_api"]
+        if cloud.get("model_name") != "deepseek-flash" or cloud.get("base_url", "").rstrip("/") != "https://api.deepseek.com":
+            parser.error("pilot requires the verified deepseek-flash official endpoint")
+        if not cloud.get("api_key"):
+            parser.error("teacher credential missing")
+        if args.runs != 1 or not args.task:
+            parser.error("teacher pilot is limited to one selected task/run")
+        if args.max_cost_usd < 0.02376:
+            parser.error("budget must cover the conservative 6-call teacher ceiling of $0.02376")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     suite_bytes = args.suite.read_bytes()
     suite = json.loads(suite_bytes)
     protocol = suite["protocol"]
-    tasks = [t for t in suite["tasks"] if args.split == "all" or t["split"] == args.split]
+    tasks = [t for t in suite["tasks"] if (args.split == "all" or t["split"] == args.split) and (not args.task or t["task_id"] == args.task)]
     config = {"model": args.model, "port": args.port, "runs": args.runs, "split": args.split,
+              "task": args.task, "teacher": ({"model": cloud["model_name"], "thinking": False, "max_calls": 6, "max_request_input_bytes": 12000, "max_output_tokens": 300, "cost_ceiling_usd": 0.02376} if cloud else None),
               "suite_sha256": hashlib.sha256(suite_bytes).hexdigest(), "protocol": protocol}
     (args.output_dir / "config.json").write_text(json.dumps(config, indent=2))
     journal = Journal(args.output_dir / "journal.sqlite")
-    cap = len(tasks) * args.runs * protocol["max_model_calls"]
+    cap = len(tasks) * args.runs * protocol["max_model_calls"] * (2 if cloud else 1)
     budget = BudgetTracker(BudgetConfig(max_api_calls=cap, max_input_tokens_total=cap*8000,
-                          max_output_tokens_total=cap*2000, input_cost_per_million=0,
-                          output_cost_per_million=0), args.output_dir / "budget.sqlite")
+                          max_output_tokens_total=cap*2000, max_cost_usd=args.max_cost_usd if cloud else None,
+                          input_cost_per_million=0.3 if cloud else 0,
+                          output_cost_per_million=1.2 if cloud else 0), args.output_dir / "budget.sqlite")
     candidate = Candidate("local_baseline", (), "workflow", str(ROOT), "frozen-c2-v1")
     rows = []
     for repeat in range(args.runs):
@@ -64,6 +85,13 @@ def main():
                     model_name=args.model, base_url=f"http://127.0.0.1:{args.port}/v1", timeout_sec=120)
             chain = KageChainProvider(model, model_label=args.model,
                                     max_model_calls=protocol["max_model_calls"])
+            if cloud:
+                teacher_model = RecordedLocalProvider(args.output_dir / f"{run_id}-teacher.jsonl",
+                    api_key=cloud["api_key"], model_name=cloud["model_name"],
+                    base_url=cloud["base_url"], timeout_sec=60, thinking=False)
+                teacher = KageChainProvider(teacher_model, model_label=cloud["model_name"],
+                    provider_mode="cloud", max_model_calls=6)
+                chain = TeacherTakeoverProvider(chain, teacher, task)
             runner = EvolutionRunner(journal, budget, args.output_dir / "workspaces", chain)
             start = time.monotonic()
             result = runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task["task_id"],
