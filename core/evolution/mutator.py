@@ -44,21 +44,15 @@ class MutationFailed(ValueError):
 
 
 class Mutator:
+    target = "skill"
     def __init__(self, model, budget: BudgetTracker, journal: Journal, root: Path,
                  input_cap: int = 12_000, output_cap: int = 3_000):
         self.model, self.budget, self.journal = model, budget, journal
         self.root = Path(root)
         self.input_cap, self.output_cap = input_cap, output_cap
 
-    def propose(self, parent: Candidate, feedback: dict, target: str = "skill") -> Candidate:
-        if target != "skill":
-            raise ValueError("E1 mutator supports only skill candidates")
-        source = Path(parent.bundle_path)
-        if bundle_digest(source) != parent.digest:
-            raise ValueError("parent bundle digest mismatch")
-        SkillCatalog.from_bundle(source)
-        manifest = json.loads((source / "manifest.json").read_text())
-        messages = [{"role": "system", "content": (
+    def _messages(self, source, manifest, feedback):
+        return [{"role": "system", "content": (
             "Generate a reusable Python standard-library skill from the observed failure. "
             "Return ONLY a JSON object with hypothesis, skill_id, description, parameters "
             "(JSON Schema object), and code. code must define run(arguments, context)->dict. "
@@ -69,6 +63,36 @@ class Mutator:
             "failure": _visible_feedback({key: feedback[key] for key in
                 ("task_id", "instruction", "failure_reason", "trace") if key in feedback}),
         }, ensure_ascii=False)}]
+
+    def _validate_parent(self, source):
+        SkillCatalog.from_bundle(source)
+
+    def _apply_proposal(self, stage, manifest, proposal):
+        code = proposal["code"]
+        tree = ast.parse(code)
+        if not any(isinstance(node, ast.FunctionDef) and node.name == "run" for node in tree.body):
+            raise ValueError("code must define run(arguments, context)")
+        descriptor = {key: proposal[key] for key in ("skill_id", "description", "parameters")}
+        filename = "skill-" + hashlib.sha256(code.encode()).hexdigest() + ".py"
+        descriptor["entrypoint"] = filename + ":run"
+        canonical = json.dumps(descriptor, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        descriptor["digest"] = hashlib.sha256(canonical.encode() + b"\n" + code.encode()).hexdigest()
+        (stage / filename).write_text(code)
+        updated = {**manifest, "skills": [item for item in manifest["skills"]
+                   if item["skill_id"] != descriptor["skill_id"]] + [descriptor]}
+        (stage / "manifest.json").write_text(json.dumps(updated, sort_keys=True, allow_nan=False))
+        SkillCatalog.from_bundle(stage)
+
+    def propose(self, parent: Candidate, feedback: dict, target=None) -> Candidate:
+        target = target or self.target
+        if target != self.target:
+            raise ValueError(f"mutator supports only {self.target} candidates")
+        source = Path(parent.bundle_path)
+        if bundle_digest(source) != parent.digest:
+            raise ValueError("parent bundle digest mismatch")
+        self._validate_parent(source)
+        manifest = json.loads((source / "manifest.json").read_text())
+        messages = self._messages(source, manifest, feedback)
         fingerprint = hashlib.sha256(json.dumps(messages, sort_keys=True).encode()
                                       + parent.digest.encode()).hexdigest()
         request_path = self.root / "request.json"
@@ -96,31 +120,17 @@ class Mutator:
             hypothesis = proposal["hypothesis"]
             if not isinstance(hypothesis, str) or not hypothesis.strip():
                 raise ValueError("non-empty hypothesis required")
-            code = proposal["code"]
-            tree = ast.parse(code)
-            if not any(isinstance(node, ast.FunctionDef) and node.name == "run" for node in tree.body):
-                raise ValueError("code must define run(arguments, context)")
-            descriptor = {key: proposal[key] for key in ("skill_id", "description", "parameters")}
-            # Use a content-derived filename, avoiding collisions with parent files.
-            filename = "skill-" + hashlib.sha256(code.encode()).hexdigest() + ".py"
-            descriptor["entrypoint"] = filename + ":run"
-            canonical = json.dumps(descriptor, sort_keys=True, separators=(",", ":"), allow_nan=False)
-            descriptor["digest"] = hashlib.sha256(canonical.encode() + b"\n" + code.encode()).hexdigest()
             with tempfile.TemporaryDirectory(dir=bundles, prefix="draft-") as temporary:
                 stage = Path(temporary)
                 shutil.copytree(source, stage, dirs_exist_ok=True)
-                (stage / filename).write_text(code)
-                updated = {**manifest, "skills": [item for item in manifest["skills"]
-                           if item["skill_id"] != descriptor["skill_id"]] + [descriptor]}
-                (stage / "manifest.json").write_text(json.dumps(updated, sort_keys=True, allow_nan=False))
-                SkillCatalog.from_bundle(stage)  # validate schema, names, and digest without executing code
+                self._apply_proposal(stage, manifest, proposal)
                 digest = bundle_digest(stage)
                 destination = bundles / digest
                 if not destination.exists():
                     stage.rename(destination)
                 elif bundle_digest(destination) != digest:
                     raise ValueError("existing artifact has mismatched digest")
-            child = Candidate("skill-" + digest[:16], (parent.candidate_id,), "skill",
+            child = Candidate(self.target + "-" + digest[:16], (parent.candidate_id,), self.target,
                               str(destination.resolve()), digest, hypothesis.strip(), parent.island_id)
             self.journal.record_event(EvolutionEvent(proposal_id, child.candidate_id,
                 str(feedback.get("task_id", "")), attempt, "mutation",

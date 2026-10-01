@@ -49,10 +49,10 @@ Bundle增加字段，不改变已有version=1技能契约：
 {"action":"switch_tool","tool_call":{"name":"skill_call","arguments":{"skill_id":"runtime descriptor ID","digest":"runtime descriptor digest","arguments":{}}}}
 ```
 
-- [ ] 测试模块digest变更、入口错误、写出实际动作后的产物、失败模块取证；先red再实现。
-- [ ] 模型读取真实dev失败轨迹、默认恢复源码和可用技能schema，输出JSON hypothesis/code；只发布不可变新bundle，不让模型修改评分器/技能代码。
-- [ ] 生成与修复都复用预算预留/结算、attempt证据和Journal mutation事件；未通过contract或外部评分不启用。
-- [ ] KageChainProvider把加载的候选恢复器传给实际AgenticLoop，模型提示/技能保持一致。
+- [x] 测试模块digest变更、入口错误、写出实际动作后的产物、失败模块取证；先red再实现。
+- [x] 模型读取真实dev失败轨迹、默认恢复源码和可用技能schema，输出JSON hypothesis/code；只发布不可变新bundle，不让模型修改评分器/技能代码。
+- [x] 生成与修复都复用预算预留/结算、attempt证据和Journal mutation事件；未通过contract或外部评分不启用。
+- [x] KageChainProvider把加载的候选恢复器传给实际AgenticLoop，模型提示/技能保持一致。
 
 ## Task 3: Real pilot and activation
 

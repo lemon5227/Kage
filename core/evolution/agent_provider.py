@@ -248,6 +248,7 @@ class KageChainProvider:
         agentic_loop_cls: type[AgenticLoop] = AgenticLoop,
         skill_catalog: SkillCatalog | None = None,
         skill_context_mode: str = "search",
+        recovery_policy=None,
     ) -> None:
         self.provider_mode = provider_mode
         self.model_label = model_label or type(model_provider).__name__
@@ -255,6 +256,7 @@ class KageChainProvider:
         self.max_model_calls = max(1, int(max_model_calls))
         self.agentic_loop_cls = agentic_loop_cls
         self.skill_catalog = skill_catalog
+        self.recovery_policy = recovery_policy
         if skill_context_mode not in {"search", "preview"}:
             raise ValueError("skill_context_mode must be search or preview")
         self.skill_context_mode = skill_context_mode
@@ -278,6 +280,7 @@ class KageChainProvider:
             "max_model_calls": self.max_model_calls,
             "agentic_loop": self.agentic_loop_cls.__name__,
             "skills": self.skill_catalog.digests if self.skill_catalog else {},
+            "recovery": self.recovery_policy.identity() if self.recovery_policy else None,
             "skill_context_mode": self.skill_context_mode,
             "experiment_prompt_sha256": hashlib.sha256(self._experiment_soul().encode()).hexdigest(),
             "skill_runtime": ({
@@ -300,6 +303,7 @@ class KageChainProvider:
             "tool_registry": "ToolRegistry(workspace-scoped: read_file/write_file/list_files)",
             "prompt_builder": "PromptBuilder(prune_tools=False, frozen experiment identity)",
             "tool_executor": "ToolExecutor",
+            "recovery": self.recovery_policy.identity() if self.recovery_policy else None,
             "skill_context_mode": self.skill_context_mode,
             "experiment_prompt_sha256": hashlib.sha256(self._experiment_soul().encode()).hexdigest(),
             "skills": self.skill_catalog.digests if self.skill_catalog else {},
@@ -351,8 +355,10 @@ class KageChainProvider:
             prompt_builder=prompt_builder,
             session_manager=HistorySession(self._history_messages(task_def, history)),
             memory_system=None,
+            **({"recovery_policy": self.recovery_policy} if self.recovery_policy is not None else {}),
         )
 
+        policy_events_before = len(self.recovery_policy.events) if self.recovery_policy else 0
         calls_before = len(self._model.calls)
         try:
             result = run_sync(lambda: loop.run(instruction))
@@ -379,6 +385,8 @@ class KageChainProvider:
             "model_errors": [c["error"] for c in call_slice if c["error"]],
             "call_usage": [c["usage"] for c in call_slice],
             "final_text": str(getattr(result, "final_text", "") or "")[:2000],
+            "recovery_events": getattr(loop, "recovery_events", []),
+            "recovery_trace": self.recovery_policy.events[policy_events_before:] if self.recovery_policy else [],
         }
         self.last_chain = chain_info
 
@@ -403,6 +411,7 @@ class KageChainProvider:
     def _normalize_tool_call(tc: dict[str, Any]) -> dict[str, Any]:
         return {
             "name": str(tc.get("name") or ""),
+            "actor": tc.get("actor", "student"),
             "arguments": tc.get("arguments") if isinstance(tc.get("arguments"), dict) else {},
             "success": bool(tc.get("success")),
             "outcome": tc.get("outcome") or ("ok" if tc.get("success") else "error"),
