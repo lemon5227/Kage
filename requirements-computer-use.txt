@@ -1,0 +1,2 @@
+# Optional DOM browser adapter; install browser binary separately.
+playwright==1.63.0

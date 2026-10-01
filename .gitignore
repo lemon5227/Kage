@@ -51,3 +51,6 @@ kage-avatar/node_modules/
 # Evolution runs and artifacts
 runs/
 artifacts/
+
+# Optional computer-use experiment environment
+/.venv-computer-use/

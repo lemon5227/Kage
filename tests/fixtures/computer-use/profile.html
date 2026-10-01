@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Profile task</title>
+<h1>Profile editor</h1><form id="profile"><label>Name <input name="name" aria-label="Name"></label><button type="submit">Save profile</button></form>
+<p role="status" id="status">Not saved</p><div style="height:1600px"></div><button onclick="document.querySelector('#status').textContent='Footer reached'">Footer</button>
+<script>
+document.querySelector('#profile').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.querySelector('[name=name]').value;
+  const response = await fetch('/save', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+  const saved = await response.json();
+  document.querySelector('#status').textContent = 'Saved: '+saved.name;
+});
+</script></html>
