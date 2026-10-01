@@ -27,6 +27,7 @@ def main():
     parser.add_argument('--teacher-config',type=Path,required=True)
     parser.add_argument('--port',type=int,default=18082)
     parser.add_argument('--external-completion',action='store_true',help='Stop after independently verified saved output; bounded save settlement')
+    parser.add_argument('--teacher-context-pack',action='store_true',help='Archive stale teacher DOM snapshots, keep current state and actions/errors')
     args=parser.parse_args()
     cloud=json.loads(args.teacher_config.read_text())['model']['cloud_api']
     if cloud.get('model_name')!='deepseek-flash' or cloud.get('base_url','').rstrip('/')!='https://api.deepseek.com' or not cloud.get('api_key'):
@@ -36,12 +37,12 @@ def main():
     task=next(t for t in suite['tasks'] if t['task_id']=='preferences_dev')
     args.output_dir.mkdir(parents=True,exist_ok=False)
     files=['core/computer_use/browser.py','core/computer_use/task_environment.py','core/computer_use/experiment.py',
-           'core/computer_use/teacher_takeover.py','core/agentic_loop.py','core/model_provider.py',
+           'core/computer_use/teacher_takeover.py','core/computer_use/context_pack.py','core/agentic_loop.py','core/model_provider.py',
            'core/prompt_builder.py','core/tool_executor.py','core/evolution/runner.py','core/evolution/agent_provider.py',
            'scripts/experiments/task_suite.py','scripts/experiments/browser_takeover.py']
     hashes={f:file_hash(ROOT/f) for f in files}
     ceiling=protocol['max_teacher_calls']*(protocol['teacher_input_bytes']*INPUT_RATE+protocol['teacher_output_tokens']*OUTPUT_RATE)/1_000_000
-    config={'protocol':protocol,'external_completion':args.external_completion,'task_id':task['task_id'],'teacher':{'model':'deepseek-flash','thinking':False,
+    config={'protocol':protocol,'external_completion':args.external_completion,'teacher_context_pack':args.teacher_context_pack,'task_id':task['task_id'],'teacher':{'model':'deepseek-flash','thinking':False,
             'cloud_ceiling_per_attempt_usd':ceiling,'cloud_ceiling_total_usd':ceiling*protocol['repeats'],
             'input_rate_assumed_per_million':INPUT_RATE,'output_rate_assumed_per_million':OUTPUT_RATE},
             'student':'agents-a1-4b','source_hashes':hashes,'suite_sha256':file_hash(suite_path),
@@ -60,7 +61,7 @@ def main():
         rid=f'preferences_dev-{repeat}'
         local=RecordedLocalProvider(args.output_dir/(rid+'-student.jsonl'),api_key='local',model_name='agents-a1-4b',base_url=f'http://127.0.0.1:{args.port}/v1',timeout_sec=protocol['http_timeout_s'])
         teacher=RecordedLocalProvider(args.output_dir/(rid+'-teacher.jsonl'),api_key=cloud['api_key'],model_name=cloud['model_name'],base_url=cloud['base_url'],timeout_sec=protocol['http_timeout_s'],thinking=False,output_limit=protocol['teacher_output_tokens'])
-        chain=BrowserTeacherTakeoverProvider(local,teacher,task,model_label='agents-a1-4b',max_model_calls=protocol['max_model_calls'],max_teacher_calls=protocol['max_teacher_calls'],teacher_output_tokens=protocol['teacher_output_tokens'],external_completion=args.external_completion)
+        chain=BrowserTeacherTakeoverProvider(local,teacher,task,model_label='agents-a1-4b',max_model_calls=protocol['max_model_calls'],max_teacher_calls=protocol['max_teacher_calls'],teacher_output_tokens=protocol['teacher_output_tokens'],external_completion=args.external_completion,teacher_context_pack=args.teacher_context_pack)
         runner=EvolutionRunner(journal,budget,args.output_dir/'workspaces',chain)
         start=time.monotonic();wall_start=time.time()
         result=runner.run(candidate,task,RunSpec(rid,candidate.candidate_id,task['task_id'],max_steps=1,timeout_s=protocol['timeout_s']))

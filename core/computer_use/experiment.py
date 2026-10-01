@@ -144,8 +144,9 @@ class BrowserChainProvider(KageChainProvider):
         executor.actor=actor
         builder=PromptBuilder(ExperimentIdentityStore(soul),None,registry,
                               prune_tools=False,memory_cfg={'recall_enabled':False})
-        gate=CompletionGate(model,self.task_def,workspace) if self.external_completion else None
-        loop=self.agentic_loop_cls(gate or model,executor,builder,HistorySession())
+        actor_model=self._actor_model(model,actor,workspace)
+        gate=CompletionGate(actor_model,self.task_def,workspace) if self.external_completion else None
+        loop=self.agentic_loop_cls(gate or actor_model,executor,builder,HistorySession())
         started=time.monotonic()
         observation=await adapter.observe()
         atomic_json(workspace/(actor+'-initial-observation.json'),observation)
@@ -181,6 +182,9 @@ class BrowserChainProvider(KageChainProvider):
 
     async def _after_student(self,task,step,workspace,adapter,registry,executor,student):
         return student
+
+    def _actor_model(self,model,actor,workspace):
+        return model
 
     async def _run(self,task,step,history,workspace):
         from playwright.async_api import async_playwright

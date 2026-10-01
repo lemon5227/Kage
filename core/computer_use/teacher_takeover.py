@@ -6,10 +6,12 @@ from core.computer_use.experiment import BrowserChainProvider,BROWSER_SOUL
 from core.computer_use.task_environment import atomic_json,checkpoint
 from core.evolution.agent_provider import MeteredProvider
 from core.evolution.runner import Evaluator
+from core.computer_use.context_pack import BrowserContextProvider
 
 class BrowserTeacherTakeoverProvider(BrowserChainProvider):
-    def __init__(self,student_model,teacher_model,task_def,*,teacher_label='deepseek-flash',max_teacher_calls=6,teacher_output_tokens=1024,**kwargs):
+    def __init__(self,student_model,teacher_model,task_def,*,teacher_label='deepseek-flash',max_teacher_calls=6,teacher_output_tokens=1024,teacher_context_pack=False,**kwargs):
         super().__init__(student_model,task_def,**kwargs)
+        self.teacher_context_pack=bool(teacher_context_pack)
         self.teacher_label=teacher_label
         self._teacher=MeteredProvider(teacher_model,label=teacher_label,max_calls=max_teacher_calls)
         self.RESERVATION_INPUT_CAP+=max_teacher_calls*12000
@@ -18,11 +20,15 @@ class BrowserTeacherTakeoverProvider(BrowserChainProvider):
 
     def cache_identity(self):
         return {**super().cache_identity(),'teacher':self.teacher_label,'teacher_calls':self._teacher.max_calls,
+                'teacher_context_pack':self.teacher_context_pack,'context_pack_sha256':hashlib.sha256(Path(__file__).with_name('context_pack.py').read_bytes()).hexdigest(),
                 'policy':'same-page-failed-external-check-v1','takeover_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
 
     def metadata(self):
-        return {**super().metadata(),'provider_mode':'same-page-browser-takeover','teacher':self.teacher_label,
+        return {**super().metadata(),'provider_mode':'same-page-browser-takeover','teacher':self.teacher_label,'teacher_context_pack':self.teacher_context_pack,
                 'student_call_guard':self._model.max_calls,'teacher_call_guard':self._teacher.max_calls}
+
+    def _actor_model(self,model,actor,workspace):
+        return BrowserContextProvider(model,workspace) if actor=='teacher' and self.teacher_context_pack else model
 
     async def _after_student(self,task,step,workspace,adapter,registry,executor,student):
         checked=await checkpoint(adapter.page,executor.url,workspace)

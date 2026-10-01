@@ -128,3 +128,39 @@ def test_save_settlement_deadline_keeps_live_page_and_unconfirmed_evidence(tmp_p
                     await asyncio.sleep(.01)
                     assert not errors, errors
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('packed',[False,True])
+def test_teacher_can_save_under_same_wire_cap_with_archived_dom_history(tmp_path,packed):
+    from core.computer_use.teacher_takeover import BrowserTeacherTakeoverProvider
+    from core.model_provider import OpenAICompatibleProvider
+    from core.evolution.budget import BudgetConfig,BudgetTracker
+    from core.evolution.contracts import Candidate,RunSpec
+    from core.evolution.journal import Journal
+    from core.evolution.runner import EvolutionRunner
+    class WireBoundedActions(Actions):
+        def generate(self,messages,**kwargs):
+            wire=OpenAICompatibleProvider(api_key='test',model_name='deepseek-flash',thinking=False)
+            kwargs['max_tokens']=1024;kwargs['temperature']=0
+            if len(wire._serialize_request(wire._request_payload(messages,**kwargs)))>12000:
+                raise RuntimeError('teacher input byte cap reached')
+            if self.labels and self.labels[0]=='OBSERVE':
+                self.labels.pop(0)
+                return ModelResponse(text='Reobserve',tool_calls=[{'name':'browser_observe','arguments':{}}],usage={'input_tokens':2,'output_tokens':1})
+            return super().generate(messages,**kwargs)
+    provider=BrowserTeacherTakeoverProvider(Actions([]),WireBoundedActions(['OBSERVE','Email notifications','SMS notifications','Save settings']),task(),
+        model_label='test-student',external_completion=True,teacher_context_pack=packed)
+    runner=EvolutionRunner(Journal(tmp_path/'j.sqlite'),BudgetTracker(BudgetConfig(max_api_calls=12,max_input_tokens_total=200000,max_output_tokens_total=20000),tmp_path/'b.sqlite'),tmp_path/'runs',provider)
+    r=runner.run(Candidate('browser',(),'workflow',str(ROOT),'bounded-history'),task(),RunSpec('bounded','browser','preferences_dev',max_steps=1,timeout_s=20))
+    ws=Path(r.final_state_path)
+    t=r.metadata['chain'][0]['takeover']
+    assert (r.status=='passed' and r.score==1)==packed
+    if packed:
+        assert t['teacher_chain']['stop_reason']=='external_check' and t['teacher_check_passed']
+        assert t['teacher_usage']['api_calls']==4
+        assert json.loads((ws/'backend.json').read_text())['record']=={'email':True,'sms':False,'weekly':False}
+        records=[json.loads(line) for line in (ws/'teacher-context-pack.jsonl').read_text().splitlines()]
+        assert records[-1]['archived_observations']>=3
+        assert all((ws/record['source_path']).exists() for record in records)
+    else:
+        assert 'byte cap' in str(t['teacher_chain']['model_errors'])
