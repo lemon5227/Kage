@@ -1,0 +1,365 @@
+{
+  "suite_id": "c21-browser-v1",
+  "protocol": {
+    "repeats": 1,
+    "max_model_calls": 6,
+    "max_loop_steps": 5,
+    "timeout_s": 180,
+    "split": "paired-content-label-variants",
+    "cloud": false
+  },
+  "tasks": [
+    {
+      "task_id": "profile_dev",
+      "family": "profile",
+      "split": "dev",
+      "instruction": "Fill Name with \"Wenbo Browser Lab\" and Email with \"wenbo@example.test\". Save and confirm the displayed saved values.",
+      "fixture": {
+        "kind": "profile",
+        "title": "Profile editor",
+        "fields": [
+          {
+            "name": "name",
+            "label": "Name"
+          },
+          {
+            "name": "email",
+            "label": "Email"
+          }
+        ],
+        "submit": "Save profile"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "name": "Wenbo Browser Lab",
+            "email": "wenbo@example.test"
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "invoice_dev",
+      "family": "invoice",
+      "split": "dev",
+      "instruction": "Compute the sum of quantity times unit price for all invoice rows. Enter it in Total, submit, and confirm the displayed saved amount.",
+      "fixture": {
+        "kind": "invoice",
+        "title": "Invoice review",
+        "fields": [
+          {
+            "name": "total",
+            "label": "Total"
+          }
+        ],
+        "rows": [
+          {
+            "item": "Compute",
+            "qty": 3,
+            "price": 17
+          },
+          {
+            "item": "Storage",
+            "qty": 5,
+            "price": 11
+          },
+          {
+            "item": "Support",
+            "qty": 2,
+            "price": 7
+          }
+        ],
+        "submit": "Save total"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "total": 120
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "preferences_dev",
+      "family": "preferences",
+      "split": "dev",
+      "instruction": "Enable Email notifications, disable SMS notifications, and keep Weekly digest disabled. Save and confirm the saved settings.",
+      "fixture": {
+        "kind": "preferences",
+        "title": "Notification preferences",
+        "fields": [
+          {
+            "name": "email",
+            "label": "Email notifications",
+            "initial": false
+          },
+          {
+            "name": "sms",
+            "label": "SMS notifications",
+            "initial": true
+          },
+          {
+            "name": "weekly",
+            "label": "Weekly digest",
+            "initial": false
+          }
+        ],
+        "submit": "Save settings"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "email": true,
+            "sms": false,
+            "weekly": false
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "catalog_dev",
+      "family": "catalog",
+      "split": "dev",
+      "instruction": "Set City to Budapest, enable Design only, apply the filters, then choose the cheapest matching hotel. Confirm the displayed selection.",
+      "fixture": {
+        "kind": "catalog",
+        "title": "Hotel catalog",
+        "query_label": "City",
+        "category_label": "Design only",
+        "category": "Design",
+        "apply_label": "Apply filters",
+        "items": [
+          {
+            "id": "alpha",
+            "name": "Garden Inn",
+            "city": "Budapest",
+            "category": "Design",
+            "price": 90
+          },
+          {
+            "id": "beta",
+            "name": "River Loft",
+            "city": "Budapest",
+            "category": "Design",
+            "price": 65
+          },
+          {
+            "id": "gamma",
+            "name": "Budget Stay",
+            "city": "Budapest",
+            "category": "Budget",
+            "price": 35
+          },
+          {
+            "id": "delta",
+            "name": "Other City",
+            "city": "Paris",
+            "category": "Design",
+            "price": 20
+          }
+        ]
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "property_id": "beta",
+            "city": "Budapest",
+            "category": "Design"
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "profile_holdout",
+      "family": "profile",
+      "split": "holdout",
+      "instruction": "Fill Full name with \"Mira Research\" and Contact email with \"mira@example.test\". Save and confirm the displayed saved values.",
+      "fixture": {
+        "kind": "profile",
+        "title": "Research profile",
+        "fields": [
+          {
+            "name": "name",
+            "label": "Full name"
+          },
+          {
+            "name": "email",
+            "label": "Contact email"
+          }
+        ],
+        "submit": "Update profile"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "name": "Mira Research",
+            "email": "mira@example.test"
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "invoice_holdout",
+      "family": "invoice",
+      "split": "holdout",
+      "instruction": "Compute the sum of quantity times unit price for all invoice rows. Enter it in Invoice amount, submit, and confirm the displayed saved amount.",
+      "fixture": {
+        "kind": "invoice",
+        "title": "Invoice review",
+        "fields": [
+          {
+            "name": "total",
+            "label": "Invoice amount"
+          }
+        ],
+        "rows": [
+          {
+            "item": "Compute",
+            "qty": 7,
+            "price": 19
+          },
+          {
+            "item": "Storage",
+            "qty": 4,
+            "price": 13
+          },
+          {
+            "item": "Support",
+            "qty": 2,
+            "price": 23
+          }
+        ],
+        "submit": "Submit amount"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "total": 231
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "preferences_holdout",
+      "family": "preferences",
+      "split": "holdout",
+      "instruction": "Enable Email alerts, disable Text messages, and keep Weekly digest disabled. Save and confirm the saved settings.",
+      "fixture": {
+        "kind": "preferences",
+        "title": "Notification preferences",
+        "fields": [
+          {
+            "name": "email",
+            "label": "Email alerts",
+            "initial": false
+          },
+          {
+            "name": "sms",
+            "label": "Text messages",
+            "initial": true
+          },
+          {
+            "name": "weekly",
+            "label": "Weekly digest",
+            "initial": false
+          }
+        ],
+        "submit": "Apply settings"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "email": true,
+            "sms": false,
+            "weekly": false
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "catalog_holdout",
+      "family": "catalog",
+      "split": "holdout",
+      "instruction": "Set Destination to Lisbon, enable Design hotels, apply the filters, then choose the cheapest matching hotel. Confirm the displayed selection.",
+      "fixture": {
+        "kind": "catalog",
+        "title": "Hotel catalog",
+        "query_label": "Destination",
+        "category_label": "Design hotels",
+        "category": "Design",
+        "apply_label": "Show matching hotels",
+        "items": [
+          {
+            "id": "gamma",
+            "name": "Budget Stay",
+            "city": "Lisbon",
+            "category": "Budget",
+            "price": 35
+          },
+          {
+            "id": "beta",
+            "name": "Garden Inn",
+            "city": "Lisbon",
+            "category": "Design",
+            "price": 140
+          },
+          {
+            "id": "delta",
+            "name": "Other City",
+            "city": "Paris",
+            "category": "Design",
+            "price": 20
+          },
+          {
+            "id": "alpha",
+            "name": "Casa Flora",
+            "city": "Lisbon",
+            "category": "Design",
+            "price": 85
+          }
+        ]
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-check.json",
+        "expected": {
+          "record": {
+            "property_id": "alpha",
+            "city": "Lisbon",
+            "category": "Design"
+          },
+          "posts": 1,
+          "readback_matches_backend": true
+        }
+      }
+    }
+  ]
+}
