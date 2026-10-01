@@ -185,7 +185,17 @@ class OpenAICompatibleProvider(ModelProvider):
                 try:
                     parsed_args = json.loads(args) if isinstance(args, str) else args
                 except json.JSONDecodeError:
-                    parsed_args = {}
+                    return ModelResponse(
+                        text=text, error=f"InvalidToolArguments: {func.get('name', '')} (finish_reason={choice.get('finish_reason')})",
+                        raw_output=json.dumps(body, ensure_ascii=False),
+                        usage=extract_usage(body.get("usage")),
+                    )
+                if not isinstance(parsed_args, dict):
+                    return ModelResponse(
+                        text=text, error=f"InvalidToolArguments: {func.get('name', '')} (arguments must be an object)",
+                        raw_output=json.dumps(body, ensure_ascii=False),
+                        usage=extract_usage(body.get("usage")),
+                    )
                 tool_calls.append({
                     "name": func.get("name", ""),
                     "arguments": parsed_args,
