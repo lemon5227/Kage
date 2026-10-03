@@ -149,15 +149,19 @@ class BrowserChainProvider(KageChainProvider):
         self.call_log.append({'task_id':task_def['task_id'],'step':step})
         return output
 
-    async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice=''):
+    def _student_step_limit(self):
+        return 5
+
+    async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice='',*,reset_quota=True,max_steps=None):
         executor.actor=actor
-        if hasattr(executor,'browser_quota'):
+        if reset_quota and hasattr(executor,'browser_quota'):
             executor.browser_quota.used=0
         builder=PromptBuilder(ExperimentIdentityStore(soul),None,registry,
                               prune_tools=False,memory_cfg={'recall_enabled':False})
         actor_model=self._actor_model(model,actor,workspace)
         gate=CompletionGate(actor_model,self.task_def,workspace) if self.external_completion else None
         loop=self.agentic_loop_cls(gate or actor_model,executor,builder,HistorySession())
+        loop.MAX_STEPS=max_steps if max_steps is not None else (self._student_step_limit() if actor=='student' else 5)
         started=time.monotonic()
         observation=await adapter.observe()
         atomic_json(workspace/(actor+'-initial-observation.json'),observation)
