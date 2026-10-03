@@ -28,7 +28,7 @@ def pack_browser_messages(messages,workspace):
         content=message.get('content')
         if not isinstance(content,str): continue
         initial=message.get('role')=='user' and INITIAL in content
-        browser_tool=message.get('role')=='tool' and content.startswith('[Tool: browser_')
+        browser_tool=message.get('role')=='tool' and content.startswith(('[Tool: browser_','[Tool Error: browser_'))
         if not (initial or browser_tool): continue
         try:
             prefix,raw=content.rsplit(INITIAL,1) if initial else (content[:content.index('{')],content[content.index('{'):])

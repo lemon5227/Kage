@@ -14,7 +14,7 @@ def test_old_dom_archived_but_latest_error_and_native_links_survive(tmp_path):
     messages=[{'role':'system','content':'Browser policy'},
         {'role':'user','content':'Save my settings\nInitial browser observation supplied by runtime:\n'+json.dumps(old,ensure_ascii=False)},
         {'role':'assistant','content':'click','tool_calls':[{'id':'call-1','type':'function','function':{'name':'browser_act','arguments':'{"target_ref":"e1"}'}}]},
-        {'role':'tool','tool_call_id':'call-1','content':'[Tool: browser_act] '+json.dumps({'success':False,'error':'StaleObservation','message':'reobserve','outcome':'rejected','observation':old})},
+        {'role':'tool','tool_call_id':'call-1','content':'[Tool Error: browser_act] '+json.dumps({'success':False,'error':'StaleObservation','message':'reobserve','outcome':'rejected','observation':old})},
         {'role':'assistant','content':'observe','tool_calls':[{'id':'call-2','type':'function','function':{'name':'browser_observe','arguments':'{}'}}]},
         {'role':'tool','tool_call_id':'call-2','content':'[Tool: browser_observe] '+json.dumps({'success':True,'observation':latest})}]
     original=copy.deepcopy(messages)
@@ -39,6 +39,18 @@ def test_no_fresh_observation_leaves_messages_intact(tmp_path):
         {'role':'assistant','content':'Malformed unrelated {text'}]
     packed,stats=pack_browser_messages(messages,tmp_path)
     assert packed==messages and stats['archived_observations']==0
+
+
+def test_latest_error_observation_survives_packing(tmp_path):
+    old=observation('old');latest=observation('fresh')
+    messages=[{'role':'user','content':'Task\nInitial browser observation supplied by runtime:\n'+json.dumps(old)},
+              {'role':'tool','tool_call_id':'call-1','content':'[Tool Error: browser_act] '+json.dumps({'success':False,'error':'BrowserTimeout','outcome':'tool_error','message':'click timed out','action_applied':None,'observation':latest})}]
+    packed,stats=pack_browser_messages(messages,tmp_path)
+    assert stats['archived_observations']==1
+    result=json.loads(packed[1]['content'].split('] ',1)[1])
+    assert packed[1]['tool_call_id']=='call-1'
+    assert result['observation']==latest and result['action_applied'] is None
+    assert result['error']=='BrowserTimeout' and result['outcome']=='tool_error'
 
 
 def test_large_current_dom_still_hits_original_wire_limit_without_network(tmp_path):

@@ -98,6 +98,15 @@ def test_render_history_line_phrasing():
     assert "未分类的失败码" in unknown and "调用被拒绝" not in unknown
 
 
+def test_browser_error_rendering_preserves_uncertain_action_and_malformed_fallback():
+    payload={"success":False,"error":"BrowserTimeout","message":"click timed out",
+             "outcome":"tool_error","action_applied":None,"observation":{"observation_id":"new"}}
+    line=render_history_line("browser_act",False,json.dumps(payload),"BrowserTimeout","click timed out","tool_error")
+    assert json.loads(line.split('] ',1)[1])==payload
+    assert 'BrowserTimeout' in render_history_line("browser_act",False,'{broken',"BrowserTimeout","click timed out","tool_error")
+    assert '调用被拒绝' in render_history_line("ordinary",False,json.dumps(payload),"InvalidArgument","bad","rejected")
+
+
 # ---------------------------------------------------------------------------
 # Through the real executor
 # ---------------------------------------------------------------------------

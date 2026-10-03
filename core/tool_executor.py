@@ -135,6 +135,15 @@ def render_history_line(name: str, success: bool, result: str = "",
         return f"[Tool: {name}] 用户拒绝了该操作：{error_message or result}"
     if outcome == "needs_confirmation":
         return f"[Tool: {name}] 该操作需要用户确认后才能执行：{error_message or result}"
+    if name in {"browser_open", "browser_observe", "browser_act"} and not success:
+        # Browser failures may include a new DOM observation or an uncertain
+        # action_applied state. Keep the entire structured result for recovery.
+        try:
+            payload = json.loads(result)
+        except (TypeError, ValueError):
+            payload = None
+        if isinstance(payload, dict) and payload.get("success") is False:
+            return f"[Tool Error: {name}] {result}"
     if outcome == "rejected":
         return (f"[Tool Error: {name}] {error_type}: {error_message}"
                 "（调用被拒绝：请修正参数或改用其他方式）")

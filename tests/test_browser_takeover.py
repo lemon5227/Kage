@@ -130,6 +130,68 @@ def test_save_settlement_deadline_keeps_live_page_and_unconfirmed_evidence(tmp_p
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('packed',[False, True])
+def test_stale_browser_action_recovers_from_fresh_error_observation(tmp_path,packed):
+    import asyncio
+    from playwright.async_api import async_playwright
+    from core.agentic_loop import AgenticLoop
+    from core.computer_use.browser import BrowserAdapter
+    from core.computer_use.context_pack import BrowserContextProvider
+    from core.computer_use.experiment import BROWSER_SOUL
+    from core.computer_use.task_environment import browser_task_server
+    from core.evolution.agent_provider import ExperimentIdentityStore,HistorySession
+    from core.prompt_builder import PromptBuilder
+    from core.tool_executor import ToolExecutor
+    from core.tool_registry import ToolRegistry
+
+    class RecoveringModel(ModelProvider):
+        def __init__(self,old): self.old,self.calls=old,0
+        def generate(self,messages,**kwargs):
+            self.calls+=1
+            if self.calls==1:
+                obs=self.old
+            elif self.calls==2:
+                tool=next(m for m in messages if m['role']=='tool')
+                request=next(m for m in messages if m.get('tool_calls'))
+                assert tool['tool_call_id']==request['tool_calls'][0]['id']
+                assert tool['content'].startswith('[Tool Error: browser_act] ')
+                payload=json.loads(tool['content'].split('] ',1)[1])
+                assert payload['error']=='StaleObservation' and payload['outcome']=='rejected'
+                assert payload['message'] and payload['success'] is False
+                obs=payload['observation']
+                assert obs['observation_id']!=self.old['observation_id']
+                assert obs['surface_id']==self.old['surface_id']
+                assert next(t['target_ref'] for t in obs['targets'] if t['label']=='Email notifications') != next(t['target_ref'] for t in self.old['targets'] if t['label']=='Email notifications')
+            else:
+                return ModelResponse(text='clicked',usage={'input_tokens':2,'output_tokens':1})
+            ref=next(t['target_ref'] for t in obs['targets'] if t['label']=='Email notifications')
+            return ModelResponse(text='',tool_calls=[{'name':'browser_act','arguments':{'observation_id':obs['observation_id'],'operation':'click','target_ref':ref}}],usage={'input_tokens':2,'output_tokens':1})
+
+    async def run():
+        with browser_task_server(task()['fixture'],tmp_path) as (url,_):
+            async with async_playwright() as p:
+                browser=await p.chromium.launch(headless=True)
+                try:
+                    page=await browser.new_page();await page.goto(url)
+                    adapter=BrowserAdapter(page,compact_observations=True)
+                    registry=ToolRegistry();adapter.register_tools(registry)
+                    old=await adapter.observe()
+                    email=next(t for t in old['targets'] if t['label']=='Email notifications')
+                    assert email['value']=='on' and 'checked' not in email  # compact-v1 omission means false.
+                    await page.evaluate('''() => { const old = document.querySelector('input[name="email"]'); old.replaceWith(old.cloneNode(true)); }''')
+                    model=RecoveringModel(old)
+                    provider=BrowserContextProvider(model,tmp_path) if packed else model
+                    loop=AgenticLoop(provider,ToolExecutor(registry,str(tmp_path)),
+                        PromptBuilder(ExperimentIdentityStore(BROWSER_SOUL),None,registry,prune_tools=False,memory_cfg={'recall_enabled':False}),HistorySession())
+                    result=await loop.run('Enable email notifications.\nInitial browser observation supplied by runtime:\n'+json.dumps(old))
+                    assert model.calls==3 and len(result.tool_calls_executed)==2
+                    assert result.tool_calls_executed[0]['outcome']=='rejected'
+                    assert result.tool_calls_executed[1]['outcome']=='ok'
+                    assert await page.locator('input[name="email"]').is_checked()
+                finally: await browser.close()
+    asyncio.run(run())
+
+
 @pytest.mark.parametrize('packed',[False,True])
 def test_teacher_can_save_under_same_wire_cap_with_archived_dom_history(tmp_path,packed):
     from core.computer_use.teacher_takeover import BrowserTeacherTakeoverProvider
