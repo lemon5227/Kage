@@ -26,6 +26,13 @@ from scripts.experiments.task_suite import RecordedLocalProvider
 def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def skill_call_count(workspace_path):
+    actor_log=Path(workspace_path)/'actor-tools.jsonl'
+    if not actor_log.exists(): return 0
+    return sum(json.loads(line).get('name')=='skill_call'
+               for line in actor_log.read_text().splitlines() if line.strip())
+
+
 def reuse_task(task):
     """Predefined dev variant; this definition is not sent to the optimizer."""
     new=json.loads(json.dumps(task))
@@ -127,11 +134,8 @@ def main():
     resumed=restarted.evaluate(child,reuse,repeat_id=0)
     if restarted.budget.total_api_calls!=before_restart or resumed.run_id!=reuse_results[0].run_id:
         raise AssertionError('same-repeat restart consumed another local run')
-    def skill_calls(trace_path):
-        return sum(json.loads(line).get('action',{}).get('name')=='skill_call'
-                   for line in Path(trace_path).read_text().splitlines())
     all_child=[pair['child'] for pair in comparison['pairs']]
-    calls=[skill_calls(row['trace_path']) for row in all_child]+[skill_calls(row.trace_path) for row in reuse_results]
+    calls=[skill_call_count(row['final_state_path']) for row in all_child]+[skill_call_count(row.final_state_path) for row in reuse_results]
     report={'parent':asdict(parent),'child':asdict(child),'comparison':comparison,
             'reuse':[asdict(row) for row in reuse_results],'restart_same_repeat_run_id':resumed.run_id,
             'actual_skill_calls':calls,'optimizer_usage':optimizer_budget.usage_by_type,
