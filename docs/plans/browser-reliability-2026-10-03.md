@@ -14,3 +14,11 @@ R1执行：`scripts/experiments/browser_state_diagnosis.py --cloud-config <已�
 独立评分沿用后台记录和页面保存读回完全匹配，隐藏expected不入模型提示。模型文字/工具success不等于完成。每次保留请求、初始/最终DOM、逐步actor动作、后台POST和读回、截图、stop_reason、usage、耗时与hash。所有终止失败计入原始分母，不能为了得到成功重跑同格。
 
 解释规则：v2优于v1只是这三个开发例上的线索，需后续重复与新留出；两者均通过则省略false不是云清洁执行的已证实瓶颈，应继续技能发现和预算诊断；两者均差先检动作轨迹/协议，不直接开始权重训练或引擎替换。
+
+## R2固定云开发诊断
+
+R1实际两组各3/3，原始结果独立保存。R2仍使用相同三个dev任务，固定compact-v2，重置Page/历史，九次（raw/search/preview各三次、每格一次）按task旋转组顺序。raw无技能；search有catalog与搜索指引；preview在search基础上直供至多三个descriptor的skill_id/description/digest/parameters，并引导匹配时直接调用。预览不含workflow源码、不预绑定目标值；目标参数由真实模型从公开指令与页面推导。衡量的是发现策略整体，不把descriptor和指引各自归因。
+
+复用B2.1c未晋级候选9400d42f…及技能21e4ea88…，先核bundle/manifest hash；不再生成、不运行晋级、不默认安装。与R1相同每run预算；九次总54请求、名义云上限$0.30、保守上限$0.2607552，同假设费率，不是实付。脚本browser_skill_diagnosis.py冻结config/prompt/source/candidate后执行，终止失败不重采。
+
+成功必须独立保存通过且实际actor-tools有skill_call；另记search/call次数、参数、内部browser primitives、费用和失败。只有云用会技能不能宣称小模型学会；若有效，下一固定小实验再检本地search/preview并决定复杂规划云端、简单执行本地的路由。只有完整新留出后才谈迁移收益。

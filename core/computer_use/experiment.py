@@ -127,8 +127,14 @@ class BrowserChainProvider(KageChainProvider):
         self.browser_skill_catalog=BrowserSkillCatalog.from_bundle(browser_skill_bundle) if browser_skill_bundle is not None else None
 
     def _experiment_soul(self):
-        return BROWSER_SOUL + ('\nSearch available browser skills for a matching workflow, then call by its exact digest and verify the saved result.\n'
-                               if self.browser_skill_catalog is not None else '')
+        soul=BROWSER_SOUL + ('\nSearch available browser skills for a matching workflow, then call by its exact digest and verify the saved result.\n'
+                             if self.browser_skill_catalog is not None else '')
+        if self.browser_skill_catalog is not None and self.skill_context_mode=='preview':
+            preview=[{**item,'description':item['description'][:200]}
+                     for item in self.browser_skill_catalog.search('',limit=3)['skills']]
+            soul+='\nBrowser reusable skill preview (descriptors only): '+json.dumps(preview,ensure_ascii=False,separators=(',',':'))
+            soul+='\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual actions; otherwise search.\n'
+        return soul
 
     def cache_identity(self):
         return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
