@@ -2,6 +2,8 @@
 
 来源：[新留出v2唯一失败](../experiments/2026-10-03-browser-local-transfer-v2.md)：search组先observe，5步正确改完四项，但未Save。v2已用于诊断，不能改方法后重跑作为盲测。之前R2-local六次dev全部通过的事实保持。
 
+状态：已完成工程与四次真实本地dev，[报告](../experiments/2026-10-03-browser-save-budget-dev.md)。5/6步各2/2、21请求/零云；未见完成率收益，默认5，可显式选6，下一C5.0。以下保留执行时的冻结规格，不再追加采样。
+
 ## 执行范围
 
 1. 新建两个dev实例，使用原preferences_dev的公开标签，额外第四项checkbox，公开目标要求四项均改变；新字段/保存标签与v2不相同。不要读取v2 checker或拿其原run做第六步救回。冻结四次试验：两任务×5步/6步各一次，保持同候选search模式、compact-v2、模型/引擎/历史/300输出策略、6模型调用/16 primitives/480秒。每个模型请求还是原限制，唯一变量循环上限。
