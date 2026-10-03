@@ -34,7 +34,7 @@ class BrowserTaskService:
 ```
 Service复用专用BackgroundLane/BackgroundWorker实例，实现单worker串行；不是另一套Agent循环或评分器。独立实例避免实验Page挤占普通音频/聊天任务。on_event为async(event, public_job)；公共job包含job_id=run_id、task_type=browser_experiment、input_text公开指令、status、execution_status、task_id、executor、max_loop_steps、result和error。status含queued/running/completed/failed/stopped/unknown，execution_status区分后台执行生命周期。
 
-payload字段：task_id、executor（local/cloud/local_teacher，默认local）、max_loop_steps（5/6，默认5）、workflow_bundle（可省略的本地bundle路径）。拒绝未知字段/错误类型，避免自由指令改变验证目标。目录使用browser-learning-v2.json的profile_dev、preferences_dev；另preferences_unchecked为preferences_dev副本移除scoring_criteria，公开标无自动检查，external_completion=False。不改既有清单或成绩。
+payload字段：task_id、executor（local/cloud/local_teacher，默认local）、max_loop_steps（5/6，默认5）、workflow_bundle（可省略的本地bundle路径）。拒绝未知字段/错误类型，避免自由指令改变验证目标。目录使用browser-learning-v2.json的profile_dev、preferences_dev；另preferences_unchecked为preferences_dev副本移除scoring_criteria，公开标无自动检查，external_completion=False。不改既有清单或成绩。无checker任务拒绝local_teacher，因为不能据此推断失败并自动消费教师预算；基础设施错误仍显示执行失败与目标未确认，不伪报成功。
 
 catalog返回tasks（task_id,title,instruction,check_available）及executors（id,model_name,configured），不返回key；云需有效远端OpenAI-compatible配置，其他provider/loopback冒充cloud明确不支持。worker使用ModelBroker，覆盖本次broker角色与hybrid=false后核实际profile.mode；配置为运行时快照，不修改用户文件。
 
