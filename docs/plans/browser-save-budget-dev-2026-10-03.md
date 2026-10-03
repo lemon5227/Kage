@@ -5,7 +5,7 @@
 ## 执行范围
 
 1. 新建两个dev实例，使用原preferences_dev的公开标签，额外第四项checkbox，公开目标要求四项均改变；新字段/保存标签与v2不相同。不要读取v2 checker或拿其原run做第六步救回。冻结四次试验：两任务×5步/6步各一次，保持同候选search模式、compact-v2、模型/引擎/历史/300输出策略、6模型调用/16 primitives/480秒。每个模型请求还是原限制，唯一变量循环上限。
-2. 为BrowserChainProvider增加实验配置max_loop_steps默认5，限制不超过max_model_calls；身份/cache/metadata记入实际值，主执行者按值设置Loop，教师保持自身现有独立上限。不要全局改AgenticLoop.MAX_STEPS或已有冻结协议。所有默认调用仍5步。
+2. 为BrowserChainProvider增加实验配置max_loop_steps默认5，限制不超过max_model_calls；身份/cache/metadata记入实际值，主执行者按值设置Loop，教师保持自身现有独立上限。不要全局改AgenticLoop.MAX_STEPS或已有冻结协议。原6请求默认调用仍5步；已有少于5请求的调用取两者最小值，保留请求保护有效边界。重试子类保留其原2/2/1协议。
 3. 先真实Page回归：脚本模型先observe再四次改动和Save；5步无POST、6步真实POST/读回通过；实际模型调用上限6，不能有第七次。两种预算的缓存身份不同；同5步配置复跑不得与6步结果串缓存。不是仅assert数值常量。
 4. 代码与dev清单提交后再启动自有本地模型，冻结config/source/prompt/runtime/候选hash，执行全部四格，任何终止失败保留。名义整包24请求/192000输入/8000输出，零云，记录新增请求/耗时，不写成“同实际算力”。每次原6请求预留仍完整计量。
 5. 报告最终表单状态、POST/读回、模型errors/stop、实际search/call、tokens/耗时，区分多一步确实用于保存与继续循环；重算score并校验证据hash。结果不论是否改善，这包之后按队列领取C5.0。

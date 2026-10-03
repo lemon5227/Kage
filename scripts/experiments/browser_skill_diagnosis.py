@@ -30,7 +30,31 @@ def diagnostic_provider(model,task,bundle,arm,*,local=False,model_label='deepsee
     return (BrowserChainProvider if local else BrowserCloudProvider)(model,task,
         model_label=model_label,provider_mode='local' if local else 'cloud',max_model_calls=6,
         external_completion=True,observation_format='compact-v2',browser_skill_bundle=bundle if arm!='raw' else None,
-        skill_context_mode='preview' if arm=='preview' else 'search')
+        skill_context_mode='preview' if arm=='preview' else 'search',
+        max_loop_steps=6 if arm=='steps-6' else 5)
+
+
+def load_save_budget(path):
+    suite=json.loads(Path(path).read_text())
+    expected={'family':'preferences','split':'dev','repeats_per_arm_per_task':1,
+        'arms':['steps-5','steps-6'],'skill_context_mode':'search','max_model_calls':6,
+        'max_loop_steps':[5,6],'max_primitives':16,'timeout_s':480,'cloud':False}
+    if suite.get('status')!='frozen-before-local-run' or suite.get('protocol')!=expected:
+        raise ValueError('save budget diagnosis requires the frozen dev protocol')
+    tasks=suite.get('tasks',[])
+    if len(tasks)!=2 or len({t.get('task_id') for t in tasks})!=2:
+        raise ValueError('save budget diagnosis requires two unique dev tasks')
+    for task in tasks:
+        fields=task['fixture']['fields']; names={f['name'] for f in fields}
+        criteria=task['scoring_criteria']; values=criteria.get('expected',{}).get('record',{})
+        if (task.get('split')!='dev' or task.get('family')!='preferences' or task['fixture'].get('kind')!='preferences'
+                or len(fields)!=4 or len(names)!=4 or len({f['label'] for f in fields})!=4
+                or criteria.get('type')!='json_exact_match' or criteria.get('file')!='browser-outcome.json'
+                or criteria.get('expected',{}).get('readback_matches_backend') is not True
+                or set(values)!=names or any(type(v) is not bool for v in values.values())
+                or any(type(f.get('initial')) is not bool or f['initial']==values[f['name']] for f in fields)):
+            raise ValueError('save budget task must require four changes and independently check saved readback')
+    return tasks
 
 
 def load_local_transfer(path):
@@ -56,12 +80,12 @@ def load_local_transfer(path):
     return tasks
 
 
-def summarize(rows,selected_arms=ARMS,protocol='c21-r2-discovery-dev-v1'):
+def summarize(rows,selected_arms=ARMS,protocol='c21-r2-discovery-dev-v1',*,expected_per_arm=3):
     arms={}
     for arm in selected_arms:
         group=[r for r in rows if r['arm']==arm]
         calls=[c for r in group for c in r['chain'].get('call_usage',[])]
-        arms[arm]={'expected_runs':3,'recorded_runs':len(group),'passed':sum(r['status']=='passed' for r in group),
+        arms[arm]={'expected_runs':expected_per_arm,'recorded_runs':len(group),'passed':sum(r['status']=='passed' for r in group),
             'model_calls':len(calls),'skill_search':sum(r['skill_search'] for r in group),
             'skill_call':sum(r['skill_call'] for r in group),
             'passed_with_skill_call':sum(r['status']=='passed' and r['skill_call']>0 for r in group),
@@ -69,7 +93,7 @@ def summarize(rows,selected_arms=ARMS,protocol='c21-r2-discovery-dev-v1'):
             'reported_tokens':{k:sum(c.get(k,0) for c in calls) for k in ('input_tokens','output_tokens')},
             'unknown_usage_calls':sum(not all(k in c for k in ('input_tokens','output_tokens')) for c in calls),
             'seconds':round(sum(r['seconds'] for r in group),3)}
-    return {'protocol':protocol,'complete':len(rows)==3*len(selected_arms),'arms':arms}
+    return {'protocol':protocol,'complete':all(a['recorded_runs']==expected_per_arm for a in arms.values()),'arms':arms}
 
 
 def main():
@@ -77,16 +101,19 @@ def main():
     parser.add_argument('--cloud-config',type=Path)
     parser.add_argument('--skill-bundle',type=Path,required=True)
     parser.add_argument('--output-dir',type=Path,required=True)
-    parser.add_argument('--study',choices=['discovery','retrieval-repair','local-discovery','local-transfer'],default='discovery')
-    parser.add_argument('--suite',type=Path,help='Frozen new test manifest; required for local-transfer')
+    parser.add_argument('--study',choices=['discovery','retrieval-repair','local-discovery','local-transfer','local-save-budget'],default='discovery')
+    parser.add_argument('--suite',type=Path,help='Frozen manifest; required for local-transfer or local-save-budget')
     parser.add_argument('--port',type=int,default=18082)
     parser.add_argument('--local-runtime',type=Path,help='Recorded owned-server argv/version/model hash; required for local study')
     args=parser.parse_args()
-    local=args.study in {'local-discovery','local-transfer'}
-    selected_arms=('search','preview') if args.study=='local-discovery' else (('search',) if args.study=='retrieval-repair' else ARMS)
+    local=args.study in {'local-discovery','local-transfer','local-save-budget'}
+    save_budget=args.study=='local-save-budget'
+    selected_arms=('steps-5','steps-6') if save_budget else (('search','preview') if args.study=='local-discovery' else (('search',) if args.study=='retrieval-repair' else ARMS))
     protocol={'discovery':'c21-r2-discovery-dev-v1','retrieval-repair':'c21-r2-retrieval-repair-dev-v1',
-              'local-discovery':'c21-r2-local-discovery-dev-v1','local-transfer':'c21-browser-local-transfer-v2'}[args.study]
-    expected_runs=3*len(selected_arms)
+              'local-discovery':'c21-r2-local-discovery-dev-v1','local-transfer':'c21-browser-local-transfer-v2',
+              'local-save-budget':'c21-r3-save-budget-dev'}[args.study]
+    expected_per_arm=2 if save_budget else 3
+    expected_runs=expected_per_arm*len(selected_arms)
     call_cap=6*expected_runs
     runtime=None
     if local:
@@ -112,9 +139,9 @@ def main():
         if settings.get('model_name')!='deepseek-flash' or settings.get('base_url','').rstrip('/')!='https://api.deepseek.com' or not settings.get('api_key'):
             parser.error('requires configured official DeepSeek Flash')
     catalog=BrowserSkillCatalog.from_bundle(args.skill_bundle)
-    if args.study=='local-transfer':
-        if not args.suite:parser.error('local-transfer requires a frozen test suite')
-        tasks=load_local_transfer(args.suite)
+    if args.study in {'local-transfer','local-save-budget'}:
+        if not args.suite:parser.error('study requires its frozen suite')
+        tasks=(load_save_budget if save_budget else load_local_transfer)(args.suite)
     else:
         if args.suite:parser.error('dev diagnosis must not consume a test suite')
         tasks=development_tasks()
@@ -131,7 +158,7 @@ def main():
         'suite_sha256':sha(args.suite) if args.suite else None,'expected_runs':expected_runs,'repeats':1,'arms':list(selected_arms),
         'executor':'local_student' if local else 'cloud_direct','model':settings['model_name'],'endpoint':settings['base_url'],
         'thinking':None if local else False,'temperature':0,'local_runtime':runtime,
-        'observation_format':'compact-v2','max_calls_per_run':6,'max_loop_steps':5,'max_primitives':16,
+        'observation_format':'compact-v2','max_calls_per_run':6,'max_loop_steps':[5,6] if save_budget else 5,'max_primitives':16,
         'timeout_s':480,'request_timeout_s':120 if local else 60,'max_request_input_bytes':None if local else 12000,
         'output_policy':'existing AgenticLoop route limits, no override' if local else '1024 tokens per request',
         'max_output_tokens':None if local else 1024,'context_pack':not local,'external_completion':True,
@@ -179,12 +206,12 @@ def main():
                 'skill_call':sum(e['name']=='skill_call' for e in entries),
                 'evidence_hashes':{name:sha(ws/name) for name in names if (ws/name).exists()}}
             rows.append(row);keys.append(key);atomic_json(path,rows)
-            report=summarize(rows,selected_arms,protocol)
+            report=summarize(rows,selected_arms,protocol,expected_per_arm=expected_per_arm)
             if local:report['local_usage_ledger']=budget.to_dict()
             else:report['cloud_assumed_ledger']=BudgetTracker(cloud_config,args.output_dir/'cloud-budget.sqlite').to_dict()
             atomic_json(args.output_dir/'report.json',report)
             print(json.dumps({k:row[k] for k in ('key','status','score','skill_search','skill_call','seconds')},ensure_ascii=False),flush=True)
-    print(json.dumps(summarize(rows,selected_arms,protocol),ensure_ascii=False),flush=True)
+    print(json.dumps(summarize(rows,selected_arms,protocol,expected_per_arm=expected_per_arm),ensure_ascii=False),flush=True)
 
 
 if __name__=='__main__':main()

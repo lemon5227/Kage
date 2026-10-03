@@ -1,0 +1,31 @@
+{
+  "suite_id": "c21-r3-save-budget-dev",
+  "status": "frozen-before-local-run",
+  "protocol": {"family": "preferences", "split": "dev", "repeats_per_arm_per_task": 1,
+    "arms": ["steps-5", "steps-6"], "skill_context_mode": "search", "max_model_calls": 6,
+    "max_loop_steps": [5, 6], "max_primitives": 16, "timeout_s": 480, "cloud": false},
+  "tasks": [
+    {
+      "task_id": "preferences_budget_dev_enable", "family": "preferences", "split": "dev",
+      "instruction": "Enable Email notifications, disable SMS notifications, enable Weekly digest, and enable Security summaries. Save and confirm all four saved settings.",
+      "fixture": {"kind": "preferences", "title": "Notification preferences", "fields": [
+        {"name": "email", "label": "Email notifications", "initial": false},
+        {"name": "sms", "label": "SMS notifications", "initial": true},
+        {"name": "weekly", "label": "Weekly digest", "initial": false},
+        {"name": "security", "label": "Security summaries", "initial": false}], "submit": "Save notification choices"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": true, "sms": false, "weekly": true, "security": true}, "readback_matches_backend": true}}
+    },
+    {
+      "task_id": "preferences_budget_dev_reverse", "family": "preferences", "split": "dev",
+      "instruction": "Disable Email notifications, enable SMS notifications, disable Weekly digest, and disable Security summaries. Save and confirm all four saved settings.",
+      "fixture": {"kind": "preferences", "title": "Notification preferences", "fields": [
+        {"name": "email", "label": "Email notifications", "initial": true},
+        {"name": "sms", "label": "SMS notifications", "initial": false},
+        {"name": "weekly", "label": "Weekly digest", "initial": true},
+        {"name": "security", "label": "Security summaries", "initial": true}], "submit": "Save notification choices"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": false, "sms": true, "weekly": false, "security": false}, "readback_matches_backend": true}}
+    }
+  ]
+}

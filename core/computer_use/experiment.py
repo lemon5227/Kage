@@ -117,10 +117,17 @@ class BrowserChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,**kwargs):
         if observation_format not in {'compact-v1', 'compact-v2'}:
             raise ValueError('unsupported browser observation format')
         super().__init__(model_provider,**kwargs)
+        # Nominal default remains five. A smaller request guard also bounds the
+        # effective loop; explicit experimental budgets must fit that guard.
+        if max_loop_steps is None:
+            max_loop_steps=min(5,self._model.max_calls)
+        if type(max_loop_steps) is not int or not 1<=max_loop_steps<=self._model.max_calls:
+            raise ValueError('max_loop_steps must be a positive integer within max_model_calls')
+        self.max_loop_steps=max_loop_steps
         self.observation_format=observation_format
         self.task_def=json.loads(json.dumps(task_def))
         self.external_completion=bool(external_completion)
@@ -139,6 +146,7 @@ class BrowserChainProvider(KageChainProvider):
     def cache_identity(self):
         return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
                 'observation_format':self.observation_format,'primary_actor':self.primary_actor,
+                'max_loop_steps':self._primary_step_limit(),
                 'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
                 'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
                 'adapter_sha256':hashlib.sha256(Path(__file__).with_name('browser.py').read_bytes()).hexdigest(),
@@ -147,6 +155,7 @@ class BrowserChainProvider(KageChainProvider):
     def metadata(self):
         return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.external_completion else 0,
                 'observation_format':self.observation_format,'primary_actor':self.primary_actor,
+                'max_loop_steps':self._primary_step_limit(),'agentic_loop_max_steps':self._primary_step_limit(),
                 'tool_registry':'ToolRegistry(page-scoped browser and workflow tools)' if self.browser_skill_catalog is not None else 'ToolRegistry(page-scoped browser tools only)',
                 'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
                 'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
@@ -162,7 +171,10 @@ class BrowserChainProvider(KageChainProvider):
         return output
 
     def _student_step_limit(self):
-        return 5
+        return self.max_loop_steps
+
+    def _primary_step_limit(self):
+        return self._student_step_limit() if self.primary_actor=='student' else self.max_loop_steps
 
     async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice='',*,reset_quota=True,max_steps=None):
         executor.actor=actor
@@ -173,7 +185,7 @@ class BrowserChainProvider(KageChainProvider):
         actor_model=self._actor_model(model,actor,workspace)
         gate=CompletionGate(actor_model,self.task_def,workspace) if self.external_completion else None
         loop=self.agentic_loop_cls(gate or actor_model,executor,builder,HistorySession())
-        loop.MAX_STEPS=max_steps if max_steps is not None else (self._student_step_limit() if actor=='student' else 5)
+        loop.MAX_STEPS=max_steps if max_steps is not None else (self._primary_step_limit() if actor==self.primary_actor else 5)
         started=time.monotonic()
         observation=await adapter.observe()
         atomic_json(workspace/(actor+'-initial-observation.json'),observation)
@@ -200,7 +212,7 @@ class BrowserChainProvider(KageChainProvider):
             usage.update({key:sum(c['usage'][key] for c in calls) for key in ['input_tokens','output_tokens']})
         chain={'task_id':task['task_id'],'runner_step':step,'actor':actor,'chain_steps':result.steps,
                'browser_primitives':executor.browser_quota.used if hasattr(executor,'browser_quota') else None,
-               'stop_reason':result.stop_reason,'model_calls':len(calls),'tool_calls':len(result.tool_calls_executed),
+               'stop_reason':result.stop_reason,'max_loop_steps':loop.MAX_STEPS,'model_calls':len(calls),'tool_calls':len(result.tool_calls_executed),
                'call_usage':[c['usage'] for c in calls],'model_errors':[c['error'] for c in calls if c['error']],
                'model_elapsed_ms':round(sum(c['elapsed_ms'] for c in calls),3),
                'agent_elapsed_ms':round(elapsed_ms,3),'final_text':result.final_text[:2000],
