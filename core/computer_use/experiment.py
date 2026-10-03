@@ -23,7 +23,7 @@ BROWSER_SOUL='''You are Kage, completing a browser task through the provided too
 The runtime supplies an initial DOM observation. Use only current observation_id and target_ref.
 Every browser action returns a fresh observation: reuse it for the next action or to confirm the result.
 If stale, use the fresh observation returned with the error. Observe or wait when asynchronous results are not yet visible.
-Compact-v1 omits false checked/disabled and null target properties. Keep checkbox state in mind before clicking.
+Compact-v1 omits false checked; compact-v2 shows checkbox/radio checked true/false. Both omit false disabled and null target properties. Keep checkbox state in mind before clicking.
 Confirm the saved result from the page. Tool success and final text alone do not prove completion.
 Only use the provided browser tools. No selectors, JavaScript, file writes or invented node references.
 '''
@@ -113,11 +113,15 @@ class CheckpointExecutor(ToolExecutor):
 
 
 class BrowserChainProvider(KageChainProvider):
+    primary_actor = 'student'
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',**kwargs):
+        if observation_format not in {'compact-v1', 'compact-v2'}:
+            raise ValueError('unsupported browser observation format')
         super().__init__(model_provider,**kwargs)
+        self.observation_format=observation_format
         self.task_def=json.loads(json.dumps(task_def))
         self.external_completion=bool(external_completion)
         self.browser_skill_catalog=BrowserSkillCatalog.from_bundle(browser_skill_bundle) if browser_skill_bundle is not None else None
@@ -128,6 +132,7 @@ class BrowserChainProvider(KageChainProvider):
 
     def cache_identity(self):
         return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
+                'observation_format':self.observation_format,'primary_actor':self.primary_actor,
                 'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
                 'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
                 'adapter_sha256':hashlib.sha256(Path(__file__).with_name('browser.py').read_bytes()).hexdigest(),
@@ -135,6 +140,7 @@ class BrowserChainProvider(KageChainProvider):
 
     def metadata(self):
         return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.external_completion else 0,
+                'observation_format':self.observation_format,'primary_actor':self.primary_actor,
                 'tool_registry':'ToolRegistry(page-scoped browser and workflow tools)' if self.browser_skill_catalog is not None else 'ToolRegistry(page-scoped browser tools only)',
                 'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
                 'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
@@ -165,7 +171,7 @@ class BrowserChainProvider(KageChainProvider):
         started=time.monotonic()
         observation=await adapter.observe()
         atomic_json(workspace/(actor+'-initial-observation.json'),observation)
-        if actor=='student': atomic_json(workspace/'initial-observation.json',observation)
+        if actor==self.primary_actor: atomic_json(workspace/'initial-observation.json',observation)
         await executor.checkpoint()
         instruction=task['instruction']+notice+'\nInitial browser observation supplied by runtime:\n'+json.dumps(observation,ensure_ascii=False,separators=(',',':'))
         before=len(model.calls)
@@ -181,7 +187,7 @@ class BrowserChainProvider(KageChainProvider):
         await executor.checkpoint()
         if gate and gate.completed: result.stop_reason='external_check'
         atomic_json(workspace/(actor+'-loop-result.json'),asdict(result))
-        if actor=='student': atomic_json(workspace/'loop-result.json',asdict(result))
+        if actor==self.primary_actor: atomic_json(workspace/'loop-result.json',asdict(result))
         calls=model.calls[before:]
         usage={'api_calls':len(calls)}
         if all('input_tokens' in c['usage'] and 'output_tokens' in c['usage'] for c in calls):
@@ -211,14 +217,14 @@ class BrowserChainProvider(KageChainProvider):
                     context=await browser.new_context()
                     page=await context.new_page();await page.goto(url,wait_until='domcontentloaded',timeout=10000)
                     atomic_json(workspace/'worker-processes.json',descendant_pids(os.getpid()))
-                    adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True)
+                    adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True,compact_format=self.observation_format)
                     quota=BrowserPrimitiveQuota(16)
                     registry=ToolRegistry();adapter.register_tools(registry,quota=quota)
                     executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.external_completion)
                     executor.browser_quota=quota
                     if self.browser_skill_catalog is not None:
                         self.browser_skill_catalog.register_tools(registry,adapter,executor,workspace,quota)
-                    student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,'student',self._experiment_soul())
+                    student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,self.primary_actor,self._experiment_soul())
                     output=await self._after_student(task,step,workspace,adapter,registry,executor,student)
                     await checkpoint(page,url,workspace)
                     screenshot_error=None
@@ -232,3 +238,14 @@ class BrowserChainProvider(KageChainProvider):
                     return {'action':{'name':'finish','reason':f"browser chain stopped: {output['chain']['stop_reason']}"},**output}
                 finally:
                     await browser.close()
+
+
+class BrowserCloudProvider(BrowserChainProvider):
+    """One real cloud executor from a reset page; no student phase or takeover."""
+    primary_actor = 'cloud_direct'
+    RESERVATION_INPUT_CAP = 72_000
+    RESERVATION_OUTPUT_CAP = 6_144
+
+    def _actor_model(self,model,actor,workspace):
+        from core.computer_use.context_pack import BrowserContextProvider
+        return BrowserContextProvider(model,workspace,trace_name='cloud-context-pack.jsonl')

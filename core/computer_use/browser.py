@@ -66,12 +66,15 @@ TARGET_DEFAULTS = {
 
 class BrowserAdapter:
     """One owned Page, one current observation; no global browser or selector API."""
-    def __init__(self, page, trace_path=None, *, compact_observations=False):
+    def __init__(self, page, trace_path=None, *, compact_observations=False, compact_format='compact-v1'):
+        if compact_format not in {'compact-v1', 'compact-v2'}:
+            raise ValueError('unsupported compact observation format')
         self.page = page
         self.surface_id = 'browser:' + uuid.uuid4().hex
         self.trace_path = Path(trace_path) if trace_path else None
         self.current = None
         self.compact_observations = compact_observations
+        self.compact_format = compact_format
         self._lock = asyncio.Lock()
 
     def _model_observation(self):
@@ -80,9 +83,11 @@ class BrowserAdapter:
         # Projection only: full snapshots remain authoritative for guards and
         # trace evidence. Never drop an actual value, destination or geometry.
         targets = [{key: value for key, value in target.items()
-                    if key not in TARGET_DEFAULTS or value != TARGET_DEFAULTS[key]}
+                    if key not in TARGET_DEFAULTS or value != TARGET_DEFAULTS[key]
+                    or (self.compact_format == 'compact-v2' and key == 'checked'
+                        and target.get('input_type') in {'checkbox', 'radio'})}
                    for target in self.current['targets']]
-        return {**self.current, 'targets': targets, 'observation_format': 'compact-v1'}
+        return {**self.current, 'targets': targets, 'observation_format': self.compact_format}
 
     def _record(self, phase, start, **data):
         row = {'phase':phase,'elapsed_ms':round((time.monotonic()-start)*1000,3),**data}
@@ -179,7 +184,7 @@ class BrowserAdapter:
             return result
 
     def register_tools(self,registry,quota=None):
-        format_hint = (' Compact-v1 omits false checked/disabled and null target properties.'
+        format_hint = (' Compact-v1 omits false checked; v2 keeps checkbox/radio checked. Both omit false disabled and nulls.'
                        if self.compact_observations else '')
         def serialize(payload):
             return json.dumps(payload, ensure_ascii=False,

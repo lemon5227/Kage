@@ -55,11 +55,12 @@ def pack_browser_messages(messages,workspace):
 
 
 class BrowserContextProvider(ModelProvider):
-    def __init__(self,model,workspace):
+    def __init__(self,model,workspace,*,trace_name='teacher-context-pack.jsonl'):
         self.model,self.workspace=model,Path(workspace)
+        self.trace_name=trace_name
 
     def generate(self,messages,**kwargs):
         packed,stats=pack_browser_messages(messages,self.workspace)
-        with (self.workspace/'teacher-context-pack.jsonl').open('a') as stream:
+        with (self.workspace/self.trace_name).open('a') as stream:
             stream.write(json.dumps(stats)+'\n')
         return self.model.generate(messages=packed,**kwargs)
