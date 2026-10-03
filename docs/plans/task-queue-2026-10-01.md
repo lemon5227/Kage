@@ -55,7 +55,8 @@ C2.0实际产物检查 → C4.1任务级接管 → C4.2/E2.0最小档案 → C4.
 | C2.1-R1 | 工程与6次云独立dev对照完成 | v1/v2均3/3；v2请求8 vs12，旧格式satisfied先错后纠正；不认定完成率提升。实际20云请求，假设费用$0.014204；[报告](../experiments/2026-10-03-browser-state-diagnosis.md)。下一项R2 |
 | C2.1-R2 | 云发现对照9次完成 | raw/search/preview均3/3；仅preview实际skill_call 3/3、每次1云请求。search全词匹配使3次空结果；22请求、假设费用$0.015847；[报告](../experiments/2026-10-03-browser-skill-diagnosis.md) |
 | C2.1-R2检索修复 | 工程与3次云dev验证完成 | 长查询部分命中排序；实际搜索/调用3/3，每次2请求，独立保存全部通过；假设费用$0.0042225；[报告与下一包规格](../experiments/2026-10-03-browser-skill-retrieval-repair.md) |
-| C2.1-R2-local | 当前下一包 | 原三个dev、本地search/preview各一次共6次，先冻协议/hash；不混入云成绩，不重采成功；之后R3及新留出 |
+| C2.1-R2-local | 工程与6次真实本地dev完成 | 两组各3/3，preview两次真实search/call，search零；13请求、零云；[报告](../experiments/2026-10-03-browser-local-skill-diagnosis.md) |
+| C2.1-R3 | 本轮条件审查完成，未触发增步 | 六次均external_check、无模型错误/步数失败，保持原预算；新留出若失败另起dev诊断 |
 
 每个包的文件、接口、测试、固定预算、证据标准在[执行交接§2–6](execution-handoff-2026-10-03.md)。修复、生成和评测分别提交，候选冻结后才运行test，不反复看test调技能。不因网络不稳定无限采样成功；受控教师恢复探针和自然失败接管分表。
 
