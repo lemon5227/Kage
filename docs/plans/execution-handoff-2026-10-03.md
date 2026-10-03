@@ -123,7 +123,7 @@ descriptor的digest由工具生成并写入，不让调用方随意指定；实�
 
 用户最新确认覆盖原默认次序：先完成[可靠性规格](browser-reliability-2026-10-03.md)中R1状态、R2技能发现、R3步数诊断与新留出，再领取下列入口/示范任务。各诊断固定小预算，依据轨迹推进，不反复调旧test。
 
-当前R1/R2云对照与检索修复已完成，不重做；下一包R2-local的六次固定本地search/preview规格见[修复报告末节](../experiments/2026-10-03-browser-skill-retrieval-repair.md)。云能绑定/调用不代表本地学会；先核模型服务及hash，实际失败保留，再按轨迹领取R3。
+当前R1/R2云、本地六次dev与新v2九次已完成，不重做；[v2报告](../experiments/2026-10-03-browser-local-transfer-v2.md)记录一次真实四项技能调用与search唯一未保存失败。下一包按[R3-a规格](browser-save-budget-dev-2026-10-03.md)做新dev四次5/6步对照，一包后C5.0。v2不用于修复后盲测，不强行晋级候选。
 
 1. **C5.0最小集成（新增子包，属于原C5）**：在现有任务入口/事件通道提供显式实验浏览器模式、执行器选择、运行ID/结果/费用/停止；先验证用户发起任务能走已验收链。当前CLI fixture功能不等于日常Kage已启用。复用core/server.py与现有前端，不重做桌面平台。只有实现了对应任务检查器才可自动标completed；任意网页没有可靠检查时标unknown/待人工确认，不能把fixture的隐藏评分文件当通用完成检测器。
 
