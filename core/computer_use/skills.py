@@ -85,12 +85,19 @@ class BrowserSkillCatalog:
         return cls(entries)
 
     def search(self,query,limit=5):
-        terms=str(query).casefold().split()
+        # Queries describe tasks, including values a reusable skill deliberately
+        # does not hardcode. Rank partial word overlap instead of requiring every
+        # task-specific word to occur in the descriptor. This is lexical recall,
+        # not semantic/embedding retrieval.
+        words=lambda text:set(re.findall(r'[^\W_]+',str(text).casefold()))
+        terms=words(query)
         matches=[]
         for skill_id,item in sorted(self._entries.items()):
-            if all(term in f"{skill_id} {item['description']}".casefold() for term in terms):
-                matches.append({key:item[key] for key in ('skill_id','description','parameters','digest')})
-        return {'success':True,'skills':matches[:max(1,min(10,limit))]}
+            score=2*len(terms & words(skill_id))+len(terms & words(item['description']))
+            if not terms or score:
+                matches.append((score,skill_id,{key:item[key] for key in ('skill_id','description','parameters','digest')}))
+        matches.sort(key=lambda row:(-row[0],row[1]))
+        return {'success':True,'skills':[row[2] for row in matches[:max(1,min(10,limit))]]}
 
     async def call(self,skill_id,digest,arguments,adapter,executor,quota,parent_call_id):
         item=self._entries.get(skill_id)

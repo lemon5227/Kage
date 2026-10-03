@@ -1,4 +1,4 @@
-"""Nine dev runs: raw cloud actions, skill search, descriptor preview. No promotion."""
+"""Fixed dev matrix: raw cloud actions, search, preview, or a retrieval repair probe."""
 import argparse
 from dataclasses import asdict
 import json
@@ -24,9 +24,9 @@ from scripts.experiments.task_suite import RecordedLocalProvider
 ARMS=('raw','search','preview')
 
 
-def summarize(rows):
+def summarize(rows,selected_arms=ARMS,protocol='c21-r2-discovery-dev-v1'):
     arms={}
-    for arm in ARMS:
+    for arm in selected_arms:
         group=[r for r in rows if r['arm']==arm]
         calls=[c for r in group for c in r['chain'].get('call_usage',[])]
         arms[arm]={'expected_runs':3,'recorded_runs':len(group),'passed':sum(r['status']=='passed' for r in group),
@@ -37,7 +37,7 @@ def summarize(rows):
             'reported_tokens':{k:sum(c.get(k,0) for c in calls) for k in ('input_tokens','output_tokens')},
             'unknown_usage_calls':sum(not all(k in c for k in ('input_tokens','output_tokens')) for c in calls),
             'seconds':round(sum(r['seconds'] for r in group),3)}
-    return {'protocol':'c21-r2-discovery-dev-v1','complete':len(rows)==9,'arms':arms}
+    return {'protocol':protocol,'complete':len(rows)==3*len(selected_arms),'arms':arms}
 
 
 def main():
@@ -45,7 +45,12 @@ def main():
     parser.add_argument('--cloud-config',type=Path,required=True)
     parser.add_argument('--skill-bundle',type=Path,required=True)
     parser.add_argument('--output-dir',type=Path,required=True)
+    parser.add_argument('--study',choices=['discovery','retrieval-repair'],default='discovery')
     args=parser.parse_args()
+    selected_arms=('search',) if args.study=='retrieval-repair' else ARMS
+    protocol='c21-r2-retrieval-repair-dev-v1' if args.study=='retrieval-repair' else 'c21-r2-discovery-dev-v1'
+    expected_runs=3*len(selected_arms)
+    call_cap=6*expected_runs
     cloud=json.loads(args.cloud_config.read_text())['model']['cloud_api']
     if cloud.get('model_name')!='deepseek-flash' or cloud.get('base_url','').rstrip('/')!='https://api.deepseek.com' or not cloud.get('api_key'):
         parser.error('requires configured official DeepSeek Flash')
@@ -59,8 +64,8 @@ def main():
     sources+=['core/evolution/'+s for s in ('agent_provider.py','runner.py','budget.py','mutator.py')]
     sources+=['scripts/experiments/'+s for s in ('browser_state_diagnosis.py','browser_skill_diagnosis.py','browser_transfer.py','task_suite.py')]
     prompts={arm:BrowserCloudProvider(None,tasks[0],browser_skill_bundle=args.skill_bundle if arm!='raw' else None,
-        skill_context_mode='preview' if arm=='preview' else 'search').cache_identity()['experiment_prompt_sha256'] for arm in ARMS}
-    config={'protocol':'c21-r2-discovery-dev-v1','tasks':tasks,'split':'dev-only','expected_runs':9,'repeats':1,'arms':list(ARMS),
+        skill_context_mode='preview' if arm=='preview' else 'search').cache_identity()['experiment_prompt_sha256'] for arm in selected_arms}
+    config={'protocol':protocol,'tasks':tasks,'split':'dev-only','expected_runs':expected_runs,'repeats':1,'arms':list(selected_arms),
         'executor':'cloud_direct','model':cloud['model_name'],'endpoint':cloud['base_url'],'thinking':False,'temperature':0,
         'observation_format':'compact-v2','max_calls_per_run':6,'max_loop_steps':5,'max_primitives':16,
         'timeout_s':480,'request_timeout_s':60,'max_request_input_bytes':12000,'max_output_tokens':1024,
@@ -68,24 +73,25 @@ def main():
         'candidate_previously_promoted':False,'generation_calls':0,'promotion_in_this_experiment':False,
         'source_hashes':{s:sha(ROOT/s) for s in sources},'prompt_hashes':prompts,
         'git_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
-        'max_assumed_cost_usd':.30,'conservative_cost_ceiling_usd':.2607552,
+        'max_assumed_cost_usd':.10*len(selected_arms),'conservative_cost_ceiling_usd':call_cap*(12000*.3+1024*1.2)/1000000,
         'assumed_rates_per_million':{'input':.3,'output':1.2},'order':'task/rotating-arm-order'}
     args.output_dir.mkdir(parents=True,exist_ok=True)
     config_path=args.output_dir/'config.json'
     if config_path.exists():
         if json.loads(config_path.read_text())!=config:parser.error('resume configuration changed')
     else:atomic_json(config_path,config)
-    cloud_config=BudgetConfig(max_api_calls=54,max_input_tokens_total=648000,max_output_tokens_total=55296,
-        max_cost_usd=.30,input_cost_per_million=.3,output_cost_per_million=1.2)
-    budget=BudgetTracker(BudgetConfig(max_api_calls=54,max_input_tokens_total=648000,max_output_tokens_total=55296,
+    cloud_config=BudgetConfig(max_api_calls=call_cap,max_input_tokens_total=call_cap*12000,max_output_tokens_total=call_cap*1024,
+        max_cost_usd=config['max_assumed_cost_usd'],input_cost_per_million=.3,output_cost_per_million=1.2)
+    budget=BudgetTracker(BudgetConfig(max_api_calls=call_cap,max_input_tokens_total=call_cap*12000,max_output_tokens_total=call_cap*1024,
         input_cost_per_million=0,output_cost_per_million=0),args.output_dir/'chain-budget.sqlite')
     journal=Journal(args.output_dir/'journal.sqlite')
     path=args.output_dir/'results.json'
     rows=json.loads(path.read_text()) if path.exists() else []
-    expected={t['task_id']+'--'+a for t in tasks for a in ARMS};keys=[r['key'] for r in rows]
+    expected={t['task_id']+'--'+a for t in tasks for a in selected_arms};keys=[r['key'] for r in rows]
     if len(set(keys))!=len(keys) or set(keys)-expected:parser.error('unexpected or duplicate result keys')
     for index,task in enumerate(tasks):
-        for arm in ARMS[index:]+ARMS[:index]:
+        shift=index%len(selected_arms)
+        for arm in selected_arms[shift:]+selected_arms[:shift]:
             key=task['task_id']+'--'+arm
             if key in keys:continue
             remote=RecordedLocalProvider(args.output_dir/(key+'-cloud.jsonl'),api_key=cloud['api_key'],
@@ -106,10 +112,10 @@ def main():
                 'skill_call':sum(e['name']=='skill_call' for e in entries),
                 'evidence_hashes':{name:sha(ws/name) for name in names if (ws/name).exists()}}
             rows.append(row);keys.append(key);atomic_json(path,rows)
-            report=summarize(rows);report['cloud_assumed_ledger']=BudgetTracker(cloud_config,args.output_dir/'cloud-budget.sqlite').to_dict()
+            report=summarize(rows,selected_arms,protocol);report['cloud_assumed_ledger']=BudgetTracker(cloud_config,args.output_dir/'cloud-budget.sqlite').to_dict()
             atomic_json(args.output_dir/'report.json',report)
             print(json.dumps({k:row[k] for k in ('key','status','score','skill_search','skill_call','seconds')},ensure_ascii=False),flush=True)
-    print(json.dumps(summarize(rows),ensure_ascii=False),flush=True)
+    print(json.dumps(summarize(rows,selected_arms,protocol),ensure_ascii=False),flush=True)
 
 
 if __name__=='__main__':main()

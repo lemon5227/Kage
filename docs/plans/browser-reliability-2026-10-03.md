@@ -22,3 +22,5 @@ R1实际两组各3/3，原始结果独立保存。R2仍使用相同三个dev任�
 复用B2.1c未晋级候选9400d42f…及技能21e4ea88…，先核bundle/manifest hash；不再生成、不运行晋级、不默认安装。与R1相同每run预算；九次总54请求、名义云上限$0.30、保守上限$0.2607552，同假设费率，不是实付。脚本browser_skill_diagnosis.py冻结config/prompt/source/candidate后执行，终止失败不重采。
 
 成功必须独立保存通过且实际actor-tools有skill_call；另记search/call次数、参数、内部browser primitives、费用和失败。只有云用会技能不能宣称小模型学会；若有效，下一固定小实验再检本地search/preview并决定复杂规划云端、简单执行本地的路由。只有完整新留出后才谈迁移收益。
+
+R2实际搜索三次空返回，原因是全词AND匹配过滤通用技能；另包修复为词项部分命中排序（skill_id权重2、description权重1、无匹配不返回、同分按id稳定，空query仍列出）。这是词面检索，不宣称语义召回。修复后的`--study retrieval-repair`只跑原三个dev的search，使用独立目录/协议/hash，不覆盖九次旧数据。上限18请求、名义$0.10（保守$0.0869184），其余预算相同。验证通过后仍须本地小实验，不能将云的调用能力归给本地。

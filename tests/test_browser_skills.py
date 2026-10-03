@@ -43,7 +43,8 @@ def test_bundle_digest_and_unknown_skill_do_not_execute(tmp_path):
         BrowserSkillCatalog.from_bundle(path)
 
 
-def test_skill_discovery_call_and_actual_saved_readback(tmp_path):
+@pytest.mark.parametrize('query',['checkbox','notification preferences enable email disable sms save settings'])
+def test_skill_discovery_call_and_actual_saved_readback(tmp_path,query):
     path,descriptor=bundle(tmp_path)
     args={'settings':[{'label':'Email notifications','checked':True},
                       {'label':'SMS notifications','checked':False},
@@ -54,7 +55,7 @@ def test_skill_discovery_call_and_actual_saved_readback(tmp_path):
             self.calls+=1
             if self.calls==1:
                 assert any(t['function']['name']=='skill_search' for t in kwargs['tools'])
-                return ModelResponse(text='',tool_calls=[{'name':'skill_search','arguments':{'query':'checkbox'}}])
+                return ModelResponse(text='',tool_calls=[{'name':'skill_search','arguments':{'query':query}}])
             if self.calls==2:
                 discovered=next(m for m in messages if m['role']=='tool')
                 result=json.loads(discovered['content'].split('] ',1)[1])
