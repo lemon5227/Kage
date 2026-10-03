@@ -46,3 +46,30 @@ def test_background_worker_processes_failed_job():
     assert jobs[0]["status"] == "failed"
     assert jobs[0]["error"] == "boom"
     assert events == [("started", "running", None), ("failed", "failed", "boom")]
+
+
+def test_cancelled_job_cannot_be_overwritten_by_late_processor_return():
+    lane = BackgroundLane()
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    events = []
+
+    async def processor(job):
+        entered.set()
+        await release.wait()
+        return {'late': True}
+
+    async def scenario():
+        job = lane.submit(task_type='browser_experiment', input_text='test')
+        async def on_event(event, _job):
+            events.append(event)
+        worker = BackgroundWorker(lane=lane, processor=processor, on_event=on_event)
+        processing = asyncio.create_task(worker.process_next())
+        await entered.wait()
+        lane.cancel(job['job_id'])
+        release.set()
+        await processing
+        assert lane.get(job['job_id'])['status'] == 'cancelled'
+        assert lane.get(job['job_id'])['result'] is None
+        assert events == ['started']
+    asyncio.run(scenario())

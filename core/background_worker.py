@@ -68,11 +68,15 @@ class BackgroundWorker:
             else:
                 result = await self._processor(job)
         except Exception as exc:
+            if (self._lane.get(job_id) or {}).get("status") == "cancelled":
+                return True
             failed = self._lane.fail(job_id, str(exc))
             if failed is not None:
                 await self._emit("failed", failed)
             return True
 
+        if (self._lane.get(job_id) or {}).get("status") == "cancelled":
+            return True
         completed = self._lane.complete(job_id, result)
         if completed is not None:
             await self._emit("completed", completed)
