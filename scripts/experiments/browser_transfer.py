@@ -67,13 +67,22 @@ def summarize(plan,rows):
             takeover=chain.get('takeover',{})
             student=takeover.get('student_usage',row.get('usage',{}))
             teacher=takeover.get('teacher_usage',{'api_calls':0,'input_tokens':0,'output_tokens':0})
+            # RunResult.usage is the settled ledger: unknown requests can be
+            # charged at the full cap. Per-call observations are the measured source.
+            if not chain: student={'api_calls':student.get('api_calls',0)}
             info['takeovers']+=bool(takeover.get('triggered'))
             info['student_passed']+=bool(takeover.get('student_check_passed',row['status']=='passed'))
             info['model_calls']+=chain.get('model_calls',0)
             info['browser_primitives']+=((takeover.get('student_chain',{}).get('browser_primitives',0) or 0)
                 +(takeover.get('teacher_chain',{}).get('browser_primitives',0) or 0)) if takeover else (chain.get('browser_primitives',0) or 0)
             unknown=False
-            for label,usage in [('student',student),('teacher',teacher)]:
+            for label,usage,actor_chain in [('student',student,takeover.get('student_chain',chain)),
+                                           ('teacher',teacher,takeover.get('teacher_chain',{}))]:
+                if 'call_usage' in actor_chain:
+                    calls=actor_chain['call_usage']
+                    unknown|=any(not all(key in call for key in ('input_tokens','output_tokens')) for call in calls)
+                    usage={key:sum(call.get(key,0) for call in calls) for key in ('input_tokens','output_tokens')}
+                    if label=='student': student=usage
                 if not all(key in usage for key in ('input_tokens','output_tokens')): unknown=True
                 for key in ('input_tokens','output_tokens'): info[label+'_tokens'][key]+=usage.get(key,0)
             info['unknown_usage_runs']+=unknown

@@ -95,3 +95,15 @@ def test_partial_transfer_summary_preserves_frozen_denominator_and_actor_costs()
     assert summary['arms']['cloud_takeover']['teacher_tokens']=={'input_tokens':100,'output_tokens':10}
     assert summary['arms']['cloud_takeover']['student_tokens']=={'input_tokens':9999,'output_tokens':100}
     assert summary['arms']['raw']['recorded_runs']==0
+
+
+def test_summary_keeps_reported_tokens_distinct_from_conservative_budget_charge():
+    from scripts.experiments.browser_transfer import summarize
+    plan=transfer.TransferPlan('test','hash',('one',),1,transfer.ARMS)
+    row={'arm':'raw','status':'failed','score':0,'seconds':1,'actual_skill_calls':0,
+         'usage':{'api_calls':2,'input_tokens':48000,'output_tokens':2000},
+         'metadata':{'chain':[{'model_calls':2,'browser_primitives':1,
+             'call_usage':[{'input_tokens':5,'output_tokens':1},{}]}]}}
+    arm=summarize(plan,[row])['arms']['raw']
+    assert arm['student_tokens']=={'input_tokens':5,'output_tokens':1}
+    assert arm['unknown_usage_runs']==1
