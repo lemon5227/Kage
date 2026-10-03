@@ -123,6 +123,8 @@ descriptor的digest由工具生成并写入，不让调用方随意指定；实�
 
 用户最新确认覆盖原默认次序：先完成[可靠性规格](browser-reliability-2026-10-03.md)中R1状态、R2技能发现、R3步数诊断与新留出，再领取下列入口/示范任务。各诊断固定小预算，依据轨迹推进，不反复调旧test。
 
+当前R1/R2云对照与检索修复已完成，不重做；下一包R2-local的六次固定本地search/preview规格见[修复报告末节](../experiments/2026-10-03-browser-skill-retrieval-repair.md)。云能绑定/调用不代表本地学会；先核模型服务及hash，实际失败保留，再按轨迹领取R3。
+
 1. **C5.0最小集成（新增子包，属于原C5）**：在现有任务入口/事件通道提供显式实验浏览器模式、执行器选择、运行ID/结果/费用/停止；先验证用户发起任务能走已验收链。当前CLI fixture功能不等于日常Kage已启用。复用core/server.py与现有前端，不重做桌面平台。只有实现了对应任务检查器才可自动标completed；任意网页没有可靠检查时标unknown/待人工确认，不能把fixture的隐藏评分文件当通用完成检测器。
 
    执行边界：先定位现有server任务分发/事件API与UI组件；为实验浏览器建立显式入口，复用已验收BrowserChainProvider及runner隔离/事件，勿复制一套Agent循环。执行模式标清本地、可选云接管和预算；未晋级工作流不设默认。长任务异步返回run_id，状态读取/停止须绑定该worker并终止其子进程，不阻塞主事件循环。真实状态区分running/completed/failed/stopped/unknown与模型stop_reason，费用区分已报告值/保守预留。先用用户入口发起可重置任务，核对实际Page动作、产物读回、结束状态和停止后进程清理；脚本模型回归与真实模型pilot分表。fixture入口须标实验任务，不包装成任意网页自动完成；真实网页无checker的接口可返回unknown，通用接入范围单列待做。
