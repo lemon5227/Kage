@@ -2,6 +2,10 @@
 
 从原总规划§1–12保留的详细设计。原编号用于历史引用；实施状态以[总规划](../agent-memory-evolution-master-plan-2026-09-29.md)为准。设计中的模块、命令与示例不等于已经实现。原日期估算与阶段排序是设计参考，最新领取顺序见[当前任务队列](task-queue-2026-10-01.md)。
 
+## 2026-10-03 状态校准
+
+本文件是研究设计，不是当前领取顺序。E0工程、E1首真实pilot已完成；E2只完成最小episode，E3只完成recovery源码首pilot；E4–E7未完成。当前先按[执行交接](execution-handoff-2026-10-03.md)修浏览器观察/技能桥接。E2.1/E3.1/E4在B2.2后可独立领取，不必等待所有GUI。以下旧工期是初始估计，不是当前承诺；历史凭据缺失记述不再代表当前环境。
+
 ## 1. 重新决定项目的核心价值
 
 原版“先完整治理记忆，再考虑可执行技能”的排序撤回。当前优先级是：
@@ -401,7 +405,7 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 **消费：** E0 runner、budget、journal；**产出：** Mutator.propose、Promoter.compare、skill_search/skill_call；新技能先绑定候选私有 manifest，不修改其他运行的工具集合。
 
 - [x] 用预制候选验证 manifest → 注册入口 → 模型可见 schema → 子进程调用 → 真实输出完整链路（2026-09-30，见 §16–17）。
-- [x] 实现技能生成器：根据失败轨迹与重试逻辑，自动合成具名 Python Tool，生成独立 `manifest.json`（含 JSON Schema）并绑定该候选的技能映射；注册表只暴露稳定 search/call 入口（fixture 与真实 HTTP provider 接口已验收，付费云端试验仍待完成）。
+- [x] 实现技能生成器：根据失败轨迹与重试逻辑，自动合成具名 Python Tool，生成独立 `manifest.json`（含 JSON Schema）并绑定该候选的技能映射；注册表只暴露稳定 search/call 入口（fixture与真实HTTP接口已验收；真实云生成后由C4.3完成，见本节末项）。
 - [x] 实现 ARM64 容器 runner 与环境重置；process 模式仍可用于可信本地夹具测试。
 - [x] 加入云模型生成 patch 接口、附带可检验的修改假说（`hypothesis`）、2 次修复上限、配对 dev 比较和原子激活指针。
 - [x] 验证失败 → 新技能结晶晋级 → 原任务重试 → 未见输入复用；重启后 digest 相同且可调用（确定性 fixture 驱动，真实执行与外部评分）。
@@ -410,9 +414,11 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 
 验收必须覆盖：评分退化不激活、超时后下一任务正常、两个候选环境互不污染、生成局部测试通过但外部评分失败时不晋级、parent 看不到 child 新技能、方法/种子之间技能库独立。
 
-### E2 — 经验记忆与版本档案（P1，约 2–3 天）
+### E2 — 经验记忆与版本档案（部分完成）
 
-**新增：** `core/evolution/archive.py`、`experience.py`、`tests/test_evolution_archive.py`。
+已有`core/evolution/archive.py`的ExperienceArchive，最小证据/过滤/去重/重启验收见[档案报告](../experiments/2026-10-01-c4-experience-archive.md)。下面完整候选档案/谱系/BM25仍待做，不能重建第二份episode数据库。浏览器setup/字段兼容先由B2.1a补齐。
+
+**现有：** `core/evolution/archive.py`与`tests/test_experience_archive.py`。先扩展既有接口；完整候选谱系确需独立模块时再拆分，不预建重复experience存储。
 **消费：** E0 轨迹与 E1 比较结果；**产出：** Archive.select_parent、经验过滤检索、谱系查询；默认单档案，分岛是独立可选实验。
 
 - [ ] 先实现单档案、digest 去重与最优/多样候选保留。可选双岛实验每岛上限 4，每完成 4 个候选评价，交替复制一侧在共同 dev 上得分最高的候选到另一侧、替换最低分成员；不足 4 次不迁移，同 digest 不重复占本岛槽位，迁移不生成新代码、不触发额外评测。只改变 membership，不改候选身份或谱系。
@@ -421,15 +427,17 @@ def test_resume_skips_finished_run(experiment, fake_provider):
 - [ ] 实现按环境版本/失败类别过滤，再做 BM25；空命中返回空，不硬塞无关记忆。
 - [ ] `python -m pytest tests/test_evolution_archive.py -q`：覆盖过期经验过滤、digest 去重、失败候选保留原因、重启谱系一致；启用双岛才增加迁移测试。
 
-### E3 — 修改 Agent 自身模块（P0 核心，约 4–7 天）
+### E3 — 修改 Agent 自身模块（recovery首pilot完成）
+
+已完成接口、源码加载与真实恢复patch，见[源码报告](../experiments/2026-10-01-e3-recovery-self-modification.md)。仅stop/switch_tool、一家族+一个新变体，未接入日常桌面或浏览器执行链；下一轮扩展真实失败类型和一个新模块，回溯仍待做。
 
 **新增：** `core/evolvable/recovery.py`、`planner.py`、`retrieval_policy.py`、`workflow.py`、`core/evolution/bundle.py`、`tests/test_evolution_self_modify.py`。
 **修改：** `core/agentic_loop.py`，通过默认策略适配器保持正常路径行为。
 **消费：** Candidate bundle 与 runner；**产出：** 第 4.3 节模块接口、可版本化完整 Agent bundle；按 4.5 节新增 `checkpoints.py` 与夹具恢复协议。
 
-- [ ] 先抽出 recovery 默认实现，验证未启用实验时与原行为一致。
+- [x] 已抽出recovery默认实现并验收未启用实验时的行为，接口报告与当前代码为准。
 - [ ] 构造重复工具故障任务，使基线盲目重试失败；先让候选修改 recovery，采用 replan/switch_tool 获得改进；再增加可快照夹具的 `rollback_and_branch`，验证恢复后失败证据与计费仍保留、不可回溯环境正确回退。
-- [ ] 验证子版本代码哈希改变、事件记录实际加载路径、下一任务使用新策略，而不是仅提示声称策略改变。
+- [x] recovery首pilot已记录实际源码hash/加载路径，并在新任务加载子版本；更广模块仍待验。
 - [ ] 逐步开放 planner（消费固定进度观察）、retrieval、workflow，统一输入输出；契约破坏直接记失败。
 - [ ] `python -m pytest tests/test_evolution_self_modify.py -q`；产出至少一个由模型生成且外部评分改进的核心模块 patch，同时记录失败 patch。
 
