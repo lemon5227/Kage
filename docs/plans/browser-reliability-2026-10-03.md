@@ -24,3 +24,11 @@ R1实际两组各3/3，原始结果独立保存。R2仍使用相同三个dev任�
 成功必须独立保存通过且实际actor-tools有skill_call；另记search/call次数、参数、内部browser primitives、费用和失败。只有云用会技能不能宣称小模型学会；若有效，下一固定小实验再检本地search/preview并决定复杂规划云端、简单执行本地的路由。只有完整新留出后才谈迁移收益。
 
 R2实际搜索三次空返回，原因是全词AND匹配过滤通用技能；另包修复为词项部分命中排序（skill_id权重2、description权重1、无匹配不返回、同分按id稳定，空query仍列出）。这是词面检索，不宣称语义召回。修复后的`--study retrieval-repair`只跑原三个dev的search，使用独立目录/协议/hash，不覆盖九次旧数据。上限18请求、名义$0.10（保守$0.0869184），其余预算相同。验证通过后仍须本地小实验，不能将云的调用能力归给本地。
+
+## R2-local执行冻结
+
+基线c4730fa；脚本`browser_skill_diagnosis.py --study local-discovery --port 18082 --local-runtime <服务记录JSON> --skill-bundle <原候选目录> --output-dir artifacts/c21-browser-local-skill-diagnosis-2026-10-03`。原三个dev×search/preview各一次共6次，按task交替先后顺序。仅本地Agents-A1-4B Q4_K_M，权重SHA d93c393a…固定，启动前核API健康/模型id与实际权重；记录自有服务argv、llama版本、上下文与服务元信息。缺服务/权重不匹配在生成前报错，不回退云或脚本模型。
+
+复用BrowserChainProvider的学生执行链、compact-v2、外部保存检查、原候选/检索/预览策略。保持此前本地上下文策略（不加教师打包）、AgenticLoop现有路由输出上限（不覆盖max_tokens）、请求temperature=0、服务reasoning off。6调用/5步/16 primitives/480秒，HTTP120秒；本地名义每run预留48000输入/2000输出，整包36调用/288000输入/12000输出。实际usage与预留分开，超预留如实记，不因过短参数输出在中途提高上限。
+
+代码只扩展实验执行者选择，云既有协议保持可用。先工程回归、代码提交；随后停止重测试再启动单槽模型，冻结完整config/source/prompt/runtime/candidate hash后执行。逐run保存状态、search/call与子动作、参数错误/截断、真实POST/读回、tokens/耗时/截图；终止失败计入分母且不重采。完成后停止本次自有服务，独立报告/审计提交。依据失败轨迹决定R3增量预算或云规划路由；不要凭dev六次自动晋级。

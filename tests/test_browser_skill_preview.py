@@ -6,7 +6,8 @@ pytest.importorskip('playwright.async_api')
 from test_browser_skills import bundle, TASK
 
 
-def test_model_binds_preview_and_workflow_saves_without_search(tmp_path):
+@pytest.mark.parametrize('local',[False,True])
+def test_model_binds_preview_and_workflow_saves_without_search(tmp_path,local):
     from core.computer_use.experiment import BrowserCloudProvider
     from core.evolution.budget import BudgetConfig, BudgetTracker
     from core.evolution.contracts import Candidate, RunSpec
@@ -26,8 +27,9 @@ def test_model_binds_preview_and_workflow_saves_without_search(tmp_path):
                     'settings': [{'label': 'Email notifications', 'checked': True},
                         {'label': 'SMS notifications', 'checked': False}, {'label': 'Weekly digest', 'checked': False}],
                     'save_label': 'Save settings'}}}], usage={'input_tokens': 5, 'output_tokens': 2})
-    provider = BrowserCloudProvider(PreviewModel(), TASK, model_label='scripted-cloud', provider_mode='cloud',
-        external_completion=True, browser_skill_bundle=path, observation_format='compact-v2', skill_context_mode='preview')
+    from scripts.experiments.browser_skill_diagnosis import diagnostic_provider
+    provider = diagnostic_provider(PreviewModel(), TASK, path, 'preview', local=local,
+        model_label='scripted-local' if local else 'scripted-cloud')
     runner = EvolutionRunner(Journal(tmp_path/'j.sqlite'), BudgetTracker(BudgetConfig(max_api_calls=6,
         max_input_tokens_total=72000, max_output_tokens_total=6144), tmp_path/'b.sqlite'), tmp_path/'runs', provider)
     result = runner.run(Candidate('preview', (), 'workflow', str(path), 'test-preview'), TASK,
@@ -39,7 +41,9 @@ def test_model_binds_preview_and_workflow_saves_without_search(tmp_path):
     assert [e['name'] for e in entries].count('skill_call') == 1
     assert all(e['name'] != 'skill_search' for e in entries)
     assert [e['name'] for e in entries].count('browser_act') == 3
-    assert all(e['actor'] == 'cloud_direct' for e in entries)
+    assert all(e['actor'] == ('student' if local else 'cloud_direct') for e in entries)
+    assert result.metadata['provider_mode'] == ('local' if local else 'cloud')
+    assert (ws/'cloud-context-pack.jsonl').exists() == (not local)
     check = json.loads((ws/'browser-check.json').read_text())
     assert check['posts'] == 1 and check['record'] == {'email': True, 'sms': False, 'weekly': False} and check['readback_matches_backend']
     search = BrowserCloudProvider(PreviewModel(), TASK, browser_skill_bundle=path, skill_context_mode='search')
