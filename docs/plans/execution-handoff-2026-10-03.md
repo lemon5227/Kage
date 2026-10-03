@@ -91,7 +91,7 @@ descriptor的digest由工具生成并写入，不让调用方随意指定；实�
 
 **防止元数据假接通：** 空catalog、错误digest、不兼容bundle和未注册handler均明确失败；不通过读取fixture.expected或直接写backend.json完成任务。恢复模块没有接入此browser链时metadata应标未启用；不要因为父类有recovery_policy字段就宣称浏览器已自修改。
 
-## 5. B2.1c：真实生成、真实本地调用、开发变体验收
+## 5. B2.1c：真实生成、真实本地调用、开发变体验收（已完成一族负结果，见[报告](../experiments/2026-10-03-browser-workflow-generation.md)）
 
 依赖0/a/b工程通过。新增`BrowserWorkflowMutator(Mutator)`（放`core/computer_use/skill_mutator.py`），仅覆盖消息、父catalog验证、提案验证/应用：输出hypothesis/descriptor/workflow，保留E1的预算、attempt落盘、父digest、候选发布和Promoter。不能直接使用Mutator现有“生成Python写workspace”提示，也不能让SkillCatalog.from_bundle硬验证v2。
 
