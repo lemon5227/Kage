@@ -18,22 +18,22 @@
 - B2.2先分开“模块能执行”“真实生成/调用”“新输入迁移”三层证据。云救场单列额外预算；多步技能每个实际动作计数。
 - B2.2后提前接入最小任务入口与人类DOM示范。E2/E3/E4研究线可在浏览器闭环后独立领取，不必等全部GUI完成。C6/C8和训练继续按瓶颈/数据启动。
 
-## 2. B2.1-0：错误返回必须把新观察送到模型（下一包）
+## 2. B2.1-0：错误返回必须把新观察送到模型（已完成，见[报告](../experiments/2026-10-03-browser-error-observation.md)）
 
 **已复现：** BrowserAdapter返回`StaleObservation`时附新observation；ToolExecutor的`render_history_line`仅保留错误码/文字，AgenticLoop实际消息缺新observation_id。2026-10-03真实headless页面探针确认raw有观察、history没有。BROWSER_SOUL却要求使用错误内新观察，二者矛盾。
 
 **文件：** 修改`core/tool_executor.py`的错误渲染（保持无结构化结果时原行为）、必要时调整`core/computer_use/context_pack.py`；扩展`tests/test_browser_takeover.py`、`tests/test_browser_context_pack.py`与`tests/test_tool_outcome_semantics.py`。不要通过把失败改成success绕过。
 
 **步骤与验收：**
-- [ ] 先写经过BrowserAdapter→ToolExecutor→AgenticLoop→下一次provider消息的真实浏览器回归：观察后替换节点，旧引用被拒绝、无误点击；模型收到新观察并能对新引用执行成功。直接测试adapter返回字典不够。
-- [ ] 错误结果采用明确可解析的结构化载荷，保留error/outcome/message/action_applied/observation；原生tool_call_id不变。更新打包器识别该真实格式，最新错误观察不得被当旧DOM丢掉。
-- [ ] 验证普通工具错误兼容、JSON异常不抛出二次错误、超时且action_applied未知仍保持未知；打开/关闭打包均可恢复。
-- [ ] 同包验证compact-v1下checkbox缺checked的约定：仅该版本明确解释为false，不把value="on"当勾选；本包不修改观察格式。若要改为显式false，另立协议版本并给各实验臂一致启用。
-- [ ] 聚焦命令：`.venv-computer-use/bin/python -m pytest -q tests/test_browser_takeover.py tests/test_browser_context_pack.py tests/test_tool_outcome_semantics.py tests/test_tool_conversation.py`。触及共用executor后再跑全量一次；不调用付费模型证明消息是否丢字段。
+- [x] 先写经过BrowserAdapter→ToolExecutor→AgenticLoop→下一次provider消息的真实浏览器回归：观察后替换节点，旧引用被拒绝、无误点击；模型收到新观察并能对新引用执行成功。直接测试adapter返回字典不够。
+- [x] 错误结果采用明确可解析的结构化载荷，保留error/outcome/message/action_applied/observation；原生tool_call_id不变。更新打包器识别该真实格式，最新错误观察不得被当旧DOM丢掉。
+- [x] 验证普通工具错误兼容、JSON异常不抛出二次错误、超时且action_applied未知仍保持未知；打开/关闭打包均可恢复。
+- [x] 同包验证compact-v1下checkbox缺checked的约定：仅该版本明确解释为false，不把value="on"当勾选；本包不修改观察格式。若要改为显式false，另立协议版本并给各实验臂一致启用。
+- [x] 聚焦命令：`.venv-computer-use/bin/python -m pytest -q tests/test_browser_takeover.py tests/test_browser_context_pack.py tests/test_tool_outcome_semantics.py tests/test_tool_conversation.py`。触及共用executor后再跑全量一次；不调用付费模型证明消息是否丢字段。
 
 完成后独立提交修复和报告，再进入a。
 
-## 3. B2.1a：浏览器episode与生成输入桥接
+## 3. B2.1a：浏览器episode与生成输入桥接（已完成工程桥接，见[报告](../experiments/2026-10-03-browser-episode-bridge.md)）
 
 **现有缺口：** `ExperienceArchive.record`的setup不含fixture；failure_status读取`student_check.status`，浏览器使用student_state/student_check_passed/student_chain；`scripts/experiments/skill_learning.py`找teacher_check.check_passed，不能直接复用浏览器数据；browser脚本尚未导入archive。
 
