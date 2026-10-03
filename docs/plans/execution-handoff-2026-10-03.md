@@ -54,7 +54,7 @@
 
 **验收：** 同一setup真实重建页面并读回；实际actor-tools/browser.jsonl入证据；旧格式与browser过滤均正确；失败/holdout不进正示范；证据改动后失效；生成器可见输入用独立sentinel检查不含checker秘密。不根据示范重复次数虚增训练样本数。新候选生成前冻结B2.2测试manifest/hash。
 
-## 4. B2.1b：同一活页面上的参数化浏览器技能
+## 4. B2.1b：同一活页面上的参数化浏览器技能（工程完成，见[报告](../experiments/2026-10-03-browser-skill-runtime.md)）
 
 **选择与范围：** 初版支持表单和checkbox、唯一语义目标、顺序步骤；不做任意Python/JS注入、跨域登录、规划语言或递归技能。E1文件Python技能和Docker执行仍沿用原路径。浏览器技能属于L1程序性技能，不能算E3核心源码自修改。
 
