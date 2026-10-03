@@ -21,13 +21,21 @@ class ExperienceArchive:
         trace = Path(result.trace_path).resolve()
         identity = {"task_id": task_def["task_id"], "run_id": result.run_id, "trace": str(trace)}
         episode_id = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        browser = None
+        if task_def.get('fixture') and result.metadata.get('environment_kind') == 'resettable-local-http-browser':
+            from core.computer_use.episodes import normalize_browser_episode
+            browser = normalize_browser_episode(task_def, result, root)
         paths = [p for p in sorted(root.rglob("*")) if p.is_file() and p.suffix not in {".jsonl", ".sqlite"}]
+        if browser:
+            paths.extend(Path(browser['evidence'][name]['path']) for name in ('actor-tools.jsonl', 'browser.jsonl'))
         paths.append(trace)
         setup_dir = root.parent / ".episode-setups"
         setup_dir.mkdir(exist_ok=True)
         setup = setup_dir / (episode_id + ".json")
-        encoded_setup = json.dumps({key: task_def[key] for key in
-            ("task_id", "family", "split", "instruction", "initial_files") if key in task_def},
+        setup_fields = ("task_id", "family", "split", "instruction", "initial_files")
+        if browser:
+            setup_fields += ("fixture", "scoring_criteria")
+        encoded_setup = json.dumps({key: task_def[key] for key in setup_fields if key in task_def},
             sort_keys=True, ensure_ascii=False)
         if setup.exists() and setup.read_text() != encoded_setup:
             raise ValueError("episode setup identity reused with different inputs")
@@ -43,6 +51,8 @@ class ExperienceArchive:
         payload = {"version": 1, "episode_id": episode_id, "task_id": task_def["task_id"],
                    "family": task_def.get("family", "unknown"), "split": task_def.get("split", "unknown"),
                    "goal": task_def.get("instruction", ""), "run": asdict(result), "evidence": refs}
+        if browser:
+            payload['browser'] = browser
         encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False)
         with self.journal._get_connection() as conn:
             previous = conn.execute("SELECT payload_json FROM episodes WHERE episode_id=?", (episode_id,)).fetchone()
@@ -69,7 +79,7 @@ class ExperienceArchive:
             recorded_environment = metadata.get("environment") or metadata.get("student", {}).get("environment", {})
             if environment and any(recorded_environment.get(key) != value for key, value in environment.items()):
                 continue
-            if failure_status is not None and not any(
+            if failure_status is not None and episode.get('browser', {}).get('failure_status') != failure_status and not any(
                 chain.get("takeover", {}).get("student_check", {}).get("status") == failure_status
                 for chain in metadata.get("chain", [])):
                 continue

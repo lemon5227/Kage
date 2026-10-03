@@ -42,3 +42,12 @@ def test_retrieval_requires_matching_failure_and_environment_when_requested(tmp_
         archive.record({"task_id": run_id, "family": "code", "split": "dev"}, run)
     matches = archive.retrieve("code", failure_status="call_limit", environment={"platform": "mac-v2"})
     assert [e["task_id"] for e in matches] == ["c"]
+
+
+def test_existing_file_episode_setup_does_not_change_with_browser_extension(tmp_path):
+    archive=ExperienceArchive(Journal(tmp_path/'journal.sqlite'))
+    workspace=tmp_path/'file-run';workspace.mkdir();(workspace/'out.json').write_text('{}')
+    run=result(workspace)
+    task={'task_id':'legacy','family':'code','split':'dev','instruction':'write file'}
+    episode_id=archive.record(task,run)
+    assert archive.record({**task,'scoring_criteria':{'type':'json_exact_match'}},run)==episode_id

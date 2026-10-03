@@ -1,0 +1,41 @@
+{
+  "suite_id": "c21-browser-transfer-v1",
+  "status": "frozen-before-browser-workflow-generation",
+  "protocol": {"family": "preferences", "split": "test", "repeats_per_arm_per_task": 3,
+    "arms": ["raw", "cloud_takeover", "dev_trajectory", "learned_workflow", "local_retries"]},
+  "tasks": [
+    {
+      "task_id": "preferences_transfer_state",
+      "family": "preferences", "split": "test",
+      "instruction": "Keep Email updates enabled, disable Text alerts, and keep Weekly summary disabled. Save and confirm the saved settings.",
+      "fixture": {"kind": "preferences", "title": "Message preferences", "fields": [
+        {"name": "weekly", "label": "Weekly summary", "initial": false},
+        {"name": "sms", "label": "Text alerts", "initial": true},
+        {"name": "email", "label": "Email updates", "initial": true}], "submit": "Apply preferences"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": true, "sms": false, "weekly": false}, "readback_matches_backend": true}}
+    },
+    {
+      "task_id": "preferences_transfer_digest",
+      "family": "preferences", "split": "test",
+      "instruction": "Enable Mail notices, leave Mobile notices disabled, and disable the Digest. Save and confirm the saved settings.",
+      "fixture": {"kind": "preferences", "title": "Delivery options", "fields": [
+        {"name": "sms", "label": "Mobile notices", "initial": false},
+        {"name": "email", "label": "Mail notices", "initial": false},
+        {"name": "weekly", "label": "Digest", "initial": true}], "submit": "Store options"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": true, "sms": false, "weekly": false}, "readback_matches_backend": true}}
+    },
+    {
+      "task_id": "preferences_transfer_reverse",
+      "family": "preferences", "split": "test",
+      "instruction": "Disable Email reminders, enable SMS reminders, and disable Weekly emails. Save and confirm the saved settings.",
+      "fixture": {"kind": "preferences", "title": "Reminder channels", "fields": [
+        {"name": "email", "label": "Email reminders", "initial": true},
+        {"name": "weekly", "label": "Weekly emails", "initial": true},
+        {"name": "sms", "label": "SMS reminders", "initial": false}], "submit": "Save reminder channels"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": false, "sms": true, "weekly": false}, "readback_matches_backend": true}}
+    }
+  ]
+}
