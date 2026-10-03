@@ -67,6 +67,9 @@ class Mutator:
     def _validate_parent(self, source):
         SkillCatalog.from_bundle(source)
 
+    def _validate_request(self, messages):
+        """Optional protocol-specific request bound before reserving a model call."""
+
     def _apply_proposal(self, stage, manifest, proposal):
         code = proposal["code"]
         tree = ast.parse(code)
@@ -154,6 +157,7 @@ class Mutator:
             messages.extend([{"role": "assistant", "content": previous["response"]},
                              {"role": "user", "content": "Repair this candidate: " + previous.get("validation_error", "interrupted attempt")}])
         for attempt in range(len(existing), 3):  # repairs remain bounded after restart
+            self._validate_request(messages)
             reservation = self.budget.reserve(self.input_cap, self.output_cap,
                                               call_type="optimizer", run_id=proposal_id)
             attempt_path = attempts / f"{proposal_id}-{attempt}.json"

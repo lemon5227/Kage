@@ -67,3 +67,21 @@ def test_dev_regression_and_test_split_never_activate(tmp_path):
     assert not result["promoted"] and not (promoter.root / "active.json").exists()
     with pytest.raises(ValueError, match="dev"):
         promoter.compare(parent, child, [{**_task("holdout", " Secret "), "split": "test"}])
+
+
+def test_repeat_ids_are_real_runs_and_restart_reuses_only_same_repeat(tmp_path):
+    from core.evolution.promotion import Promoter
+    parent=_parent(tmp_path/'parent')
+    child=_mutator(tmp_path,_Generator([PROPOSAL])).propose(parent,{"failure_reason":"whitespace"})
+    promoter=Promoter(Journal(tmp_path/'journal.sqlite'),BudgetTracker(),_SkillProvider,
+                      tmp_path/'comparison',kernel_max_steps=1)
+    task=_task('repair',' Ada ')
+    comparison=promoter.compare(parent,child,[task],repeats=3)
+    assert comparison['promoted'] and len(comparison['pairs'])==3
+    assert [pair['repeat_id'] for pair in comparison['pairs']]==[0,1,2]
+    assert len({pair['parent']['run_id'] for pair in comparison['pairs']})==3
+    assert len({pair['child']['run_id'] for pair in comparison['pairs']})==3
+    used=promoter.budget.total_api_calls
+    assert used==6
+    assert promoter.evaluate(child,task,repeat_id=1).run_id==comparison['pairs'][1]['child']['run_id']
+    assert promoter.budget.total_api_calls==used
