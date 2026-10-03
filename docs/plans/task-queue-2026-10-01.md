@@ -51,7 +51,7 @@ C2.0实际产物检查 → C4.1任务级接管 → C4.2/E2.0最小档案 → C4.
 | C2.1-B2.1a | 工程完成 | 浏览器setup/actor/结果归一、档案与生成输入白名单；旧B1三条实际证据2学生/1混合，冻结三条新test；[实验报告](../experiments/2026-10-03-browser-episode-bridge.md) |
 | C2.1-B2.1b | 工程完成 | v2声明式技能同一活Page执行，`skill_search/call`、digest、quota、子动作取证与真实保存；[实验报告](../experiments/2026-10-03-browser-skill-runtime.md)；尚无模型生成 |
 | C2.1-B2.1c | 工程与真实pilot完成，未晋级 | DeepSeek生成1个有效v2候选；父/子dev均0/3，未激活；reuse 3/3但模型0次skill_call；[实验报告](../experiments/2026-10-03-browser-workflow-generation.md) |
-| **C2.1-B2.2** | **下一包** | 新留出五臂每变体3次；单族45run起步，两族90run；云额外预算单列，skill子动作计数 |
+| **C2.1-B2.2** | **协议包完成，真实执行器待接** | 五臂/45-run分母、冻结SHA、repeat键和拒绝暴露test已接通；真实raw/cloud/trajectory/workflow/retry运行待做 |
 
 每个包的文件、接口、测试、固定预算、证据标准在[执行交接§2–6](execution-handoff-2026-10-03.md)。修复、生成和评测分别提交，候选冻结后才运行test，不反复看test调技能。不因网络不稳定无限采样成功；受控教师恢复探针和自然失败接管分表。
 
