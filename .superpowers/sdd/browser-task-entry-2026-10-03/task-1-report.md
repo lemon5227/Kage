@@ -17,3 +17,9 @@ Red/green evidence:
 The tests use only a scripted local HTTP model boundary; they launch a real separate Python worker, Chromium, and the controlled Page. They assert a real POST/readback, no POST for an unsaved model response, cancellation of queued work before model dispatch, termination of owned PIDs for a hung HTTP request, and the ability to run a following job. The original background worker completion/failure tests also pass, along with a new late-return cancellation test that verifies no completed event.
 
 No actual local or cloud model was called. Live cloud behavior and configured price calculation were not exercised by this task's test gate; validation and request limits were tested without network calls to a cloud provider.
+
+Final validation for code commit `0b78129` (no code changes after these checks):
+
+- `.venv-computer-use/bin/python -m pytest tests/test_browser_task_service.py tests/test_background_worker.py -q` — exit 0, **11 passed in 8.41s**.
+- `.venv-computer-use/bin/python -m py_compile core/computer_use/task_service.py core/computer_use/task_worker.py core/background_worker.py` — exit 0.
+- `git diff --cached --check` — exit 0, no output, immediately before commit `0b78129`.
