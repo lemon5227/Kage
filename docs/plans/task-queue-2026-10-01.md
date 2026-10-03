@@ -53,6 +53,7 @@ C2.0实际产物检查 → C4.1任务级接管 → C4.2/E2.0最小档案 → C4.
 | C2.1-B2.1c | 工程与真实pilot完成，未晋级 | DeepSeek生成1个有效v2候选；父/子dev均0/3，未激活；reuse 3/3但模型0次skill_call；[实验报告](../experiments/2026-10-03-browser-workflow-generation.md) |
 | **C2.1-B2.2** | **工程与45次真实单族实验完成，学习收益未证明** | raw2/9、云5/9、轨迹2/9、工作流1/9、重试0/9；技能搜索/调用均0。云学生2/9、接管3/7成功，假设云费$0.01906；[报告](../experiments/2026-10-03-browser-transfer.md)。旧test已暴露，后续学习改进另冻新留出 |
 | C2.1-R1 | 工程与6次云独立dev对照完成 | v1/v2均3/3；v2请求8 vs12，旧格式satisfied先错后纠正；不认定完成率提升。实际20云请求，假设费用$0.014204；[报告](../experiments/2026-10-03-browser-state-diagnosis.md)。下一项R2 |
+| C2.1-R2 | 云发现对照9次完成；检索修复/本地验证待做 | raw/search/preview均3/3；仅preview实际skill_call 3/3、每次1云请求。search全词匹配使3次空结果；22请求、假设费用$0.015847；[报告](../experiments/2026-10-03-browser-skill-diagnosis.md) |
 
 每个包的文件、接口、测试、固定预算、证据标准在[执行交接§2–6](execution-handoff-2026-10-03.md)。修复、生成和评测分别提交，候选冻结后才运行test，不反复看test调技能。不因网络不稳定无限采样成功；受控教师恢复探针和自然失败接管分表。
 
