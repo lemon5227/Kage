@@ -178,7 +178,7 @@ class BrowserAdapter:
                 action={'observation_id':observation_id,'operation':operation,'target_ref':target_ref,'value':value,'amount':amount},result=result)
             return result
 
-    def register_tools(self,registry):
+    def register_tools(self,registry,quota=None):
         format_hint = (' Compact-v1 omits false checked/disabled and null target properties.'
                        if self.compact_observations else '')
         def serialize(payload):
@@ -190,6 +190,10 @@ class BrowserAdapter:
             return serialize(await self.open(url))
         async def browser_act(observation_id,operation,target_ref=None,value=None,amount=500,timeout_ms=2000):
             return serialize(await self.act(observation_id,operation,target_ref,value,amount,timeout_ms))
+        if quota is not None:
+            browser_observe=quota.wrap(browser_observe)
+            browser_open=quota.wrap(browser_open)
+            browser_act=quota.wrap(browser_act)
         registry.register(ToolDefinition('browser_observe','Observe current DOM text and actionable node references.' + format_hint,
             {'type':'object','properties':{}},browser_observe))
         registry.register(ToolDefinition('browser_open','Navigate this browser session to an HTTP(S) URL and observe.' + format_hint,

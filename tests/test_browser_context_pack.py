@@ -53,6 +53,16 @@ def test_latest_error_observation_survives_packing(tmp_path):
     assert result['error']=='BrowserTimeout' and result['outcome']=='tool_error'
 
 
+def test_latest_skill_observation_survives_packing(tmp_path):
+    old=observation('old');fresh=observation('skill-fresh')
+    messages=[{'role':'user','content':'Task\nInitial browser observation supplied by runtime:\n'+json.dumps(old)},
+              {'role':'tool','tool_call_id':'skill-1','content':'[Tool: skill_call] （未应用）'+json.dumps({'success':False,'outcome':'not_applied','error':'NodeNotFound','observation':fresh})}]
+    packed,stats=pack_browser_messages(messages,tmp_path)
+    assert stats['archived_observations']==1
+    assert json.loads(packed[1]['content'][packed[1]['content'].index('{'):])['observation']==fresh
+    assert packed[1]['tool_call_id']=='skill-1'
+
+
 def test_large_current_dom_still_hits_original_wire_limit_without_network(tmp_path):
     import pytest
     from core.computer_use.context_pack import BrowserContextProvider

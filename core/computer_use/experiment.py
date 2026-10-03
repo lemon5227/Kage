@@ -10,6 +10,7 @@ import time
 
 from core.agentic_loop import AgenticLoop,LoopResult
 from core.computer_use.browser import BrowserAdapter
+from core.computer_use.skills import BrowserSkillCatalog,BrowserPrimitiveQuota
 from core.computer_use.task_environment import browser_task_server,checkpoint,atomic_json,unconfirmed_checkpoint
 from core.evolution.agent_provider import KageChainProvider,ExperimentIdentityStore,HistorySession,run_sync
 from core.prompt_builder import PromptBuilder
@@ -98,7 +99,8 @@ class CheckpointExecutor(ToolExecutor):
 
     async def execute(self,name,arguments,require_confirmation=None):
         result=await super().execute(name,arguments,require_confirmation)
-        self.entries.append({**asdict(result),"arguments":arguments,"actor":self.actor})
+        self.entries.append({**asdict(result),"arguments":arguments,"actor":self.actor,
+                             **(getattr(self,'skill_context',None) or {})})
         with (self.workspace/"actor-tools.jsonl").open("a") as stream:
             stream.write(json.dumps(self.entries[-1],ensure_ascii=False)+"\n")
         try:
@@ -114,21 +116,28 @@ class BrowserChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,*,external_completion=False,**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,**kwargs):
         super().__init__(model_provider,**kwargs)
         self.task_def=json.loads(json.dumps(task_def))
         self.external_completion=bool(external_completion)
+        self.browser_skill_catalog=BrowserSkillCatalog.from_bundle(browser_skill_bundle) if browser_skill_bundle is not None else None
 
     def _experiment_soul(self):
-        return BROWSER_SOUL
+        return BROWSER_SOUL + ('\nSearch available browser skills for a matching workflow, then call by its exact digest and verify the saved result.\n'
+                               if self.browser_skill_catalog is not None else '')
 
     def cache_identity(self):
         return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
+                'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
+                'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
                 'adapter_sha256':hashlib.sha256(Path(__file__).with_name('browser.py').read_bytes()).hexdigest(),
                 'environment_sha256':hashlib.sha256(Path(__file__).with_name('task_environment.py').read_bytes()).hexdigest()}
 
     def metadata(self):
-        return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.external_completion else 0,'tool_registry':'ToolRegistry(page-scoped browser tools only)',
+        return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.external_completion else 0,
+                'tool_registry':'ToolRegistry(page-scoped browser and workflow tools)' if self.browser_skill_catalog is not None else 'ToolRegistry(page-scoped browser tools only)',
+                'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
+                'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
                 'environment_kind':'resettable-local-http-browser','compact_observations':True,
                 'initial_observation':'runtime bootstrap; no simulated model call'}
 
@@ -142,6 +151,8 @@ class BrowserChainProvider(KageChainProvider):
 
     async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice=''):
         executor.actor=actor
+        if hasattr(executor,'browser_quota'):
+            executor.browser_quota.used=0
         builder=PromptBuilder(ExperimentIdentityStore(soul),None,registry,
                               prune_tools=False,memory_cfg={'recall_enabled':False})
         actor_model=self._actor_model(model,actor,workspace)
@@ -172,6 +183,7 @@ class BrowserChainProvider(KageChainProvider):
         if all('input_tokens' in c['usage'] and 'output_tokens' in c['usage'] for c in calls):
             usage.update({key:sum(c['usage'][key] for c in calls) for key in ['input_tokens','output_tokens']})
         chain={'task_id':task['task_id'],'runner_step':step,'actor':actor,'chain_steps':result.steps,
+               'browser_primitives':executor.browser_quota.used if hasattr(executor,'browser_quota') else None,
                'stop_reason':result.stop_reason,'model_calls':len(calls),'tool_calls':len(result.tool_calls_executed),
                'call_usage':[c['usage'] for c in calls],'model_errors':[c['error'] for c in calls if c['error']],
                'model_elapsed_ms':round(sum(c['elapsed_ms'] for c in calls),3),
@@ -196,8 +208,12 @@ class BrowserChainProvider(KageChainProvider):
                     page=await context.new_page();await page.goto(url,wait_until='domcontentloaded',timeout=10000)
                     atomic_json(workspace/'worker-processes.json',descendant_pids(os.getpid()))
                     adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True)
-                    registry=ToolRegistry();adapter.register_tools(registry)
+                    quota=BrowserPrimitiveQuota(16)
+                    registry=ToolRegistry();adapter.register_tools(registry,quota=quota)
                     executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.external_completion)
+                    executor.browser_quota=quota
+                    if self.browser_skill_catalog is not None:
+                        self.browser_skill_catalog.register_tools(registry,adapter,executor,workspace,quota)
                     student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,'student',self._experiment_soul())
                     output=await self._after_student(task,step,workspace,adapter,registry,executor,student)
                     await checkpoint(page,url,workspace)

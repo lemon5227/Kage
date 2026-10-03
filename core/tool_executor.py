@@ -128,6 +128,13 @@ def render_history_line(name: str, success: bool, result: str = "",
     if outcome == "unchanged":
         return f"[Tool: {name}] （未变更：目标已满足）{result}"
     if outcome == "not_applied":
+        if name == "skill_call":
+            try:
+                payload = json.loads(result)
+            except (TypeError, ValueError):
+                payload = None
+            if isinstance(payload, dict) and isinstance(payload.get("observation"), dict):
+                return f"[Tool: {name}] （未应用）{result}"
         return f"[Tool: {name}] （未应用）{error_message or result}"
     if success:
         return f"[Tool: {name}] {result}"
