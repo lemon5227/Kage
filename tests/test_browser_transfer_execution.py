@@ -107,3 +107,16 @@ def test_summary_keeps_reported_tokens_distinct_from_conservative_budget_charge(
     arm=summarize(plan,[row])['arms']['raw']
     assert arm['student_tokens']=={'input_tokens':5,'output_tokens':1}
     assert arm['unknown_usage_runs']==1
+
+
+def test_retry_early_final_responses_do_not_create_more_than_three_attempts(tmp_path):
+    class ClaimsDone(ModelProvider):
+        def generate(self,**kwargs):
+            return ModelResponse(text='Done.',usage={'input_tokens':2,'output_tokens':1})
+    provider=transfer.BrowserRetryProvider(ClaimsDone(),TASK,model_label='scripted',max_model_calls=6,external_completion=True)
+    runner=EvolutionRunner(Journal(tmp_path/'journal.sqlite'),BudgetTracker(BudgetConfig(max_api_calls=6)),
+                           tmp_path/'runs',provider,step_isolation='inline')
+    result=runner.run(Candidate('retry',(),'workflow',str(ROOT),'early-final'),TASK,
+        RunSpec('early-final','retry',TASK['task_id'],max_steps=1,timeout_s=30))
+    assert result.status=='failed'
+    assert len(result.metadata['chain'][0]['retries']['attempts'])==3

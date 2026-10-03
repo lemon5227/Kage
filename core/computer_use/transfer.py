@@ -99,7 +99,7 @@ class BrowserRetryProvider(BrowserChainProvider):
     async def _after_student(self,task,step,workspace,adapter,registry,executor,student):
         attempts=[student]
         consumed=student['chain']['chain_steps']
-        while (Evaluator.score(self.task_def,workspace)<1 and consumed<5
+        while (Evaluator.score(self.task_def,workspace)<1 and consumed<5 and len(attempts)<3
                and len(self._model.calls)<self._model.max_calls
                and executor.browser_quota.used<executor.browser_quota.limit):
             last=attempts[-1]['chain']
@@ -108,7 +108,7 @@ class BrowserRetryProvider(BrowserChainProvider):
                     f'Previous stop: {last["stop_reason"]}. Previous response: {last["final_text"][:500]}')
             attempt=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,
                 f'student_retry_{len(attempts)}',self._experiment_soul(),notice,
-                reset_quota=False,max_steps=min(2,5-consumed))
+                reset_quota=False,max_steps=min(2 if len(attempts)==1 else 1,5-consumed))
             attempts.append(attempt)
             # Reserve a step even for an early exception/empty result; no unbounded retries.
             consumed+=max(1,attempt['chain']['chain_steps'])
