@@ -33,6 +33,29 @@ def diagnostic_provider(model,task,bundle,arm,*,local=False,model_label='deepsee
         skill_context_mode='preview' if arm=='preview' else 'search')
 
 
+def load_local_transfer(path):
+    suite=json.loads(Path(path).read_text())
+    expected={'family':'preferences','split':'test','repeats_per_arm_per_task':1,'arms':list(ARMS),
+              'max_model_calls':6,'max_loop_steps':5,'max_primitives':16,'timeout_s':480,'cloud':False}
+    if suite.get('status')!='frozen-after-method-before-transfer' or suite.get('protocol')!=expected:
+        raise ValueError('transfer protocol is not the frozen three-arm local pilot')
+    tasks=suite.get('tasks',[])
+    if len(tasks)!=3 or len({t.get('task_id') for t in tasks})!=3:
+        raise ValueError('transfer requires three unique tasks')
+    for task in tasks:
+        if task.get('split')!='test' or task.get('family')!='preferences' or task['fixture'].get('kind')!='preferences':
+            raise ValueError('transfer task split/family mismatch')
+        fields=task['fixture']['fields'];names={f['name'] for f in fields}
+        if not 3<=len(fields)<=4 or len(names)!=len(fields) or len({f['label'] for f in fields})!=len(fields):
+            raise ValueError('transfer requires three/four unique checkbox names and labels')
+        criteria=task['scoring_criteria'];values=criteria.get('expected',{}).get('record',{})
+        if (criteria.get('type')!='json_exact_match' or criteria.get('file')!='browser-outcome.json'
+                or criteria.get('expected',{}).get('readback_matches_backend') is not True or set(values)!=names
+                or any(type(value) is not bool for value in values.values())):
+            raise ValueError('transfer requires the independent saved-state checker for all fields')
+    return tasks
+
+
 def summarize(rows,selected_arms=ARMS,protocol='c21-r2-discovery-dev-v1'):
     arms={}
     for arm in selected_arms:
@@ -54,14 +77,15 @@ def main():
     parser.add_argument('--cloud-config',type=Path)
     parser.add_argument('--skill-bundle',type=Path,required=True)
     parser.add_argument('--output-dir',type=Path,required=True)
-    parser.add_argument('--study',choices=['discovery','retrieval-repair','local-discovery'],default='discovery')
+    parser.add_argument('--study',choices=['discovery','retrieval-repair','local-discovery','local-transfer'],default='discovery')
+    parser.add_argument('--suite',type=Path,help='Frozen new test manifest; required for local-transfer')
     parser.add_argument('--port',type=int,default=18082)
     parser.add_argument('--local-runtime',type=Path,help='Recorded owned-server argv/version/model hash; required for local study')
     args=parser.parse_args()
-    local=args.study=='local-discovery'
-    selected_arms=('search','preview') if local else (('search',) if args.study=='retrieval-repair' else ARMS)
+    local=args.study in {'local-discovery','local-transfer'}
+    selected_arms=('search','preview') if args.study=='local-discovery' else (('search',) if args.study=='retrieval-repair' else ARMS)
     protocol={'discovery':'c21-r2-discovery-dev-v1','retrieval-repair':'c21-r2-retrieval-repair-dev-v1',
-              'local-discovery':'c21-r2-local-discovery-dev-v1'}[args.study]
+              'local-discovery':'c21-r2-local-discovery-dev-v1','local-transfer':'c21-browser-local-transfer-v2'}[args.study]
     expected_runs=3*len(selected_arms)
     call_cap=6*expected_runs
     runtime=None
@@ -88,7 +112,12 @@ def main():
         if settings.get('model_name')!='deepseek-flash' or settings.get('base_url','').rstrip('/')!='https://api.deepseek.com' or not settings.get('api_key'):
             parser.error('requires configured official DeepSeek Flash')
     catalog=BrowserSkillCatalog.from_bundle(args.skill_bundle)
-    tasks=development_tasks()
+    if args.study=='local-transfer':
+        if not args.suite:parser.error('local-transfer requires a frozen test suite')
+        tasks=load_local_transfer(args.suite)
+    else:
+        if args.suite:parser.error('dev diagnosis must not consume a test suite')
+        tasks=development_tasks()
     candidate=Candidate('existing_browser_candidate',(),'workflow',str(args.skill_bundle.resolve()),bundle_digest(args.skill_bundle))
     if candidate.digest!='9400d42f5119acfff14f1c6acf153f66efe16323e66b9d8f32fe6904ab63ffba':
         parser.error('R2 requires the unchanged, unpromoted B2.1c candidate')
@@ -98,7 +127,8 @@ def main():
     sources+=['scripts/experiments/'+s for s in ('browser_state_diagnosis.py','browser_skill_diagnosis.py','browser_transfer.py','task_suite.py')]
     prompts={arm:diagnostic_provider(None,tasks[0],args.skill_bundle,arm,local=local,
         model_label=settings['model_name']).cache_identity()['experiment_prompt_sha256'] for arm in selected_arms}
-    config={'protocol':protocol,'tasks':tasks,'split':'dev-only','expected_runs':expected_runs,'repeats':1,'arms':list(selected_arms),
+    config={'protocol':protocol,'tasks':tasks,'split':'test' if args.study=='local-transfer' else 'dev-only',
+        'suite_sha256':sha(args.suite) if args.suite else None,'expected_runs':expected_runs,'repeats':1,'arms':list(selected_arms),
         'executor':'local_student' if local else 'cloud_direct','model':settings['model_name'],'endpoint':settings['base_url'],
         'thinking':None if local else False,'temperature':0,'local_runtime':runtime,
         'observation_format':'compact-v2','max_calls_per_run':6,'max_loop_steps':5,'max_primitives':16,

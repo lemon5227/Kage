@@ -1,0 +1,41 @@
+{
+  "suite_id": "c21-browser-local-transfer-v2",
+  "status": "frozen-after-method-before-transfer",
+  "method_baseline": "bd18121",
+  "protocol": {"family": "preferences", "split": "test", "repeats_per_arm_per_task": 1,
+    "arms": ["raw", "search", "preview"], "max_model_calls": 6, "max_loop_steps": 5,
+    "max_primitives": 16, "timeout_s": 480, "cloud": false},
+  "tasks": [
+    {
+      "task_id": "preferences_local_v2_labels", "family": "preferences", "split": "test",
+      "instruction": "Enable Product bulletins, disable Phone alerts, and disable Weekly roundup. Save and confirm the saved settings.",
+      "fixture": {"kind": "preferences", "title": "Delivery preferences", "fields": [
+        {"name": "sms", "label": "Phone alerts", "initial": true},
+        {"name": "weekly", "label": "Weekly roundup", "initial": true},
+        {"name": "email", "label": "Product bulletins", "initial": false}], "submit": "Commit preferences"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": true, "sms": false, "weekly": false}, "readback_matches_backend": true}}
+    },
+    {
+      "task_id": "preferences_local_v2_four", "family": "preferences", "split": "test",
+      "instruction": "Disable Email notices, enable Phone notices, disable Weekly digest, and enable Offer alerts. Save and confirm all four saved settings.",
+      "fixture": {"kind": "preferences", "title": "Channel settings", "fields": [
+        {"name": "offers", "label": "Offer alerts", "initial": false},
+        {"name": "weekly", "label": "Weekly digest", "initial": true},
+        {"name": "sms", "label": "Phone notices", "initial": false},
+        {"name": "email", "label": "Email notices", "initial": true}], "submit": "Store channels"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": false, "sms": true, "weekly": false, "offers": true}, "readback_matches_backend": true}}
+    },
+    {
+      "task_id": "preferences_local_v2_zh", "family": "preferences", "split": "test",
+      "instruction": "开启邮件提醒，关闭短信提醒，保持每周汇总关闭。保存通知配置，并确认页面显示的保存结果。",
+      "fixture": {"kind": "preferences", "title": "通知偏好", "fields": [
+        {"name": "sms", "label": "短信提醒", "initial": true},
+        {"name": "weekly", "label": "每周汇总", "initial": false},
+        {"name": "email", "label": "邮件提醒", "initial": false}], "submit": "保存通知配置"},
+      "scoring_criteria": {"type": "json_exact_match", "file": "browser-outcome.json",
+        "expected": {"record": {"email": true, "sms": false, "weekly": false}, "readback_matches_backend": true}}
+    }
+  ]
+}

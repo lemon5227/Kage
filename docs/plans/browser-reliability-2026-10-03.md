@@ -32,3 +32,11 @@ R2实际搜索三次空返回，原因是全词AND匹配过滤通用技能；另
 复用BrowserChainProvider的学生执行链、compact-v2、外部保存检查、原候选/检索/预览策略。保持此前本地上下文策略（不加教师打包）、AgenticLoop现有路由输出上限（不覆盖max_tokens）、请求temperature=0、服务reasoning off。6调用/5步/16 primitives/480秒，HTTP120秒；本地名义每run预留48000输入/2000输出，整包36调用/288000输入/12000输出。实际usage与预留分开，超预留如实记，不因过短参数输出在中途提高上限。
 
 代码只扩展实验执行者选择，云既有协议保持可用。先工程回归、代码提交；随后停止重测试再启动单槽模型，冻结完整config/source/prompt/runtime/candidate hash后执行。逐run保存状态、search/call与子动作、参数错误/截断、真实POST/读回、tokens/耗时/截图；终止失败计入分母且不重采。完成后停止本次自有服务，独立报告/审计提交。依据失败轨迹决定R3增量预算或云规划路由；不要凭dev六次自动晋级。
+
+## 新本地留出v2
+
+R2-local六次全部独立通过，预览有两次真实工作流调用；R3未触发增步。方法/候选基线bd18121冻结后新建`eval/computer-use/browser-local-transfer-v2.json`：三个test实例（全新标签/顺序、四项checkbox、中文指令/页面），raw/search/preview各一次，共9次。仅preferences家族的迁移pilot，不是通用电脑评测。脚本的`--study local-transfer --suite <manifest>`仅消费此固定三臂/三任务/test协议，不允许dev诊断读test。
+
+相同模型、v2观察、本地无额外上下文打包、原300输出策略，6调用/5步/16 primitives/480秒；没有云臂/重试/新生成。整包54请求、432000输入/18000输出名义预留。先用脚本动作验证夹具在原步数内真实可保存/读回（非模型成绩），提交manifest和代码，再冻结config/source/prompt/runtime/candidate/suite hash，启动实际九次本地运行。各臂原始分母/技能调用/子动作/成本分开，模型未调用技能的通过不能归为技能成长。
+
+结果无论正负均保留；不得看本轮test后改描述/参数/检索再复跑同格。一次/格不证明统计收益，不与旧五臂45次直接作完成率对比。若用于后续诊断，标v2 exposed并另造v3。完成后优先回到C5.0显式入口与人类DOM示范；新盲测失败不无限阻塞产品入口。
