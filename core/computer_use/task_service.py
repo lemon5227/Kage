@@ -25,6 +25,7 @@ class BrowserTaskService:
         self._requests: dict[str, dict] = {}
         self._results: dict[str, dict] = {}
         self._processes: dict[str, asyncio.subprocess.Process] = {}
+        self._startups: dict[str, asyncio.Task] = {}
         self._closed = False
         self._worker = BackgroundWorker(lane=self._lane, processor=self._process, on_event=self._event)
 
@@ -39,6 +40,11 @@ class BrowserTaskService:
         model = config.get('model') or {}
         local = model.get('local_runtime') or {}
         cloud = model.get('cloud_api') or {}
+        local_ok = True
+        try:
+            _model_config(config, 'local')
+        except ValueError:
+            local_ok = False
         cloud_ok = True
         try:
             _model_config(config, 'cloud')
@@ -48,11 +54,11 @@ class BrowserTaskService:
                   'instruction': task['instruction'], 'check_available': bool(task.get('scoring_criteria'))}
                  for task in task_catalog().values()]
         return {'tasks': tasks, 'executors': [
-            {'id': 'local', 'model_name': local.get('model_name') or 'local-model', 'configured': bool(local)},
+            {'id': 'local', 'model_name': local.get('model_name') or 'local-model', 'configured': local_ok},
             {'id': 'cloud', 'model_name': cloud.get('model_name') or 'gpt-4o-mini', 'configured': cloud_ok},
             {'id': 'local_teacher', 'model_name': local.get('model_name') or 'local-model',
              'teacher_model_name': cloud.get('model_name') or 'gpt-4o-mini',
-             'configured': bool(local) and cloud_ok}]}
+             'configured': local_ok and cloud_ok}]}
 
     async def submit(self, payload: dict) -> dict:
         if self._closed:
@@ -122,14 +128,28 @@ class BrowserTaskService:
         request = self._requests[run_id]
         spec = {**request, 'run_id': run_id, 'run_root': str(self.run_root)}
         python = os.environ.get('KAGE_BROWSER_PYTHON') or sys.executable
-        proc = await asyncio.create_subprocess_exec(python, '-m', 'core.computer_use.task_worker',
-            cwd=str(ROOT), stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL, start_new_session=True)
-        self._processes[run_id] = proc
+        if self._lane.get(run_id)['status'] == 'cancelled':
+            return self._partial(run_id, 'stopped', 'user_stop')
+        startup = asyncio.create_task(asyncio.create_subprocess_exec(
+            python, '-m', 'core.computer_use.task_worker', cwd=str(ROOT),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL, start_new_session=True))
+        self._startups[run_id] = startup
+        proc = None
         try:
+            try:
+                proc = await asyncio.shield(startup)
+            except Exception as exc:
+                result = self._partial(run_id, 'failed', 'worker_launch_failed')
+                error = f'WorkerLaunchError: {type(exc).__name__}: {exc}'
+                secret = str((request.get('config', {}).get('model', {}).get('cloud_api') or {}).get('api_key') or '')
+                result['error'] = error.replace(secret, '[REDACTED]') if secret else error
+                self._save_partial(run_id, result)
+                return result
+            self._processes[run_id] = proc
             if self._lane.get(run_id)['status'] == 'cancelled':
                 await self._kill(proc)
-                return {'task_status': 'stopped'}
+                return self._partial(run_id, 'stopped', 'user_stop')
             try:
                 await asyncio.wait_for(proc.communicate(json.dumps(spec).encode()), timeout=480)
             except asyncio.TimeoutError:
@@ -149,7 +169,17 @@ class BrowserTaskService:
             if proc.returncode != 0:
                 self._save_partial(run_id, result)
             return result
+        except asyncio.CancelledError:
+            if proc is None:
+                try:
+                    proc = await asyncio.shield(startup)
+                except Exception:
+                    pass
+            if proc is not None:
+                await self._kill(proc)
+            raise
         finally:
+            self._startups.pop(run_id, None)
             self._processes.pop(run_id, None)
             self._requests[run_id].pop('config', None)
 
@@ -183,7 +213,7 @@ class BrowserTaskService:
             for path in sorted(workspace.rglob('*')):
                 if path.is_file() and not path.name.endswith('.tmp') and path.name != 'result.json':
                     name = str(path.relative_to(workspace))
-                    items.append({'name': name, 'url': f'/api/browser-tasks/{run_id}/artifacts/{name}',
+                    items.append({'name': name, 'url': f'/api/browser/tasks/{run_id}/artifacts/{name}',
                                   'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
         return {'task_status': status, 'run_status': reason, 'stop_reason': reason,
                 'error': None if status == 'stopped' else reason,
@@ -213,8 +243,11 @@ class BrowserTaskService:
     async def _kill(proc):
         try:
             os.killpg(proc.pid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
+        except OSError:
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                pass
         try:
             await asyncio.wait_for(proc.wait(), timeout=.5)
         except asyncio.TimeoutError:
@@ -222,8 +255,11 @@ class BrowserTaskService:
         # The group can outlive its leader (Chromium children).
         try:
             os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+        except OSError:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
         await proc.wait()
 
     async def stop(self, run_id: str) -> dict | None:
@@ -232,7 +268,13 @@ class BrowserTaskService:
             return None
         if job['status'] in {'queued', 'running'}:
             cancelled = self._lane.cancel(run_id)
+            startup = self._startups.get(run_id)
             proc = self._processes.get(run_id)
+            if startup is not None:
+                try:
+                    proc = await asyncio.shield(startup)
+                except Exception:
+                    pass
             if proc:
                 await self._kill(proc)
             result = self._partial(run_id, 'stopped', 'user_stop')

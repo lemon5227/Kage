@@ -2,6 +2,7 @@
 import asyncio
 import json
 import os
+import signal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import threading
@@ -54,6 +55,9 @@ class ScriptedModel(BaseHTTPRequestHandler):
                     'target_ref': target['target_ref'], 'operation': 'click'}}
                 break
         message = {'role': 'assistant', 'content': 'Done.'}
+        if server.mode == 'invalid_secret':
+            message = {'role': 'assistant', 'content': server.secret, 'tool_calls': [
+                {'id': 'bad', 'type': 'function', 'function': {'name': server.secret, 'arguments': '{'}}]}
         if action:
             message['tool_calls'] = [{'id': f'call-{server.calls}', 'type': 'function',
                                       'function': {'name': action['name'], 'arguments': json.dumps(action['arguments'])}}]
@@ -73,6 +77,7 @@ def model_server():
     server.calls = 0
     server.requests = []
     server.mode = 'save'
+    server.secret = ''
     server.hang = False
     server.entered = threading.Event()
     server.release = threading.Event()
@@ -117,6 +122,8 @@ def test_real_worker_http_model_page_and_checker(tmp_path, model_server, monkeyp
             final = await terminal(service, job['run_id'])
             assert final['status'] == expected_status
             assert final['result']['check_passed'] is passed
+            assert all(item['url'].startswith(f"/api/browser/tasks/{job['run_id']}/artifacts/")
+                       for item in final['result']['artifacts'])
             check = json.loads(service.artifact(job['run_id'], 'browser-check.json').read_text())
             assert check['posts'] == posts
             if passed:
@@ -223,7 +230,8 @@ def test_cloud_wire_budget_rejects_before_request_and_redacts_response(tmp_path)
     with pytest.raises(RuntimeError, match='input byte cap'):
         recorder.generate(messages=[{'role': 'user', 'content': 'x' * 13000}])
     assert model.calls == 0
-    recorder.generate(messages=[{'role': 'user', 'content': 'short'}])
+    response = recorder.generate(messages=[{'role': 'user', 'content': 'short'}])
+    assert 'TOP-SECRET-KEY' not in response.text + response.raw_output + (response.error or '')
     assert model.calls == 1
     assert 'TOP-SECRET-KEY' not in trace.read_text()
     assert '1024' in trace.read_text()
@@ -236,3 +244,133 @@ def test_cloud_rejects_all_loopback_addresses_without_network(model_server):
                                       'api_key': 'TOP-SECRET-KEY'}
     with pytest.raises(ValueError, match='remote HTTPS'):
         _model_config(settings, 'cloud')
+
+
+def test_invalid_worker_python_has_structured_failure_and_result_file(tmp_path, model_server, monkeypatch):
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(tmp_path / 'missing-python'))
+
+    async def scenario():
+        service = BrowserTaskService(tmp_path, lambda: config(model_server))
+        try:
+            job = await service.submit({'task_id': 'preferences_dev'})
+            final = await terminal(service, job['run_id'])
+            assert final['status'] == 'failed'
+            assert final['result']['task_status'] == 'failed'
+            assert final['result']['check_available'] is True
+            assert final['result']['check_passed'] is None
+            assert final['result']['usage_status'] == 'no_requests'
+            assert final['error']
+            saved = tmp_path / f"run_{job['run_id']}" / 'result.json'
+            assert json.loads(saved.read_text())['task_status'] == 'failed'
+            assert model_server.calls == 0
+        finally:
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_missing_explicit_local_runtime_rejected_before_queue(tmp_path):
+    async def scenario():
+        service = BrowserTaskService(tmp_path, lambda: {})
+        try:
+            with pytest.raises(ValueError, match='local_runtime'):
+                await service.submit({'task_id': 'preferences_dev'})
+            assert service.list() == []
+        finally:
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_provider_error_on_unchecked_task_is_failed_and_secret_never_reaches_artifacts(tmp_path, model_server, monkeypatch):
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(Path(__file__).resolve().parents[1] / '.venv-computer-use/bin/python'))
+    secret = 'SYNTHETIC-BEARER-SECRET-DO-NOT-PRINT'
+    model_server.mode = 'invalid_secret'
+    model_server.secret = secret
+    settings = config(model_server)
+    settings['model']['cloud_api'] = {'provider_type': 'openai', 'base_url': 'https://example.test/v1',
+                                      'api_key': secret, 'model_name': 'remote-unused'}
+
+    async def scenario():
+        service = BrowserTaskService(tmp_path, lambda: settings)
+        try:
+            job = await service.submit({'task_id': 'preferences_unchecked', 'executor': 'local'})
+            final = await terminal(service, job['run_id'])
+            assert final['status'] == 'failed'
+            assert final['result']['check_available'] is False
+            assert final['result']['check_passed'] is None
+            assert final['result']['error']
+            workspace = tmp_path / f"run_{job['run_id']}"
+            assert (workspace / 'model-calls.jsonl').exists()
+            assert (workspace / 'loop-result.json').exists()
+            for path in workspace.rglob('*'):
+                if path.is_file():
+                    assert secret.encode() not in path.read_bytes(), path
+            assert secret not in json.dumps(final)
+        finally:
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_close_during_real_subprocess_startup_reaps_owned_process(tmp_path, model_server, monkeypatch):
+    import core.computer_use.task_service as module
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(Path(__file__).resolve().parents[1] / '.venv-computer-use/bin/python'))
+    real_spawn = module.asyncio.create_subprocess_exec
+    spawned = {}
+
+    async def scenario():
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def delayed_spawn(*args, **kwargs):
+            proc = await real_spawn(*args, **kwargs)
+            spawned['proc'] = proc
+            entered.set()
+            await release.wait()
+            return proc
+
+        monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', delayed_spawn)
+        service = BrowserTaskService(tmp_path, lambda: config(model_server))
+        try:
+            job = await service.submit({'task_id': 'preferences_dev'})
+            await asyncio.wait_for(entered.wait(), 10)
+            closing = asyncio.create_task(service.close())
+            await asyncio.sleep(.1)
+            release.set()
+            await asyncio.wait_for(closing, 10)
+            assert service.get(job['run_id'])['status'] == 'stopped'
+            assert service.get(job['run_id'])['result']['task_status'] == 'stopped'
+            with pytest.raises(ProcessLookupError):
+                os.kill(spawned['proc'].pid, 0)
+            assert model_server.calls == 0
+        finally:
+            release.set()
+            proc = spawned.get('proc')
+            if proc and proc.returncode is None:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except OSError:
+                    try:
+                        proc.kill()
+                    except ProcessLookupError:
+                        pass
+                await asyncio.wait_for(proc.wait(), 2)
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_response_redaction_covers_json_escaped_values_and_tool_argument_keys(tmp_path):
+    from dataclasses import asdict
+    from core.computer_use.task_worker import RecordedProvider
+    from core.model_provider import ModelProvider, ModelResponse
+
+    secret = 'SYNTHETIC"QUOTED-KEY'
+
+    class Echo(ModelProvider):
+        def generate(self, **_kwargs):
+            return ModelResponse(text=secret, raw_output=json.dumps({'echo': secret}),
+                                 tool_calls=[{'name': 'browser_act', 'arguments': {secret: secret}}],
+                                 error=secret)
+
+    recorder = RecordedProvider(Echo(), tmp_path / 'calls.jsonl', [secret])
+    safe = recorder.generate(messages=[])
+    assert secret not in json.dumps(asdict(safe), ensure_ascii=False)
+    assert json.dumps(secret)[1:-1] not in safe.raw_output
+    assert secret not in (tmp_path / 'calls.jsonl').read_text()

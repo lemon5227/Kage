@@ -18,7 +18,7 @@ from core.evolution.journal import Journal
 from core.evolution.mutator import bundle_digest
 from core.evolution.runner import EvolutionRunner
 from core.model_broker import ModelBroker
-from core.model_provider import ModelProvider
+from core.model_provider import ModelProvider, ModelResponse
 
 ROOT = Path(__file__).resolve().parents[2]
 SUITE = ROOT / 'eval/computer-use/browser-learning-v2.json'
@@ -38,6 +38,12 @@ def _model_config(config: dict, executor: str) -> tuple[dict, dict]:
     effective = json.loads(json.dumps(config))
     model = effective.setdefault('model', {})
     cloud = model.get('cloud_api') or {}
+    if executor in {'local', 'local_teacher'}:
+        local = model.get('local_runtime')
+        if (not isinstance(local, dict) or not isinstance(local.get('host'), str)
+                or not local['host'].strip() or type(local.get('port')) is not int
+                or not 1 <= local['port'] <= 65535):
+            raise ValueError('model.local_runtime requires explicit host and port')
     if executor in {'cloud', 'local_teacher'}:
         if str(cloud.get('provider_type') or 'openai').lower() not in {'openai', 'openai-compatible'}:
             raise ValueError('cloud requires an OpenAI-compatible provider')
@@ -76,10 +82,20 @@ class RecordedProvider(ModelProvider):
         self.remote = remote
         self.secrets = [secret for secret in secrets if secret]
 
+    def _redact(self, value):
+        if isinstance(value, str):
+            for secret in self.secrets:
+                escaped = json.dumps(secret, ensure_ascii=False)[1:-1]
+                value = value.replace(escaped, '[REDACTED]').replace(secret, '[REDACTED]')
+            return value
+        if isinstance(value, list):
+            return [self._redact(item) for item in value]
+        if isinstance(value, dict):
+            return {self._redact(key): self._redact(item) for key, item in value.items()}
+        return value
+
     def _record(self, value):
-        line = json.dumps(value, ensure_ascii=False, default=str)
-        for secret in self.secrets:
-            line = line.replace(secret, '[REDACTED]')
+        line = json.dumps(self._redact(value), ensure_ascii=False, default=str)
         with self.path.open('a') as stream:
             stream.write(line + '\n')
 
@@ -95,15 +111,17 @@ class RecordedProvider(ModelProvider):
         try:
             response = self.provider.generate(messages=messages, **kwargs)
         except Exception as exc:
-            self._record({'error': f'{type(exc).__name__}: {exc}'})
-            raise
-        self._record({'response': asdict(response)})
-        return response
+            safe_error = self._redact(f'{type(exc).__name__}: {exc}')
+            self._record({'error': safe_error})
+            raise RuntimeError(safe_error) from None
+        safe_response = ModelResponse(**self._redact(asdict(response)))
+        self._record({'response': asdict(safe_response)})
+        return safe_response
 
 
 def _artifacts(workspace: Path, run_id: str) -> list[dict]:
     return [{'name': str(path.relative_to(workspace)),
-             'url': f'/api/browser-tasks/{run_id}/artifacts/{path.relative_to(workspace)}',
+             'url': f'/api/browser/tasks/{run_id}/artifacts/{path.relative_to(workspace)}',
              'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
             for path in sorted(workspace.rglob('*')) if path.is_file() and not path.name.endswith('.tmp') and path.name != 'result.json']
 
@@ -159,9 +177,14 @@ def run(request: dict) -> dict:
     else:
         usage_status = 'partial_or_unknown'
     check_available = bool(task.get('scoring_criteria'))
-    check_passed = completed.status == 'passed' if check_available else None
-    execution_failed = completed.status in {'crashed', 'timeout', 'budget_exhausted'} or chain.get('stop_reason') == 'call_error'
-    task_status = ('completed' if check_passed else 'failed') if check_available else ('failed' if execution_failed else 'unknown')
+    model_errors = [call['error'] for call in calls if call.get('error')]
+    execution_failed = (completed.status in {'crashed', 'timeout', 'budget_exhausted'}
+                        or chain.get('stop_reason') == 'call_error' or bool(model_errors))
+    check_passed = (completed.status == 'passed' if check_available else None)
+    if execution_failed and not check_passed:
+        check_passed = None
+    task_status = ('failed' if execution_failed else 'completed' if check_passed
+                   else 'failed' if check_available else 'unknown')
     cost = {'amount_usd': 0 if executor == 'local' else None,
             'source': 'local_api_only' if executor == 'local' else 'unknown_unpriced'}
     cloud = (effective.get('model') or {}).get('cloud_api') or {}
@@ -176,7 +199,8 @@ def run(request: dict) -> dict:
             pass
     result = {'task_status': task_status, 'check_available': check_available,
               'check_passed': check_passed, 'run_status': completed.status,
-              'stop_reason': chain.get('stop_reason') or completed.metadata.get('completion', {}).get('stop_reason'),
+              'error': model_errors[0] if model_errors else None,
+              'stop_reason': 'model_error' if model_errors else chain.get('stop_reason') or completed.metadata.get('completion', {}).get('stop_reason'),
               'executor': executor, 'model_name': primary.provider.model_name,
               'teacher_model_name': teacher.provider.model_name if teacher else None,
               'teacher_triggered': bool(chain.get('takeover', {}).get('triggered')) if teacher else False,
