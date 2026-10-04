@@ -1004,9 +1004,12 @@ class KageServer:
         if job.get('task_type') == 'browser_experiment':
             result = job.get('result') if isinstance(job.get('result'), dict) else {}
             status = result.get('task_status') or job.get('status')
+            if status == 'failed':
+                if result.get('check_available') is True and result.get('check_passed') is False:
+                    return '浏览器实验未通过检查。'
+                return '浏览器实验执行失败，目标未确认。'
             messages = {
                 'completed': '浏览器实验检查通过了。',
-                'failed': '浏览器实验未通过检查。',
                 'unknown': '浏览器实验已结束，结果待确认。',
                 'stopped': '浏览器实验已停止。',
             }

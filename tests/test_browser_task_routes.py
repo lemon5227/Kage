@@ -97,6 +97,49 @@ def test_runtime_notification_failure_does_not_strand_worker(client, model_serve
         server.kage_server = None
 
 
+def test_stalled_runtime_notification_does_not_delay_worker_stop_or_close(client, model_server):
+    import core.server as server
+    import core.routes.browser_tasks as routes
+
+    class StalledRuntime:
+        def __init__(self):
+            self.release = asyncio.Event()
+            self.entered = asyncio.Event()
+
+        async def _notify_job_event(self, _event, _job):
+            self.entered.set()
+            await self.release.wait()
+
+    runtime = StalledRuntime()
+    server.kage_server = runtime
+    try:
+        first = client.post('/api/browser/tasks', json={'task_id': 'preferences_dev'}).json()
+        # The real scripted HTTP model must be reached while notification is still stalled.
+        deadline = time.monotonic() + 5
+        while model_server.calls == 0 and time.monotonic() < deadline:
+            time.sleep(.02)
+        assert model_server.calls > 0
+        assert client.portal.call(runtime.entered.is_set)
+        assert not runtime.release.is_set()
+        assert wait_for(client, first['run_id'], 'completed')['result']['check_passed'] is True
+
+        model_server.hang = True
+        second = client.post('/api/browser/tasks', json={'task_id': 'preferences_dev'}).json()
+        assert model_server.entered.wait(25)
+        started = time.monotonic()
+        assert client.post(f'/api/browser/tasks/{second["run_id"]}/stop').json()['status'] == 'stopped'
+        assert time.monotonic() - started < 2
+        started = time.monotonic()
+        client.portal.call(routes.close_service)
+        assert time.monotonic() - started < 2
+        assert routes._service is None
+        assert client.portal.call(lambda: all(task.done() for task in routes._notification_tasks))
+    finally:
+        client.portal.call(runtime.release.set)
+        model_server.release.set()
+        server.kage_server = None
+
+
 def test_invalid_payload_config_and_stop_preserve_truth(client, model_server):
     assert client.post('/api/browser/tasks', json={'task_id': 'missing'}).status_code == 422
     assert client.post('/api/browser/tasks', json={'task_id': 'preferences_dev', 'instruction': 'other'}).status_code == 422
@@ -160,6 +203,7 @@ def test_launcher_click_status_evidence_and_stop(client, model_server):
         page.locator('#browser-task-id').select_option('preferences_dev')
         page.locator('#browser-start').click()
         page.locator('#browser-job-status').get_by_text('未通过', exact=False).wait_for(timeout=35000)
+        assert '检查: 未通过' in page.locator('#browser-job-status').inner_text()
         assert '检查通过' not in page.locator('#browser-job-status').inner_text()
 
         model_server.hang = True
@@ -169,6 +213,49 @@ def test_launcher_click_status_evidence_and_stop(client, model_server):
         page.locator('#browser-job-status').get_by_text('已停止', exact=False).wait_for(timeout=10000)
         assert len([r for r in requests if r[0] == 'POST' and r[1].endswith('/stop')]) == 1
         model_server.release.set()
+        browser.close()
+
+
+@pytest.mark.parametrize('task_id,check_text', [
+    ('preferences_dev', '检查: 未确认'),
+    ('preferences_unchecked', '检查: 未提供'),
+])
+def test_launcher_shows_unconfirmed_goal_for_worker_launch_error(client, model_server, monkeypatch,
+                                                                tmp_path, task_id, check_text):
+    from playwright.sync_api import sync_playwright
+
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(tmp_path / 'missing-python'))
+    launcher = Path(__file__).resolve().parents[1] / 'kage-avatar/public/launcher.html'
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        def api_route(route):
+            request = route.request
+            path = request.url.split('/api', 1)[1]
+            if request.method == 'OPTIONS':
+                route.fulfill(status=200, headers={'access-control-allow-origin': '*',
+                                                    'access-control-allow-methods': 'GET, POST, OPTIONS',
+                                                    'access-control-allow-headers': 'content-type'})
+                return
+            response = client.request(request.method, '/api' + path,
+                                      content=request.post_data if request.method == 'POST' else None,
+                                      headers={'content-type': 'application/json'} if request.method == 'POST' else None)
+            route.fulfill(status=response.status_code, body=response.content,
+                          headers={'access-control-allow-origin': '*',
+                                   'content-type': response.headers.get('content-type', 'application/json')})
+
+        page.route('http://127.0.0.1:12345/api/browser/**', api_route)
+        page.goto(launcher.as_uri())
+        page.locator('#browser-task-id').select_option(task_id)
+        page.locator('#browser-start').click()
+        page.locator('#browser-job-status').get_by_text('执行失败，目标未确认', exact=False).wait_for(timeout=15000)
+        status = page.locator('#browser-job-status').inner_text()
+        assert check_text in status
+        assert '错误: WorkerLaunchError' in status
+        assert '未通过检查' not in status
+        assert model_server.calls == 0
         browser.close()
 
 

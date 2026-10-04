@@ -209,17 +209,22 @@ def test_background_completion_notification_handles_failure():
     assert "失败了" in text
 
 
-@pytest.mark.parametrize('task_status,expected', [
-    ('completed', '通过'), ('failed', '未通过'),
-    ('unknown', '待确认'), ('stopped', '已停止'),
+@pytest.mark.parametrize('task_status,check_available,check_passed,expected', [
+    ('completed', True, True, '通过'),
+    ('failed', True, False, '未通过检查'),
+    ('failed', True, None, '执行失败，目标未确认'),
+    ('failed', False, None, '执行失败，目标未确认'),
+    ('unknown', False, None, '待确认'),
+    ('stopped', True, None, '已停止'),
 ])
-def test_browser_notification_uses_checked_task_status(task_status, expected):
+def test_browser_notification_uses_checked_task_status(task_status, check_available, check_passed, expected):
     server = object.__new__(KageServer)
     server.active_websocket = object()
     server._ui_state = 'IDLE'
     text = server._background_completion_notification('completed', {
-        'task_type': 'browser_experiment', 'task_status': task_status,
-        'status': task_status, 'notify_on_finish': True,
+        'task_type': 'browser_experiment', 'status': task_status,
+        'result': {'task_status': task_status, 'check_available': check_available,
+                   'check_passed': check_passed}, 'notify_on_finish': True,
     })
     assert expected in text
     if task_status != 'completed':

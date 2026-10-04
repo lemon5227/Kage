@@ -1,6 +1,7 @@
 """HTTP entry point for controlled browser experiments."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -15,6 +16,37 @@ router = APIRouter(prefix='/api/browser', tags=['browser-experiments'])
 logger = logging.getLogger(__name__)
 _service: BrowserTaskService | None = None
 _service_lock = Lock()
+_notification_tasks: set[asyncio.Task] = set()
+NOTIFICATION_TIMEOUT_SECONDS = 5.0
+NOTIFICATION_CLEANUP_SECONDS = 0.25
+
+
+def _track_notification(task: asyncio.Task) -> None:
+    _notification_tasks.add(task)
+
+    def settled(done: asyncio.Task) -> None:
+        _notification_tasks.discard(done)
+        if not done.cancelled():
+            try:
+                done.exception()
+            except Exception as exc:
+                logger.warning('Browser job notification failed: %s', type(exc).__name__)
+
+    task.add_done_callback(settled)
+
+
+async def _deliver_notification(runtime, event: str, job: dict) -> None:
+    delivery = asyncio.create_task(runtime._notify_job_event(event, job))
+    _track_notification(delivery)
+    done, pending = await asyncio.wait({delivery}, timeout=NOTIFICATION_TIMEOUT_SECONDS)
+    if pending:
+        delivery.cancel()
+        logger.warning('Browser job notification timed out')
+    else:
+        try:
+            delivery.result()
+        except Exception as exc:
+            logger.warning('Browser job notification failed: %s', type(exc).__name__)
 
 
 async def _notify_runtime(event: str, job: dict) -> None:
@@ -22,11 +54,9 @@ async def _notify_runtime(event: str, job: dict) -> None:
     runtime = server.kage_server
     if runtime is None:
         return
-    try:
-        await runtime._notify_job_event(event, job)
-    except Exception as exc:
-        # A disconnected UI or speech failure must not abort the serial worker.
-        logger.warning('Browser job notification failed: %s', type(exc).__name__)
+    # Event delivery may include websocket I/O and speech. It cannot hold the
+    # serial worker's started event or a run-bound stop/shutdown response.
+    _track_notification(asyncio.create_task(_deliver_notification(runtime, event, job)))
 
 
 def _get_service() -> BrowserTaskService:
@@ -44,8 +74,17 @@ async def close_service() -> None:
     global _service
     with _service_lock:
         service, _service = _service, None
-    if service is not None:
-        await service.close()
+    try:
+        if service is not None:
+            await service.close()
+    finally:
+        tasks = tuple(_notification_tasks)
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            _, pending = await asyncio.wait(tasks, timeout=NOTIFICATION_CLEANUP_SECONDS)
+            if pending:
+                logger.warning('Browser job notification cleanup timed out')
 
 
 @router.get('/catalog')

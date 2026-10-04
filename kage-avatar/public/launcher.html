@@ -1010,8 +1010,10 @@
     let _browserPollApplied = 0;
     let _browserTerminal = false;
 
-    function browserStatusLabel(status) {
-      return ({ queued: '排队中', running: '运行中', completed: '检查通过', failed: '未通过',
+    function browserStatusLabel(status, result = {}) {
+      if (status === 'failed')
+        return result.check_available === true && result.check_passed === false ? '未通过检查' : '执行失败，目标未确认';
+      return ({ queued: '排队中', running: '运行中', completed: '检查通过',
         unknown: '待确认', stopped: '已停止' })[status] || String(status || '未知');
     }
 
@@ -1040,7 +1042,9 @@
       const usage = result.usage || {};
       const reserve = result.reservation || {};
       const cost = result.cost || {};
-      const lines = [browserField('运行 ID', job.run_id), browserField('状态', browserStatusLabel(status)),
+      const check = result.check_available === false ? '未提供' : result.check_passed === true ? '通过' : result.check_passed === false ? '未通过' : '未确认';
+      const lines = [browserField('运行 ID', job.run_id), browserField('状态', browserStatusLabel(status, result)),
+        browserField('检查', check), browserField('错误', result.error || job.error),
         browserField('执行器', result.executor || job.executor), browserField('实际模型', result.model_name),
         browserField('停止原因', result.stop_reason), browserField('模型请求', usage.api_calls),
         browserField('报告输入 tokens', usage.reported_input_tokens ?? usage.input_tokens),
