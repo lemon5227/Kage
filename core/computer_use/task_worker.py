@@ -183,8 +183,7 @@ def run(request: dict) -> dict:
     check_passed = (completed.status == 'passed' if check_available else None)
     if execution_failed and not check_passed:
         check_passed = None
-    task_status = ('failed' if execution_failed else 'completed' if check_passed
-                   else 'failed' if check_available else 'unknown')
+    task_status = ('completed' if check_passed else 'failed' if execution_failed or check_available else 'unknown')
     cost = {'amount_usd': 0 if executor == 'local' else None,
             'source': 'local_api_only' if executor == 'local' else 'unknown_unpriced'}
     cloud = (effective.get('model') or {}).get('cloud_api') or {}
@@ -199,8 +198,10 @@ def run(request: dict) -> dict:
             pass
     result = {'task_status': task_status, 'check_available': check_available,
               'check_passed': check_passed, 'run_status': completed.status,
-              'error': model_errors[0] if model_errors else None,
-              'stop_reason': 'model_error' if model_errors else chain.get('stop_reason') or completed.metadata.get('completion', {}).get('stop_reason'),
+              'error': model_errors[0] if model_errors and not check_passed else None,
+              'model_errors': model_errors,
+              'stop_reason': ('model_error' if model_errors and not check_passed else
+                              chain.get('stop_reason') or completed.metadata.get('completion', {}).get('stop_reason')),
               'executor': executor, 'model_name': primary.provider.model_name,
               'teacher_model_name': teacher.provider.model_name if teacher else None,
               'teacher_triggered': bool(chain.get('takeover', {}).get('triggered')) if teacher else False,

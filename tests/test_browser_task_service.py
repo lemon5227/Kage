@@ -39,7 +39,7 @@ class ScriptedModel(BaseHTTPRequestHandler):
                 payload = json.loads(content[content.index('{'):])
                 observation = payload.get('observation', observation)
         action = None
-        if server.mode == 'save':
+        if server.mode in {'save', 'recover_error_then_save'}:
             for label in ('Email notifications', 'SMS notifications', 'Save settings'):
                 target = next((target for target in observation['targets'] if target.get('label') == label), None)
                 if target is None:
@@ -55,6 +55,11 @@ class ScriptedModel(BaseHTTPRequestHandler):
                     'target_ref': target['target_ref'], 'operation': 'click'}}
                 break
         message = {'role': 'assistant', 'content': 'Done.'}
+        if server.mode == 'recover_error_then_save' and server.calls == 1:
+            message = {'role': 'assistant', 'content': json.dumps(action), 'tool_calls': [
+                {'id': 'bad-first-call', 'type': 'function',
+                 'function': {'name': 'browser_act', 'arguments': '{'}}]}
+            action = None
         if server.mode == 'invalid_secret':
             message = {'role': 'assistant', 'content': server.secret, 'tool_calls': [
                 {'id': 'bad', 'type': 'function', 'function': {'name': server.secret, 'arguments': '{'}}]}
@@ -374,3 +379,123 @@ def test_response_redaction_covers_json_escaped_values_and_tool_argument_keys(tm
     assert secret not in json.dumps(asdict(safe), ensure_ascii=False)
     assert json.dumps(secret)[1:-1] not in safe.raw_output
     assert secret not in (tmp_path / 'calls.jsonl').read_text()
+
+
+def test_recovered_model_error_keeps_history_but_confirmed_check_completes(tmp_path, model_server, monkeypatch):
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(Path(__file__).resolve().parents[1] / '.venv-computer-use/bin/python'))
+    model_server.mode = 'recover_error_then_save'
+
+    async def scenario():
+        service = BrowserTaskService(tmp_path, lambda: config(model_server))
+        try:
+            job = await service.submit({'task_id': 'preferences_dev'})
+            final = await terminal(service, job['run_id'])
+            assert final['status'] == 'completed'
+            assert final['result']['check_passed'] is True
+            assert final['result']['error'] is None
+            assert len(final['result']['model_errors']) == 1
+            assert final['result']['stop_reason'] != 'model_error'
+            check = json.loads(service.artifact(job['run_id'], 'browser-check.json').read_text())
+            assert check['posts'] == 1 and check['readback_matches_backend'] is True
+            assert model_server.calls >= 3
+        finally:
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_stop_and_close_return_before_delayed_spawn_releases_then_reap_late_child(tmp_path, model_server, monkeypatch):
+    import core.computer_use.task_service as module
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(Path(__file__).resolve().parents[1] / '.venv-computer-use/bin/python'))
+    real_spawn = module.asyncio.create_subprocess_exec
+    spawned = {}
+
+    async def scenario():
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def delayed_spawn(*args, **kwargs):
+            proc = await real_spawn(*args, **kwargs)
+            spawned['proc'] = proc
+            entered.set()
+            await release.wait()
+            return proc
+
+        monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', delayed_spawn)
+        service = BrowserTaskService(tmp_path, lambda: config(model_server))
+        try:
+            job = await service.submit({'task_id': 'preferences_dev'})
+            await asyncio.wait_for(entered.wait(), 10)
+            stopped = await asyncio.wait_for(service.stop(job['run_id']), 3)
+            assert stopped['status'] == 'stopped'
+            await asyncio.wait_for(service.close(), 3)
+            assert model_server.calls == 0
+            release.set()
+            proc = spawned['proc']
+            await asyncio.wait_for(proc.wait(), 5)
+            with pytest.raises(ProcessLookupError):
+                os.kill(proc.pid, 0)
+            assert service.get(job['run_id'])['status'] == 'stopped'
+            assert model_server.calls == 0
+        finally:
+            release.set()
+            proc = spawned.get('proc')
+            if proc and proc.returncode is None:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except OSError:
+                    try:
+                        proc.kill()
+                    except ProcessLookupError:
+                        pass
+                await asyncio.wait_for(proc.wait(), 2)
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_startup_consumes_overall_deadline_and_reaps_late_child(tmp_path, model_server, monkeypatch):
+    import core.computer_use.task_service as module
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(Path(__file__).resolve().parents[1] / '.venv-computer-use/bin/python'))
+    monkeypatch.setattr(BrowserTaskService, 'RUN_DEADLINE_SECONDS', .25)
+    real_spawn = module.asyncio.create_subprocess_exec
+    spawned = {}
+
+    async def scenario():
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def delayed_spawn(*args, **kwargs):
+            proc = await real_spawn(*args, **kwargs)
+            spawned['proc'] = proc
+            entered.set()
+            await release.wait()
+            return proc
+
+        monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', delayed_spawn)
+        service = BrowserTaskService(tmp_path, lambda: config(model_server))
+        try:
+            job = await service.submit({'task_id': 'preferences_dev'})
+            await asyncio.wait_for(entered.wait(), 10)
+            final = await terminal(service, job['run_id'], timeout=2)
+            assert final['status'] == 'failed'
+            assert final['result']['stop_reason'] == 'timeout'
+            assert final['result']['check_passed'] is None
+            assert json.loads((tmp_path / f"run_{job['run_id']}" / 'result.json').read_text())['task_status'] == 'failed'
+            await asyncio.wait_for(service.close(), 2)
+            assert model_server.calls == 0
+            release.set()
+            proc = spawned['proc']
+            await asyncio.wait_for(proc.wait(), 5)
+            with pytest.raises(ProcessLookupError):
+                os.kill(proc.pid, 0)
+        finally:
+            release.set()
+            proc = spawned.get('proc')
+            if proc and proc.returncode is None:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except OSError:
+                    try:
+                        proc.kill()
+                    except ProcessLookupError:
+                        pass
+                await asyncio.wait_for(proc.wait(), 2)
+            await service.close()
+    asyncio.run(scenario())

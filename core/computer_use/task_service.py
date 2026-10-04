@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import signal
 import sys
+import time
 from typing import Any
 
 from core.background_lane import BackgroundLane
@@ -16,6 +17,9 @@ from core.computer_use.task_worker import ROOT, _model_config, task_catalog
 
 
 class BrowserTaskService:
+    RUN_DEADLINE_SECONDS = 480
+    STARTUP_STOP_WAIT_SECONDS = 1
+
     def __init__(self, run_root, config_loader, on_event=None):
         self.run_root = Path(run_root).expanduser().resolve()
         self.run_root.mkdir(parents=True, exist_ok=True)
@@ -26,6 +30,9 @@ class BrowserTaskService:
         self._results: dict[str, dict] = {}
         self._processes: dict[str, asyncio.subprocess.Process] = {}
         self._startups: dict[str, asyncio.Task] = {}
+        self._late_startups: set[asyncio.Task] = set()
+        self._late_cleanup_tasks: set[asyncio.Task] = set()
+        self._deadlines: dict[str, float] = {}
         self._closed = False
         self._worker = BackgroundWorker(lane=self._lane, processor=self._process, on_event=self._event)
 
@@ -91,6 +98,7 @@ class BrowserTaskService:
         profiles, _ = _model_config(config, executor)
         job = self._lane.submit(task_type='browser_experiment', input_text=task['instruction'])
         run_id = job['job_id']
+        self._deadlines[run_id] = time.monotonic() + self.RUN_DEADLINE_SECONDS
         self._requests[run_id] = {'task_id': task_id, 'executor': executor,
                                   'max_loop_steps': steps, 'workflow_bundle': bundle,
                                   'workflow_digest': digest, 'config': config,
@@ -128,6 +136,7 @@ class BrowserTaskService:
         request = self._requests[run_id]
         spec = {**request, 'run_id': run_id, 'run_root': str(self.run_root)}
         python = os.environ.get('KAGE_BROWSER_PYTHON') or sys.executable
+        deadline = self._deadlines[run_id]
         if self._lane.get(run_id)['status'] == 'cancelled':
             return self._partial(run_id, 'stopped', 'user_stop')
         startup = asyncio.create_task(asyncio.create_subprocess_exec(
@@ -138,7 +147,13 @@ class BrowserTaskService:
         proc = None
         try:
             try:
-                proc = await asyncio.shield(startup)
+                proc = await asyncio.wait_for(asyncio.shield(startup),
+                                              timeout=max(0, deadline - time.monotonic()))
+            except asyncio.TimeoutError:
+                self._reap_late_startup(startup)
+                result = self._partial(run_id, 'failed', 'timeout')
+                self._save_partial(run_id, result)
+                return result
             except Exception as exc:
                 result = self._partial(run_id, 'failed', 'worker_launch_failed')
                 error = f'WorkerLaunchError: {type(exc).__name__}: {exc}'
@@ -151,7 +166,8 @@ class BrowserTaskService:
                 await self._kill(proc)
                 return self._partial(run_id, 'stopped', 'user_stop')
             try:
-                await asyncio.wait_for(proc.communicate(json.dumps(spec).encode()), timeout=480)
+                await asyncio.wait_for(proc.communicate(json.dumps(spec).encode()),
+                                       timeout=max(0, deadline - time.monotonic()))
             except asyncio.TimeoutError:
                 await self._kill(proc)
                 result = self._partial(run_id, 'failed', 'timeout')
@@ -171,11 +187,8 @@ class BrowserTaskService:
             return result
         except asyncio.CancelledError:
             if proc is None:
-                try:
-                    proc = await asyncio.shield(startup)
-                except Exception:
-                    pass
-            if proc is not None:
+                self._reap_late_startup(startup)
+            else:
                 await self._kill(proc)
             raise
         finally:
@@ -239,6 +252,25 @@ class BrowserTaskService:
         workspace.mkdir(parents=True, exist_ok=True)
         (workspace / 'result.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
 
+    def _reap_late_startup(self, startup):
+        if startup in self._late_startups:
+            return
+        self._late_startups.add(startup)
+
+        def settled(task):
+            self._late_startups.discard(task)
+            if task.cancelled():
+                return
+            try:
+                proc = task.result()
+            except Exception:
+                return
+            cleanup = asyncio.create_task(self._kill(proc))
+            self._late_cleanup_tasks.add(cleanup)
+            cleanup.add_done_callback(self._late_cleanup_tasks.discard)
+
+        startup.add_done_callback(settled)
+
     @staticmethod
     async def _kill(proc):
         try:
@@ -260,7 +292,10 @@ class BrowserTaskService:
                 proc.kill()
             except ProcessLookupError:
                 pass
-        await proc.wait()
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=2)
+        except asyncio.TimeoutError:
+            pass
 
     async def stop(self, run_id: str) -> dict | None:
         job = self._lane.get(run_id)
@@ -272,7 +307,12 @@ class BrowserTaskService:
             proc = self._processes.get(run_id)
             if startup is not None:
                 try:
-                    proc = await asyncio.shield(startup)
+                    proc = await asyncio.wait_for(
+                        asyncio.shield(startup),
+                        timeout=max(0, min(self.STARTUP_STOP_WAIT_SECONDS,
+                                           self._deadlines[run_id] - time.monotonic())))
+                except asyncio.TimeoutError:
+                    self._reap_late_startup(startup)
                 except Exception:
                     pass
             if proc:
