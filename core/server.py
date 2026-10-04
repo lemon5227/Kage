@@ -910,6 +910,16 @@ class KageServer:
 
     async def _notify_job_event(self, event: str, job: dict[str, Any]) -> None:
         await self.send_message("job", self._job_event_payload(event, job))
+        if job.get('task_type') == 'browser_experiment':
+            result = job.get('result') if isinstance(job.get('result'), dict) else {}
+            self._log_server_event(
+                "job.browser_event",
+                event=event,
+                job_id=str(job.get("job_id") or ""),
+                task_type="browser_experiment",
+                task_status=str(result.get('task_status') or job.get('status') or ''),
+            )
+            return
         notification = self._background_completion_notification(event, job)
         if notification:
             self._log_server_event(

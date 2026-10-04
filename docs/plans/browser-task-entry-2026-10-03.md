@@ -70,7 +70,7 @@ GET /api/browser/tasks/{run_id}            -> public_job / 404
 POST /api/browser/tasks/{run_id}/stop      -> public_job / 404
 GET /api/browser/tasks/{run_id}/artifacts/{name} -> FileResponse / 404
 ```
-Payload/配置不支持返回422或409并提供短错误，不隐藏为成功；POST立即返回run_id、后台执行。复用现有APIRouter与kage:job；_background_completion_notification对browser_experiment按task_status表达通过/未通过/待确认/已停止，普通任务行为不改。
+Payload/配置不支持返回422或409并提供短错误，不隐藏为成功；POST立即返回run_id、后台执行。复用现有APIRouter与kage:job；_background_completion_notification对browser_experiment按task_status表达通过/未通过/待确认/已停止，普通任务行为不改。浏览器实验的实际通知仅发送kage:job并记录状态，由Launcher卡片显示；不为实验调用mouth_speak。普通后台任务仍按原逻辑语音通知。这样避免有界通知取消时旧播放线程清理共享mixer而影响新语音。
 
 Launcher在Background Tasks附近新增“浏览器实验”卡片：选择公开任务、显示目标、执行器/实际模型、5/6步预算，显式可选workflow_bundle（默认空，显示未晋级）；开始按钮、运行ID/状态/stop_reason/请求tokens/费用/保守预留、截图/保存证据链接与停止按钮。仅普通文字/DOM构造渲染模型文本，不让它生成HTML。复用fetchJson，创建/停止POST只发一次，避免默认重试创造额外任务；完成/unknown等终态停止轮询，页面重连先GET list补齐。UI异步显示运行状态，不因模型超时冻结按钮。
 

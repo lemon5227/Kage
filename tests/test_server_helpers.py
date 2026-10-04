@@ -231,6 +231,48 @@ def test_browser_notification_uses_checked_task_status(task_status, check_availa
         assert '完成了' not in text
 
 
+def test_browser_job_event_updates_panel_without_starting_speech():
+    server = object.__new__(KageServer)
+    server.active_websocket = object()
+    server._ui_state = 'IDLE'
+    server._speech_revision = 7
+    server._job_event_payload = lambda event, job: {'event': event, 'job': job}
+    logged = []
+    server._log_server_event = lambda *args, **kwargs: logged.append((args, kwargs))
+    sent = []
+    spoken = []
+
+    async def send_message(kind, payload):
+        sent.append((kind, payload))
+
+    async def mouth_speak(text, _emotion):
+        spoken.append(text)
+        server._speech_revision += 1
+        server._ui_state = 'SPEAKING'
+
+    server.send_message = send_message
+    server.mouth_speak = mouth_speak
+    browser = {'task_type': 'browser_experiment', 'job_id': 'browser-1', 'status': 'completed',
+               'result': {'task_status': 'completed', 'check_available': True, 'check_passed': True}}
+    asyncio.run(server._notify_job_event('completed', browser))
+
+    assert sent == [('job', {'event': 'completed', 'job': browser})]
+    assert spoken == []
+    assert server._speech_revision == 7
+    assert server._ui_state == 'IDLE'
+    assert logged == [(('job.browser_event',), {
+        'event': 'completed', 'job_id': 'browser-1',
+        'task_type': 'browser_experiment', 'task_status': 'completed',
+    })]
+
+    ordinary = {'task_type': 'cleanup', 'job_id': 'ordinary-1', 'status': 'completed'}
+    asyncio.run(server._notify_job_event('completed', ordinary))
+    assert sent[-1] == ('job', {'event': 'completed', 'job': ordinary})
+    assert len(spoken) == 1 and '完成了' in spoken[0]
+    assert server._speech_revision == 8
+    assert server._ui_state == 'SPEAKING'
+
+
 def test_interrupt_speech_updates_state_when_playing():
     server = object.__new__(KageServer)
     server._speech_revision = 0
