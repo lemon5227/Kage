@@ -224,6 +224,8 @@ def run(request: dict) -> dict:
 def main():
     try:
         request = json.loads(sys.stdin.buffer.read())
+        if (Path(request['run_root']) / f"run_{request['run_id']}" / 'stop.requested').exists():
+            return
         run(request)
     except BaseException as exc:
         # Never echo private configuration on stdout/stderr.

@@ -140,7 +140,7 @@ class BrowserTaskService:
         if self._lane.get(run_id)['status'] == 'cancelled':
             return self._partial(run_id, 'stopped', 'user_stop')
         startup = asyncio.create_task(asyncio.create_subprocess_exec(
-            python, '-m', 'core.computer_use.task_worker', cwd=str(ROOT),
+            python, '-m', 'core.computer_use.task_bootstrap', str(self.run_root), run_id, cwd=str(ROOT),
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL, start_new_session=True))
         self._startups[run_id] = startup
@@ -150,7 +150,8 @@ class BrowserTaskService:
                 proc = await asyncio.wait_for(asyncio.shield(startup),
                                               timeout=max(0, deadline - time.monotonic()))
             except asyncio.TimeoutError:
-                self._reap_late_startup(startup)
+                self._mark_stop(run_id)
+                await self._terminate_startup(run_id, startup)
                 result = self._partial(run_id, 'failed', 'timeout')
                 self._save_partial(run_id, result)
                 return result
@@ -169,6 +170,7 @@ class BrowserTaskService:
                 await asyncio.wait_for(proc.communicate(json.dumps(spec).encode()),
                                        timeout=max(0, deadline - time.monotonic()))
             except asyncio.TimeoutError:
+                self._mark_stop(run_id)
                 await self._kill(proc)
                 result = self._partial(run_id, 'failed', 'timeout')
                 self._save_partial(run_id, result)
@@ -186,8 +188,9 @@ class BrowserTaskService:
                 self._save_partial(run_id, result)
             return result
         except asyncio.CancelledError:
+            self._mark_stop(run_id)
             if proc is None:
-                self._reap_late_startup(startup)
+                await self._terminate_startup(run_id, startup)
             else:
                 await self._kill(proc)
             raise
@@ -252,6 +255,68 @@ class BrowserTaskService:
         workspace.mkdir(parents=True, exist_ok=True)
         (workspace / 'result.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
 
+    def _mark_stop(self, run_id):
+        workspace = self.run_root / f'run_{run_id}'
+        workspace.mkdir(parents=True, exist_ok=True)
+        (workspace / 'stop.requested').touch()
+
+    def _owned_pid(self, run_id):
+        path = self.run_root / f'run_{run_id}' / 'worker-owner.json'
+        try:
+            owner = json.loads(path.read_text())
+            pid = owner['pid']
+            return pid if type(pid) is int and pid > 0 and owner.get('pgid') == pid else None
+        except (FileNotFoundError, ValueError, KeyError, TypeError):
+            return None
+
+    async def _terminate_startup(self, run_id, startup):
+        limit = time.monotonic() + self.STARTUP_STOP_WAIT_SECONDS
+        while True:
+            if startup.done():
+                try:
+                    proc = startup.result()
+                except Exception:
+                    return
+                await self._kill(proc)
+                return
+            pid = self._owned_pid(run_id)
+            if pid is not None:
+                self._reap_late_startup(startup)
+                await self._kill_owned_pid(pid)
+                return
+            if time.monotonic() >= limit:
+                self._reap_late_startup(startup)
+                return
+            await asyncio.sleep(.02)
+
+    @staticmethod
+    async def _kill_owned_pid(pid):
+        # The bootstrap writes this PID only after creating its own process group.
+        try:
+            os.killpg(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        limit = time.monotonic() + .5
+        while time.monotonic() < limit:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                break
+            await asyncio.sleep(.02)
+        # Chromium descendants can outlive the group leader.
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        limit = time.monotonic() + 1
+        while time.monotonic() < limit:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return
+            await asyncio.sleep(.02)
+        raise RuntimeError('owned browser worker did not exit')
+
     def _reap_late_startup(self, startup):
         if startup in self._late_startups:
             return
@@ -302,20 +367,13 @@ class BrowserTaskService:
         if job is None:
             return None
         if job['status'] in {'queued', 'running'}:
+            self._mark_stop(run_id)
             cancelled = self._lane.cancel(run_id)
             startup = self._startups.get(run_id)
             proc = self._processes.get(run_id)
             if startup is not None:
-                try:
-                    proc = await asyncio.wait_for(
-                        asyncio.shield(startup),
-                        timeout=max(0, min(self.STARTUP_STOP_WAIT_SECONDS,
-                                           self._deadlines[run_id] - time.monotonic())))
-                except asyncio.TimeoutError:
-                    self._reap_late_startup(startup)
-                except Exception:
-                    pass
-            if proc:
+                await self._terminate_startup(run_id, startup)
+            elif proc:
                 await self._kill(proc)
             result = self._partial(run_id, 'stopped', 'user_stop')
             self._results[run_id] = result

@@ -428,6 +428,8 @@ def test_stop_and_close_return_before_delayed_spawn_releases_then_reap_late_chil
             assert stopped['status'] == 'stopped'
             await asyncio.wait_for(service.close(), 3)
             assert model_server.calls == 0
+            with pytest.raises(ProcessLookupError):
+                os.kill(spawned['proc'].pid, 0)
             release.set()
             proc = spawned['proc']
             await asyncio.wait_for(proc.wait(), 5)
@@ -480,6 +482,8 @@ def test_startup_consumes_overall_deadline_and_reaps_late_child(tmp_path, model_
             assert json.loads((tmp_path / f"run_{job['run_id']}" / 'result.json').read_text())['task_status'] == 'failed'
             await asyncio.wait_for(service.close(), 2)
             assert model_server.calls == 0
+            with pytest.raises(ProcessLookupError):
+                os.kill(spawned['proc'].pid, 0)
             release.set()
             proc = spawned['proc']
             await asyncio.wait_for(proc.wait(), 5)
@@ -496,6 +500,57 @@ def test_startup_consumes_overall_deadline_and_reaps_late_child(tmp_path, model_
                         proc.kill()
                     except ProcessLookupError:
                         pass
+                await asyncio.wait_for(proc.wait(), 2)
+            await service.close()
+    asyncio.run(scenario())
+
+
+def test_stop_before_spawn_returns_bounded_and_late_worker_never_dispatches(tmp_path, model_server, monkeypatch):
+    import core.computer_use.task_service as module
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(Path(__file__).resolve().parents[1] / '.venv-computer-use/bin/python'))
+    real_spawn = module.asyncio.create_subprocess_exec
+    spawned = {}
+
+    async def scenario():
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def delayed_spawn(*args, **kwargs):
+            entered.set()
+            await release.wait()
+            proc = await real_spawn(*args, **kwargs)
+            spawned['proc'] = proc
+            return proc
+
+        monkeypatch.setattr(module.asyncio, 'create_subprocess_exec', delayed_spawn)
+        service = BrowserTaskService(tmp_path, lambda: config(model_server))
+        try:
+            job = await service.submit({'task_id': 'preferences_dev'})
+            await asyncio.wait_for(entered.wait(), 10)
+            stopped = await asyncio.wait_for(service.stop(job['run_id']), 3)
+            assert stopped['status'] == 'stopped'
+            await asyncio.wait_for(service.close(), 3)
+            assert (tmp_path / f"run_{job['run_id']}" / 'stop.requested').exists()
+            release.set()
+            proc = spawned.get('proc')
+            for _ in range(100):
+                if proc is None:
+                    await asyncio.sleep(.02)
+                    proc = spawned.get('proc')
+                else:
+                    break
+            assert proc is not None
+            await asyncio.wait_for(proc.wait(), 5)
+            with pytest.raises(ProcessLookupError):
+                os.kill(proc.pid, 0)
+            assert model_server.calls == 0
+        finally:
+            release.set()
+            proc = spawned.get('proc')
+            if proc and proc.returncode is None:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except OSError:
+                    pass
                 await asyncio.wait_for(proc.wait(), 2)
             await service.close()
     asyncio.run(scenario())
