@@ -72,28 +72,19 @@ async def mouth_speak(
             logger.info("Playing audio: %s", audio_path)
         except Exception:
             pass
+        # 4. Now we are ready to play. Signal Frontend!
+        await kage_server.send_state("SPEAKING")
         barge_task = None
+        if kage_server.audio_orchestrator.should_enable_voice_barge_in(
+            text_only_mode=kage_server._text_only_mode,
+            ears=kage_server.ears,
+        ):
+            barge_task = asyncio.create_task(
+                _monitor_voice_barge_in(kage_server, speech_revision)
+            )
+        # Blocking Playback
         try:
-            # 4. Now we are ready to play. Signal Frontend!
-            await kage_server.send_state("SPEAKING")
-            if kage_server.audio_orchestrator.should_enable_voice_barge_in(
-                text_only_mode=kage_server._text_only_mode,
-                ears=kage_server.ears,
-            ):
-                barge_task = asyncio.create_task(
-                    _monitor_voice_barge_in(kage_server, speech_revision)
-                )
-            # Cancellation of to_thread does not stop its playback thread.
             await asyncio.to_thread(kage_server.mouth.play_audio_file, audio_path)
-        except asyncio.CancelledError:
-            if speech_revision == kage_server._speech_revision:
-                try:
-                    kage_server.mouth.stop_playback()
-                except Exception as exc:
-                    logger.warning("Speech cancellation could not stop playback: %s", exc)
-                if speech_revision == kage_server._speech_revision:
-                    await kage_server.send_state("IDLE")
-            raise
         finally:
             if barge_task is not None:
                 barge_task.cancel()
