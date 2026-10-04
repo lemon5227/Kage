@@ -1005,6 +1005,10 @@
     let _browserCatalog = null;
     let _browserRunId = null;
     let _browserPoll = null;
+    let _browserGeneration = 0;
+    let _browserPollIssued = 0;
+    let _browserPollApplied = 0;
+    let _browserTerminal = false;
 
     function browserStatusLabel(status) {
       return ({ queued: '排队中', running: '运行中', completed: '检查通过', failed: '未通过',
@@ -1015,10 +1019,23 @@
       return `${label}: ${value === null || value === undefined || value === '' ? '未知' : value}`;
     }
 
-    function browserRenderJob(job) {
+    function browserSelectJob(job) {
       if (!job || !job.run_id) return;
+      _browserGeneration++;
       _browserRunId = job.run_id;
+      _browserTerminal = false;
+      _browserPollIssued = 0;
+      _browserPollApplied = 0;
+      if (_browserPoll) { clearInterval(_browserPoll); _browserPoll = null; }
+      browserRenderJob(job);
+    }
+
+    function browserRenderJob(job) {
+      if (!job || job.run_id !== _browserRunId) return;
       const status = String(job.status || 'unknown');
+      const active = status === 'queued' || status === 'running';
+      if (_browserTerminal && active) return;
+      if (!active) _browserTerminal = true;
       const result = job.result || {};
       const usage = result.usage || {};
       const reserve = result.reservation || {};
@@ -1046,7 +1063,6 @@
         link.textContent = item.name;
         artifacts.appendChild(link);
       }
-      const active = status === 'queued' || status === 'running';
       qs('browser-stop').disabled = !active;
       if (!active && _browserPoll) { clearInterval(_browserPoll); _browserPoll = null; }
       if (active && !_browserPoll) _browserPoll = setInterval(browserPollStatus, 1200);
@@ -1054,8 +1070,18 @@
 
     async function browserPollStatus() {
       if (!_browserRunId) return;
-      try { browserRenderJob(await fetchJson(`/browser/tasks/${encodeURIComponent(_browserRunId)}`, {}, 1)); }
-      catch (error) { qs('browser-job-status').textContent = `状态读取失败：${error}`; }
+      const runId = _browserRunId;
+      const generation = _browserGeneration;
+      const sequence = ++_browserPollIssued;
+      try {
+        const job = await fetchJson(`/browser/tasks/${encodeURIComponent(runId)}`, {}, 1);
+        if (generation !== _browserGeneration || runId !== _browserRunId || sequence < _browserPollApplied) return;
+        _browserPollApplied = sequence;
+        browserRenderJob(job);
+      } catch (error) {
+        if (generation === _browserGeneration && runId === _browserRunId && !_browserTerminal)
+          qs('browser-job-status').textContent = `状态读取失败：${error}`;
+      }
     }
 
     function browserRenderSelection() {
@@ -1064,6 +1090,7 @@
     }
 
     async function browserLoadCatalogAndRuns() {
+      const generation = _browserGeneration;
       try {
         const [catalog, jobs] = await Promise.all([fetchJson('/browser/catalog', {}, 1), fetchJson('/browser/tasks', {}, 1)]);
         _browserCatalog = catalog;
@@ -1082,30 +1109,51 @@
           executors.appendChild(option);
         }
         browserRenderSelection();
-        if (Array.isArray(jobs) && jobs.length) browserRenderJob(jobs[jobs.length - 1]);
-      } catch (error) { qs('browser-job-status').textContent = `浏览器实验不可用：${error}`; }
+        if (generation === _browserGeneration && !_browserRunId && Array.isArray(jobs) && jobs.length)
+          browserSelectJob(jobs[jobs.length - 1]);
+      } catch (error) {
+        if (generation === _browserGeneration && !_browserRunId)
+          qs('browser-job-status').textContent = `浏览器实验不可用：${error}`;
+      }
     }
 
     async function browserStart() {
       const button = qs('browser-start'); button.disabled = true;
+      const generation = ++_browserGeneration;
+      _browserRunId = null;
+      _browserTerminal = false;
+      if (_browserPoll) { clearInterval(_browserPoll); _browserPoll = null; }
+      qs('browser-stop').disabled = true;
       try {
         const payload = { task_id: qs('browser-task-id').value, executor: qs('browser-executor').value,
           max_loop_steps: Number(qs('browser-steps').value) };
         const bundle = qs('browser-bundle').value.trim();
         if (bundle) payload.workflow_bundle = bundle;
         qs('browser-job-status').textContent = '正在提交实验…';
-        browserRenderJob(await fetchJson('/browser/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }, 1));
+        const job = await fetchJson('/browser/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }, 1);
+        if (generation === _browserGeneration) browserSelectJob(job);
       } catch (error) {
-        qs('browser-job-status').textContent = `实验提交失败：${error}`;
-        browserLoadCatalogAndRuns();
+        if (generation === _browserGeneration) {
+          qs('browser-job-status').textContent = `实验提交失败：${error}`;
+          browserLoadCatalogAndRuns();
+        }
       } finally { button.disabled = false; }
     }
 
     async function browserStop() {
       if (!_browserRunId) return;
+      const runId = _browserRunId;
+      const generation = _browserGeneration;
       const button = qs('browser-stop'); button.disabled = true;
-      try { browserRenderJob(await fetchJson(`/browser/tasks/${encodeURIComponent(_browserRunId)}/stop`, { method: 'POST' }, 1)); }
-      catch (error) { qs('browser-job-status').textContent = `停止失败：${error}`; button.disabled = false; }
+      try {
+        const job = await fetchJson(`/browser/tasks/${encodeURIComponent(runId)}/stop`, { method: 'POST' }, 1);
+        if (generation === _browserGeneration && runId === _browserRunId) browserRenderJob(job);
+      } catch (error) {
+        if (generation === _browserGeneration && runId === _browserRunId) {
+          qs('browser-job-status').textContent = `停止失败：${error}`;
+          button.disabled = false;
+        }
+      }
     }
 
     function renderBackgroundJobs() {

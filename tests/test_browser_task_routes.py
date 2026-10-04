@@ -170,3 +170,89 @@ def test_launcher_click_status_evidence_and_stop(client, model_server):
         assert len([r for r in requests if r[0] == 'POST' and r[1].endswith('/stop')]) == 1
         model_server.release.set()
         browser.close()
+
+
+def test_launcher_ignores_late_poll_from_previous_run_and_terminal_revival(client, model_server):
+    from playwright.async_api import async_playwright
+
+    launcher = Path(__file__).resolve().parents[1] / 'kage-avatar/public/launcher.html'
+    model_server.hang = True
+
+    async def scenario():
+        post_ids = []
+        stopped_ids = []
+        seen_a, release_a = asyncio.Event(), asyncio.Event()
+        seen_b, release_b = asyncio.Event(), asyncio.Event()
+
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch(headless=True)
+            page = await browser.new_page()
+
+            async def api_route(route):
+                request = route.request
+                path = request.url.split('/api', 1)[1]
+                if request.method == 'OPTIONS':
+                    await route.fulfill(status=200, headers={
+                        'access-control-allow-origin': '*',
+                        'access-control-allow-methods': 'GET, POST, OPTIONS',
+                        'access-control-allow-headers': 'content-type',
+                    })
+                    return
+                response = await asyncio.to_thread(
+                    client.request, request.method, '/api' + path,
+                    content=request.post_data if request.method == 'POST' else None,
+                    headers={'content-type': 'application/json'} if request.method == 'POST' else None,
+                )
+                if request.method == 'POST' and path == '/browser/tasks':
+                    post_ids.append(response.json()['run_id'])
+                if request.method == 'POST' and path.endswith('/stop'):
+                    stopped_ids.append(path.split('/')[3])
+                if request.method == 'GET' and len(post_ids) >= 1 and path == f'/browser/tasks/{post_ids[0]}' and not seen_a.is_set():
+                    seen_a.set()
+                    await release_a.wait()
+                if request.method == 'GET' and len(post_ids) >= 2 and path == f'/browser/tasks/{post_ids[1]}' and not seen_b.is_set():
+                    seen_b.set()
+                    await release_b.wait()
+                await route.fulfill(status=response.status_code, body=response.content, headers={
+                    'access-control-allow-origin': '*',
+                    'content-type': response.headers.get('content-type', 'application/json'),
+                })
+
+            await page.route('http://127.0.0.1:12345/api/browser/**', api_route)
+            await page.goto(launcher.as_uri())
+            await page.locator('#browser-task-id').select_option('preferences_dev')
+            await page.locator('#browser-start').click()
+            await asyncio.wait_for(seen_a.wait(), 15)
+            await page.locator('#browser-start').click()
+            while len(post_ids) < 2:
+                await asyncio.sleep(.02)
+            run_a, run_b = post_ids
+            await page.locator('#browser-job-status').get_by_text(run_b, exact=False).wait_for(timeout=10000)
+
+            release_a.set()
+            await page.wait_for_timeout(350)
+            assert run_b in await page.locator('#browser-job-status').inner_text()
+            assert run_a not in await page.locator('#browser-job-status').inner_text()
+            await page.evaluate("""runId => window.dispatchEvent(new CustomEvent('kage:job', {
+              detail: {event: 'running', job: {task_type: 'browser_experiment', run_id: runId, status: 'running'}}
+            }))""", run_a)
+            assert run_b in await page.locator('#browser-job-status').inner_text()
+
+            await asyncio.wait_for(seen_b.wait(), 15)
+            await page.locator('#browser-stop').click()
+            await page.locator('#browser-job-status').get_by_text('已停止', exact=False).wait_for(timeout=10000)
+            assert stopped_ids == [run_b]
+            release_b.set()
+            await page.wait_for_timeout(350)
+            assert run_b in await page.locator('#browser-job-status').inner_text()
+            assert '已停止' in await page.locator('#browser-job-status').inner_text()
+            assert '排队中' not in await page.locator('#browser-job-status').inner_text()
+            await page.evaluate("""runId => window.dispatchEvent(new CustomEvent('kage:job', {
+              detail: {event: 'running', job: {task_type: 'browser_experiment', run_id: runId, status: 'running'}}
+            }))""", run_b)
+            assert '已停止' in await page.locator('#browser-job-status').inner_text()
+            await asyncio.to_thread(client.post, f'/api/browser/tasks/{run_a}/stop')
+            model_server.release.set()
+            await browser.close()
+
+    asyncio.run(scenario())
