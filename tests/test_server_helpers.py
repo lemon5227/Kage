@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 
 from core.dialog_state_machine import DialogStateSnapshot
 from core.realtime_handlers import format_video_evidence, video_selection_evidence
@@ -206,6 +207,23 @@ def test_background_completion_notification_handles_failure():
     )
 
     assert "失败了" in text
+
+
+@pytest.mark.parametrize('task_status,expected', [
+    ('completed', '通过'), ('failed', '未通过'),
+    ('unknown', '待确认'), ('stopped', '已停止'),
+])
+def test_browser_notification_uses_checked_task_status(task_status, expected):
+    server = object.__new__(KageServer)
+    server.active_websocket = object()
+    server._ui_state = 'IDLE'
+    text = server._background_completion_notification('completed', {
+        'task_type': 'browser_experiment', 'task_status': task_status,
+        'status': task_status, 'notify_on_finish': True,
+    })
+    assert expected in text
+    if task_status != 'completed':
+        assert '完成了' not in text
 
 
 def test_interrupt_speech_updates_state_when_playing():

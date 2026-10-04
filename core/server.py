@@ -478,21 +478,24 @@ async def lifespan(app: FastAPI):
                 logger.info("Main loop autostart enabled")
             except Exception as e:
                 logger.warning("Failed to autostart main loop: %s", e, exc_info=True)
-    yield
-    # Shutdown
-    if kage_server:
-        kage_server.is_running = False
-        try:
-            await kage_server.background_worker.stop()
-        except Exception as exc:
-            logger.warning("background_worker.stop() failed during shutdown: %s", exc)
-        # Flush pending memory facts before exit
-        try:
-            if hasattr(kage_server, "agentic_loop") and kage_server.agentic_loop:
-                kage_server.agentic_loop.flush_pending_facts()
-        except Exception as exc:
-            logger.warning("flush_pending_facts() failed during shutdown: %s", exc)
-        logger.info("Lifespan Shutdown: stopping KageServer...")
+    try:
+        yield
+    finally:
+        from core.routes.browser_tasks import close_service
+        await close_service()
+        if kage_server:
+            kage_server.is_running = False
+            try:
+                await kage_server.background_worker.stop()
+            except Exception as exc:
+                logger.warning("background_worker.stop() failed during shutdown: %s", exc)
+            # Flush pending memory facts before exit
+            try:
+                if hasattr(kage_server, "agentic_loop") and kage_server.agentic_loop:
+                    kage_server.agentic_loop.flush_pending_facts()
+            except Exception as exc:
+                logger.warning("flush_pending_facts() failed during shutdown: %s", exc)
+            logger.info("Lifespan Shutdown: stopping KageServer...")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -554,10 +557,12 @@ def _get_kage_server():
 from core.routes.system import router as system_router
 from core.routes.models import router as models_router
 from core.routes.memory import router as memory_router
+from core.routes.browser_tasks import router as browser_tasks_router
 
 app.include_router(system_router)
 app.include_router(models_router)
 app.include_router(memory_router)
+app.include_router(browser_tasks_router)
 
 # Re-exports for backward compatibility
 from core.routes.system import (
@@ -984,7 +989,8 @@ class KageServer:
         return labels.get(task, "后台任务")
 
     def _should_notify_background_completion(self, event: str, job: dict[str, Any]) -> bool:
-        if str(event or "") not in ("completed", "failed"):
+        allowed = ("completed", "failed", "stopped") if job.get('task_type') == 'browser_experiment' else ("completed", "failed")
+        if str(event or "") not in allowed:
             return False
         if not bool(job.get("notify_on_finish", True)):
             return False
@@ -995,6 +1001,16 @@ class KageServer:
     def _background_completion_notification(self, event: str, job: dict[str, Any]) -> str:
         if not self._should_notify_background_completion(event, job):
             return ""
+        if job.get('task_type') == 'browser_experiment':
+            result = job.get('result') if isinstance(job.get('result'), dict) else {}
+            status = result.get('task_status') or job.get('status')
+            messages = {
+                'completed': '浏览器实验检查通过了。',
+                'failed': '浏览器实验未通过检查。',
+                'unknown': '浏览器实验已结束，结果待确认。',
+                'stopped': '浏览器实验已停止。',
+            }
+            return messages.get(status, '浏览器实验已结束，结果待确认。')
         label = self._background_task_label(str(job.get("task_type") or ""))
         if str(event or "") == "completed":
             return f"{label}完成了。你想听结果的话，我现在就可以继续说。"

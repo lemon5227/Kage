@@ -500,6 +500,22 @@
           <div class="card-title">Background Tasks</div>
           <div class="mono" id="background-jobs" role="status" aria-live="polite" aria-label="Background tasks"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No background tasks yet</div></div>
         </div>
+        <div class="card" id="browser-experiment">
+          <div class="card-title">浏览器实验</div>
+          <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">仅运行公开的受控任务。检查结果和保存证据会在这里显示。</div>
+          <label for="browser-task-id">公开任务</label>
+          <select id="browser-task-id" style="width:100%; margin:6px 0 10px;"></select>
+          <div id="browser-task-goal" style="font-size:12px; margin-bottom:10px;"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <div><label for="browser-executor">执行器 / 实际模型</label><br><select id="browser-executor" style="margin-top:6px;"></select></div>
+            <div><label for="browser-steps">循环步数（主执行者最多 6 次请求；教师另有 6 次）</label><br><select id="browser-steps" style="margin-top:6px;"><option value="5">5 步</option><option value="6">6 步</option></select></div>
+          </div>
+          <label for="browser-bundle">Workflow bundle（可选，未晋级）</label>
+          <input id="browser-bundle" type="text" placeholder="留空：不加载 bundle" style="width:100%; box-sizing:border-box; margin:6px 0 10px;" />
+          <div style="display:flex; gap:8px;"><button class="btn-launch" id="browser-start" type="button">开始实验</button><button class="btn-launch" id="browser-stop" type="button" disabled>停止当前运行</button></div>
+          <div id="browser-job-status" role="status" aria-live="polite" style="font-size:12px; margin-top:12px; white-space:pre-wrap; overflow-wrap:anywhere;">尚无运行</div>
+          <div id="browser-artifacts" style="font-size:12px; margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+        </div>
       </div>
       <div id="page-model" class="page">
         <div class="card">
@@ -986,6 +1002,111 @@
 
     let _list_jobs_cache = null;
     let _background_jobs = [];
+    let _browserCatalog = null;
+    let _browserRunId = null;
+    let _browserPoll = null;
+
+    function browserStatusLabel(status) {
+      return ({ queued: '排队中', running: '运行中', completed: '检查通过', failed: '未通过',
+        unknown: '待确认', stopped: '已停止' })[status] || String(status || '未知');
+    }
+
+    function browserField(label, value) {
+      return `${label}: ${value === null || value === undefined || value === '' ? '未知' : value}`;
+    }
+
+    function browserRenderJob(job) {
+      if (!job || !job.run_id) return;
+      _browserRunId = job.run_id;
+      const status = String(job.status || 'unknown');
+      const result = job.result || {};
+      const usage = result.usage || {};
+      const reserve = result.reservation || {};
+      const cost = result.cost || {};
+      const lines = [browserField('运行 ID', job.run_id), browserField('状态', browserStatusLabel(status)),
+        browserField('执行器', result.executor || job.executor), browserField('实际模型', result.model_name),
+        browserField('停止原因', result.stop_reason), browserField('模型请求', usage.api_calls),
+        browserField('报告输入 tokens', usage.reported_input_tokens ?? usage.input_tokens),
+        browserField('报告输出 tokens', usage.reported_output_tokens ?? usage.output_tokens),
+        browserField('用量状态', result.usage_status),
+        browserField('费用 USD', cost.amount_usd), browserField('费用来源', cost.source),
+        browserField('保守预留', `${reserve.api_calls ?? '?'} 请求 / ${reserve.input_tokens ?? '?'} 输入 / ${reserve.output_tokens ?? '?'} 输出 tokens`),
+        browserField('Bundle digest', result.workflow_digest || '未加载（未晋级）'),
+        browserField('模型文字', result.final_text)];
+      const statusBox = qs('browser-job-status');
+      statusBox.textContent = lines.join('\n');
+      const artifacts = qs('browser-artifacts');
+      artifacts.replaceChildren();
+      for (const item of result.artifacts || []) {
+        if (typeof item.name !== 'string' || typeof item.url !== 'string' || !item.url.startsWith(`/api/browser/tasks/${encodeURIComponent(job.run_id)}/artifacts/`)) continue;
+        const link = document.createElement('a');
+        link.href = API_URL + item.url.slice(4);
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = item.name;
+        artifacts.appendChild(link);
+      }
+      const active = status === 'queued' || status === 'running';
+      qs('browser-stop').disabled = !active;
+      if (!active && _browserPoll) { clearInterval(_browserPoll); _browserPoll = null; }
+      if (active && !_browserPoll) _browserPoll = setInterval(browserPollStatus, 1200);
+    }
+
+    async function browserPollStatus() {
+      if (!_browserRunId) return;
+      try { browserRenderJob(await fetchJson(`/browser/tasks/${encodeURIComponent(_browserRunId)}`, {}, 1)); }
+      catch (error) { qs('browser-job-status').textContent = `状态读取失败：${error}`; }
+    }
+
+    function browserRenderSelection() {
+      const task = (_browserCatalog?.tasks || []).find(item => item.task_id === qs('browser-task-id').value);
+      qs('browser-task-goal').textContent = task ? `${task.instruction} · ${task.check_available ? '有独立检查' : '无独立检查，结果待确认'}` : '';
+    }
+
+    async function browserLoadCatalogAndRuns() {
+      try {
+        const [catalog, jobs] = await Promise.all([fetchJson('/browser/catalog', {}, 1), fetchJson('/browser/tasks', {}, 1)]);
+        _browserCatalog = catalog;
+        const tasks = qs('browser-task-id');
+        tasks.replaceChildren();
+        for (const task of catalog.tasks || []) {
+          const option = document.createElement('option'); option.value = task.task_id; option.textContent = task.title;
+          tasks.appendChild(option);
+        }
+        const executors = qs('browser-executor');
+        executors.replaceChildren();
+        for (const executor of catalog.executors || []) {
+          const option = document.createElement('option'); option.value = executor.id;
+          option.disabled = !executor.configured;
+          option.textContent = `${executor.id} — ${executor.model_name}${executor.teacher_model_name ? ' + ' + executor.teacher_model_name : ''}${executor.configured ? '' : '（未配置）'}`;
+          executors.appendChild(option);
+        }
+        browserRenderSelection();
+        if (Array.isArray(jobs) && jobs.length) browserRenderJob(jobs[jobs.length - 1]);
+      } catch (error) { qs('browser-job-status').textContent = `浏览器实验不可用：${error}`; }
+    }
+
+    async function browserStart() {
+      const button = qs('browser-start'); button.disabled = true;
+      try {
+        const payload = { task_id: qs('browser-task-id').value, executor: qs('browser-executor').value,
+          max_loop_steps: Number(qs('browser-steps').value) };
+        const bundle = qs('browser-bundle').value.trim();
+        if (bundle) payload.workflow_bundle = bundle;
+        qs('browser-job-status').textContent = '正在提交实验…';
+        browserRenderJob(await fetchJson('/browser/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }, 1));
+      } catch (error) {
+        qs('browser-job-status').textContent = `实验提交失败：${error}`;
+        browserLoadCatalogAndRuns();
+      } finally { button.disabled = false; }
+    }
+
+    async function browserStop() {
+      if (!_browserRunId) return;
+      const button = qs('browser-stop'); button.disabled = true;
+      try { browserRenderJob(await fetchJson(`/browser/tasks/${encodeURIComponent(_browserRunId)}/stop`, { method: 'POST' }, 1)); }
+      catch (error) { qs('browser-job-status').textContent = `停止失败：${error}`; button.disabled = false; }
+    }
 
     function renderBackgroundJobs() {
       const el = document.getElementById('background-jobs');
@@ -1180,6 +1301,10 @@
       const detail = ev?.detail || {};
       const eventName = String(detail.event || '').trim();
       const job = detail.job || {};
+      if (job.task_type === 'browser_experiment') {
+        if (job.run_id === _browserRunId) browserRenderJob(job);
+        return;
+      }
       upsertBackgroundJob(job);
       if (eventName) {
         const taskType = String(job?.task_type || 'background_task');
@@ -1364,6 +1489,10 @@
       appendLog('Launcher build: 2026-01-31-02-19');
     })();
     renderBackgroundJobs();
+    qs('browser-task-id').addEventListener('change', browserRenderSelection);
+    qs('browser-start').addEventListener('click', browserStart);
+    qs('browser-stop').addEventListener('click', browserStop);
+    browserLoadCatalogAndRuns();
     // Avatar crop controls
     (function initCrop() {
       const slider = document.getElementById('cropSlider');
