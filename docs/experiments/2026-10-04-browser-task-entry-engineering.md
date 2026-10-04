@@ -1,0 +1,70 @@
+# Task 2 report — browser experiment API, Launcher, notifications
+
+> Archived engineering history for C5.0. Final source: `e1e9fff`. Final full suite: **946 passed, 4 skipped, 1 xfailed, 1 existing pygame warning in 191.64s**, exit 0. Browser experiment notifications are **job events and Launcher panel only**; the earlier speech cancellation trial was reverted. Historical sections below retain the trials and intermediate test counts, not final capability claims. The actual model pilot and final conclusions are recorded separately in [C5.0 report](2026-10-04-browser-task-entry.md).
+
+## Implementation
+
+- Added a lazily initialized `BrowserTaskService` route singleton with an initialization lock, configured from `core.server._load_effective_config` and `KAGE_BROWSER_RUNS_DIR` (default `~/.kage/browser-runs`). The service starts in `KAGE_MODE=control` without constructing `KageServer`. Lifespan always closes and resets the service in `finally`.
+- Exposed catalog, create (202), list, get, stop, and indexed artifact routes under `/api/browser`. Nested artifact names are supported; the Task 1 service enforces run ownership, path containment, and index membership. Unsupported payloads/configurations return 422/409 with short errors; missing runs/artifacts return 404.
+- Bridged browser job events to the runtime's existing `_notify_job_event` when present. Notification transport errors are logged and contained so they cannot strand the serial worker. Final browser notifications use job events, logs, and the Launcher panel, without starting speech. Text status distinguishes checked success, failed, unchecked, and stopped. Ordinary background task speech retains its prior behavior. Historical speech trials below were withdrawn.
+- Added a controlled browser experiment card beside Background Tasks in Launcher. It loads the public catalog and recent jobs, shows the task goal, executor/model, 5/6 loop steps, optional explicitly unpromoted bundle, run ID, checked status, stop reason, reported usage, cost/source, conservative reservation, final text, indexed artifact links, and a run-bound stop button. Create/stop POSTs use one attempt. Polling runs only for active jobs and list restores state after reload. Browser events bypass the generic background-task HTML renderer; model text is assigned with `textContent`.
+
+## TDD evidence
+
+- **RED:** `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py tests/test_server_helpers.py -q` before implementation: 5 setup errors for missing `core.routes.browser_tasks`, 4 notification failures because browser statuses all spoke the generic completion text. The first attempt to collect tests also revealed and fixed two test syntax/import mistakes; those were test authoring errors, not implementation evidence.
+- **GREEN:** `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py tests/test_server_helpers.py -q` → **26 passed in 11.61s**. See `artifacts/c5-browser-entry-2026-10-03/engineering-tests.log`.
+- **Full gate:** `.venv-computer-use/bin/python -m pytest tests -q` → **939 passed, 4 skipped, 1 xfailed, 1 warning in 155.59s**. The warning is pygame's existing `pkg_resources` deprecation. See `artifacts/c5-browser-entry-2026-10-03/full-tests.log`. A later review change added the singleton lock and clarified the UI budget label; focused tests and build were rerun after it, while the full suite was run once as requested.
+- **Frontend:** `npm run build` in `kage-avatar` → success (`tsc && vite build`, 113 modules, built in 708ms). Existing Vite warnings concern non-module live2d scripts and a 500 kB chunk. See `artifacts/c5-browser-entry-2026-10-03/frontend-build.log`.
+
+## Behavior exercised
+
+Tests use `TestClient` in control mode with the real `BrowserTaskService`, subprocess worker, local HTTP scripted model, and Chromium fixture page. They cover checked save/readback and independent artifact GET, checked failure when no save is made, unchecked `unknown`, catalog/list/get, nested indexed files, 404 and invalid payload/configuration cases, queued/running stop with late worker completion, and a failing runtime notifier. Real Playwright loads the Launcher, clicks Start, observes POST count and terminal status/evidence links, reloads and restores state, checks failed and unchecked wording, injects HTML-shaped model text to verify literal rendering, and clicks Stop on the active run.
+
+## Files changed
+
+- `core/routes/browser_tasks.py` (new)
+- `core/routes/__init__.py`
+- `core/server.py`
+- `kage-avatar/public/launcher.html`
+- `tests/test_browser_task_routes.py` (new)
+- `tests/test_server_helpers.py`
+
+## Self-review and scope
+
+The API uses Task 1's public job/result status and artifact index. It does not add a second agent loop or scoring mechanism. The generic Background Tasks renderer remains as it was for ordinary jobs; browser jobs are diverted to safe text rendering. No real model or cloud calls were made. The Task 1 report was already modified by the root and was not staged. The actual local-model pilot, report/index work, and main fast-forward remain root-owned.
+
+## Review fix round 1 — stale run response
+
+The independent review found that a delayed GET for run A could overwrite the selected run after run B was created, making Stop target A. The new Playwright regression uses the real control-mode HTTP routes and scripted worker, holds A's GET response until after B's POST, then checks that the card stays on B and Stop posts to B. It also holds an earlier B poll until after B is stopped and injects late active events, verifying the terminal card cannot revive.
+
+- **RED:** `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py::test_launcher_ignores_late_poll_from_previous_run_and_terminal_revival -q` → **1 failed in 3.81s**. After B's POST, releasing A's delayed GET made the card show A's ID and `运行中`; the assertion that B remained selected failed.
+- **Fix:** Launcher now distinguishes selection from rendering. Starting or selecting a run increments a generation; polls and stop responses capture that generation and run ID and apply only if both still match. Out-of-order poll responses are ignored, and a terminal status latches until a new run is selected. Late active events for the stopped run cannot revive it. Catalog/list reconnect cannot overwrite a newer user selection.
+- **GREEN:** `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py tests/test_server_helpers.py -q` → **27 passed in 21.84s**. `npm run build` → success, built in **1.49s**. The same existing Vite script and chunk-size warnings remain. Updated logs are in `artifacts/c5-browser-entry-2026-10-03/engineering-tests.log` and `frontend-build.log`.
+- The full suite was not rerun for this review fix, per controller instruction; the root will run it after final review. Only `kage-avatar/public/launcher.html` and `tests/test_browser_task_routes.py` changed in the fix commit.
+
+## Final review fix wave — notification boundary and unconfirmed failures
+
+The whole-branch review found two important issues. A runtime notifier that awaited indefinitely held the worker's `started` event before the subprocess could run, and also held stop/shutdown. Separately, `task_status=failed` with `check_passed=None` was described as a failed independent check, even when no checker existed.
+
+- **RED:** `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py::test_stalled_runtime_notification_does_not_delay_worker_stop_or_close tests/test_browser_task_routes.py::test_launcher_shows_unconfirmed_goal_for_worker_launch_error tests/test_server_helpers.py::test_browser_notification_uses_checked_task_status -q` → **5 failed, 4 passed in 38.83s**. With a genuinely stalled notifier, the scripted HTTP model had **0 calls after 5 seconds** because the worker never got past its started event. Both real Launcher worker-launch-error cases timed out waiting for “执行失败，目标未确认”. The two notification cases with `check_passed=None` instead said “未通过检查”.
+- **Fix:** The browser notification bridge schedules delivery outside the serial worker path, bounds each delivery to 5 seconds, and tracks both delivery and runtime tasks. Service close cancels owned notification tasks and waits no longer than 0.25 seconds for cleanup; a delivery failure or timeout is logged without changing job status. The speech text now reserves “未通过检查” for `check_available=True` and `check_passed=False`; all failed jobs without a negative verdict say execution failed and the goal is unconfirmed. The Launcher shows the check verdict and error beside a similarly precise status, using `textContent`.
+- **GREEN:** `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py tests/test_server_helpers.py -q` → **32 passed in 27.83s** on the final source and tests. The stalled-notifier test asserts that the notifier entered and no tracked task remains pending after close. `npm run build` → success, built in **1.53s**, with the same existing Vite warnings. Updated focused-test and build logs are in `artifacts/c5-browser-entry-2026-10-03/engineering-tests.log` and `frontend-build.log`.
+- Tests use a real scripted HTTP worker and Chromium Launcher for checked and unchecked launch errors, and verify confirmed failed checks and ordinary notifications still retain their meanings. No real AI or cloud calls were made. The root will rerun the full suite after the final scoped review.
+
+## Speech cancellation supplement
+
+The final review follow-up found that cancelling a browser notification during real audio playback leaves the `asyncio.to_thread` playback worker running and the UI in `SPEAKING`. The fix is confined to `core/speech_engine.py`: cancellation in the speaking/playback phase calls the mouth's `stop_playback`, restores `IDLE`, and re-raises cancellation. Both actions are guarded by the speech revision so a cancelled older utterance cannot stop or reset newer speech. Existing ordinary playback and barge helper behavior remains covered.
+
+- **RED:** `.venv-computer-use/bin/python -m pytest tests/test_speech_engine_cancellation.py -q` → **2 failed, 2 passed in 0.88s**. The current-speech cancellation test observed `stop_calls == 0`, and the integration through the actual browser notification timeout observed the same after the timeout. Both expected 1, with the UI left in `SPEAKING` before the repair.
+- **GREEN:** `.venv-computer-use/bin/python -m pytest tests/test_speech_engine_cancellation.py -q` → **4 passed in 0.66s**. The broader focused command `.venv-computer-use/bin/python -m pytest tests/test_speech_engine_cancellation.py tests/test_browser_task_routes.py tests/test_server_helpers.py tests/test_round14_audio.py tests/test_audio_orchestrator.py -q` → **46 passed, 1 warning in 35.66s**. The warning is the pre-existing pygame `pkg_resources` deprecation. Output is saved in `artifacts/c5-browser-entry-2026-10-03/speech-tests.log`.
+- The fake audio boundary blocks a real `to_thread` worker without generating speech or touching an audio device. Tests verify cancellation stops the current playback, leaves newer revision playback and UI state intact, lets ordinary speech complete normally, preserves the barge helper revision change, and exercises cancellation from the browser notification timeout through `KageServer._notify_job_event`. No model, cloud, TTS, or audio side effect was used. The root retains the fresh full-suite gate.
+
+## Final notification policy after shared-mixer review
+
+The speech cancellation trial above was reverted in commit `cecbf77`; `core/speech_engine.py` now matches its pre-trial source and `tests/test_speech_engine_cancellation.py` was removed. The whole-branch rereview established a concrete shared-mixer race: cancelling a `to_thread` playback can set IDLE before its old worker reaches `pygame.mixer.music.unload()`. A newer utterance can load its file in that gap, then the old worker unloads it. The reviewer reproduced this with the actual `mouth_speak`, `KageMouth.play_audio_file`, and `stop_playback` methods using a deterministic in-memory pygame mock, observing `Error playing audio: nothing loaded` for the newer utterance. That experiment used no actual audio device or TTS.
+
+The approved scope keeps browser experiment notifications in the job event and Launcher panel. `KageServer._notify_job_event` still sends `kage:job` and logs browser task status, but returns before `mouth_speak` for `browser_experiment`. Ordinary background jobs keep their existing speech path. The status formatter remains available for text/helper checks; its browser wording is **not** an audible notification claim. The Task 2 plan now records this policy and its shared-mixer reason. The bounded notification bridge remains necessary for websocket delivery, while browser jobs no longer create a speech playback task that it might cancel.
+
+- **RED:** `.venv-computer-use/bin/python -m pytest tests/test_server_helpers.py::test_browser_job_event_updates_panel_without_starting_speech -q` → **1 failed in 0.50s**. The actual `KageServer._notify_job_event` called `mouth_speak` with “浏览器实验检查通过了。” for a browser completion.
+- **GREEN:** The same test → **1 passed in 0.46s** after the event-only policy. The focused command `.venv-computer-use/bin/python -m pytest tests/test_browser_task_routes.py tests/test_server_helpers.py tests/test_round14_audio.py tests/test_audio_orchestrator.py tests/test_round6_cleanup.py -q` → **67 passed, 1 warning in 54.72s**. The warning is the existing pygame `pkg_resources` deprecation. Output is saved in `artifacts/c5-browser-entry-2026-10-03/event-only-tests.log`.
+- The integration test uses the real `KageServer._notify_job_event` with a fake speech boundary: browser completion sends the job, logs its status, leaves speech revision/UI state unchanged, and never invokes speech; ordinary completion still invokes speech. No frontend code changed after the prior passing build, so the build was not repeated. The root owns the fresh full-suite gate.

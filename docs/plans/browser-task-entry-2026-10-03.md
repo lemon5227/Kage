@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans task by task.
 
+**Status:** C5.0完成于2026-10-04；最终源码e1e9fff，946 passed，真实本地两次入口pilot完成。详见[入口报告](../experiments/2026-10-04-browser-task-entry.md)。下一C4.5-DOM；本页为实施记录，不重复领取。
+
 **Goal:** 用户从现有Launcher发起受控浏览器实验，看到真实执行者、任务检查、费用/预算、停止和产物。
 **Architecture:** 复用BackgroundLane/BackgroundWorker；轻量BrowserTaskService调度独立Python子进程，子进程复用BrowserChainProvider/BrowserCloudProvider/BrowserTeacherTakeoverProvider与EvolutionRunner。API在control模式也可用，不触发音频、记忆模型加载；有runtime时走原kage:job事件，无runtime时前端轮询同一任务状态。
 **Tech Stack:** 现有FastAPI、asyncio subprocess、Python3.13、Playwright、原Launcher HTML/JS；不加依赖。基线6bc671d。
@@ -42,7 +44,7 @@ result至少包含task_status、check_available/check_passed、run_status、stop
 
 worker通过stdin接收私有配置，公共配置/实际请求响应可落盘但必须去key。执行EvolutionRunner(step_isolation='inline')，仅因它已在独立受管理子进程内；service以start_new_session启动并施加480秒整体deadline，超时/取消杀树并留明确状态。结果写result.json，普通返回与异常均有证据；model response/error原样保留。服务支持KAGE_BROWSER_PYTHON选择已有电脑实验Python（默认sys.executable），不自动安装依赖。
 
-- [ ] 写失败回归：真实HTTP脚本模型→实际子进程→真实Page修改/POST/读回；成功与未保存失败；preferences_unchecked的模型说Done也只能unknown。
+- [x] 写失败回归：真实HTTP脚本模型→实际子进程→真实Page修改/POST/读回；成功与未保存失败；preferences_unchecked的模型说Done也只能unknown。
 ```python
 job = await service.submit({'task_id':'preferences_dev','executor':'local'})
 final = await wait_terminal(service, job['run_id'])
@@ -51,10 +53,10 @@ assert json.loads(service.artifact(job['run_id'], 'browser-check.json').read_tex
     'record': {'email': True, 'sms': False, 'weekly': False},
     'posts': 1, 'readback_matches_backend': True}
 ```
-- [ ] 对未保存模型：status=failed、check_passed=false、posts=0；无checker同样未保存不伪报failed/completed，status=unknown。
-- [ ] 对挂起HTTP模型：等真实Chromium/worker已启动，停止run，所有自有PID退出；事件状态不可由迟到返回改成completed；排队取消不发模型请求；另一任务可继续。BackgroundWorker原普通任务回归仍通过。
-- [ ] 运行红灯，再实现接口；局部命令`.venv-computer-use/bin/python -m pytest tests/test_browser_task_service.py tests/test_background_worker.py -q`。只允许脚本HTTP模型，不调用云/真实大模型。
-- [ ] 自检配置/产物无key，服务shutdown可清理、错误有状态，git diff --check，独立提交feat(computer-use): add managed browser experiment task service。
+- [x] 对未保存模型：status=failed、check_passed=false、posts=0；无checker同样未保存不伪报failed/completed，status=unknown。
+- [x] 对挂起HTTP模型：等真实Chromium/worker已启动，停止run，所有自有PID退出；事件状态不可由迟到返回改成completed；排队取消不发模型请求；另一任务可继续。BackgroundWorker原普通任务回归仍通过。
+- [x] 运行红灯，再实现接口；局部命令`.venv-computer-use/bin/python -m pytest tests/test_browser_task_service.py tests/test_background_worker.py -q`。只允许脚本HTTP模型，不调用云/真实大模型。
+- [x] 自检配置/产物无key，服务shutdown可清理、错误有状态，git diff --check，独立提交feat(computer-use): add managed browser experiment task service。
 
 ### Task 2: API、Launcher与可信通知
 
@@ -74,13 +76,13 @@ Payload/配置不支持返回422或409并提供短错误，不隐藏为成功；
 
 Launcher在Background Tasks附近新增“浏览器实验”卡片：选择公开任务、显示目标、执行器/实际模型、5/6步预算，显式可选workflow_bundle（默认空，显示未晋级）；开始按钮、运行ID/状态/stop_reason/请求tokens/费用/保守预留、截图/保存证据链接与停止按钮。仅普通文字/DOM构造渲染模型文本，不让它生成HTML。复用fetchJson，创建/停止POST只发一次，避免默认重试创造额外任务；完成/unknown等终态停止轮询，页面重连先GET list补齐。UI异步显示运行状态，不因模型超时冻结按钮。
 
-- [ ] 先API回归控制模式：POST真实service+HTTP脚本模型，等待terminal后GET独立保存证据；未保存为failed而不是后台completed；artifact取该run，未知run/name=404；停止后status不被迟到事件覆盖。
+- [x] 先API回归控制模式：POST真实service+HTTP脚本模型，等待terminal后GET独立保存证据；未保存为failed而不是后台completed；artifact取该run，未知run/name=404；停止后status不被迟到事件覆盖。
 ```python
 created = client.post('/api/browser/tasks', json={'task_id':'preferences_dev','max_loop_steps':5})
 assert created.status_code == 202
 assert created.json()['status'] in {'queued','running'}
 ```
-- [ ] 用真实Playwright加载Launcher点击开始→检查实际POST/界面终态/证据链接；用无checker与失败结果验证文字没有任务成功；点击停止触发绑定run API；不写只检查源码含字符串的用例。
-- [ ] 红灯后接route/service/lifespan、卡片与通知，聚焦API/界面/普通通知回归；然后一次全量pytest与kage-avatar npm run build，不与真实推理并行。独立提交feat(ui): expose checked browser experiment tasks。
-- [ ] 冻结本次入口pilot：两个local任务preferences_dev和preferences_unchecked各一次，固定5步/6请求/480秒、无bundle/云；合计12请求/96000输入/4000输出预留。代码提交后启动自有Agents-A1-4B服务和隔离control HTTP应用，用户入口（真实Launcher或相同POST API）发起；保留任何终止结果，不复跑求成功。
-- [ ] 报告两个run的实际执行者/请求、POST/读回、checked vs unknown、停止与费用、源码/提示/协议hash和证据；这只验入口集成，不是新能力分数。停止自有服务，报告/队列/master/index另提交，主仓库干净时FF；下一C4.5-DOM。
+- [x] 用真实Playwright加载Launcher点击开始→检查实际POST/界面终态/证据链接；用无checker与失败结果验证文字没有任务成功；点击停止触发绑定run API；不写只检查源码含字符串的用例。
+- [x] 红灯后接route/service/lifespan、卡片与通知，聚焦API/界面/普通通知回归；然后一次全量pytest与kage-avatar npm run build，不与真实推理并行。独立提交feat(ui): expose checked browser experiment tasks。
+- [x] 冻结本次入口pilot：两个local任务preferences_dev和preferences_unchecked各一次，固定5步/6请求/480秒、无bundle/云；合计12请求/96000输入/4000输出预留。代码提交后启动自有Agents-A1-4B服务和隔离control HTTP应用，用户入口（真实Launcher或相同POST API）发起；保留任何终止结果，不复跑求成功。
+- [x] 报告两个run的实际执行者/请求、POST/读回、checked vs unknown、停止与费用、源码/提示/协议hash和证据；这只验入口集成，不是新能力分数。停止自有服务，报告/队列/master/index另提交，主仓库干净时FF；下一C4.5-DOM。
