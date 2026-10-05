@@ -49,9 +49,7 @@ class BrowserDemonstrationService(BrowserTaskService):
                         result = self._partial(run_id, 'stopped', reason or 'service_restart')
                         self._settle_result(run_id, result, clean_exit=False)
                     else:
-                        self._recovery_errors[run_id] = 'RecoveryOwnershipUnverified: old worker cleanup did not complete'
-                        result = {'task_status': 'stopped', 'stop_reason': 'service_restart',
-                                  'error': self._recovery_errors[run_id], 'artifacts': [], 'event_count': 0}
+                        result = self._blocked_recovery(run_id)
                 job['status'] = 'cancelled' if result.get('task_status') == 'stopped' else 'completed'
                 self._results[run_id] = result
             except (OSError, ValueError, KeyError, TypeError):
@@ -89,20 +87,45 @@ class BrowserDemonstrationService(BrowserTaskService):
         except PermissionError:
             return True
 
-    def _recover_owner(self, run_id):
+    @staticmethod
+    def _group_alive(pgid):
+        # Signal zero only observes group existence; it never changes a process.
+        try:
+            os.killpg(pgid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+
+    def _writers_gone(self, run_id):
         pid = self._owned_pid(run_id)
         if pid is None:
             workspace = self.run_root / ('run_' + run_id)
             return not (workspace / 'worker-owner.json').exists() and not (workspace / 'initial-observation.json').exists()
+        return not self._pid_alive(pid) and not self._group_alive(pid)
+
+    def _blocked_recovery(self, run_id):
+        self._recovery_errors[run_id] = 'RecoveryOwnershipUnverified: old worker cleanup did not complete'
+        return {'task_status': 'stopped', 'stop_reason': 'service_restart',
+                'error': self._recovery_errors[run_id], 'artifacts': [], 'event_count': 0}
+
+    def _recover_owner(self, run_id):
+        pid = self._owned_pid(run_id)
+        if pid is None:
+            return self._writers_gone(run_id)
+        owner = self._read(self.run_root / ('run_' + run_id) / 'worker-owner.json')
+        if (owner.get('run_id', run_id) != run_id
+                or owner.get('run_root', str(self.run_root)) != str(self.run_root)):
+            return False
         if not self._pid_alive(pid):
-            return True
+            # A missing leader cannot validate surviving descendants. Do not
+            # signal that group or freeze evidence until it is actually absent.
+            return not self._group_alive(pid)
         try:
-            owner = self._read(self.run_root / ('run_' + run_id) / 'worker-owner.json')
             command = subprocess.check_output(['ps', '-ww', '-p', str(pid), '-o', 'command='],
                                               text=True, timeout=.5).strip()
-            if (os.getpgid(pid) != pid or owner.get('run_id', run_id) != run_id
-                    or owner.get('run_root', str(self.run_root)) != str(self.run_root)
-                    or run_id not in command or str(self.run_root) not in command
+            if (os.getpgid(pid) != pid or run_id not in command or str(self.run_root) not in command
                     or 'core.computer_use.task_bootstrap' not in command):
                 return False
             # Let a cooperative recorder disable listening and flush pending
@@ -119,12 +142,7 @@ class BrowserDemonstrationService(BrowserTaskService):
                         pass
                 deadline = time.monotonic() + duration
                 while time.monotonic() < deadline:
-                    if not self._pid_alive(pid):
-                        if action is not None:
-                            try:
-                                os.killpg(pid, signal.SIGKILL)
-                            except ProcessLookupError:
-                                pass
+                    if not self._pid_alive(pid) and not self._group_alive(pid):
                         return True
                     time.sleep(.02)
             # An owned child can be a zombie if its former async parent has
@@ -133,11 +151,11 @@ class BrowserDemonstrationService(BrowserTaskService):
                 os.waitpid(pid, os.WNOHANG)
             except ChildProcessError:
                 pass
-            return not self._pid_alive(pid)
+            return not self._pid_alive(pid) and not self._group_alive(pid)
         except ProcessLookupError:
-            return not self._pid_alive(pid)
+            return not self._pid_alive(pid) and not self._group_alive(pid)
         except (OSError, subprocess.SubprocessError):
-            return not self._pid_alive(pid)
+            return not self._pid_alive(pid) and not self._group_alive(pid)
 
     @staticmethod
     def _read(path):
@@ -317,6 +335,10 @@ class BrowserDemonstrationService(BrowserTaskService):
                                   arguments=payload['arguments'], source_run_id=run_id)
 
     def _partial(self, run_id, status, reason):
+        if self._recovery_path(run_id).exists() and not self._writers_gone(run_id):
+            # Also guard an old parent's delayed callback after leader exit;
+            # its descendants may still own open evidence files.
+            return self._blocked_recovery(run_id)
         workspace = self.run_root / ('run_' + run_id)
         state = self._read(workspace / 'status.json')
         count = state.get('event_count', 0)

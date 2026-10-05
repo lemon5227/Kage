@@ -462,7 +462,8 @@ def test_failed_replay_after_real_partial_action_is_checked_and_archived(client,
         compile_demonstration(episode, tmp_path / 'rejected-replay', skill_id='form-rejected')
 
 
-def test_recovery_rejects_mismatched_live_ownership_without_signalling(client, tmp_path):
+@pytest.mark.parametrize('corruption', ['mismatched_run', 'malformed_json'])
+def test_recovery_rejects_mismatched_live_ownership_without_signalling(client, tmp_path, corruption):
     from core.computer_use.demonstration_service import BrowserDemonstrationService
     import signal
     run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
@@ -471,7 +472,8 @@ def test_recovery_rejects_mismatched_live_ownership_without_signalling(client, t
     owner = json.loads(owner_path.read_text())
     os.killpg(owner['pid'], signal.SIGSTOP)
     # Corrupt only ownership metadata; Page evidence remains genuinely captured.
-    owner_path.write_text(json.dumps({**owner, 'run_id': 'different-owned-session'}))
+    owner_path.write_text(json.dumps({**owner, 'run_id': 'different-owned-session'})
+                          if corruption == 'mismatched_run' else '{malformed ownership')
     restarted = BrowserDemonstrationService(tmp_path, lambda: {})
     assert 'RecoveryOwnershipUnverified' in restarted.get(run_id)['error']
     assert restarted.get(run_id)['artifacts'] == []
@@ -486,3 +488,88 @@ def test_recovery_rejects_mismatched_live_ownership_without_signalling(client, t
     client.portal.call(routes.close_service)
     with pytest.raises(ProcessLookupError):
         os.kill(owner['pid'], 0)
+
+
+def test_restart_blocks_surviving_group_when_actual_bootstrap_leader_is_gone(tmp_path):
+    from core.computer_use.demonstration_service import BrowserDemonstrationService
+    import hashlib
+    import signal
+    import subprocess
+    run_id = 'orphan-production-bootstrap'
+    workspace = tmp_path / ('run_' + run_id)
+    workspace.mkdir()
+    # Only session routing metadata is supplied. The production worker captures
+    # all observations and real Page input; no result or evidence is fabricated.
+    (workspace / 'session.json').write_text(json.dumps({'job_id': run_id, 'run_id': run_id,
+        'status': 'running', 'task_type': 'browser_demonstration', 'operation': 'demonstration',
+        'task_id': 'demo_profile', 'source_kind': 'automation', 'executor': 'automation'}))
+    proc = subprocess.Popen([str(ROOT / '.venv-computer-use/bin/python'), '-m',
+        'core.computer_use.task_bootstrap', str(tmp_path), run_id, 'demonstration_worker'],
+        cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        start_new_session=True, env={**os.environ, 'KAGE_BROWSER_DEMONSTRATION_HEADLESS': '1'})
+    services = []
+
+    def members():
+        output = subprocess.check_output(['ps', '-axo', 'pid=,pgid=,stat='], text=True)
+        return {int(parts[0]): parts[2] for line in output.splitlines()
+                if len(parts := line.split()) == 3 and int(parts[1]) == proc.pid}
+
+    async def pending(endpoint):
+        async with async_playwright() as p:
+            browser = await p.chromium.connect_over_cdp(endpoint)
+            await browser.contexts[0].pages[0].get_by_label('Name').fill('Correction')
+
+    try:
+        proc.stdin.write(json.dumps({'run_id': run_id, 'run_root': str(tmp_path),
+            'task_id': 'demo_profile', 'operation': 'demonstration', 'source_kind': 'automation',
+            'executor': 'automation', 'config': {}}).encode())
+        proc.stdin.close()
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            state = BrowserDemonstrationService._read(workspace / 'status.json')
+            if state.get('status') == 'recording':
+                break
+            time.sleep(.02)
+        else:
+            raise AssertionError('actual bootstrap never reached recording')
+        asyncio.run(pending(state['automation_cdp_endpoint']))
+        os.killpg(proc.pid, signal.SIGSTOP)
+        os.kill(proc.pid, signal.SIGKILL)
+        assert proc.wait(timeout=3) == -signal.SIGKILL
+        before = members()
+        assert before and all('T' in status for status in before.values())
+        restarted = BrowserDemonstrationService(tmp_path, lambda: {})
+        services.append(restarted)
+        final = restarted.get(run_id)
+        assert 'RecoveryOwnershipUnverified' in (final['error'] or '')
+        assert final['artifacts'] == [] and final['event_count'] == 0
+        assert restarted.artifact(run_id, 'initial-observation.json') is None
+        assert members() == before  # No guessed descendant signalling.
+
+        async def reject_replacement():
+            with pytest.raises(RuntimeError, match='recovery is incomplete'):
+                await restarted.submit({'task_id': 'demo_profile', 'source_kind': 'automation'})
+        asyncio.run(reject_replacement())
+    finally:
+        # This harness owns the process group and performs cleanup explicitly.
+        for action in (signal.SIGCONT, signal.SIGKILL):
+            try:
+                os.killpg(proc.pid, action)
+            except ProcessLookupError:
+                pass
+        if proc.poll() is None:
+            proc.wait(timeout=3)
+        deadline = time.monotonic() + 3
+        while members() and time.monotonic() < deadline:
+            time.sleep(.02)
+        for service in services:
+            asyncio.run(service.close())
+        assert not members(), 'harness left an actual owned process group'
+
+    # Once the group is actually absent, a fresh service can freeze evidence.
+    recovered = BrowserDemonstrationService(tmp_path, lambda: {})
+    final = recovered.get(run_id)
+    assert final['error'] is None and final['artifacts']
+    for item in final['artifacts']:
+        assert hashlib.sha256(recovered.artifact(run_id, item['name']).read_bytes()).hexdigest() == item['sha256']
+    asyncio.run(recovered.close())
