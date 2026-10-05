@@ -17,6 +17,7 @@ from core.computer_use.task_worker import ROOT, _model_config, task_catalog
 
 
 class BrowserTaskService:
+    WORKER_MODULE = "task_worker"
     RUN_DEADLINE_SECONDS = 480
     STARTUP_STOP_WAIT_SECONDS = 1
 
@@ -140,7 +141,7 @@ class BrowserTaskService:
         if self._lane.get(run_id)['status'] == 'cancelled':
             return self._partial(run_id, 'stopped', 'user_stop')
         startup = asyncio.create_task(asyncio.create_subprocess_exec(
-            python, '-m', 'core.computer_use.task_bootstrap', str(self.run_root), run_id, cwd=str(ROOT),
+            python, '-m', 'core.computer_use.task_bootstrap', str(self.run_root), run_id, *([self.WORKER_MODULE] if self.WORKER_MODULE != 'task_worker' else []), cwd=str(ROOT),
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL, start_new_session=True))
         self._startups[run_id] = startup

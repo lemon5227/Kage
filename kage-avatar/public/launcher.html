@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kage</title>
+  <script src="browser-demonstrations.js"></script>
   <script>
     // Dev-only: enable Vite HMR in this static HTML page.
     // `public/launcher.html` is served as-is, so Vite won't inject the client automatically.
@@ -499,6 +500,33 @@
         <div class="card">
           <div class="card-title">Background Tasks</div>
           <div class="mono" id="background-jobs" role="status" aria-live="polite" aria-label="Background tasks"><div style="color: rgba(255,255,255,0.65);" data-placeholder="1">No background tasks yet</div></div>
+        </div>
+        <div class="card" id="browser-demonstration">
+          <div class="card-title">浏览器教学</div>
+          <p style="font-size:12px; color:var(--text-secondary);">在独立受控窗口示范填写与保存。候选仅供检查和直接工作流复用，未晋级；不代表 AI 学会。</p>
+          <label for="demonstration-task">教学任务</label>
+          <select id="demonstration-task" style="width:100%; margin:6px 0;"></select>
+          <p id="demonstration-goal" style="font-size:12px;"></p>
+          <label for="demonstration-source">示范来源</label>
+          <select id="demonstration-source"><option value="human_declared">真人声明（不认证身份）</option><option value="automation">自动化验证</option></select>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn-launch" id="demonstration-start" type="button" disabled>开始教学</button>
+            <button class="btn-launch" id="demonstration-finish" type="button" disabled>结束并提取</button>
+            <button class="btn-launch" id="demonstration-stop" type="button" disabled>取消</button>
+          </div>
+          <div id="demonstration-status" role="status" aria-live="polite" style="font-size:12px; margin:12px 0; white-space:pre-wrap; overflow-wrap:anywhere;">尚无教学</div>
+          <label for="demonstration-history">已保存的教学（选择后加载候选）</label>
+          <select id="demonstration-history" style="width:100%; margin:6px 0;"><option value="">不加载历史候选</option></select>
+          <div id="demonstration-candidate" hidden>
+            <label for="demonstration-reuse-task">新输入任务</label>
+            <select id="demonstration-reuse-task" style="width:100%; margin:6px 0;"></select>
+            <p id="demonstration-reuse-goal" style="font-size:12px;"></p>
+            <label for="demonstration-arguments">可编辑 JSON 参数（按新目标修改值）</label>
+            <textarea id="demonstration-arguments" rows="8" spellcheck="false" style="width:100%; box-sizing:border-box; margin:6px 0;"></textarea>
+            <button class="btn-launch" id="demonstration-replay" type="button" disabled>直接工作流复用</button>
+          </div>
+          <div id="demonstration-error" role="alert" style="font-size:12px; margin-top:8px;"></div>
+          <div id="demonstration-artifacts" style="font-size:12px; display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
         </div>
         <div class="card" id="browser-experiment">
           <div class="card-title">浏览器实验</div>
@@ -1353,6 +1381,7 @@
       const detail = ev?.detail || {};
       const eventName = String(detail.event || '').trim();
       const job = detail.job || {};
+      if (job.task_type === 'browser_demonstration') return;
       if (job.task_type === 'browser_experiment') {
         if (job.run_id === _browserRunId) browserRenderJob(job);
         return;
@@ -1544,6 +1573,7 @@
     qs('browser-task-id').addEventListener('change', browserRenderSelection);
     qs('browser-start').addEventListener('click', browserStart);
     qs('browser-stop').addEventListener('click', browserStop);
+    window.KageBrowserDemonstrations.init({request: (path, options = {}) => fetchJson(path, options, 1), apiUrl: API_URL});
     browserLoadCatalogAndRuns();
     // Avatar crop controls
     (function initCrop() {

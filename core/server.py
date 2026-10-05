@@ -481,6 +481,8 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        from core.routes.browser_demonstrations import close_service as close_demonstrations
+        await close_demonstrations()
         from core.routes.browser_tasks import close_service
         await close_service()
         if kage_server:
@@ -563,6 +565,8 @@ app.include_router(system_router)
 app.include_router(models_router)
 app.include_router(memory_router)
 app.include_router(browser_tasks_router)
+from core.routes.browser_demonstrations import router as browser_demonstrations_router
+app.include_router(browser_demonstrations_router)
 
 # Re-exports for backward compatibility
 from core.routes.system import (
@@ -910,13 +914,13 @@ class KageServer:
 
     async def _notify_job_event(self, event: str, job: dict[str, Any]) -> None:
         await self.send_message("job", self._job_event_payload(event, job))
-        if job.get('task_type') == 'browser_experiment':
+        if job.get('task_type') in {'browser_experiment', 'browser_demonstration'}:
             result = job.get('result') if isinstance(job.get('result'), dict) else {}
             self._log_server_event(
                 "job.browser_event",
                 event=event,
                 job_id=str(job.get("job_id") or ""),
-                task_type="browser_experiment",
+                task_type=str(job.get("task_type")),
                 task_status=str(result.get('task_status') or job.get('status') or ''),
             )
             return

@@ -9,6 +9,9 @@ import sys
 
 def main():
     run_root, run_id = Path(sys.argv[1]), sys.argv[2]
+    module = sys.argv[3] if len(sys.argv) == 4 else 'task_worker'
+    if len(sys.argv) not in {3, 4} or module not in {'task_worker', 'demonstration_worker'}:
+        raise SystemExit('unsupported browser worker module')
     workspace = run_root / f'run_{run_id}'
     workspace.mkdir(parents=True, exist_ok=True)
     stopped = workspace / 'stop.requested'
@@ -22,10 +25,11 @@ def main():
     os.replace(pending, owner)
     if stopped.exists():
         return
-    from core.computer_use import task_worker
+    import importlib
+    worker = importlib.import_module('core.computer_use.' + module)
     if stopped.exists():
         return
-    task_worker.main()
+    worker.main()
 
 
 if __name__ == '__main__':

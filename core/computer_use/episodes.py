@@ -50,6 +50,9 @@ def normalize_browser_episode(task, result, workspace):
     source_kind = ('mixed_student_teacher' if active == {'student', 'teacher'} else
                    'teacher_only' if active == {'teacher'} else
                    'student_only' if active == {'student'} else 'no_action')
+    workflow_replay = result.metadata.get('executor') == 'workflow_engine'
+    if workflow_replay:
+        source_kind = 'workflow_engine_replay'
     capture_ok = True
     if declaration is not None:
         source_kind = ('human_demonstration_declared' if declaration == 'human_declared'
@@ -61,7 +64,7 @@ def normalize_browser_episode(task, result, workspace):
     final_verified = result.status == 'passed' and result.score >= 1 and check.get('readback_matches_backend') is True
     final_verified = final_verified and capture_ok
     student_passed = takeover.get('student_check_passed', final_verified if not takeover else None)
-    if declaration is not None:
+    if declaration is not None or workflow_replay:
         student_passed = None
     verification = ('legacy_final_verified' if final_verified and takeover.get('teacher_check_passed') is False else
                     'final_verified' if final_verified else 'not_verified')
@@ -71,6 +74,7 @@ def normalize_browser_episode(task, result, workspace):
             'split': task.get('split', 'unknown'), 'source_kind': source_kind,
             'failure_status': ('demonstration_verified' if final_verified else 'demonstration_incomplete')
                               if declaration is not None else
+                              ('workflow_replay_verified' if final_verified else 'workflow_replay_incomplete') if workflow_replay else
                               ('passed' if student_passed is True else 'external_incomplete'),
             'student': {'external_passed': student_passed,
                         'stop_reason': student.get('stop_reason'), 'model_errors': student.get('model_errors', [])},
@@ -80,7 +84,8 @@ def normalize_browser_episode(task, result, workspace):
                         'stop_reason': teacher.get('stop_reason'), 'model_errors': teacher.get('model_errors', [])},
             'final_external_passed': final_verified, 'verification': verification,
             'actor_segments': [{'actor': actor, 'tool_calls': sum(row.get('actor') == actor for row in actions)}
-                               for actor in (('human', 'automation') if declaration is not None else ('student', 'teacher'))
+                               for actor in (('workflow_engine',) if workflow_replay else
+                                             ('human', 'automation') if declaration is not None else ('student', 'teacher'))
                                if any(row.get('actor') == actor for row in actions)],
             'evidence': refs}
 
