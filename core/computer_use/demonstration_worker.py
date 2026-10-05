@@ -47,6 +47,7 @@ async def run(request):
               'cost': {'amount_usd': 0, 'source': 'local_api_only'}, 'event_count': 0,
               'error': None, 'stop_reason': None}
     recorder = None
+    execution_ok = True
     atomic_json(workspace / 'status.json', state)
     try:
         from playwright.async_api import async_playwright
@@ -107,9 +108,16 @@ async def run(request):
                         result.update(workflow_digest=candidate['digest'], primitive_calls=quota.used,
                                       source_run_id=request['source_run_id'])
                         atomic_json(workspace / 'workflow-result.json', asdict(executed))
-                        atomic_json(workspace / 'final-observation.json', await adapter.observe())
-                        if not executed.success:
-                            raise RuntimeError('WorkflowExecutionFailed: ' + str(executed.error_message or executed.result))
+                        execution_ok = executed.success
+                        if not execution_ok:
+                            result.update(error='WorkflowExecutionFailed: ' + str(executed.error_message or executed.result),
+                                          stop_reason='workflow_failed')
+                        try:
+                            atomic_json(workspace / 'final-observation.json', await adapter.observe())
+                        except Exception as exc:
+                            execution_ok = False
+                            result.update(error=result['error'] or f'WorkflowFinalObservationFailed: {exc}',
+                                          stop_reason='workflow_failed')
                     state.update(status='finalizing', ready=False, event_count=result['event_count'], automation_cdp_endpoint=None)
                     atomic_json(workspace / 'status.json', state)
                     if stop.exists():
@@ -117,10 +125,11 @@ async def run(request):
                     await executor.checkpoint()
                     score = Evaluator.score(task, workspace)
                     result['check_passed'] = score >= 1
-                    scored = RunResult(run_id, 'passed' if score >= 1 else 'failed', score,
+                    scored = RunResult(run_id, 'passed' if score >= 1 and execution_ok else 'failed', score,
                         str(workspace / 'trace.jsonl'), final_state_path=str(workspace),
                         usage={'api_calls': 0}, metadata={'environment_kind': 'resettable-local-http-browser',
-                        **({'demonstration_source': source} if operation == 'demonstration' else {'executor': 'workflow_engine'})})
+                        **({'demonstration_source': source} if operation == 'demonstration' else {'executor': 'workflow_engine', 'execution_success': execution_ok,
+                                                                  'execution_error': result['error']})})
                     (workspace / 'trace.jsonl').touch(exist_ok=True)
                     atomic_json(workspace / 'run-result.json', asdict(scored))
                     archive = ExperienceArchive(Journal(Path(request['run_root']) / (run_id + '-journal.sqlite')))
@@ -142,9 +151,9 @@ async def run(request):
                     elif operation == 'demonstration':
                         result.update(task_status='incomplete', error='Saved form did not pass the independent check', stop_reason='check_failed')
                     else:
-                        result.update(task_status='completed' if score >= 1 else 'failed',
-                                      error=None if score >= 1 else 'Replay did not pass the independent check',
-                                      stop_reason=None if score >= 1 else 'check_failed')
+                        result.update(task_status='completed' if score >= 1 and execution_ok else 'failed',
+                                      error=result['error'] if not execution_ok else None if score >= 1 else 'Replay did not pass the independent check',
+                                      stop_reason='workflow_failed' if not execution_ok else None if score >= 1 else 'check_failed')
                 finally:
                     await browser.close()
     except Exception as exc:

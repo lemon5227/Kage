@@ -21,7 +21,8 @@ def main():
         raise SystemExit('browser worker must own its process group')
     owner = workspace / 'worker-owner.json'
     pending = workspace / f'worker-owner.{os.getpid()}.tmp'
-    pending.write_text(json.dumps({'pid': os.getpid(), 'pgid': os.getpgrp()}))
+    pending.write_text(json.dumps({'pid': os.getpid(), 'pgid': os.getpgrp(),
+                                    'run_id': run_id, 'run_root': str(run_root.resolve())}))
     os.replace(pending, owner)
     if stopped.exists():
         return

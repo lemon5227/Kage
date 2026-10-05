@@ -132,6 +132,9 @@ class BrowserTaskService:
         if self.on_event:
             await self.on_event(event, self._public(job))
 
+    def _worker_finished(self, run_id, returncode):
+        """Optional parent-side exit observation; default C5 behavior is unchanged."""
+
     async def _process(self, job):
         run_id = job['job_id']
         request = self._requests[run_id]
@@ -176,6 +179,7 @@ class BrowserTaskService:
                 result = self._partial(run_id, 'failed', 'timeout')
                 self._save_partial(run_id, result)
                 return result
+            self._worker_finished(run_id, proc.returncode)
             path = self.run_root / f'run_{run_id}' / 'result.json'
             if path.exists():
                 result = json.loads(path.read_text())

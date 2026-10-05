@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import signal
+import subprocess
 from pathlib import Path
 import time
 
@@ -23,6 +26,8 @@ class BrowserDemonstrationService(BrowserTaskService):
     def __init__(self, run_root, config_loader, on_event=None):
         super().__init__(run_root, config_loader, on_event)
         self._history = {}
+        self._recovery_errors = {}
+        self._worker_exit_codes = {}
         for path in self.run_root.glob('run_*/session.json'):
             try:
                 job = json.loads(path.read_text())
@@ -31,23 +36,114 @@ class BrowserDemonstrationService(BrowserTaskService):
                     continue
                 self._history[run_id] = job
                 result = self._read(path.parent / 'result.json')
-                if result.get('task_status') not in TERMINAL:
+                accepted = self._accepted(run_id, result)
+                marker = (path.parent / 'stop.requested').exists()
+                deadline_failed = result.get('task_status') == 'failed' and result.get('stop_reason') == 'timeout'
+                if not accepted or (marker and result.get('task_status') != 'stopped' and not deadline_failed):
+                    self._recovery_path(run_id).touch()
                     self._mark_stop(run_id)
-                    result = self._partial(run_id, 'stopped', 'service_restart')
-                    atomic_json(path.parent / 'result.json', result)
-                if ((path.parent / 'stop.requested').exists() and result.get('task_status') != 'stopped'
-                        and not (result.get('task_status') == 'failed' and result.get('stop_reason') == 'timeout')):
-                    result = self._partial(run_id, 'stopped', 'service_restart')
-                    atomic_json(path.parent / 'result.json', result)
+                    # Constructor recovery is bounded and synchronous: no new
+                    # session or artifact index can precede owned-writer exit.
+                    if self._recover_owner(run_id):
+                        reason = result.get('stop_reason') if result.get('task_status') == 'stopped' else 'service_restart'
+                        result = self._partial(run_id, 'stopped', reason or 'service_restart')
+                        self._settle_result(run_id, result, clean_exit=False)
+                    else:
+                        self._recovery_errors[run_id] = 'RecoveryOwnershipUnverified: old worker cleanup did not complete'
+                        result = {'task_status': 'stopped', 'stop_reason': 'service_restart',
+                                  'error': self._recovery_errors[run_id], 'artifacts': [], 'event_count': 0}
                 job['status'] = 'cancelled' if result.get('task_status') == 'stopped' else 'completed'
                 self._results[run_id] = result
             except (OSError, ValueError, KeyError, TypeError):
                 continue
 
+    def _recovery_path(self, run_id):
+        return self.run_root / (run_id + '-recovery.requested')
+
+    def _acceptance_path(self, run_id):
+        # Keep mutable parent control metadata outside archived run evidence.
+        return self.run_root / (run_id + '-acceptance.json')
+
+    def _accepted(self, run_id, result):
+        acceptance = self._read(self._acceptance_path(run_id))
+        path = self.run_root / ('run_' + run_id) / 'result.json'
+        return (result.get('task_status') in TERMINAL and acceptance.get('settled') is True
+                and acceptance.get('run_id') == run_id and acceptance.get('task_status') == result['task_status']
+                and (result['task_status'] not in {'verified', 'completed'} or acceptance.get('clean_worker_exit') is True)
+                and path.is_file() and acceptance.get('result_sha256') == hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def _settle_result(self, run_id, result, *, clean_exit):
+        path = self.run_root / ('run_' + run_id) / 'result.json'
+        atomic_json(path, result)
+        atomic_json(self._acceptance_path(run_id), {'run_id': run_id, 'settled': True,
+            'clean_worker_exit': clean_exit, 'task_status': result['task_status'],
+            'result_sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
+
+    @staticmethod
+    def _pid_alive(pid):
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+
+    def _recover_owner(self, run_id):
+        pid = self._owned_pid(run_id)
+        if pid is None:
+            workspace = self.run_root / ('run_' + run_id)
+            return not (workspace / 'worker-owner.json').exists() and not (workspace / 'initial-observation.json').exists()
+        if not self._pid_alive(pid):
+            return True
+        try:
+            owner = self._read(self.run_root / ('run_' + run_id) / 'worker-owner.json')
+            command = subprocess.check_output(['ps', '-ww', '-p', str(pid), '-o', 'command='],
+                                              text=True, timeout=.5).strip()
+            if (os.getpgid(pid) != pid or owner.get('run_id', run_id) != run_id
+                    or owner.get('run_root', str(self.run_root)) != str(self.run_root)
+                    or run_id not in command or str(self.run_root) not in command
+                    or 'core.computer_use.task_bootstrap' not in command):
+                return False
+            # Let a cooperative recorder disable listening and flush pending
+            # input. Noncooperative/suspended groups get bounded TERM/KILL.
+            for duration, action in ((1., None), (.5, signal.SIGTERM), (.5, signal.SIGKILL)):
+                if action is not None:
+                    try:
+                        os.killpg(pid, action)
+                        if action == signal.SIGTERM:
+                            os.killpg(pid, signal.SIGCONT)
+                    except ProcessLookupError:
+                        # A dead group can still have an unreaped leader. Keep
+                        # waiting for the PID rather than assuming it is gone.
+                        pass
+                deadline = time.monotonic() + duration
+                while time.monotonic() < deadline:
+                    if not self._pid_alive(pid):
+                        if action is not None:
+                            try:
+                                os.killpg(pid, signal.SIGKILL)
+                            except ProcessLookupError:
+                                pass
+                        return True
+                    time.sleep(.02)
+            # An owned child can be a zombie if its former async parent has
+            # not processed exit yet. Reap only this validated PID if possible.
+            try:
+                os.waitpid(pid, os.WNOHANG)
+            except ChildProcessError:
+                pass
+            return not self._pid_alive(pid)
+        except ProcessLookupError:
+            return not self._pid_alive(pid)
+        except (OSError, subprocess.SubprocessError):
+            return not self._pid_alive(pid)
+
     @staticmethod
     def _read(path):
         try:
-            return json.loads(path.read_text())
+            value = json.loads(path.read_text())
+            return value if isinstance(value, dict) else {}
         except (OSError, ValueError):
             return {}
 
@@ -63,6 +159,8 @@ class BrowserDemonstrationService(BrowserTaskService):
     async def _submit(self, task_id, source, operation, **extra):
         if self._closed:
             raise RuntimeError('browser demonstration service is closed')
+        if self._recovery_errors:
+            raise RuntimeError('old browser worker recovery is incomplete')
         if self._active():
             raise RuntimeError('a browser demonstration session is already active')
         task = demonstration_tasks()[task_id]
@@ -106,10 +204,16 @@ class BrowserDemonstrationService(BrowserTaskService):
         if execution in {'queued', 'running'} and status in TERMINAL and status != 'stopped':
             status = 'finalizing'
         deadline_failed = result and result.get('task_status') == 'failed' and result.get('stop_reason') == 'timeout'
-        if (workspace / 'stop.requested').exists() and execution not in {'queued', 'running'} and not deadline_failed:
+        if ((workspace / 'stop.requested').exists() and not self._recovery_path(run_id).exists()
+                and execution not in {'queued', 'running'} and not deadline_failed):
             # Stop is authoritative even if a killed process published late bytes.
             if not result or result.get('task_status') != 'stopped':
                 result = self._partial(run_id, 'stopped', 'user_stop')
+            status = 'stopped'
+        if self._recovery_path(run_id).exists():
+            if not result or result.get('task_status') != 'stopped':
+                result = {'task_status': 'stopped', 'stop_reason': 'service_restart',
+                          'error': None, 'artifacts': [], 'event_count': state.get('event_count', 0)}
             status = 'stopped'
         return {**job, 'task_type': 'browser_demonstration', 'run_id': run_id, 'status': status,
                 'execution_status': execution, 'operation': request.get('operation'),
@@ -121,12 +225,38 @@ class BrowserDemonstrationService(BrowserTaskService):
                 'stop_reason': (result or {}).get('stop_reason'), 'error': (result or {}).get('error') or job.get('error'),
                 'result': result, 'artifacts': (result or {}).get('artifacts', [])}
 
+    def _worker_finished(self, run_id, returncode):
+        self._worker_exit_codes[run_id] = returncode
+
+    def _save_partial(self, run_id, result):
+        if not self._recovery_path(run_id).exists():
+            super()._save_partial(run_id, result)
+
     async def _process(self, job):
         result = await super()._process(job)
-        if result.get('run_status') == 'worker_crashed':
+        run_id = job['job_id']
+        exit_code = self._worker_exit_codes.pop(run_id, None)
+        if self._recovery_path(run_id).exists():
+            # The recovering parent owns publication. An old parent's delayed
+            # callback cannot overwrite its accepted restart snapshot.
+            result = self._partial(run_id, 'stopped', 'service_restart')
+            self._results[run_id] = result
+            return result
+        cancelled = (self._lane.get(run_id) or {}).get('status') == 'cancelled'
+        marker = (self.run_root / ('run_' + run_id) / 'stop.requested').exists()
+        deadline_failed = result.get('task_status') == 'failed' and result.get('stop_reason') == 'timeout'
+        if cancelled or (marker and not deadline_failed):
+            persisted = self._read(self.run_root / ('run_' + run_id) / 'result.json')
+            reason = persisted.get('stop_reason') if persisted.get('task_status') == 'stopped' else 'user_stop'
+            result = self._partial(run_id, 'stopped', reason or 'user_stop')
+        elif (exit_code is not None and exit_code != 0) or result.get('run_status') == 'worker_crashed':
             result.update(task_status='failed', error='worker_crashed', stop_reason='worker_crashed')
             result.pop('candidate', None)
-            self._save_partial(job['job_id'], result)
+        # super has reaped the child/owned startup and released its handles.
+        # There is no await between cancellation check and durable acceptance.
+        clean_exit = not marker and exit_code == 0
+        self._settle_result(run_id, result, clean_exit=clean_exit)
+        self._results[run_id] = result
         return result
 
     def get(self, run_id):
@@ -204,7 +334,9 @@ class BrowserDemonstrationService(BrowserTaskService):
         job = self.get(run_id)
         if job is None or job['status'] in TERMINAL:
             return job
-        return await super().stop(run_id)
+        stopped = await super().stop(run_id)
+        self._settle_result(run_id, stopped['result'], clean_exit=False)
+        return stopped
 
     def artifact(self, run_id, name):
         job = self.get(run_id)

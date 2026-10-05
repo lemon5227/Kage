@@ -356,3 +356,133 @@ def test_overall_deadline_failure_stays_failed_after_restart(client):
     client.portal.call(routes.close_service)
     restored = client.get(f'{BASE}/{run_id}').json()
     assert restored['status'] == 'failed' and restored['stop_reason'] == 'timeout'
+
+
+def test_restart_rejects_post_result_worker_before_parent_clean_exit(client, tmp_path, monkeypatch):
+    from core.computer_use.demonstration_service import BrowserDemonstrationService
+    wrapper = tmp_path / 'delayed-abnormal-python'
+    wrapper.write_text('#!' + str(ROOT / '.venv-computer-use/bin/python') + '\n'
+        'import os, runpy, sys, time\n'
+        'sys.path.insert(0, os.getcwd())\n'
+        'sys.argv = ["task_bootstrap", *sys.argv[3:]]\n'
+        'runpy.run_module("core.computer_use.task_bootstrap", run_name="__main__")\n'
+        'time.sleep(60)\n'
+        'os._exit(1)\n')
+    wrapper.chmod(0o755)
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(wrapper))
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    asyncio.run(operate(wait_job(client, run_id, {'recording'}), 'profile'))
+    client.post(f'{BASE}/{run_id}/finish')
+    workspace = tmp_path / ('run_' + run_id)
+    end = time.monotonic() + 10
+    while not (workspace / 'result.json').exists() and time.monotonic() < end:
+        time.sleep(.02)
+    assert json.loads((workspace / 'result.json').read_text())['task_status'] == 'verified'
+    assert client.get(f'{BASE}/{run_id}').json()['status'] == 'finalizing'
+    restarted = BrowserDemonstrationService(tmp_path, lambda: {})
+    final = restarted.get(run_id)
+    assert final['status'] == 'stopped' and final['stop_reason'] == 'service_restart'
+    assert not final['result'].get('candidate')
+    assert (workspace / 'stop.requested').exists()
+    pid = json.loads((workspace / 'worker-owner.json').read_text())['pid']
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
+    time.sleep(.2)
+    restored = BrowserDemonstrationService(tmp_path, lambda: {})
+    assert restored.get(run_id)['status'] == 'stopped'
+
+
+def test_restart_terminates_suspended_owner_before_replacement(client, tmp_path):
+    from core.computer_use.demonstration_service import BrowserDemonstrationService
+    import signal
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    wait_job(client, run_id, {'recording'})
+    workspace = tmp_path / ('run_' + run_id)
+    pid = json.loads((workspace / 'worker-owner.json').read_text())['pid']
+    os.killpg(pid, signal.SIGSTOP)
+    started = time.monotonic()
+    restarted = BrowserDemonstrationService(tmp_path, lambda: {})
+    assert time.monotonic() - started < 3
+    assert restarted.get(run_id)['stop_reason'] == 'service_restart'
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
+    async def replace():
+        try:
+            next_job = await restarted.submit({'task_id': 'demo_profile', 'source_kind': 'automation'})
+            assert next_job['run_id'] != run_id
+        finally:
+            await restarted.close()
+    client.portal.call(replace)
+
+
+def test_restart_pending_real_input_freezes_hashes_after_flush(client, tmp_path):
+    from core.computer_use.demonstration_service import BrowserDemonstrationService
+    import hashlib
+    async def pending(job):
+        async with async_playwright() as p:
+            browser = await p.chromium.connect_over_cdp(job['automation_cdp_endpoint'])
+            await browser.contexts[0].pages[0].get_by_label('Name').fill('Correction')
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    asyncio.run(pending(wait_job(client, run_id, {'recording'})))
+    restarted = BrowserDemonstrationService(tmp_path, lambda: {})
+    time.sleep(.7)
+    final = restarted.get(run_id)
+    assert final['status'] == 'stopped' and final['event_count'] == 1
+    assert json.loads((tmp_path / ('run_' + run_id) / 'demonstration-summary.json').read_text())['event_count'] == 1
+    for item in final['artifacts']:
+        assert hashlib.sha256(restarted.artifact(run_id, item['name']).read_bytes()).hexdigest() == item['sha256']
+    restored = BrowserDemonstrationService(tmp_path, lambda: {})
+    assert restored.get(run_id)['artifacts'] == final['artifacts']
+
+
+def test_failed_replay_after_real_partial_action_is_checked_and_archived(client, tmp_path):
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    asyncio.run(operate(wait_job(client, run_id, {'recording'}), 'profile'))
+    client.post(f'{BASE}/{run_id}/finish')
+    candidate = wait_job(client, run_id, {'verified'})['result']['candidate']
+    args = {**candidate['arguments'], 'field_1_value': 'Kage Reuse', 'field_2_label': 'Missing visible label'}
+    created = client.post(f'{BASE}/{run_id}/replay', json={'task_id': 'reuse_profile', 'arguments': args})
+    assert created.status_code == 202
+    replay_id = created.json()['run_id']
+    final = wait_job(client, replay_id, {'failed'})
+    assert final['stop_reason'] == 'workflow_failed'
+    assert 'Missing visible label' in final['error'] and final['check_passed'] is False
+    scored = client.get(f'{BASE}/{replay_id}/artifacts/run-result.json').json()
+    assert scored['status'] == 'failed' and scored['score'] == 0
+    episode = client.get(f'{BASE}/{replay_id}/artifacts/episode.json').json()
+    assert episode['status'] == 'failed'
+    assert episode['browser']['source_kind'] == 'workflow_engine_replay'
+    assert episode['browser']['failure_status'] == 'workflow_replay_incomplete'
+    assert episode['browser']['student']['external_passed'] is None
+    assert episode['browser']['actor_segments'] == [{'actor': 'workflow_engine', 'tool_calls': 3}]
+    tools = [json.loads(line) for line in client.get(f'{BASE}/{replay_id}/artifacts/actor-tools.jsonl').text.splitlines()]
+    assert any(row['name'] == 'browser_act' and row['success'] and row['arguments'].get('value') == 'Kage Reuse' for row in tools)
+    from core.computer_use.demonstration_compiler import compile_demonstration
+    with pytest.raises(ValueError):
+        compile_demonstration(episode, tmp_path / 'rejected-replay', skill_id='form-rejected')
+
+
+def test_recovery_rejects_mismatched_live_ownership_without_signalling(client, tmp_path):
+    from core.computer_use.demonstration_service import BrowserDemonstrationService
+    import signal
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    wait_job(client, run_id, {'recording'})
+    owner_path = tmp_path / ('run_' + run_id) / 'worker-owner.json'
+    owner = json.loads(owner_path.read_text())
+    os.killpg(owner['pid'], signal.SIGSTOP)
+    # Corrupt only ownership metadata; Page evidence remains genuinely captured.
+    owner_path.write_text(json.dumps({**owner, 'run_id': 'different-owned-session'}))
+    restarted = BrowserDemonstrationService(tmp_path, lambda: {})
+    assert 'RecoveryOwnershipUnverified' in restarted.get(run_id)['error']
+    assert restarted.get(run_id)['artifacts'] == []
+    os.kill(owner['pid'], 0)
+    async def rejected():
+        with pytest.raises(RuntimeError, match='recovery is incomplete'):
+            await restarted.submit({'task_id': 'demo_profile', 'source_kind': 'automation'})
+        await restarted.close()
+    client.portal.call(rejected)
+    # The original parent still owns its actual process handle and can reap it.
+    import core.routes.browser_demonstrations as routes
+    client.portal.call(routes.close_service)
+    with pytest.raises(ProcessLookupError):
+        os.kill(owner['pid'], 0)
