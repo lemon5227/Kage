@@ -230,6 +230,47 @@ def test_real_write_failure_preserves_prior_records_and_fails_closed(tmp_path):
     asyncio.run(run())
 
 
+def test_final_stop_trace_failure_persists_failed_capture_and_blocks_compilation(tmp_path, monkeypatch):
+    async def run():
+        task = demonstration_tasks()['demo_profile']
+        workspace = tmp_path / 'record'; workspace.mkdir()
+        with browser_task_server(task['fixture'], workspace) as (url, state):
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                try:
+                    page = await browser.new_page(); await page.goto(url)
+                    recorder = BrowserDemonstrationRecorder(page, workspace, source_kind='automation')
+                    await recorder.start()
+                    await teach(page, 'profile')
+                    await page.evaluate('() => window.__kageDemonstration.chain')
+                    names = ('demonstration-events.jsonl', 'demonstration-inputs.jsonl', 'actor-tools.jsonl')
+                    raw = {name: (workspace / name).read_bytes() for name in names}
+                    original_append = recorder._append
+
+                    def fail_stop_trace(name, row):
+                        if name == 'trace.jsonl' and row.get('event') == 'demonstration_stopped':
+                            raise OSError('final stopped trace unavailable')
+                        original_append(name, row)
+
+                    monkeypatch.setattr(recorder, '_append', fail_stop_trace)
+                    summary = await recorder.stop()
+                    assert summary['success'] is False and summary['error'] == 'CaptureFlushFailed'
+                    assert json.loads((workspace / 'demonstration-summary.json').read_text()) == summary
+                    assert all((workspace / name).read_bytes() == data for name, data in raw.items())
+                    assert await recorder.stop() == summary
+                    assert (await checkpoint(page, url, workspace))['readback_matches_backend']
+                    assert state['posts'] == 1 and Evaluator.score(task, workspace) == 1
+                    episode = archive(task, workspace, tmp_path)
+                    assert episode['browser']['verification'] == 'not_verified'
+                    assert episode['browser']['failure_status'] == 'demonstration_incomplete'
+                    with pytest.raises(ValueError, match='verified dev'):
+                        compile_demonstration(episode, tmp_path / 'candidate', skill_id='form-demo')
+                    assert not (tmp_path / 'candidate').exists()
+                finally:
+                    await browser.close()
+    asyncio.run(run())
+
+
 def test_capture_limit_page_close_and_stop_flush_preserve_evidence(tmp_path):
     async def run():
         async with async_playwright() as p:

@@ -201,9 +201,15 @@ class BrowserDemonstrationRecorder:
             if final is not None:
                 atomic_json(self.workspace / 'final-observation.json', final)
                 self._append('browser.jsonl', {'phase': 'observe', 'elapsed_ms': 0, 'observation': final})
-            atomic_json(self.workspace / 'demonstration-summary.json', self.summary)
             self._append('trace.jsonl', {'event': 'demonstration_stopped', 'success': self.summary['success'],
                          'error': error, 'event_count': self.event_count})
+            # Publish capture success only after every other stop record persisted.
+            atomic_json(self.workspace / 'demonstration-summary.json', self.summary)
         except OSError as exc:
             self.summary.update(success=False, error='CaptureFlushFailed', capture_error=str(exc))
+            try:
+                atomic_json(self.workspace / 'demonstration-summary.json', self.summary)
+            except OSError:
+                # Missing summary evidence also prevents verification/compilation.
+                pass
         return self.summary
