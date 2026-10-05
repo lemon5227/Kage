@@ -28,6 +28,12 @@ class ExperienceArchive:
         paths = [p for p in sorted(root.rglob("*")) if p.is_file() and p.suffix not in {".jsonl", ".sqlite"}]
         if browser:
             paths.extend(Path(browser['evidence'][name]['path']) for name in ('actor-tools.jsonl', 'browser.jsonl'))
+            existing = {path.resolve() for path in paths} | {trace}
+            for ref in browser['evidence'].values():
+                path = Path(ref['path'])
+                if path.resolve() not in existing:
+                    paths.append(path)
+                    existing.add(path.resolve())
         paths.append(trace)
         setup_dir = root.parent / ".episode-setups"
         setup_dir.mkdir(exist_ok=True)

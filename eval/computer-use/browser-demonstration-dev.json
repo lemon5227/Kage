@@ -1,0 +1,161 @@
+{
+  "suite_id": "c45-browser-demonstration-dev",
+  "protocol": {
+    "split": "dev-only",
+    "cloud": false,
+    "capture_max_actions": 64,
+    "capture_timeout_s": 900,
+    "reuse_max_primitives": 16,
+    "reuse_timeout_s": 480
+  },
+  "tasks": [
+    {
+      "task_id": "demo_profile",
+      "family": "profile",
+      "split": "dev",
+      "instruction": "Fill Name with \"Kage Demo\" and Email with \"demo@example.test\". Click Save profile and confirm the displayed saved values.",
+      "fixture": {
+        "version": "demonstration-dev-v1",
+        "kind": "profile",
+        "title": "Profile editor",
+        "fields": [
+          {
+            "name": "name",
+            "label": "Name"
+          },
+          {
+            "name": "email",
+            "label": "Email"
+          }
+        ],
+        "submit": "Save profile"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-outcome.json",
+        "expected": {
+          "record": {
+            "name": "Kage Demo",
+            "email": "demo@example.test"
+          },
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "reuse_profile",
+      "family": "profile",
+      "split": "dev",
+      "instruction": "Fill Name with \"Kage Reuse\" and Email with \"reuse@example.test\". Click Save profile and confirm the displayed saved values.",
+      "fixture": {
+        "version": "demonstration-dev-v1",
+        "kind": "profile",
+        "title": "Profile editor",
+        "fields": [
+          {
+            "name": "email",
+            "label": "Email"
+          },
+          {
+            "name": "name",
+            "label": "Name"
+          }
+        ],
+        "submit": "Save profile"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-outcome.json",
+        "expected": {
+          "record": {
+            "name": "Kage Reuse",
+            "email": "reuse@example.test"
+          },
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "demo_preferences",
+      "family": "preferences",
+      "split": "dev",
+      "instruction": "Enable Email notifications, disable SMS notifications and keep Weekly digest disabled. Click Save settings and confirm the displayed saved values.",
+      "fixture": {
+        "version": "demonstration-dev-v1",
+        "kind": "preferences",
+        "title": "Notification preferences",
+        "fields": [
+          {
+            "name": "email",
+            "label": "Email notifications",
+            "initial": false
+          },
+          {
+            "name": "sms",
+            "label": "SMS notifications",
+            "initial": true
+          },
+          {
+            "name": "weekly",
+            "label": "Weekly digest",
+            "initial": false
+          }
+        ],
+        "submit": "Save settings"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-outcome.json",
+        "expected": {
+          "record": {
+            "email": true,
+            "sms": false,
+            "weekly": false
+          },
+          "readback_matches_backend": true
+        }
+      }
+    },
+    {
+      "task_id": "reuse_preferences",
+      "family": "preferences",
+      "split": "dev",
+      "instruction": "Disable Email notifications, enable SMS notifications and enable Weekly digest. Click Save settings and confirm the displayed saved values.",
+      "fixture": {
+        "version": "demonstration-dev-v1",
+        "kind": "preferences",
+        "title": "Notification preferences",
+        "fields": [
+          {
+            "name": "weekly",
+            "label": "Weekly digest",
+            "initial": false
+          },
+          {
+            "name": "sms",
+            "label": "SMS notifications",
+            "initial": false
+          },
+          {
+            "name": "email",
+            "label": "Email notifications",
+            "initial": true
+          }
+        ],
+        "submit": "Save settings"
+      },
+      "scoring_criteria": {
+        "type": "json_exact_match",
+        "file": "browser-outcome.json",
+        "expected": {
+          "record": {
+            "email": false,
+            "sms": true,
+            "weekly": true
+          },
+          "readback_matches_backend": true
+        }
+      }
+    }
+  ]
+}
