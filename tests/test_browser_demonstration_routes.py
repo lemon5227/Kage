@@ -573,3 +573,200 @@ def test_restart_blocks_surviving_group_when_actual_bootstrap_leader_is_gone(tmp
     for item in final['artifacts']:
         assert hashlib.sha256(recovered.artifact(run_id, item['name']).read_bytes()).hexdigest() == item['sha256']
     asyncio.run(recovered.close())
+
+
+@pytest.mark.parametrize('exit_code', [0, 1])
+def test_public_result_waits_for_actual_worker_settlement(client, tmp_path, monkeypatch, exit_code):
+    release = tmp_path / 'release-worker'
+    wrapper = tmp_path / 'held-python'
+    wrapper.write_text('#!' + str(ROOT / '.venv-computer-use/bin/python') + '\n'
+        'import os, runpy, sys, time\nfrom pathlib import Path\n'
+        'sys.path.insert(0, os.getcwd())\n'
+        'sys.argv = ["task_bootstrap", *sys.argv[3:]]\n'
+        'runpy.run_module("core.computer_use.task_bootstrap", run_name="__main__")\n'
+        f'while not Path({str(release)!r}).exists(): time.sleep(.02)\n'
+        f'os._exit({exit_code})\n')
+    wrapper.chmod(0o755)
+    monkeypatch.setenv('KAGE_BROWSER_PYTHON', str(wrapper))
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    asyncio.run(operate(wait_job(client, run_id, {'recording'}), 'profile'))
+    client.post(f'{BASE}/{run_id}/finish')
+    workspace = tmp_path / ('run_' + run_id)
+    end = time.monotonic() + 10
+    while not (workspace / 'result.json').exists() and time.monotonic() < end:
+        time.sleep(.02)
+    raw = json.loads((workspace / 'result.json').read_text())
+    assert raw['task_status'] == 'verified' and raw['candidate']['digest']
+    pid = json.loads((workspace / 'worker-owner.json').read_text())['pid']
+    os.kill(pid, 0)
+    try:
+        for job in (client.get(f'{BASE}/{run_id}').json(),
+                    next(j for j in client.get(BASE).json() if j['run_id'] == run_id)):
+            assert job['status'] == 'finalizing' and job['execution_status'] == 'running'
+            assert job['result'] is None and job['check_passed'] is None and job['artifacts'] == []
+        assert client.get(f'{BASE}/{run_id}/artifacts/candidate/manifest.json').status_code == 404
+        assert not (tmp_path / (run_id + '-acceptance.json')).exists()
+    finally:
+        release.touch()
+    final = wait_job(client, run_id, {'verified' if exit_code == 0 else 'failed'})
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
+    if exit_code == 0:
+        assert final['check_passed'] is True and final['result']['candidate']['digest'] == raw['candidate']['digest']
+        assert client.get(f'{BASE}/{run_id}/artifacts/candidate/manifest.json').status_code == 200
+    else:
+        assert final['stop_reason'] == 'worker_crashed' and not final['result'].get('candidate')
+        assert (workspace / 'candidate/manifest.json').is_file()
+        assert client.get(f'{BASE}/{run_id}/artifacts/candidate/manifest.json').status_code == 404
+        assert client.get(f'{BASE}/{run_id}/artifacts/candidate.json').status_code == 404
+        assert client.post(f'{BASE}/{run_id}/replay', json={'task_id': 'reuse_profile', 'arguments': raw['candidate']['arguments']}).status_code == 409
+
+
+def test_reads_during_delayed_stop_do_not_index_live_worker(client, tmp_path, monkeypatch):
+    import hashlib
+    import signal
+    import threading
+    import core.routes.browser_demonstrations as routes
+    service = routes._get_service()
+    run_id = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    asyncio.run(operate(wait_job(client, run_id, {'recording'}), 'profile', save=False))
+    workspace = tmp_path / ('run_' + run_id)
+    pid = json.loads((workspace / 'worker-owner.json').read_text())['pid']
+    os.killpg(pid, signal.SIGSTOP)
+    entered, release = threading.Event(), threading.Event()
+    original_kill, original_partial = service._kill, service._partial
+    indexed = []
+
+    async def delayed_kill(proc):
+        entered.set()
+        while not release.is_set():
+            await asyncio.sleep(.01)
+        await original_kill(proc)
+
+    def count_partial(*args):
+        indexed.append(args)
+        return original_partial(*args)
+
+    monkeypatch.setattr(service, '_kill', delayed_kill)
+    monkeypatch.setattr(service, '_partial', count_partial)
+    future = client.portal.start_task_soon(service.stop, run_id)
+    try:
+        assert entered.wait(5)
+        os.kill(pid, 0)
+        for _ in range(3):
+            job = client.get(f'{BASE}/{run_id}').json()
+            assert job['status'] == 'finalizing' and job['result'] is None
+            assert job['check_passed'] is None and job['artifacts'] == []
+            assert client.get(f'{BASE}/{run_id}/artifacts/initial-observation.json').status_code == 404
+            assert next(j for j in client.get(BASE).json() if j['run_id'] == run_id)['artifacts'] == []
+        assert indexed == []
+        assert not (tmp_path / (run_id + '-acceptance.json')).exists()
+    finally:
+        os.killpg(pid, signal.SIGCONT)
+        release.set()
+        final = future.result(timeout=10)
+    assert final['status'] == 'stopped' and final['stop_reason'] == 'user_stop'
+    with pytest.raises(ProcessLookupError):
+        os.kill(pid, 0)
+    assert final['result'] and not final['result'].get('candidate')
+    for item in final['artifacts']:
+        response = client.get(item['url'])
+        assert response.status_code == 200
+        assert hashlib.sha256(response.content).hexdigest() == item['sha256']
+
+
+@pytest.mark.parametrize('mutation', ['start', 'replay'])
+@pytest.mark.parametrize('history_outcome', ['success', 'error', 'empty'])
+def test_launcher_history_serializes_mutations_and_releases_controls(client, mutation, history_outcome):
+    # Real candidate plus real Launcher; defer transport responses only.
+    old = client.post(BASE, json={'task_id': 'demo_profile', 'source_kind': 'automation'}).json()['run_id']
+    asyncio.run(operate(wait_job(client, old, {'recording'}), 'profile'))
+    client.post(f'{BASE}/{old}/finish')
+    wait_job(client, old, {'verified'})
+
+    async def scenario():
+        history_entered, history_release = asyncio.Event(), asyncio.Event()
+        post_entered, post_release = asyncio.Event(), asyncio.Event()
+        history_reads, posts = 0, []
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+
+            async def api(route):
+                nonlocal history_reads
+                request = route.request
+                path = '/api' + request.url.split('/api', 1)[1]
+                headers = {'access-control-allow-origin': '*', 'content-type': 'application/json',
+                           'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type'}
+                if request.method == 'OPTIONS':
+                    await route.fulfill(status=200, headers=headers)
+                    return
+                response = await asyncio.to_thread(client.request, request.method, path,
+                    content=request.post_data if request.method == 'POST' else None,
+                    headers={'content-type': 'application/json'} if request.method == 'POST' else None)
+                if request.method == 'GET' and path == BASE + '/' + old:
+                    history_reads += 1
+                    if history_reads == 2:
+                        history_entered.set()
+                        await history_release.wait()
+                        if history_outcome == 'error':
+                            await route.fulfill(status=500, body='{"detail":"history unavailable"}', headers=headers)
+                            return
+                if request.method == 'POST':
+                    posts.append((path, response.json()))
+                    post_entered.set()
+                    await post_release.wait()
+                await route.fulfill(status=response.status_code, body=response.content, headers=headers)
+
+            await page.route('http://127.0.0.1:12345/api/browser/demonstrations**', api)
+            try:
+                await page.goto((ROOT / 'kage-avatar/public/launcher.html').as_uri())
+                await page.locator('#demonstration-history').select_option(old)
+                await page.locator('#demonstration-status').get_by_text(old, exact=False).wait_for()
+                await page.locator('#demonstration-history').select_option('')
+                await page.locator('#demonstration-history').select_option(old)
+                await asyncio.wait_for(history_entered.wait(), 5)
+                assert await page.locator('#demonstration-start').is_disabled()
+                assert await page.locator('#demonstration-replay').is_disabled()
+                # Even a queued/programmatic click cannot submit a competing action.
+                await page.locator('#demonstration-' + mutation).dispatch_event('click')
+                assert posts == []
+                if history_outcome == 'empty':
+                    await page.locator('#demonstration-history').evaluate("el => {el.value=''; el.dispatchEvent(new Event('change'));}")
+                history_release.set()
+                await page.wait_for_function("!document.querySelector('#demonstration-start').disabled")
+                assert history_reads == 2
+                if history_outcome == 'success':
+                    assert await page.locator('#demonstration-replay').is_enabled()
+                else:
+                    if history_outcome == 'error':
+                        await page.locator('#demonstration-error').get_by_text('500', exact=False).wait_for()
+                    # Select a candidate explicitly again before replay after a failed/empty load.
+                    if mutation == 'replay':
+                        await page.locator('#demonstration-history').select_option('')
+                        await page.locator('#demonstration-history').select_option(old)
+                        await page.locator('#demonstration-replay').wait_for(state='visible')
+                        await page.wait_for_function("!document.querySelector('#demonstration-replay').disabled")
+                await page.locator('#demonstration-task').select_option('demo_profile')
+                await page.locator('#demonstration-source').select_option('automation')
+                await page.locator('#demonstration-' + mutation).click()
+                await asyncio.wait_for(post_entered.wait(), 5)
+                assert len(posts) == 1 and posts[0][1]['run_id'] != old
+                # A late history selection cannot invalidate an accepted POST owner.
+                await page.locator('#demonstration-history').evaluate("el => {el.value=''; el.dispatchEvent(new Event('change'));}")
+                post_release.set()
+                new_id = posts[0][1]['run_id']
+                await page.locator('#demonstration-status').get_by_text(new_id, exact=False).wait_for()
+                if mutation == 'start':
+                    await page.locator('#demonstration-status').get_by_text('独立教学窗口已就绪', exact=False).wait_for()
+                    assert await page.locator('#demonstration-stop').is_enabled()
+                    assert await page.locator('#demonstration-finish').is_enabled()
+                else:
+                    await page.locator('#demonstration-status').get_by_text('执行者: workflow_engine', exact=False).wait_for()
+                assert len(posts) == 1
+            finally:
+                history_release.set()
+                post_release.set()
+                await page.unroute_all(behavior='wait')
+                await browser.close()
+    asyncio.run(scenario())

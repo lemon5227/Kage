@@ -118,13 +118,16 @@ window.KageBrowserDemonstrations = {
       catch (error) { el('error').textContent = 'JSON 参数无效: ' + error; }
     });
     el('history').addEventListener('change', async () => {
+      if (busy) return;
       const id = el('history').value, stamp = ++generation;
-      clearInterval(poll); candidateJob = null; controls();
+      clearInterval(poll); showCandidate(null);
       if (!id) { current = null; showCandidate(null); controls(); return; }
+      busy = true; el('error').textContent = ''; controls();
       try {
         const job = await request(`${base}/${id}`);
         if (stamp === generation && el('history').value === id) { showCandidate(job); bind(job); }
       } catch (error) { if (stamp === generation) el('error').textContent = String(error); }
+      finally { busy = false; controls(); }
     });
     window.addEventListener('kage:job', event => {
       const job = event.detail?.job;

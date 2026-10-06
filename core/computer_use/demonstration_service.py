@@ -28,6 +28,7 @@ class BrowserDemonstrationService(BrowserTaskService):
         self._history = {}
         self._recovery_errors = {}
         self._worker_exit_codes = {}
+        self._stopping = set()
         for path in self.run_root.glob('run_*/session.json'):
             try:
                 job = json.loads(path.read_text())
@@ -71,6 +72,12 @@ class BrowserDemonstrationService(BrowserTaskService):
                 and path.is_file() and acceptance.get('result_sha256') == hashlib.sha256(path.read_bytes()).hexdigest())
 
     def _settle_result(self, run_id, result, *, clean_exit):
+        if result['task_status'] != 'verified':
+            # Rejected candidate bytes remain internal audit, never a public bundle.
+            result.pop('candidate', None)
+            result['artifacts'] = [item for item in result.get('artifacts', [])
+                if not item['name'].startswith('candidate/')
+                and item['name'] not in {'candidate.json', 'parameters.json'}]
         path = self.run_root / ('run_' + run_id) / 'result.json'
         atomic_json(path, result)
         atomic_json(self._acceptance_path(run_id), {'run_id': run_id, 'settled': True,
@@ -214,24 +221,20 @@ class BrowserDemonstrationService(BrowserTaskService):
         request = self._requests.get(run_id) or job
         workspace = self.run_root / ('run_' + run_id)
         state = self._read(workspace / 'status.json')
-        result = self._results.get(run_id) or job.get('result') or self._read(workspace / 'result.json') or None
+        raw = self._results.get(run_id) or job.get('result') or self._read(workspace / 'result.json') or {}
+        settled = run_id not in self._stopping and self._accepted(run_id, raw)
+        result = raw if settled else None
         execution = job['status']
-        status = (result or {}).get('task_status') or ('starting' if execution == 'running' else execution)
+        status = raw.get('task_status') or ('starting' if execution == 'running' else execution)
         if status not in TERMINAL and state.get('status'):
             status = state['status']
-        if execution in {'queued', 'running'} and status in TERMINAL and status != 'stopped':
+        if not settled and (status in TERMINAL or execution == 'cancelled'):
             status = 'finalizing'
-        deadline_failed = result and result.get('task_status') == 'failed' and result.get('stop_reason') == 'timeout'
-        if ((workspace / 'stop.requested').exists() and not self._recovery_path(run_id).exists()
-                and execution not in {'queued', 'running'} and not deadline_failed):
-            # Stop is authoritative even if a killed process published late bytes.
-            if not result or result.get('task_status') != 'stopped':
-                result = self._partial(run_id, 'stopped', 'user_stop')
-            status = 'stopped'
         if self._recovery_path(run_id).exists():
-            if not result or result.get('task_status') != 'stopped':
+            if not settled:
                 result = {'task_status': 'stopped', 'stop_reason': 'service_restart',
-                          'error': None, 'artifacts': [], 'event_count': state.get('event_count', 0)}
+                          'error': self._recovery_errors.get(run_id), 'artifacts': [],
+                          'event_count': state.get('event_count', 0)}
             status = 'stopped'
         return {**job, 'task_type': 'browser_demonstration', 'run_id': run_id, 'status': status,
                 'execution_status': execution, 'operation': request.get('operation'),
@@ -273,7 +276,8 @@ class BrowserDemonstrationService(BrowserTaskService):
         # super has reaped the child/owned startup and released its handles.
         # There is no await between cancellation check and durable acceptance.
         clean_exit = not marker and exit_code == 0
-        self._settle_result(run_id, result, clean_exit=clean_exit)
+        if run_id not in self._stopping:
+            self._settle_result(run_id, result, clean_exit=clean_exit)
         self._results[run_id] = result
         return result
 
@@ -354,11 +358,15 @@ class BrowserDemonstrationService(BrowserTaskService):
 
     async def stop(self, run_id):
         job = self.get(run_id)
-        if job is None or job['status'] in TERMINAL:
+        if job is None or job['status'] in TERMINAL or run_id in self._stopping:
             return job
-        stopped = await super().stop(run_id)
-        self._settle_result(run_id, stopped['result'], clean_exit=False)
-        return stopped
+        self._stopping.add(run_id)
+        try:
+            await super().stop(run_id)
+            self._settle_result(run_id, self._results[run_id], clean_exit=False)
+        finally:
+            self._stopping.discard(run_id)
+        return self.get(run_id)
 
     def artifact(self, run_id, name):
         job = self.get(run_id)
