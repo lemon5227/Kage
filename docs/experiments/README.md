@@ -4,6 +4,7 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
+| 2026-10-07 C1.2-AX工程 | 原生AX窗口/控件范围、权限/失效/驱动语义、专用TextEdit保存关闭重开与独立检查 | [AX首包报告](2026-10-07-macos-ax.md)：确定性驱动pilot通过、1002 passed、0模型/云请求；原生模型链与按需OCR候选仍待验收，完整C1.2未完成 |
 | 2026-10-07 C4.5-DOM | 真实DOM教学、纠正/参数提取、持久入口、新输入复用与本地模型pilot | [总报告](2026-10-07-browser-demonstration.md)、[录制/提取](2026-10-05-browser-demonstration-recorder.md)、[入口/生命周期](2026-10-05-browser-demonstration-entry.md)：录制2/2、直接复用2/2、本地2/2但skill_call=0；7请求零云、992 passed，真人验收待操作；下一C1.2 AX |
 | 2026-10-04 C5.0 | Launcher/API受控任务入口、状态/模型/预算/停止/产物 | [入口集成报告](2026-10-04-browser-task-entry.md)：真实本地completed/unknown各一且均保存/读回，7请求零云；946 passed，审计温度假设修正保留；下一C4.5-DOM |
 | 2026-10-03 C2.1-R3-a | 新dev两任务×5/6步真实预算对照 | [保存预算诊断](2026-10-03-browser-save-budget-dev.md)：各2/2，6步多1请求但无分数收益；21本地请求/零云，默认5，下一C5.0；911 passed |
