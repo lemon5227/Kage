@@ -2,29 +2,66 @@
 
 # Kage (影)
 
-### A learning computer agent for macOS
+### Toward Self-Evolving General-Purpose Computer Agents
 
-**Act on your computer. Learn from assistance. Evolve through verified experiments.**
+**Computer use × Continual learning × Procedural memory × Agent self-modification**
+
+An experimental agent system that turns execution experience into reusable capabilities—and explores how agents can improve their own architecture.
 
 [Roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Task queue](docs/plans/task-queue-2026-10-01.md) · [Experiment reports](docs/experiments/README.md) · [Issues](https://github.com/lemon5227/Kage/issues)
 
 </div>
 
-Kage is building toward a general-purpose computer agent that combines local execution, affordable cloud assistance, reusable memory and skills, and controlled self-modification. Its goal is to handle everyday work across browsers, files, and native apps—and improve from verified experience rather than repeat the same mistakes.
+Kage explores a larger question than desktop automation: **can an agent become more capable through its own experience, human teaching, and selective changes to the system that drives its decisions?**
 
-The project started as a local desktop assistant with voice and Live2D. It is growing into an agent runtime and experimental platform for **computer use and self-evolution**, designed around modest hardware: an Apple Silicon Mac with 16 GB of memory and optional cloud APIs.
+The goal is a general-purpose computer agent that works across browsers, files, and native applications, accumulates transferable skills, and evolves beyond a fixed collection of prompts and tools. macOS is the first execution environment. Local small models and cloud teachers provide a practical setting for studying this on an Apple Silicon Mac with 16 GB of memory.
 
-**Current status: active experimental development.** Controlled browser and file workflows are implemented and tested. Arbitrary websites, broad native-app automation, continuous autonomous evolution, and human-level general ability remain goals. The roadmap describes intended capabilities; the reports describe what actually ran.
+The central research loop is:
 
-## What Kage is building
+> **Act → Verify → Remember → Learn → Modify → Evaluate → Reuse**
 
-- **Computer use:** observe the environment, plan, execute tools, recover from errors, and verify the resulting state. Browser DOM is the first structured interface; macOS accessibility and cross-app workflows come next.
-- **Local + cloud collaboration:** use a small local model for affordable execution and call a cloud teacher when assistance is needed. Preserve the teacher's actual actions and verified outcome for later reuse.
-- **Learning from demonstrations:** capture actions and corrections, turn verified episodes into editable skills, and test those skills on different inputs. A dedicated browser teaching UI is available for controlled forms.
-- **Memory that supports action:** retain episodes, provenance, versioned candidates, and evidence; retrieve useful experience and procedural skills instead of treating all history as chat text.
-- **Self-evolution:** experiment with changes to skills and selected agent modules, compare candidates using independent checks, and retain or reject changes based on measured results.
+Execution produces evidence. Evidence becomes episodic memory and executable skill candidates. Failures identify where the agent's procedure or scaffolding needs to change. Candidate improvements must demonstrate value on independent tasks before becoming part of the agent's capabilities.
 
-Learning has distinct layers: **experience memory → reusable skills → agent-module changes → eventual model distillation**. Saving a trajectory is not weight training, and a successful tool call is not proof that a task is complete.
+Kage began as a voice-driven desktop companion with Live2D. Its current direction is an **experimental platform for computer-use agents, continual adaptation, and agent self-evolution**. The interface is the entry point; the learning and evolution loop is the core ambition.
+
+**Research prototype, actively developed.** The sections below separate the research agenda from implemented mechanisms and measured results.
+
+## Research agenda
+
+### Computer use as an open-ended action environment
+
+Connect structured browser perception, macOS accessibility, and eventually visual grounding into an agent that can operate across application boundaries. Study task completion, recovery, and transfer through changes in content, layout, and initial state—not only whether an action API returns success.
+
+### Continual adaptation through experience and teaching
+
+Turn failed attempts, successful executions, human corrections, and cloud-teacher interventions into learning signals. The target is an agent that needs less assistance as useful experience accumulates. Episodic retrieval, procedural learning, and eventual model distillation are distinct adaptation mechanisms to evaluate.
+
+### Procedural memory: from trajectories to executable capabilities
+
+Move beyond storing conversations. Convert verified demonstrations into parameterized, composable procedures that can be discovered and applied in new situations. Bind skills to their source evidence, execution semantics, and versions, then test whether they improve transfer, reliability, or inference cost.
+
+### Self-modifying agent scaffolds
+
+Explore evolution of the agent's planning, retrieval, recovery, and workflow modules—not only its final answers. Generate candidate changes in isolated execution environments, load the actual changed code, compare parent and child behavior, and preserve both improvements and regressions. A recovery-module pilot is implemented; broader module evolution is the next research direction.
+
+### Failure-conditioned evolution
+
+Develop a mechanism for choosing **what to improve**: retrieve an experience, repair a procedure, create a skill, revise an agent module, or request teaching. Compare failure-conditioned selection with fixed rules and alternative search policies under explicit budgets. This routing method remains a planned experiment.
+
+### Resource-aware local–cloud co-evolution
+
+Use local models for affordable execution and cloud models for selective teaching and candidate generation. Study how verified teacher experience can become local capabilities, and measure the trade-off between assistance, task success, latency, tokens, and learning cost. Weight distillation becomes a separate experiment when trajectory quality and training/export support are sufficient.
+
+## Layers of adaptation
+
+| Layer | What changes | Research question |
+|---|---|---|
+| Episodic memory | Retrieved experience and context | Which past evidence helps this task? |
+| Procedural memory | Executable, parameterized skills | Can a learned procedure transfer to new inputs and states? |
+| Agent scaffolding | Selected planning/retrieval/recovery/workflow modules | Can the agent improve the algorithm governing its own execution? |
+| Model parameters — future | Distillation adapters or weights | Can verified experience become better local-model decisions? |
+
+The research target is **persistent capability growth across tasks**, rather than a longer transcript or a larger prompt. Each layer needs its own evidence; improving one does not establish improvement in the others.
 
 ## Available today
 
@@ -39,7 +76,7 @@ Learning has distinct layers: **experience memory → reusable skills → agent-
 
 The validated local setup uses **Agents-A1-4B Q4_K_M with llama.cpp**. Cloud teaching experiments have used DeepSeek. Backends are configurable; model choice alone does not determine task success.
 
-## Architecture
+## An execution loop coupled to an evolution loop
 
 ```mermaid
 flowchart TD
@@ -113,7 +150,7 @@ Runtime settings are read from `~/.kage/config.json`. Local inference uses `mode
 
 Cloud-assisted task learning is an explicit experimental chain. Existing runtime fallback settings are not evidence that every failed computer task automatically becomes a verified learning episode. Optional speech and cloud features may contact external services; local execution does not imply every feature is offline.
 
-## Evidence and development
+## Experimental evidence and reproducibility
 
 The latest browser teaching package passed **992 engineering tests** and verified two captures plus two fresh-input workflow replays. Its local 4B model completed both pilot tasks, but made **zero calls to the new skills**. The capture/reuse path works; automatic skill adoption and a learning advantage remain unproven. See the [full report](docs/experiments/2026-10-07-browser-demonstration.md).
 
@@ -137,7 +174,7 @@ npm run build
 
 Most browser integration tests operate real owned Chromium pages and inspect HTTP saves/readback. Scripted actions are engineering evidence, not human demonstrations or AI benchmark scores. Raw experiment artifacts stay outside Git by default; reports identify their locations and hashes. Reproducing model pilots also requires the matching weights, runtime settings and evidence.
 
-## Next milestones
+## Research trajectory
 
 1. Complete actual human browser teaching acceptance; extend native macOS accessibility execution and reliable document save/readback.
 2. Add native demonstrations and browser/native cross-app task families with independent checks.
@@ -145,7 +182,7 @@ Most browser integration tests operate real owned Chromium pages and inspect HTT
 4. Surface version changes, scores and costs; broaden held-out experiments and research reports.
 5. Train small distillation adapters when verified, diverse trajectories and GPU/export support justify it. Evaluate visual grounding and inference engines against measured bottlenecks.
 
-The complete E/C task queue and execution order live in the [roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) and [handoff](docs/plans/execution-handoff-2026-10-03.md). Kage aims to become a capable, adaptable computer agent; each stage must earn that claim through working behavior and reproducible evidence.
+The complete E/C task queue and execution order live in the [roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) and [handoff](docs/plans/execution-handoff-2026-10-03.md). The long-term aim is an agent that can **operate, learn, and redesign parts of its own problem-solving system**. The research challenge is to turn that ambition into sustained, transferable improvement with reproducible evidence.
 
 ## License
 
