@@ -1,5 +1,7 @@
 ![Kage — an anime companion and evolving agent](docs/assets/readme/companion-cover.png)
 
+<p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+
 <p align="center"><sub>Haru-inspired concept illustration · Current cover character, not a permanent Kage identity · <a href="docs/assets/readme/VISUAL_STYLE.md">Visual style guide</a></sub></p>
 
 <p align="center">
@@ -103,7 +105,7 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:1420/launcher.html** and find **浏览器教学**:
+Open **http://localhost:1420/launcher.html** and find the **Browser teaching** panel. The current Launcher UI uses Chinese labels; the [Chinese guide](README.zh-CN.md#体验浏览器教学流程) lists the corresponding panel name.
 
 1. Choose a teaching task and the human-declared source, then start.
 2. Wait until the dedicated browser is ready. Follow the visible goal, correct any mistakes, and save.
