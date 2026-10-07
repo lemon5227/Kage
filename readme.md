@@ -3,40 +3,97 @@
 <p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
 
 <p align="center">
-  <strong>Your companion. Your evolving agent.</strong><br>
-  Live2D presence · Voice interaction · Personal memory · Self-evolution
+  <strong>Toward Self-Evolving General-Purpose Computer Agents</strong><br>
+  Computer use · Continual learning · Procedural memory · Agent self-modification
 </p>
 
 <p align="center">
+  <a href="#toward-a-self-evolving-personal-agent">Vision</a> ·
+  <a href="#research-program">Research</a> ·
   <a href="#get-started">Get started</a> ·
-  <a href="#how-kage-grows">Architecture</a> ·
   <a href="docs/agent-memory-evolution-master-plan-2026-09-29.md">Roadmap</a> ·
   <a href="docs/experiments/README.md">Experiments</a> ·
   <a href="docs/project-guide.en.md">Full guide</a>
 </p>
 
-## A companion that learns with you
+## Toward a self-evolving personal Agent
 
-**Kage is an anime-style personal assistant for macOS**, combining a desktop companion with an experimental computer-use Agent. The ambition: work across apps, remember what matters, learn from your guidance, and improve how it solves problems.
+<strong>Kage explores an Agent that can operate a computer, learn from experience and teaching, and improve parts of the system that drives its decisions.</strong>
 
-- **Connect:** Live2D expressions, voice, and a configurable persona.
-- **Act:** browser workflows, file tools, and system controls.
-- **Learn:** verified experience, human teaching, and reusable skills.
-- **Evolve:** experiments in cloud teaching and Agent self-modification.
+The ambition is general-purpose computer use across browsers, files, documents, and native applications. Experience should accumulate as transferable capabilities; failed tasks should inform what the Agent learns or changes next. The project brings <strong>computer-use execution, continual adaptation, and Agent scaffold evolution</strong> into one experimental system.
 
-<sub>The Haru-inspired cover is a temporary concept illustration. Kage has no fixed character; future artwork can keep the same style with a new appearance. [Visual style guide](docs/assets/readme/VISUAL_STYLE.md).</sub>
+### Beyond a fixed set of tools
+
+Kage's research direction extends from retrieving useful memories to creating executable skills, revising selected Agent modules, and eventually distilling verified experience into local models. Each layer targets a deeper change in how the Agent solves future tasks.
+
+### Experience as the engine of improvement
+
+When a task fails, a person or cloud teacher can demonstrate a solution. The intended learning chain preserves the actual actions and verified result, extracts reusable knowledge, and tests whether it helps on new tasks. Skills, source-code changes, and future weight updates are evaluated as distinct mechanisms.
+
+### A research platform on personal hardware
+
+Local small models and selective cloud teaching provide a practical setting for studying autonomy, transfer, self-modification, and resource use on modest hardware. The long-term goal is <strong>an Agent that can act, learn, and redesign parts of its own problem-solving system</strong>.
+
+## Research program
+
+### Computer use and procedural memory
+
+- <strong>General-purpose action:</strong> connect browser DOM perception, native macOS accessibility, and future visual grounding. Evaluate completion and recovery as content, layouts, and initial states change.
+- <strong>Experience as a capability:</strong> turn trajectories and corrections into parameterized procedures. Test discovery, composition, and transfer to new inputs rather than only replaying the original demonstration.
+
+### Self-modification and failure-driven improvement
+
+- <strong>Evolving the Agent scaffold:</strong> generate isolated candidate changes, load the changed code, and compare parent and child behavior. A recovery-module pilot is implemented; broader module evolution is the next direction.
+- <strong>Choosing what to improve:</strong> investigate when to retrieve a memory, repair a skill, revise a module, or request teaching. Failure-conditioned routing is a planned experiment, compared with fixed policies under explicit budgets.
+
+### Continual learning on modest hardware
+
+- <strong>Local–cloud collaboration:</strong> use local small models for affordable execution and cloud teachers for selected difficult tasks and candidate generation. Track task success and assistance cost separately.
+- <strong>Learning from teachers:</strong> build verified, diverse trajectories before distilling them into local adapters or weights. Compare memory, skills, and eventual parameter learning as distinct mechanisms.
+
+Development starts on an <strong>Apple Silicon Mac with 16 GB of memory</strong>. The goal is to make capability growth practical under limited resources, with reproducible experiments behind each step.
 
 ## How Kage grows
 
+### Execution and evolution, on different timescales
+
 ![Execution and adaptation loops](docs/assets/readme/architecture-companion.svg)
 
-**Act → Verify → Remember → Learn → Evaluate → Reuse**
+<strong>Act → Verify → Remember → Learn → Evaluate → Reuse</strong>
 
-Execution produces experience. Teaching turns experience into candidate skills. Independent comparisons decide which changes deserve reuse. Local models handle execution; cloud teachers can support selected learning experiments.
+The execution loop observes the environment, chooses actions, and checks the resulting state. The evolution loop uses that evidence to propose skills or module changes, compare behavior, and select useful capabilities for reuse.
+
+Verification is tied to actual outcomes where a reliable checker exists—for example, saved data read back from a browser task. Candidate versions and provenance connect an improvement to its source experience and evaluation.
+
+### Four layers of adaptation
 
 ![From episodic memory to procedural skills, scaffold evolution, and future parameter learning](docs/assets/readme/learning-companion.svg)
 
-The research goal is **durable, transferable capability growth**—from recalling experience to changing selected parts of the Agent itself. Weight distillation is a future research stage.
+| Layer | What changes | Intended benefit |
+| :--- | :--- | :--- |
+| L0 · Episodic memory | The experience retrieved for a task | Relevant context from earlier attempts |
+| L1 · Procedural memory | The executable skills available | Reuse and transfer of verified routines |
+| L2 · Scaffold evolution | Selected planning, retrieval, or recovery modules | Better ways to solve and recover |
+| L3 · Parameter learning | Future local-model adapters or weights | Distillation of verified teacher experience |
+
+The research objective is <strong>persistent, transferable capability growth</strong>, measured alongside task success, regressions, latency, tokens, and learning cost. Parameter learning remains a future stage.
+
+## Current experimental foundation
+
+| Component | Implemented foundation | Next validation |
+| :--- | :--- | :--- |
+| Agent runtime | Multi-step model/tool loop, local/cloud routing, cancellation | Reliability across broader task families |
+| Browser teaching | Recording, corrections, candidate extraction, fresh-page replay | Actual human acceptance and broader workflows |
+| Experience and skills | Evidence-bound episodes, candidate versions, skill execution | Automatic adoption and measurable transfer |
+| Module evolution | Candidate code loading and recovery-module comparison | More modules and improvement policies |
+
+The latest browser teaching package passed <strong>992 engineering tests</strong>, with <strong>two verified captures and two fresh-input replays</strong>. Its local 4B model completed both pilot tasks but made <strong>zero new-skill calls</strong>: workflow reuse works, while automatic adoption and a learning advantage remain unproven.
+
+[Browser teaching report](docs/experiments/2026-10-07-browser-demonstration.md) · [Skill transfer comparison](docs/experiments/2026-10-01-c4-transfer-ablation.md) · [Self-modification pilot](docs/experiments/2026-10-01-e3-recovery-self-modification.md)
+
+### Personal-assistant interface
+
+Kage presents this system through an anime-style macOS assistant with Live2D expressions, optional voice, and a configurable persona. The interface provides a personal way to interact with the Agent. The Haru-inspired cover is temporary concept art; future characters can retain the [visual style](docs/assets/readme/VISUAL_STYLE.md).
 
 ## Get started
 
@@ -98,39 +155,23 @@ See [configuration details](docs/project-guide.en.md#models-and-cloud-configurat
 
 </details>
 
-## In the lab
+## Roadmap
 
-Browser capture and fresh-input workflow replay are working. A recovery-module self-modification pilot loads and evaluates actual candidate code. Broader autonomy and transfer remain active research.
+1. <strong>Broaden the action environment.</strong> Complete human browser teaching acceptance, extend native macOS accessibility, and add independently checked cross-app tasks.
+2. <strong>Make experience reliably reusable.</strong> Improve memory selection, skill discovery, candidate lineage, and transfer evaluation; expand evolving modules and failure-driven routing.
+3. <strong>Bring verified learning into local models.</strong> Build diverse teacher trajectories, then evaluate small-model distillation, visual grounding, and inference engines against measured bottlenecks.
 
-<details>
-<summary><strong>Latest validation and its limits</strong></summary>
+[Complete E/C task queue](docs/plans/task-queue-2026-10-01.md) · [Research roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Execution handoff](docs/plans/execution-handoff-2026-10-03.md)
 
-| Check | Observed result |
+## Explore the project
+
+| Start here | What you will find |
 | :--- | :--- |
-| Engineering suite | 992 tests passed |
-| Browser captures | 2 verified |
-| Fresh-input workflow replays | 2 verified |
-| Local 4B model pilot | 2 tasks completed; 0 new-skill calls |
-
-Workflow replay demonstrates capture and reuse. **Automatic skill adoption and a learning advantage remain unproven.** Actual human teaching acceptance is pending; browser teaching currently targets controlled single-form tasks.
-
-[Full browser teaching report](docs/experiments/2026-10-07-browser-demonstration.md) · [Implementation boundaries](docs/project-guide.en.md#implemented-mechanisms-and-current-validation) · [Reproduction checks](docs/project-guide.en.md#experimental-evidence-and-reproducibility)
-
-</details>
-
-## What comes next
-
-| Direction | Next milestone |
-| :--- | :--- |
-| Computer use | Human teaching acceptance, native macOS accessibility, cross-app tasks |
-| Memory and skills | Better selection, candidate lineage, and measured transfer |
-| Self-evolution | More evolving modules and failure-conditioned improvement |
-| Local–cloud learning | Verified teacher trajectories, then small-model distillation |
-
-[Complete E/C task queue](docs/plans/task-queue-2026-10-01.md) · [Research agenda](docs/project-guide.en.md#research-agenda) · [Execution handoff](docs/plans/execution-handoff-2026-10-03.md)
+| [Full project guide](docs/project-guide.en.md) | Detailed research context, setup, configuration, and implementation boundaries |
+| [Experiment archive](docs/experiments/README.md) | Methods, results, failures, and reproduction evidence |
+| [Visual style guide](docs/assets/readme/VISUAL_STYLE.md) | Companion artwork direction and future character changes |
+| [Issues and ideas](https://github.com/lemon5227/Kage/issues) | Feedback, proposals, and collaboration |
 
 ---
 
-**Build with Kage:** [Issues and ideas](https://github.com/lemon5227/Kage/issues) · [Experiment archive](docs/experiments/README.md) · [Optimization history](docs/optimization_history.md)
-
-MIT License.
+MIT License · [Optimization history](docs/optimization_history.md)

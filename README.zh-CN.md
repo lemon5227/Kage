@@ -2,87 +2,109 @@
 
 <p align="center"><a href="readme.md">English</a> · <strong>简体中文</strong></p>
 
-<p align="center"><sub>以 Haru 为参考的概念插画 · 当前封面角色，不代表 Kage 的永久身份 · <a href="docs/assets/readme/VISUAL_STYLE.md">视觉风格说明</a></sub></p>
-
 <p align="center">
-  <strong>陪伴你，也与你一起成长。</strong><br>
-  Live2D 陪伴 · 语音交互 · 个人记忆 · 能力演化
+  <strong>迈向可自进化的通用电脑 Agent</strong><br>
+  电脑操作 · 持续学习 · 程序性记忆 · Agent 自修改
 </p>
 
 <p align="center">
-  <a href="docs/agent-memory-evolution-master-plan-2026-09-29.md">研究路线</a> ·
-  <a href="docs/experiments/README.md">实验记录</a> ·
+  <a href="#迈向可自进化的个人-agent">项目愿景</a> ·
+  <a href="#研究方向">研究方向</a> ·
   <a href="#体验浏览器教学流程">开始体验</a> ·
-  <a href="https://github.com/lemon5227/Kage/issues">参与贡献</a>
+  <a href="docs/agent-memory-evolution-master-plan-2026-09-29.md">路线图</a> ·
+  <a href="docs/experiments/README.md">实验记录</a> ·
+  <a href="docs/project-guide.zh-CN.md">完整指南</a>
 </p>
 
-## 二次元陪伴，Agent 内核
+## 迈向可自进化的个人 Agent
 
-<strong>Kage（影）是面向 macOS 的二次元个人助手：</strong>它以 Live2D 形象陪伴在桌面上，支持语音交流与人格交互，并通过 Agent 运行时完成实际任务。
+<strong>Kage 探索能够操作电脑、从经验与教学中学习，并改进自身决策系统部分机制的 Agent。</strong>
 
-我们的目标是让它从桌面伙伴成长为个人 Agent：跨浏览器、文件与原生应用工作，记住有用经验，接受教学，并改进自身执行系统中的部分模块。角色让交互更有温度，记忆、工具与学习让它更有用。
+项目的野心是跨浏览器、文件、文档和原生应用的通用电脑操作。经验应当积累为可迁移的能力，失败任务应当为下一次学习或修改提供依据。Kage 将<strong>电脑操作执行、持续适应与 Agent 脚手架演化</strong>连接到同一个实验系统中。
 
-<strong>Kage 不绑定固定角色。</strong>当前免费的 Live2D 模型是演示素材，不是项目永久形象。外观、人格配置与 Agent 能力属于不同层面；未来更换角色，不应要求重新定义助手的记忆、技能与演化机制。
+### 超越固定工具集合
 
-### 以陪伴为入口，以能力为基础
+研究路线从检索有用记忆，延伸到创建可执行技能、修改部分 Agent 模块，再到未来将经过验证的经验蒸馏进本地模型。每一层都面向更深的能力变化，改善 Agent 求解后续任务的方式。
 
-- <strong>陪伴与交流：</strong>Live2D 表情、可选语音输入输出、可配置的交互人格。
-- <strong>个人助理：</strong>桌面界面背后的系统控制、文件工具与模型／工具工作流。
-- <strong>教学与记忆：</strong>记录纠正和经过验证的经验，形成可复用流程。
-- <strong>持续成长：</strong>通过独立实验探索技能学习、云端教学与部分 Agent 脚手架的修改。
+### 以经验驱动改进
 
-目标体验是：一起工作越久，助手越有用。底层研究闭环是 <strong>行动 → 验证 → 记忆 → 学习 → 评估 → 复用</strong>。项目以本地小模型、可选云端教师和有限的 Mac 硬件资源开展实验。
+任务失败时，可以由人类或云端教师示范解法。目标学习链保留实际动作与验证结果，提取可复用知识，再用新任务检验收益。技能、源码修改与未来的权重更新作为不同机制分别评估。
+
+### 在个人硬件上开展前沿实验
+
+本地小模型与按需云端教学，为有限硬件上的自主性、迁移、自修改和资源消耗研究提供实际环境。长期目标是让 Agent 能够<strong>行动、学习，并重新设计自身部分问题求解机制</strong>。
 
 ## 研究方向
 
-### 将电脑操作作为开放的行动环境
+### 电脑操作与程序性记忆
 
-连接结构化浏览器感知、macOS 辅助功能接口，以及未来的视觉定位，使 Agent 能跨应用执行任务。评估内容、布局与初始状态变化后的完成率、恢复能力和迁移能力，而不只看操作 API 是否返回成功。
+- <strong>通用行动能力：</strong>连接浏览器 DOM 感知、原生 macOS 辅助功能接口与未来的视觉定位。在内容、布局和初始状态变化后，评估任务完成与恢复能力。
+- <strong>将经验变成能力：</strong>把轨迹与纠正转化为参数化流程，检验发现、组合与新输入迁移，而不只重放原始示范。
 
-### 从经验与教学中持续适应
+### 自修改与失败驱动的改进
 
-将失败尝试、成功执行、人类纠正与云端教师介入转化为学习信号。目标是让 Agent 随经验积累减少对外部帮助的依赖。情景检索、程序性学习与未来的模型蒸馏是不同的适应机制，需要分别评估。
+- <strong>演化 Agent 脚手架：</strong>在隔离环境中生成候选修改，加载实际修改后的代码，对比父版本与子版本行为。恢复模块试点已实现，更广泛的模块演化是下一方向。
+- <strong>选择改进路径：</strong>研究何时检索记忆、修复技能、修改模块或请求教学。失败驱动的路由仍是计划实验，将在明确预算下与固定策略比较。
 
-### 程序性记忆：从轨迹到可执行能力
+### 有限硬件上的持续学习
 
-不只保存对话，而是把经过验证的示范转化为可参数化、可组合、能在新场景中发现和调用的流程。技能与来源证据、执行语义和版本绑定，再检验其是否改善迁移、可靠性或推理成本。
+- <strong>本地与云端协作：</strong>本地小模型承担低成本执行，云端教师按需支持困难任务与候选生成。任务成功和外部帮助成本分别记录。
+- <strong>从教师经验学习：</strong>先积累经过验证且多样的轨迹，再蒸馏到本地适配器或权重；将记忆、技能与未来的参数学习作为不同机制比较。
 
-### 可自修改的 Agent 脚手架
+开发从一台<strong>16 GB 内存的 Apple Silicon Mac</strong>出发。目标是在有限资源下实现实际的能力增长，并为每一步保留可复现的实验证据。
 
-探索规划、检索、恢复与工作流模块的演化，而不只优化最终回答。在隔离执行环境中生成候选修改，加载实际修改后的代码，对比父版本与子版本行为，同时保留改善和回退证据。目前已实现恢复模块的自修改试点；更广泛的模块演化是后续研究方向。
+## Kage 如何成长
 
-### 由失败驱动的演化选择
+### 执行与演化，两个时间尺度
 
-研究如何选择<strong>改进什么</strong>：检索经验、修复流程、创建技能、修改 Agent 模块，或请求教学。在明确预算下，将失败驱动的选择与固定规则及其他搜索策略比较。这一路由机制仍属于计划实验。
+![执行与演化双闭环](docs/assets/readme/architecture-companion.svg)
 
-### 资源约束下的本地与云端协同成长
+<strong>行动 → 验证 → 记忆 → 学习 → 评估 → 复用</strong>
 
-本地模型承担低成本执行，云端模型按需提供教学和候选生成。研究经过验证的教师经验如何成为本地能力，并衡量帮助次数、任务成功率、延迟、token 与学习成本之间的关系。当轨迹质量及训练／导出支持足够时，再单独开展权重蒸馏实验。
+执行闭环观察环境、选择动作，并检查结果状态。演化闭环使用这些证据提出技能或模块修改，比较行为，并选择有用能力供后续复用。
 
-## 从记忆到自修改
+存在可靠检查器时，验证与实际结果绑定，例如回读浏览器任务保存的数据。候选版本与来源信息将每项改进连接到对应经验及评估记录。
 
-![四层适应机制：情景记忆、程序性记忆、脚手架演化与未来的参数学习](docs/assets/readme/learning-companion.svg)
+### 四层适应机制
 
-| 层级 | 机制 | 作用 |
+![从情景记忆到程序性技能、脚手架演化与未来的参数学习](docs/assets/readme/learning-companion.svg)
+
+| 层级 | 改变什么 | 预期作用 |
 | :--- | :--- | :--- |
-| L0 | 情景记忆 | 检索相关经验 |
-| L1 | 程序性记忆 | 将行为转化为可执行技能 |
-| L2 | 脚手架演化 | 修改 Agent 自身的部分组件 |
-| L3 | 参数学习 | 未来将经验蒸馏到本地模型适配器或权重 |
+| L0 · 情景记忆 | 当前任务检索到的经验 | 从过往尝试中获得相关上下文 |
+| L1 · 程序性记忆 | 可调用的执行技能 | 复用并迁移经过验证的流程 |
+| L2 · 脚手架演化 | 部分规划、检索或恢复模块 | 改善求解与错误恢复方式 |
+| L3 · 参数学习 | 未来的本地模型适配器或权重 | 蒸馏经过验证的教师经验 |
 
-研究目标是实现持久、可迁移的能力增长，并通过独立实验评估各层机制的效果与成本。
+研究目标是实现<strong>持久、可迁移的能力增长</strong>，同时衡量任务成功、能力回退、延迟、token 与学习成本。参数学习仍是未来阶段。
 
-## 执行闭环与演化闭环
+## 当前实验基础
 
-![执行与演化双闭环：观察、执行和验证连接记忆、候选生成、比较与能力复用](docs/assets/readme/architecture-companion.svg)
+| 组件 | 已实现基础 | 下一步验证 |
+| :--- | :--- | :--- |
+| Agent 运行时 | 多步模型／工具闭环、本地／云端路由与取消 | 更广泛任务族中的可靠性 |
+| 浏览器教学 | 录制、纠正、候选提取与新页面重放 | 真实人类验收与更广泛工作流 |
+| 经验与技能 | 证据绑定的经验片段、候选版本与技能执行 | 自动采用及可测量的迁移收益 |
+| 模块演化 | 候选代码加载与恢复模块比较 | 更多模块与改进策略 |
 
-行动闭环和实验闭环共享执行与证据基础设施。浏览器工作流在当前页面重新解析语义目标，不重放旧元素 ID 或坐标。存在可靠检查器时，独立检查会读取实际保存状态；没有检查器的任务保留为 <strong>unknown（未知）</strong>，不会因为 Agent 停止就被标记成功。
+最新浏览器教学阶段通过<strong>992 项工程测试</strong>，完成<strong>两次验证捕获与两次新输入重放</strong>。本地 4B 模型完成两个试点任务，但<strong>没有调用新技能</strong>：工作流复用已通，自动采用与学习收益仍未证实。
 
-技能执行、云端接管、源码修改与权重训练分别报告。候选晋级需要通过相应比较；尚未晋级的技能可以显式测试，但不会因此成为默认能力。
+[浏览器教学报告](docs/experiments/2026-10-07-browser-demonstration.md) · [技能迁移比较](docs/experiments/2026-10-01-c4-transfer-ablation.md) · [自修改试点](docs/experiments/2026-10-01-e3-recovery-self-modification.md)
+
+### 个人助手交互界面
+
+Kage 通过二次元 macOS 助手呈现这套系统，支持 Live2D 表情、可选语音和可配置人格，为人与 Agent 的交互提供更有个人感的入口。以 Haru 为参考的封面是临时概念插画，未来角色可沿用这套[视觉风格](docs/assets/readme/VISUAL_STYLE.md)。
 
 ## 体验浏览器教学流程
 
-前提：Apple Silicon Mac、Python 3.10+、Node.js 18+，以及 Playwright 使用的 Chromium。最近验证的 Python 环境为 3.13.11。原生 Tauri 开发还需要 Rust 和相应构建工具；下面的浏览器 Launcher 可以单独使用。
+示范任务、提取候选工作流，再用新输入重放。录制与直接重放<strong>不需要模型服务器或云端密钥</strong>。
+
+<strong>环境要求：</strong>Apple Silicon macOS · Python 3.10+ · Node.js 18+ · Playwright Chromium。
+
+<details>
+<summary><strong>安装与启动</strong></summary>
+
+<strong>1. 下载仓库并安装依赖。</strong>
 
 ```sh
 git clone https://github.com/lemon5227/Kage.git
@@ -93,16 +115,14 @@ python -m pip install -r requirements.txt -r requirements-computer-use.txt
 python -m playwright install chromium
 ```
 
-完整依赖包含可选音频与模型包；macOS 麦克风支持可能需要 PortAudio。
-
-启动控制 API：
+<strong>2. 启动控制 API。</strong>
 
 ```sh
 KAGE_MODE=control KAGE_BROWSER_PYTHON="$PWD/.venv/bin/python" \
   python -m uvicorn core.server:app --host 127.0.0.1 --port 12345
 ```
 
-另开终端，从仓库根目录执行：
+<strong>3. 另开终端，从仓库根目录启动 Launcher。</strong>
 
 ```sh
 cd kage-avatar
@@ -110,77 +130,48 @@ npm install
 npm run dev
 ```
 
-打开 <strong>http://localhost:1420/launcher.html</strong>，找到 <strong>浏览器教学</strong>面板：
+打开 [Launcher](http://localhost:1420/launcher.html)，找到<strong>浏览器教学</strong>面板。
 
-1. 选择教学任务与人类声明的示范来源，然后开始。
-2. 等待专用浏览器就绪，按可见目标操作，纠正错误并保存。
-3. 结束示范，运行独立检查并提取候选流程。
-4. 选择新输入任务，编辑 JSON 参数以匹配目标，在新页面上重放。
+选择任务 → 启动专用浏览器 → 示范并保存 → 结束并验证 → 修改参数，在新页面重放。
 
-录制和直接工作流重放<strong>不需要模型服务器或云端密钥</strong>。执行者标记为 `workflow_engine`；这验证的是捕获与复用路径，不代表模型已学会该技能。独立的模型消费实验会记录本地模型是否真正调用技能。
-
-教学证据默认保存在 `~/.kage/browser-demonstrations`，可通过 `KAGE_BROWSER_DEMONSTRATIONS_DIR` 修改。`KAGE_BROWSER_PYTHON` 用于选择具备浏览器依赖的解释器。人类示范使用可见的专用浏览器；自动化捕获会单独标记。
-
-要启动完整语音／桌面运行时，激活环境后运行 `python main.py`；原生前端可在 `kage-avatar` 目录运行 `npm run tauri dev`。需要按所选运行时配置模型、音频资源与 macOS 权限。浏览器教学流程不会自动完成这些配置。
-
-## 模型与云端配置
-
-运行时设置读取自 `~/.kage/config.json`。本地推理使用 `model.local_runtime`；云端配置使用 `model.cloud_api`，可选 `model.hybrid` 路由。启动兼容的本地服务器并配置模型名、主机与端口，或配置所选云端服务。API 凭据保存在仓库之外。
-
-云端辅助任务学习是一条显式实验链。现有运行时回退配置不代表所有失败的电脑任务都会自动形成经过验证的学习样本。可选语音与云端功能可能访问外部服务；本地执行也不代表每项功能均离线。
-
-## 实验证据与复现
-
-<details>
-<summary><strong>实现状态与实测结果</strong></summary>
-
-### 已实现机制与当前验证范围
-
-| 领域 | 已实现与观察到的行为 | 当前边界 |
-|---|---|---|
-| Agent 运行时 | 多步模型／工具／观察闭环、结构化工具契约、本地／云端提供方路由、后台任务与取消 | 广泛任务可靠性仍在开发中 |
-| 桌面助手 | 系统命令、文件工具、可选语音输入输出、Tauri 与 Live2D 界面 | 这些功能不能证明通用 GUI 操作能力 |
-| 浏览器执行 | DOM 观察、语义操作、过期引用恢复、有界工作流、实际保存与回读检查 | 受控任务环境；尚不支持任意已登录网站 |
-| 任务与教学 UI | Launcher／API 任务状态、预算与产物；浏览器录制、纠正、参数编辑与新页面重放 | 教学支持文本框、复选框和保存按钮组成的单表单；真实人类验收仍待完成 |
-| 经验与技能 | 哈希绑定的经验片段、经过筛选的生成反馈、候选摘要、真实本地／云端技能执行 | 浏览器泛化收益尚未证实；候选不会自动安装 |
-| 模块演化 | 恢复模块自修改试点，实际加载候选代码并独立评估 | 特定实验模块；不是日常运行时持续自主改写 |
-
-已验证的本地配置使用 <strong>Agents-A1-4B Q4_K_M 与 llama.cpp</strong>。云端教学实验使用过 DeepSeek。后端可配置，模型选择本身不决定任务成功。
-
-最新浏览器教学阶段通过 <strong>992 项工程测试</strong>，验证了两次捕获和两次新输入工作流重放。本地 4B 模型完成两个试点任务，但<strong>没有调用任何新技能</strong>。捕获／复用路径已通；自动技能采用与学习收益仍未证实。见[完整报告](docs/experiments/2026-10-07-browser-demonstration.md)。
+完整桌面／语音启动、可选音频依赖、模型配置与教学证据路径见[配置指南](docs/project-guide.zh-CN.md#体验浏览器教学流程)。
 
 </details>
 
-项目记录成功<strong>与失败</strong>，包括模型尝试、实际动作、保存状态检查、token、耗时、候选版本与来源。工程测试、真实模型试点、新输入迁移和留出集比较是不同层次的证据。
+<details>
+<summary><strong>本地模型与云端配置</strong></summary>
 
-- [实验索引](docs/experiments/README.md)
-- [浏览器任务入口](docs/experiments/2026-10-04-browser-task-entry.md)
-- [浏览器教学与复用](docs/experiments/2026-10-07-browser-demonstration.md)
-- [浏览器迁移实验，含负面结果](docs/experiments/2026-10-03-browser-transfer.md)
-- [文件技能迁移比较](docs/experiments/2026-10-01-c4-transfer-ablation.md)
-- [恢复模块自修改](docs/experiments/2026-10-01-e3-recovery-self-modification.md)
+配置文件：`~/.kage/config.json`。
 
-在已安装测试依赖和 Playwright 的环境中运行工程检查：
+| 配置项 | 用途 |
+| :--- | :--- |
+| `model.local_runtime` | 兼容的本地服务器与模型 |
+| `model.cloud_api` | 云端服务配置 |
+| `model.hybrid` | 可选路由 |
 
-```sh
-python -m pip install pytest pytest-asyncio httpx
-python -m pytest tests -q
-cd kage-avatar
-npm run build
-```
+已验证的本地配置使用<strong>Agents-A1-4B Q4_K_M 与 llama.cpp</strong>；云端教学实验使用过<strong>DeepSeek</strong>。API 凭据放在仓库之外。
 
-多数浏览器集成测试使用真实、专用的 Chromium 页面，并检查 HTTP 保存／回读。脚本操作属于工程证据，不是人类示范或 AI 基准分数。原始实验产物默认不进入 Git；报告标明位置与哈希。复现模型试点还需要对应权重、运行时设置和证据。
+详见[配置说明](docs/project-guide.zh-CN.md#模型与云端配置)。云端回退与经过验证的学习是不同机制。
 
-## 研究路线
+</details>
 
-1. 完成真实人类浏览器教学验收，扩展原生 macOS 辅助功能执行与可靠的文档保存／回读。
-2. 增加原生示范与浏览器／原生应用跨应用任务族，并配备独立检查。
-3. 扩展候选谱系、兼容性与记忆选择；演化更多 Agent 模块，评估失败驱动的演化路由。
-4. 展示版本变化、分数与成本，扩大留出集实验和研究报告。
-5. 当经过验证的多样轨迹及 GPU／导出支持足够时，训练小型蒸馏适配器；针对实测瓶颈评估视觉定位与推理引擎。
+## 后续路线
 
-完整 E／C 任务队列与执行顺序见[总规划](docs/agent-memory-evolution-master-plan-2026-09-29.md)和[执行交接](docs/plans/execution-handoff-2026-10-03.md)。长期目标是让 Agent 能够<strong>操作、学习，并重新设计自身部分问题求解机制</strong>。研究挑战在于用可复现证据，将这一目标转化为持续且可迁移的改善。
+1. <strong>扩展行动环境。</strong>完成真实人类浏览器教学验收，扩展原生 macOS 辅助功能操作，增加配备独立检查的跨应用任务。
+2. <strong>让经验可靠复用。</strong>改进记忆选择、技能发现、候选谱系与迁移评估；扩展可演化模块和失败驱动的路由。
+3. <strong>将经过验证的学习带入本地模型。</strong>积累多样教师轨迹，再针对实测瓶颈评估小模型蒸馏、视觉定位与推理引擎。
 
-## 许可证
+[完整 E／C 任务队列](docs/plans/task-queue-2026-10-01.md) · [研究路线图](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [执行交接](docs/plans/execution-handoff-2026-10-03.md)
 
-MIT。历史路由与界面说明保存在[优化历史](docs/optimization_history.md)。
+## 深入了解
+
+| 入口 | 内容 |
+| :--- | :--- |
+| [完整项目指南](docs/project-guide.zh-CN.md) | 详细研究背景、安装配置与实现边界 |
+| [实验档案](docs/experiments/README.md) | 方法、结果、失败与复现证据 |
+| [视觉风格说明](docs/assets/readme/VISUAL_STYLE.md) | 陪伴插画方向与后续人物更换 |
+| [问题与建议](https://github.com/lemon5227/Kage/issues) | 反馈、提案与协作 |
+
+---
+
+MIT 许可证 · [优化历史](docs/optimization_history.md)
