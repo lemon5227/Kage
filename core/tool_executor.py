@@ -142,8 +142,9 @@ def render_history_line(name: str, success: bool, result: str = "",
         return f"[Tool: {name}] 用户拒绝了该操作：{error_message or result}"
     if outcome == "needs_confirmation":
         return f"[Tool: {name}] 该操作需要用户确认后才能执行：{error_message or result}"
-    if name in {"browser_open", "browser_observe", "browser_act"} and not success:
-        # Browser failures may include a new DOM observation or an uncertain
+    if name in {"browser_open", "browser_observe", "browser_act",
+                "native_windows", "native_observe", "native_act"} and not success:
+        # Computer-use failures may include a new observation or an uncertain
         # action_applied state. Keep the entire structured result for recovery.
         try:
             payload = json.loads(result)

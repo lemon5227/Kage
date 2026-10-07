@@ -1,0 +1,2 @@
+Kage dedicated native AX pilot fixture.
+Status: before semantic edit.

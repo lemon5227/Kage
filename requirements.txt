@@ -33,3 +33,6 @@ tqdm
 
 # Optional (bundled) MCP server for web search
 duckduckgo-mcp-server
+
+# Native Accessibility adapter (optional outside macOS).
+pyobjc-framework-ApplicationServices; sys_platform == 'darwin'
