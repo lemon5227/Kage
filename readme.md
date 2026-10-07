@@ -1,131 +1,152 @@
 <div align="center">
 
 # Kage (影)
-### Local LLM Agent Runtime for macOS
-#### Route-based desktop automation with local inference, tools, ASR/TTS, and Live2D
 
-[🌐 官方网站](https://kage.lemony.eu.org) | [📖 文档](https://github.com/lemon5227/Kage) | [🐛 报告问题](https://github.com/lemon5227/Kage/issues)
+### A learning computer agent for macOS
 
----
+**Act on your computer. Learn from assistance. Evolve through verified experiments.**
 
-**Kage** is a local LLM Agent Runtime that turns voice/text input into controllable desktop actions.
-It combines local model inference, route-based task classification, structured tool execution,
-dialog state, safety confirmation, ASR/TTS, and a Tauri + Live2D interface.
-
-Unlike a pure chatbot, Kage separates deterministic commands from general agent work:
-
-- **Command fast path** for low-latency system controls such as volume, brightness, Wi-Fi, Bluetooth, screenshots, and app launch.
-- **Weather/video fast paths** for common information workflows where template responses and deterministic fallbacks reduce empty turns.
-- **Background lane** for long-running file organization, summarization, and multi-step tasks.
-- **AgenticLoop** for complex tool-using workflows with model -> tool -> observation -> response iterations.
-- **Pending action state** for confirmation, cancellation, follow-up, and correction flows.
+[Roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Task queue](docs/plans/task-queue-2026-10-01.md) · [Experiment reports](docs/experiments/README.md) · [Issues](https://github.com/lemon5227/Kage/issues)
 
 </div>
 
-## System At A Glance
+Kage is building toward a general-purpose computer agent that combines local execution, affordable cloud assistance, reusable memory and skills, and controlled self-modification. Its goal is to handle everyday work across browsers, files, and native apps—and improve from verified experience rather than repeat the same mistakes.
+
+The project started as a local desktop assistant with voice and Live2D. It is growing into an agent runtime and experimental platform for **computer use and self-evolution**, designed around modest hardware: an Apple Silicon Mac with 16 GB of memory and optional cloud APIs.
+
+**Current status: active experimental development.** Controlled browser and file workflows are implemented and tested. Arbitrary websites, broad native-app automation, continuous autonomous evolution, and human-level general ability remain goals. The roadmap describes intended capabilities; the reports describe what actually ran.
+
+## What Kage is building
+
+- **Computer use:** observe the environment, plan, execute tools, recover from errors, and verify the resulting state. Browser DOM is the first structured interface; macOS accessibility and cross-app workflows come next.
+- **Local + cloud collaboration:** use a small local model for affordable execution and call a cloud teacher when assistance is needed. Preserve the teacher's actual actions and verified outcome for later reuse.
+- **Learning from demonstrations:** capture actions and corrections, turn verified episodes into editable skills, and test those skills on different inputs. A dedicated browser teaching UI is available for controlled forms.
+- **Memory that supports action:** retain episodes, provenance, versioned candidates, and evidence; retrieve useful experience and procedural skills instead of treating all history as chat text.
+- **Self-evolution:** experiment with changes to skills and selected agent modules, compare candidates using independent checks, and retain or reject changes based on measured results.
+
+Learning has distinct layers: **experience memory → reusable skills → agent-module changes → eventual model distillation**. Saving a trajectory is not weight training, and a successful tool call is not proof that a task is complete.
+
+## Available today
+
+| Area | Implemented and observed | Current boundary |
+|---|---|---|
+| Agent runtime | Multi-step model/tool/observation loop, structured tool contracts, local/cloud provider routing, background jobs and cancellation | Broad task reliability is still under development |
+| Desktop assistant | System commands, file tools, optional speech input/output, Tauri and Live2D interface | These features do not establish general GUI competence |
+| Browser execution | DOM observations, semantic actions, stale-reference recovery, bounded workflows, actual save/readback checks | Controlled task environments; arbitrary logged-in websites are not yet supported |
+| Task and teaching UI | Launcher/API task states, budgets and artifacts; browser recording, corrections, editable parameters and fresh-page replay | Teaching supports single forms with text fields, checkboxes and a save button; actual human acceptance remains pending |
+| Experience and skills | Hash-bound episodes, filtered generation feedback, candidate digests, real local/cloud skill execution | Browser generalization gains remain unproven; candidates are not automatically installed |
+| Module evolution | A recovery-module self-modification pilot with actual candidate code loading and independent evaluation | Selected experimental module; not ongoing autonomous rewriting of the daily runtime |
+
+The validated local setup uses **Agents-A1-4B Q4_K_M with llama.cpp**. Cloud teaching experiments have used DeepSeek. Backends are configurable; model choice alone does not determine task success.
+
+## Architecture
 
 ```mermaid
 flowchart TD
-    A[Voice / Text Input] --> B[ASR / WebSocket]
-    B --> C[Realtime Lane Classifier]
-    C -->|high confidence| D[Command Fast Path]
-    C -->|weather / video| E[Info Fast Path]
-    C -->|long task| F[Background Queue]
-    C -->|complex / low confidence| G[AgenticLoop]
-    G --> H[ToolRegistry / ToolExecutor]
-    H --> I[Observation + Response]
-    D --> I
-    E --> I
-    F --> I
-    I --> J[TTS + Live2D + UI State]
+    U[Text / Voice / Launcher] --> R[Routing and background task lane]
+    R --> M[Local model / Optional cloud provider]
+    M --> A[Agent loop]
+    A --> T[Tool registry and executor]
+    T --> E[Browser DOM / Files / Desktop tools]
+    E --> O[Fresh observations]
+    O --> A
+    E --> V[Independent task checks]
+    V --> J[Run journal / Budgets / Evidence]
+    H[Demonstration or cloud assistance] --> J
+    J --> K[Episode memory and skill candidates]
+    K --> A
+    K --> C[Candidate comparison and promotion]
+    C --> X[Selected skills or module versions]
+    X --> A
 ```
 
-## Engineering Focus
+The action loop and experiment loop share execution and evidence infrastructure. Browser workflows resolve semantic targets on the current page; they do not replay old element IDs or coordinates. Independent checks inspect actual saved state where a reliable checker exists. Tasks without one remain **unknown**, rather than being labeled successful because the agent stopped.
 
-- **Routing over prompt sprawl**: route + confidence decides whether a request should execute directly, ask for confirmation, or enter the general agent loop.
-- **Structured tools**: ToolRegistry defines capability boundaries; ToolExecutor normalizes calls, executes handlers, records logs, and gates risky actions.
-- **Stateful desktop UX**: pending confirmation and follow-up state handles real user turns such as "confirm", "cancel", "open this", and "not this one".
-- **Local-first privacy**: the model, speech stack, memory, and desktop control path run on the user's Mac by default.
-- **Eval-ready runtime**: benchmark work tracks route accuracy, latency, fallback rate, empty response rate, and tool success rate.
+Skill execution, cloud takeover, source modification and weight training are reported separately. Promotion requires the applicable comparison to pass; an unpromoted skill can be explicitly tested without becoming a default capability.
 
-Interview and evaluation docs:
+## Try the browser teaching flow
 
-- [docs/INTERVIEW_DEEP_DIVE.md](docs/INTERVIEW_DEEP_DIVE.md)
-- [docs/BENCHMARK_PLAN.md](docs/BENCHMARK_PLAN.md)
-- [eval/eval_cases.json](eval/eval_cases.json)
+Prerequisites: Apple Silicon macOS, Python 3.10+, Node.js 18+, and installed Chromium for Playwright. The latest verified Python environment is 3.13.11. Native Tauri development also needs its Rust/build tooling; the browser Launcher below can be used separately.
 
-## ✨ 核心特性 (Features)
-
-### 🚀 极速响应 (Zero Latency)
-告别等待。Kage 采用独创的三层思考架构：
-- **<1ms** 意图识别：瞬间听懂你的指令。
-- **<500ms** 快速操作：调整音量、截图、看时间，比你动手还快。
-- **1.4s** 深度思考：处理复杂任务也无需久等。
-
-### 💖 鲜活个性 (Vivid Persona)
-Kage 拒绝冷冰冰的机器回复。
-- **傲娇人设**：她会撒娇，会吐槽，也会在你工作时默默陪伴。
-- **沉浸体验**：所有快速命令都注入了灵魂回复 ("咔嚓！截图好啦💖")。
-- **Live2D 形象**：基于 Haru 模型，表情丰富，动作灵动，支持口型同步 (LipSync)。
-
-### 🔒 隐私优先 (Privacy First)
-- **完全本地化**：基于 Qwen3 GGUF + llama-server，本地推理无需联网。
-- **数据安全**：你的对话、记忆、屏幕截图永远只留在你的 Mac 上。
-
-### �️ 强大能力 (Powerful Skills)
-- **系统掌控**：原生级控制音量、亮度、媒体播放、Wi-Fi/蓝牙。
-- **效率工具**：剪贴板管理、文件操作、天气/汇率查询。
-- **无限扩展**：内置 Python 解释器，Kage 可以通过编写 `skills` 脚本自我进化。
-
----
-
-## 📥 快速开始 (Get Started)
-
-### 环境要求
-- **硬件**: Mac with Apple Silicon (M1/M2/M3/M4)
-- **系统**: macOS 14.0+
-- **环境**: Python 3.10+, Node.js 18+
-
-### 安装运行
-
-**1. 启动大脑 (Backend)**
-```bash
-# 建议使用 Conda 创建干净环境
-conda create -n kage python=3.10
-conda activate kage
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 启动 (首次运行会自动下载模型)
-python main.py
+```sh
+git clone https://github.com/lemon5227/Kage.git
+cd Kage
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt -r requirements-computer-use.txt
+python -m playwright install chromium
 ```
 
-**2. 唤醒躯体 (Frontend)**
-```bash
+The full dependency set includes optional audio/model packages; microphone support may require PortAudio on macOS.
+
+Start the control API:
+
+```sh
+KAGE_MODE=control KAGE_BROWSER_PYTHON="$PWD/.venv/bin/python" \
+  python -m uvicorn core.server:app --host 127.0.0.1 --port 12345
+```
+
+In another terminal, from the repository root:
+
+```sh
 cd kage-avatar
-npm run tauri dev
+npm install
+npm run dev
 ```
 
-现在，试着对她说："Hey Kage, 帮我截个图！" ✨
+Open **http://localhost:1420/launcher.html** and find **浏览器教学**:
 
----
+1. Choose a teaching task and the human-declared source, then start.
+2. Wait until the dedicated browser is ready. Follow the visible goal, correct any mistakes, and save.
+3. Finish the demonstration to run the independent check and extract a candidate.
+4. Choose the new-input task, edit the JSON parameters to match its goal, and replay on a fresh page.
 
-## 🏗️ 技术架构
+Recording and direct workflow replay need **no model server or cloud key**. The executor is labeled `workflow_engine`; this proves the capture/reuse path, not that a model has learned it. The separate model-consumption experiment records whether the local model actually calls the skill.
 
-Kage 是 AI Agent 技术的集大成者：
-*   **Brain**: Qwen3 GGUF + llama-server (OpenAI Compatible API)
-*   **Ears**: FunASR (Paraformer + Emotion2Vec) + **Vosk** (超低功耗唤醒)
-*   **Body**: Tauri v2 + PixiJS Live2D
-*   **Control**: Quartz Event Services + Native macOS APIs
+Teaching evidence defaults to `~/.kage/browser-demonstrations`; override it with `KAGE_BROWSER_DEMONSTRATIONS_DIR`. `KAGE_BROWSER_PYTHON` selects the browser-capable interpreter. The dedicated human browser is visible; automation captures are labeled separately.
 
-## 📄 License
+For the full voice/desktop runtime, activate the environment and run `python main.py`; the native frontend can be started with `npm run tauri dev` from `kage-avatar`. Model, audio assets and macOS permissions must be configured for the chosen runtime. Do not assume the browser teaching flow configures all of them.
 
-MIT License © 2026 Kage Project
----
-> 📜 **历史技术文档**: 查看 [docs/optimization_history.md](docs/optimization_history.md) 了解 Kage 从 v1.0 CoT 到 v3.0 双层路由的技术演进。
->
-> 🧭 **接手与优化入口**:
-> - [docs/HANDOFF_FOR_NEXT_MODEL.md](docs/HANDOFF_FOR_NEXT_MODEL.md)
-> - [docs/agent_orchestration_playbook.md](docs/agent_orchestration_playbook.md)
-> - [docs/agent_progress_log.md](docs/agent_progress_log.md)
+## Models and cloud configuration
+
+Runtime settings are read from `~/.kage/config.json`. Local inference uses `model.local_runtime`; cloud settings use `model.cloud_api`, with optional `model.hybrid` routing. Start a compatible local server and configure its model name/host/port, or configure your chosen cloud provider. Keep API credentials outside the repository.
+
+Cloud-assisted task learning is an explicit experimental chain. Existing runtime fallback settings are not evidence that every failed computer task automatically becomes a verified learning episode. Optional speech and cloud features may contact external services; local execution does not imply every feature is offline.
+
+## Evidence and development
+
+The latest browser teaching package passed **992 engineering tests** and verified two captures plus two fresh-input workflow replays. Its local 4B model completed both pilot tasks, but made **zero calls to the new skills**. The capture/reuse path works; automatic skill adoption and a learning advantage remain unproven. See the [full report](docs/experiments/2026-10-07-browser-demonstration.md).
+
+The project records successes **and failures**, including model attempts, actual actions, saved-state checks, tokens, time, candidate versions and provenance. Engineering tests, real-model pilots, new-input transfer and held-out comparisons are separate levels of evidence.
+
+- [Current experiment index](docs/experiments/README.md)
+- [Browser task entry](docs/experiments/2026-10-04-browser-task-entry.md)
+- [Browser teaching and reuse](docs/experiments/2026-10-07-browser-demonstration.md)
+- [Browser transfer experiment, including negative results](docs/experiments/2026-10-03-browser-transfer.md)
+- [File skill transfer comparison](docs/experiments/2026-10-01-c4-transfer-ablation.md)
+- [Recovery-module self-modification](docs/experiments/2026-10-01-e3-recovery-self-modification.md)
+
+Run engineering checks in an environment with the test dependencies and Playwright installed:
+
+```sh
+python -m pip install pytest pytest-asyncio httpx
+python -m pytest tests -q
+cd kage-avatar
+npm run build
+```
+
+Most browser integration tests operate real owned Chromium pages and inspect HTTP saves/readback. Scripted actions are engineering evidence, not human demonstrations or AI benchmark scores. Raw experiment artifacts stay outside Git by default; reports identify their locations and hashes. Reproducing model pilots also requires the matching weights, runtime settings and evidence.
+
+## Next milestones
+
+1. Complete actual human browser teaching acceptance; extend native macOS accessibility execution and reliable document save/readback.
+2. Add native demonstrations and browser/native cross-app task families with independent checks.
+3. Expand candidate lineage, compatibility and memory selection; evolve additional agent modules and evaluate failure-conditioned evolution routing.
+4. Surface version changes, scores and costs; broaden held-out experiments and research reports.
+5. Train small distillation adapters when verified, diverse trajectories and GPU/export support justify it. Evaluate visual grounding and inference engines against measured bottlenecks.
+
+The complete E/C task queue and execution order live in the [roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) and [handoff](docs/plans/execution-handoff-2026-10-03.md). Kage aims to become a capable, adaptable computer agent; each stage must earn that claim through working behavior and reproducible evidence.
+
+## License
+
+MIT. Historical routing and interface notes are retained in [the optimization history](docs/optimization_history.md).
