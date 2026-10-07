@@ -1,36 +1,40 @@
-# Kage Project Roadmap
+# Kage 项目路线图
 
-## Phase 1: The Brain (Completed ✅)
-- [x] Integrate `Apple MLX` for local inference.
-- [x] Implement Basic Memory (JSONL).
-- [x] Design Core Tools (Shell, App Control).
+更新：2026-10-07。本页替代早期按 Brain / Logic / Senses / Body 划分的路线，提供项目进度概览。**任务状态与领取顺序以 [E/C 统一任务队列](docs/plans/task-queue-2026-10-01.md) 为唯一入口**；实现细节见 [执行交接](docs/plans/execution-handoff-2026-10-03.md)，研究目标见 [EvoLab 总规划](docs/agent-memory-evolution-master-plan-2026-09-29.md)。
 
-## Phase 2: The Logic (Completed ✅)
-- [x] Implement Dual-Layer Router (Chat vs Command).
-- [x] Add Feedback Loop (Action -> Observation -> Report).
-- [x] System Control integration (Mac Volume, Brightness).
+Kage 是支持 Live2D、语音和陪伴人格的个人助手，也是研究电脑 Agent 如何从失败与示范中成长的实验项目。工程目标是可靠执行与可维护代码；研究目标是通过独立检查、留出任务和对照实验检验技能与模块改进。面试和博士申请中的贡献应由源码与可复核证据支撑。
 
-## Phase 3: The Senses (Completed ✅)
-- [x] **Hearing**: Integrate `FunASR` (Paraformer) for high-accuracy STT.
-- [x] **Emotion**: Integrate `Emotion2Vec` for voice emotion detection.
-- [x] **Speech**: Integrate `Edge-TTS` for natural voice synthesis.
+## 当前进度
 
-## Phase 4: The Body (Completed ✅)
-- [x] **Framework**: Setup `Tauri v2` + `Vite` + `TypeScript`.
-- [x] **Rendering**: Implement `PixiJS v6` + `pixi-live2d-display` (Cubism 4).
-- [x] **Window**: Implement Transparent Window & Dragging (Mac Trackpad Optimized).
-- [x] **Link**: Establish WebSocket connection (Python <-> Tauri).
-- [x] **Expression**: Backend sends Emotion -> Live2D Face Change (`f01`..`f05`).
-- [x] **LipSync**: Backend Audio/Motion Signal Sync -> Frontend Mouth Animation.
+| 方向 | 已有实现与证据 | 尚待完成或验证 |
+|---|---|---|
+| 产品基础 | Python 后端、Tauri / Vite / TypeScript / Live2D、WebSocket、语音与表达链 | 发布打包、签名安装与端到端产品验收；早期功能记录不等于当前商业发布认证 |
+| 执行与实验内核（E0 / C0） | 多步工具执行、原生工具历史、停止与重复检测、预算 / 事件 / 独立评分 | 更广任务上的可靠性与性能验证 |
+| 技能学习（E1 / C4.1–4.4） | 文件 / 代码域的失败接管、技能生成与本地调用；单族留出技能 3/3、原学生 0/3 | 多任务族迁移与统计；该结果包含技能发现策略，不能推广为通用学习能力 |
+| 经验与源码演化（E2 / E3） | 最小 episode 档案、证据 hash；恢复模块首轮源码修改 pilot | 完整候选谱系、多样档案、更多修改对象与回溯；实验版本未安装日常主链 |
+| 浏览器执行与学习（C1.1 / C2.1） | DOM 观察、失效引用恢复、同页接管、声明式技能；基线四族八实例 6/8 | 相对 raw 的稳定学习收益未证明；旧留出已暴露，不再作为新盲测 |
+| 浏览器任务入口（C5.0） | Launcher / API、模型与预算、停止、产物、独立检查；真实本地 completed / unknown 各一次 | 自由网页 / 活浏览器接入、普通执行历史恢复与完整成长展示 |
+| 浏览器教学（C4.5-DOM） | 自动化录制 2/2、参数变更直接复用 2/2、真实本地执行 2/2 | 真人教学待实际操作；本轮模型 skill_call=0，自动采用与学习收益未证明，候选未晋级 |
+| 原生电脑执行（C1.2） | 已实现有界 AX 窗口观察与已观察控件操作；专用 TextEdit 确定性编辑 / 保存 / 关闭重开 / 独立读回探针通过 | 窗口隔离修复已复审，全量 1002 passed；真实模型原生执行、OCR 回退与原生示范尚未验收 |
 
-## Phase 5: The Soul (Next Steps 🚧)
-- [ ] **Long-term Memory**: Vector Database (ChromaDB) for semantic recall.
-- [ ] **Personality Training**: Fine-tune LoRA for a specific character persona (Tsundere/Maid).
-- [ ] **Vision Capability**: Integrate `Llava` or Screenshot Analysis (Kage can "see" your screen).
-- [ ] **Music/Media**: A dedicated Music Player UI inside the Tauri window.
+本轮 AX 工程与真实驱动证据见 [C1.2 首包报告](docs/experiments/2026-10-07-macos-ax.md)。数字是各报告的原始分母，不合并成项目总成功率。工程完成、真实模型 pilot、独立迁移、研究验收和主链集成分别记录。已有测试数量不代替真实任务成绩；无独立完成检查时结果保持 unknown。详细失败与限制见 [实验索引](docs/experiments/README.md)。
 
-## Phase 6: Deployment (Future 📦)
-- [ ] **Python Freeze**: Use `PyInstaller` to bundle `kage-server` binary.
-- [ ] **Sidecar Setup**: Configure Tauri to manage the Python process.
-- [ ] **Installer**: Build signed `.dmg` for macOS distribution.
-**: 支持摄像头输入，甚至能“看”到 Master 的表情。
+## 当前执行顺序
+
+1. **C1.2 macOS AX**：窗口与辅助功能树观察；仅操作已观察目标；处理权限、失效引用和超时；用专用原生文档完成编辑、保存、关闭 / 重开、重读与独立文本检查。权限不足须记录受阻，不把启动应用或工具 success 当任务通过。
+2. **C4.5-AX 原生示范**：在原生执行链验收后采集示范、提取可复用工作流，单列示范来源和实际调用证据。
+3. **C2.2 跨应用评测**：浏览器、原生与跨应用各四项起步任务；区分可重置受控任务和探索记录，冻结新留出后再评测。
+4. **E2.1 → E3.1 → E4**：完善经验 / 候选谱系，扩展源码修改，再实现失败条件化演化路由；与电脑扩展交替推进。
+5. **C5 / E5 / E6**：完善真实使用入口、版本与源码 diff 展示；补多任务族、种子、退化与消融、统计和英文研究报告。
+
+真人 DOM 教学验收可在用户实际操作后补充；模型自动采用与学习收益另做开发集诊断和新留出实验，不重写历史负结果。
+
+## 条件支线与产品交付
+
+- **C7 上下文效率**：已有紧凑 DOM 的输入 token 中位减少 21.4%，时延收益不稳定；跨页事实、可召回历史和长轨迹按实际瓶颈推进。
+- **C6 视觉定位**：DOM / AX 覆盖不足时验证截图目标定位、坐标精度与整任务表现，不先假定模型兼容。
+- **C8 推理引擎 / C3 决策后端**：先做同权重或同任务的严格对照，有证据再替换默认配置。
+- **E7 权重蒸馏**：待轨迹质量、覆盖、去重、隔离留出与 GPU / 导出条件成熟，再做小批 LoRA / QLoRA 实验；尚未训练。
+- **产品发布**：Python sidecar 打包、Tauri 生命周期管理、签名安装包与发布验证仍待验收。人格、媒体等产品扩展按统一队列和用户需求另排，不阻塞当前执行 / 学习主线。
+
+每包保留原始失败、执行者、源码 / 模型 / 协议版本、预算、费用与证据路径；代码和实验报告分开提交。学习候选通过晋级门槛前不默认安装。当前工作复用已有开发 worktree，完整历史原始实验保存在该目录，不能清理唯一证据副本。
