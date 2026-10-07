@@ -117,7 +117,8 @@ class MacOSAXDriver:
             ref = self._id(window, 'w')
             selected[ref] = (pid, bundle_id, app, window)
             result.append({'window_ref': ref, 'title': str(self._get(window, 'AXTitle', '')),
-                           'bundle_id': bundle_id, 'pid': pid})
+                           'bundle_id': bundle_id, 'pid': pid,
+                           'document_url': str(self._get(window, 'AXDocument', ''))})
         # A new identification deliberately invalidates previously selected app scope.
         self._windows = selected
         self._targets = {}
@@ -218,7 +219,8 @@ class MacOSAXDriver:
         self._menu_targets[window_ref] = {ref for ref, handle in handles.items()
             if any(cf.CFEqual(handle, menu_element) for menu_element in menu_elements)}
         snapshot = {'window_ref': window_ref, 'pid': pid, 'bundle_id': bundle,
-                'title': str(self._get(window, 'AXTitle', '')), 'targets': targets,
+                'title': str(self._get(window, 'AXTitle', '')),
+                'document_url': str(self._get(window, 'AXDocument', '')), 'targets': targets,
                 'main_window': main is not None and bool(cf.CFEqual(main, window)),
                 'truncated': truncated}
         self._snapshots[window_ref] = snapshot
