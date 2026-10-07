@@ -4,6 +4,7 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
+| 2026-10-07 C4.5-DOM | 真实DOM教学、纠正/参数提取、持久入口、新输入复用与本地模型pilot | [总报告](2026-10-07-browser-demonstration.md)、[录制/提取](2026-10-05-browser-demonstration-recorder.md)、[入口/生命周期](2026-10-05-browser-demonstration-entry.md)：录制2/2、直接复用2/2、本地2/2但skill_call=0；7请求零云、992 passed，真人验收待操作；下一C1.2 AX |
 | 2026-10-04 C5.0 | Launcher/API受控任务入口、状态/模型/预算/停止/产物 | [入口集成报告](2026-10-04-browser-task-entry.md)：真实本地completed/unknown各一且均保存/读回，7请求零云；946 passed，审计温度假设修正保留；下一C4.5-DOM |
 | 2026-10-03 C2.1-R3-a | 新dev两任务×5/6步真实预算对照 | [保存预算诊断](2026-10-03-browser-save-budget-dev.md)：各2/2，6步多1请求但无分数收益；21本地请求/零云，默认5，下一C5.0；911 passed |
 | 2026-10-03 新本地留出v2 | 标签/四项/中文三实例×三臂 | [迁移与开销](2026-10-03-browser-local-transfer-v2.md)：raw3/3、search2/3、preview3/3；四项实际调用1次，整体未加速；35本地请求，下一新dev预算诊断 |

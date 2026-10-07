@@ -121,3 +121,19 @@ assert finished.status_code == 200
 
 - [ ] 最终独立整包审查；一次全量pytest、frontend源码有新变更才复建；冻结实际模型小pilot后再推理，最多2个新reuse dev ×一次，无云/额外重试/重采样。保留automation来源，无真人来源冒认；若模型不用技能也照实记录。
 - [ ] 主实验报告与两任务工程报告分开；记录商业可用路径、限制、失败/解决、源码/协议/模型/hash/资源/停止。全部scratch审查复制原始目录再清理该plan scratch，保留worktree；报告另提交，主仓库干净时FF。C4.5-DOM区分工程/自动化复验和真人示范验收，后续C1.2按队列。
+
+## 实施中的接口补充（2026-10-05）
+
+以下是本包控制器批准的窄幅实现边界，保留原设计与历史检查结果，不追加实验样本。
+
+- Task1允许`core/evolution/archive.py`增加录制输入/事件的evidence引用，保持既有引用顺序并去重，使录制原始字节篡改时检索/生成失效。
+- Task2允许`episodes.py`增加明确`workflow_engine`分支：直接复用来源为`workflow_engine_replay`，学生通过值为None，保留真实执行片段和失败状态；必须使用实际初始/最终DOM，不能由参数构造观察。可变status/control/result不进入不可变产物索引，Journal置于run目录旁。
+- 共享`BrowserTaskService`仅增加默认无操作的`_worker_finished(run_id, returncode)` hook，实际communicate结束后同步调用；示范子类据真正退出码决定父进程acceptance。重启不能仅凭worker写出的成功result生成可用候选。
+- 重启先有界停止并核对旧worker所有权/进程组清理，再冻结partial动作数和hash。无法确认清理时公开恢复错误，保持无候选/无最终索引并阻止替代session；恢复标记防止旧父进程迟到写入。
+- 工作流执行失败仍在真实Page做安全保存settle、独立检查、failed RunResult/episode归档；具体执行错误与目标检查结果分别记录，completed须执行与检查同时通过。
+
+最终任务审查、修复复审、整包审查、全量与模型pilot结果记录在独立实验报告，真人教学验收由实际用户另行完成。
+
+### 2026-10-07交付授权更新
+
+用户明确要求完成本阶段后推送GitHub，并按已确认的新目标更新README；此最新请求覆盖本文件原“本地FF、不推送”交付限制。实现仍先审查/验证、分任务提交，保留唯一worktree原始证据；README区分通用电脑Agent/示范学习/本地云协作/自演化愿景与实际工程、pilot和待验能力，不包含私有配置或无依据速度宣传。不提交主仓库其他任务的文档。
