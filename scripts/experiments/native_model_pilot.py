@@ -85,6 +85,22 @@ def get_json(port,path):
         return json.loads(response.read())
 
 
+def server_version(output):
+    """Bound the optional CLI probe; preserve its actual outcome and log evidence."""
+    try:
+        probe=subprocess.run([str(SERVER),'--version'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=3)
+        result={'status':'exited','returncode':probe.returncode,'output':probe.stdout.strip()}
+    except subprocess.TimeoutExpired as exc:
+        partial=exc.output or ''
+        if isinstance(partial,bytes):partial=partial.decode('utf-8',errors='replace')
+        result={'status':'timeout','timeout_s':3,'output':partial.strip()}
+    except OSError as exc:
+        result={'status':'error','error':f'{type(exc).__name__}: {exc}'}
+    log=Path(output)/'server.log'
+    result['log_build_info']=[line for line in log.read_text(errors='replace').splitlines() if line.startswith('build:')] if log.exists() else []
+    return result
+
+
 class LocalService:
     """Starts only when absent; stops only the process created by this context."""
     def __init__(self,port,output):self.port=port;self.output=output;self.process=None;self.log=None
@@ -116,7 +132,7 @@ class LocalService:
                 raise RuntimeError('local server model alias mismatch')
             self.runtime={'model_path':str(MODEL),'model_sha256':file_hash(MODEL),
                           'server_path':str(SERVER),'server_sha256':file_hash(SERVER.resolve()),
-                          'server_version':subprocess.check_output([str(SERVER),'--version'],stderr=subprocess.STDOUT,text=True).strip(),
+                          'server_version':server_version(self.output),
                           'server_argv':argv,'actual_server_command':actual_argv,'server_pid':int(pids[0]),
                           'owned_service':self.process is not None,'health':health,'models':models,'port':self.port}
             return self

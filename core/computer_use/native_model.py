@@ -11,7 +11,7 @@ from urllib.parse import urlparse,unquote
 
 from core.agentic_loop import AgenticLoop, LoopResult
 from core.computer_use.native_ax import NativeAXAdapter
-from core.evolution.agent_provider import ExperimentIdentityStore, HistorySession, MeteredProvider
+from core.evolution.agent_provider import ExperimentIdentityStore, HistorySession, MeteredProvider, resolve_in_workspace
 from core.evolution.budget import BudgetExhaustedError
 from core.model_provider import ModelCallLimitExceeded
 from core.prompt_builder import PromptBuilder
@@ -69,6 +69,15 @@ class ScopedNativeAdapter:
         self.allowed_ref=matches[0]['window_ref']
         return {**result,'windows':matches}
 
+    def scoped_result(self, result):
+        observation=result.get("observation")
+        if observation is not None and (observation.get("window_ref")!=self.allowed_ref or not self.owns(observation)):
+            self.adapter.current=None
+            rejected=self.rejected("ScopeViolation","document identity changed")
+            rejected["action_applied"]=result.get("action_applied")
+            return rejected
+        return result
+
     async def observe(self, window_ref):
         if self.expired():return self.rejected('Deadline','native task deadline reached')
         if self.allowed_ref is None:
@@ -76,10 +85,7 @@ class ScopedNativeAdapter:
             if not identified['success']:return identified
         if window_ref!=self.allowed_ref:return self.rejected('ScopeViolation','window outside dedicated scope')
         result=await self.adapter.observe(window_ref)
-        if result.get('success') and not self.owns(result['observation']):
-            self.adapter.current=None
-            return self.rejected('ScopeViolation','document identity changed')
-        return result
+        return self.scoped_result(result)
 
     async def initial(self):
         result=await self.windows(self.bundle_id)
@@ -90,12 +96,16 @@ class ScopedNativeAdapter:
         if self.expired():return self.rejected('Deadline','native task deadline reached')
         current=self.adapter.current
         if not current or current.get('window_ref')!=self.allowed_ref or not self.owns(current):
+            self.adapter.current=None
             return self.rejected('ScopeViolation','observe dedicated document before acting')
         if self.actions>=self.max_actions:return self.rejected('ActionLimit','primitive action guard reached')
         self.actions+=1  # Counts every attempted primitive dispatch, including stale/failed.
         target=next((t for t in current["targets"] if t["target_ref"]==target_ref),{})
         result=await self.adapter.act(observation_id,operation,target_ref,value)
-        if operation=="press" and str(target.get("command", "")).lower()=="s" and result.get("action_applied") is True:
+        if operation=="fill" and result.get("action_applied") is not False:
+            self.save_applied=False
+        result=self.scoped_result(result)
+        if result.get("success") and operation=="press" and str(target.get("command", "")).lower()=="s" and result.get("action_applied") is True:
             self.save_applied=True
         return result
 
@@ -302,7 +312,13 @@ class NativeChainProvider(KageChainProvider):
 
     async def _run(self,workspace):
         start=time.monotonic()
-        document=workspace/self.task_def['document_name']
+        name=self.task_def['document_name']
+        document=resolve_in_workspace(workspace,name)
+        fixtures=self.task_def.get('initial_files',{})
+        if name not in fixtures or not isinstance(fixtures[name],str):
+            raise ValueError('dedicated document requires an initial text fixture')
+        if not document.is_file() or document.read_text(encoding='utf-8')!=fixtures[name]:
+            raise ValueError('dedicated document must match its prepared initial fixture')
         environment=self.environment_factory(document,workspace)
         report={'model_requests':0,'agent_actions':0,'usage':{'api_calls':0},'tool_results':[]}
         try:
@@ -325,6 +341,10 @@ class NativeChainProvider(KageChainProvider):
             checked={'status':'unknown','error':f'{type(exc).__name__}: {exc}'}
             write_json(workspace/'completion.json',checked)
         chain_info={k:v for k,v in report.items() if k!='tool_results'}
+        loop=report.get('loop',{})
+        chain_info.update({'stop_reason':loop.get('stop_reason','initialization_error'),
+                           'model_calls':report['model_requests'],'tool_calls':len(report['tool_results']),
+                           'chain_steps':loop.get('steps',0)})
         chain_info['completion']=checked;chain_info['elapsed_s']=time.monotonic()-start
         return {'action':{'name':'finish'},'usage':report['usage'],'chain':chain_info,'tool_results':report['tool_results']}
 

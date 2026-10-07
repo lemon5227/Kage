@@ -161,3 +161,101 @@ def test_save_evidence_requires_successful_observed_save_command():
         await scope.act(rejected['observation']['observation_id'],'press','save')
         assert scope.save_applied is True
     asyncio.run(scenario())
+
+import pytest
+
+@pytest.mark.parametrize('phase', ['stale', 'success', 'uncertain'])
+@pytest.mark.parametrize('identity', ['url', 'title', 'window'])
+def test_action_reobservations_cannot_leak_changed_document(tmp_path, phase, identity):
+    from core.computer_use.native_model import ScopedNativeAdapter
+    class ChangedDriver(Driver):
+        changed=False
+        def snapshot(self, ref):
+            result=super().snapshot(ref)
+            if self.changed:
+                result['targets'][0]['value']='PRIVATE CONTENT'
+                result[{'url':'document_url','title':'title','window':'window_ref'}[identity]]={'url':(tmp_path/'private.txt').as_uri(),'title':'private.txt','window':'private'}[identity]
+            return result
+        def act(self,*args):
+            self.changed=True
+            if phase=='uncertain':raise RuntimeError('dispatch uncertain')
+    async def scenario():
+        driver=ChangedDriver();driver.document_url=(tmp_path/'owned.txt').as_uri()
+        adapter=NativeAXAdapter(driver);scope=ScopedNativeAdapter(adapter,'com.apple.TextEdit','owned.txt',document_path=tmp_path/'owned.txt')
+        obs=(await scope.initial())['observation']
+        if phase=='stale':driver.changed=True
+        result=await scope.act(obs['observation_id'],'fill','text','new')
+        assert result['error']=='ScopeViolation'
+        assert 'PRIVATE CONTENT' not in json.dumps(result)
+        assert result['action_applied']=={'stale':False,'success':True,'uncertain':None}[phase]
+        assert adapter.current is None
+    asyncio.run(scenario())
+
+@pytest.mark.parametrize('uncertain', [False, True])
+def test_fill_invalidates_previous_save_evidence(uncertain):
+    from core.computer_use.native_model import ScopedNativeAdapter
+    class SaveDriver(Driver):
+        def snapshot(self,ref):
+            result=super().snapshot(ref);result['targets'].append({'target_ref':'save','role':'AXMenuItem','command':'s','operations':['press']});return result
+        def act(self,ref,target,operation,value):
+            if operation=='fill' and uncertain:raise RuntimeError('dispatch uncertain')
+    async def scenario():
+        scope=ScopedNativeAdapter(NativeAXAdapter(SaveDriver()),'com.apple.TextEdit','owned.txt')
+        obs=(await scope.initial())['observation']
+        saved=await scope.act(obs['observation_id'],'press','save')
+        assert scope.save_applied
+        await scope.act(saved['observation']['observation_id'],'fill','text','new')
+        assert not scope.save_applied
+    asyncio.run(scenario())
+
+@pytest.mark.parametrize('kind', ['absolute', 'escape', 'symlink', 'missing_fixture', 'wrong_fixture'])
+def test_provider_rejects_unsafe_or_unprepared_document_before_environment(tmp_path,kind):
+    from core.computer_use.native_model import NativeChainProvider
+    outside=tmp_path.parent/'outside-native.txt';outside.write_text('private')
+    name={'absolute':str(outside),'escape':'../outside-native.txt'}.get(kind,'owned.txt')
+    if kind=='symlink':(tmp_path/name).symlink_to(outside)
+    else:(tmp_path/'owned.txt').write_text('wrong' if kind=='wrong_fixture' else 'initial')
+    task={'task_id':'native','document_name':name,'initial_files':{} if kind=='missing_fixture' else {name:'initial'},'instruction':'inspect','expected':'new'}
+    def forbidden(*args):raise AssertionError('environment must not be created')
+    chain=NativeChainProvider(Provider(lambda *args:None),task,environment_factory=forbidden)
+    with pytest.raises(ValueError):asyncio.run(chain._run(tmp_path))
+    assert outside.read_text()=='private'
+
+
+def test_runner_records_native_call_limit_and_real_chain_counts(tmp_path):
+    from core.computer_use.native_model import NativeChainProvider,NativeEvaluator
+    from core.evolution.runner import EvolutionRunner
+    from core.evolution.budget import BudgetConfig,BudgetTracker
+    from core.evolution.journal import Journal
+    from core.evolution.contracts import Candidate,RunSpec
+    driver=Driver()
+    class Environment:
+        def __init__(self,document,output):self.document=document;self.adapter=NativeAXAdapter(driver)
+        async def setup(self):driver.document_url=self.document.resolve().as_uri()
+        async def reread(self):return await self.adapter.observe('owned')
+        async def cleanup(self):return {'success':True}
+    provider=Provider(lambda messages,kwargs:ModelResponse(text='',tool_calls=[{'name':'native_observe','arguments':{'window_ref':'owned'}}]))
+    task={'task_id':'native-limit','instruction':'Keep observing','document_name':'owned.txt','initial_files':{'owned.txt':'initial'},'expected':'new'}
+    chain=NativeChainProvider(provider,task,environment_factory=Environment,max_model_calls=1)
+    runner=EvolutionRunner(Journal(tmp_path/'journal.sqlite'),BudgetTracker(BudgetConfig(max_api_calls=10,input_cost_per_million=0,output_cost_per_million=0),tmp_path/'budget.sqlite'),tmp_path/'workspaces',chain,step_isolation='inline')
+    runner.evaluator=NativeEvaluator()
+    result=runner.run(Candidate('native',(),'workflow',str(tmp_path),'frozen'),task,RunSpec('native-limit','native','native-limit',max_steps=1,timeout_s=480))
+    assert result.metadata['chain_model_calls']==1
+    assert result.metadata['chain_tool_calls']==1
+    assert result.metadata['chain_steps']>0
+    assert result.metadata['chain'][-1]['stop_reason']=='call_limit'
+
+@pytest.mark.parametrize('success',[False,True])
+def test_observe_sanitizes_all_returned_observations(tmp_path,success):
+    from core.computer_use.native_model import ScopedNativeAdapter
+    class Adapter:
+        current=None
+        async def observe(self,ref):
+            self.current={'window_ref':'owned','title':'owned.txt','document_url':(tmp_path/'private.txt').as_uri(),'targets':[{'value':'PRIVATE CONTENT'}]}
+            return {'success':success,'observation':self.current,'action_applied':False}
+    async def scenario():
+        adapter=Adapter();scope=ScopedNativeAdapter(adapter,'com.apple.TextEdit','owned.txt',document_path=tmp_path/'owned.txt');scope.allowed_ref='owned'
+        result=await scope.observe('owned')
+        assert result['error']=='ScopeViolation' and 'PRIVATE CONTENT' not in json.dumps(result)
+        assert adapter.current is None
+    asyncio.run(scenario())
