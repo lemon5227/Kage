@@ -385,6 +385,16 @@ def test_restart_rejects_post_result_worker_before_parent_clean_exit(client, tmp
     assert not final['result'].get('candidate')
     assert (workspace / 'stop.requested').exists()
     pid = json.loads((workspace / 'worker-owner.json').read_text())['pid']
+    # Candidate rejection is synchronous; the original async parent may still
+    # be reaping its terminated child. Require eventual PID removal without
+    # treating a momentarily unreaped PID as an active worker.
+    reap_deadline = time.monotonic() + 2
+    while time.monotonic() < reap_deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(.02)
     with pytest.raises(ProcessLookupError):
         os.kill(pid, 0)
     time.sleep(.2)
