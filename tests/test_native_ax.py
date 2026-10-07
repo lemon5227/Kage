@@ -147,3 +147,58 @@ def test_successful_close_is_observed_as_closed_not_driver_failure():
         stale = await adapter.act(obs['observation_id'], 'press', 'e1')
         assert stale['error'] == 'StaleObservation' and stale['action_applied'] is False
     run(scenario())
+
+
+def test_native_menu_never_dispatches_when_main_window_switches_during_final_snapshot():
+    import pytest
+    from core.computer_use.native_ax import MacOSAXDriver, AXStaleError
+    class Element:
+        def __init__(self, **attrs): self.attrs = attrs
+    other = Element(AXRole='AXWindow')
+    text = Element(AXRole='AXTextArea', AXValue='old', AXEnabled=True, AXChildren=[])
+    save = Element(AXRole='AXMenuItem', AXTitle='Save', AXMenuItemCmdChar='S',
+                   AXMenuItemCmdModifiers=0, AXEnabled=True, AXChildren=[])
+    submenu = Element(AXChildren=[save])
+    file_menu = Element(AXRole='AXMenuBarItem', AXTitle='File', AXEnabled=True, AXChildren=[submenu])
+    menu = Element(AXChildren=[Element(), Element(), file_menu])
+    window = Element(AXRole='AXWindow', AXTitle='pilot.txt', AXChildren=[text])
+    app = Element(AXWindows=[window, other], AXMenuBar=menu)
+    class API:
+        kAXValueCGPointType, kAXValueCGSizeType = 1, 2
+        def __init__(self): self.main = window; self.switch = False; self.presses = []
+        def AXUIElementSetMessagingTimeout(self, element, seconds): return 0
+        def AXUIElementCopyAttributeNames(self, element, out):
+            return 0, list(element.attrs) + (['AXMainWindow'] if element is app else [])
+        def AXUIElementCopyAttributeValue(self, element, name, out):
+            if name == 'AXMainWindow': return 0, self.main
+            if self.switch and element is text and name == 'AXRole':
+                self.main = other; self.switch = False
+            return 0, element.attrs[name]
+        def AXUIElementCopyActionNames(self, element, out):
+            return 0, ['AXPress'] if element in (save, file_menu) else []
+        def AXUIElementIsAttributeSettable(self, element, attribute, out): return 0, True
+        def AXUIElementPerformAction(self, element, action): self.presses.append(element); return 0
+    class CF:
+        @staticmethod
+        def CFEqual(left, right): return left is right
+    api = API(); driver = MacOSAXDriver()
+    driver._load = lambda: (api, None, CF)
+    driver._windows['w1'] = (1, 'com.example.fixture', app, window)
+    snapshot = driver.snapshot('w1')
+    ref = next(t['target_ref'] for t in snapshot['targets'] if t.get('command') == 'S')
+    api.switch = True  # Final snapshot captures old main, then main changes during traversal.
+    with pytest.raises(AXStaleError):
+        driver.act('w1', ref, 'press', None)
+    assert api.presses == []
+
+
+def test_pilot_cleanup_requires_observed_window_disappearance():
+    from scripts.experiments.native_ax_pilot import wait_window_disappeared
+    class Windows:
+        def __init__(self, present): self.present = present
+        async def windows(self, bundle):
+            return {'success': True, 'windows': [{'title': 'pilot.txt'}] if self.present else []}
+    async def scenario():
+        assert await wait_window_disappeared(Windows(True), 'pilot.txt', attempts=2, interval=0) is False
+        assert await wait_window_disappeared(Windows(False), 'pilot.txt', attempts=2, interval=0) is True
+    run(scenario())

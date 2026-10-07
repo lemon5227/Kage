@@ -17,6 +17,17 @@ from core.computer_use.native_ax import NativeAXAdapter
 EXPECTED = 'Kage dedicated native AX pilot fixture.\nStatus: semantic AX edit saved and independently verified.\n'
 
 
+async def wait_window_disappeared(adapter, document_name, attempts=30, interval=0.1):
+    for _ in range(attempts):
+        identified = await adapter.windows('com.apple.TextEdit')
+        if not identified.get('success'):
+            raise RuntimeError(f'close completion probe: {identified}')
+        if not any(w['title'] == document_name for w in identified['windows']):
+            return True
+        await asyncio.sleep(interval)
+    return False
+
+
 async def pilot(output):
     output.mkdir(parents=True, exist_ok=True)
     document = output / ('kage-native-ax-' + output.name + '.txt')
@@ -51,6 +62,7 @@ async def pilot(output):
         return matches[0]
     try:
         subprocess.run(['open', '-a', 'TextEdit', str(document.resolve())], check=True, timeout=10)
+        await asyncio.sleep(0.3)  # Wait for native open/close menu teardown before querying AX.
         obs = await observe_document()
         target = unique(obs, lambda t: t['role']=='AXTextArea' and 'before semantic edit' in t['value'])
         obs = await act(obs, target, 'fill', EXPECTED)
@@ -72,30 +84,27 @@ async def pilot(output):
         closed = await adapter.act(obs['observation_id'], 'press', close['target_ref'])
         report['stages'].append({'stage': 'close', 'result': closed})
         if closed.get('action_applied') is not True: raise RuntimeError('close was not applied')
-        for _ in range(30):
-            identified = await adapter.windows('com.apple.TextEdit')
-            if not identified.get('success'):
-                await stage('identify_after_close', identified)
-            if not any(w['title'] == document.name for w in identified['windows']):
-                report['window_disappeared_after_close'] = True
-                break
-            await asyncio.sleep(0.1)
-        else:
+        report['window_disappeared_after_close'] = await wait_window_disappeared(adapter, document.name)
+        if not report['window_disappeared_after_close']:
             raise RuntimeError('closed window did not disappear before reopen')
         subprocess.run(['open', '-a', 'TextEdit', str(document.resolve())], check=True, timeout=10)
+        await asyncio.sleep(0.3)  # Wait for native open/close menu teardown before querying AX.
         obs = await observe_document()
         reread = unique(obs, lambda t: t['role']=='AXTextArea')
         report['reopened_ax_matches'] = reread['value'] == EXPECTED
         report['independent_file_matches'] = document.read_text() == EXPECTED
         # Cleanup only our dedicated reopened document through its AX Close control.
+        await asyncio.sleep(0.3)
+        obs = await observe_document()
         menu = unique(obs, lambda t: t['role']=='AXMenuBarItem')
         obs = await act(obs, menu, 'press')
         close = unique(obs, lambda t: t.get('command', '').lower()=='w')
         cleaned = await adapter.act(obs['observation_id'], 'press', close['target_ref'])
         report['stages'].append({'stage': 'cleanup_close', 'result': cleaned})
         report['cleanup_close_applied'] = cleaned.get('action_applied') is True
+        report['cleanup_window_disappeared'] = await wait_window_disappeared(adapter, document.name)
         report['file_sha256'] = hashlib.sha256(document.read_bytes()).hexdigest()
-        report['status'] = 'passed' if all(report[k] for k in ['saved_file_matches','window_disappeared_after_close','reopened_ax_matches','independent_file_matches','cleanup_close_applied']) else 'failed'
+        report['status'] = 'passed' if all(report[k] for k in ['saved_file_matches','window_disappeared_after_close','reopened_ax_matches','independent_file_matches','cleanup_close_applied','cleanup_window_disappeared']) else 'failed'
     except Exception as exc:
         report['status'] = 'blocked' if any(s['result'].get('error') in {'AXPermissionDenied','NotAvailable'} for s in report['stages']) else 'failed'
         report['error'] = f'{type(exc).__name__}: {exc}'

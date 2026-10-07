@@ -44,6 +44,7 @@ class MacOSAXDriver:
         self._identities = []
         self._windows = {}
         self._targets = {}
+        self._menu_targets = {}
         self._api = None
         self._snapshots = {}
         self._deadline = None
@@ -145,6 +146,7 @@ class MacOSAXDriver:
             raise AXWindowClosedError('observed window is no longer present')
         deadline = time.monotonic() + self.timeout_seconds
         roots = [(window, 0)]
+        menu_elements = []
         # Menus are application-scoped; only expose them when this window is main.
         main = self._get(app, 'AXMainWindow')
         if main is not None and cf.CFEqual(main, window):
@@ -160,7 +162,9 @@ class MacOSAXDriver:
                             if str(command).lower() in ('s', 'w') and int(modifiers or 0) == 0:
                                 if not any(self._load()[2].CFEqual(bar_item, root[0]) for root in roots):
                                     roots.append((bar_item, self.max_depth))
+                                    menu_elements.append(bar_item)
                                 roots.append((item, self.max_depth))
+                                menu_elements.append(item)
         queue, seen, targets, handles = roots, [], [], {}
         truncated = False
         while queue:
@@ -211,6 +215,8 @@ class MacOSAXDriver:
                 if len(children) > self.max_nodes:
                     truncated = True
         self._targets[window_ref] = handles
+        self._menu_targets[window_ref] = {ref for ref, handle in handles.items()
+            if any(cf.CFEqual(handle, menu_element) for menu_element in menu_elements)}
         snapshot = {'window_ref': window_ref, 'pid': pid, 'bundle_id': bundle,
                 'title': str(self._get(window, 'AXTitle', '')), 'targets': targets,
                 'main_window': main is not None and bool(cf.CFEqual(main, window)),
@@ -226,6 +232,11 @@ class MacOSAXDriver:
         element = self._targets.get(window_ref, {}).get(target_ref)
         if element is None:
             raise AXStaleError('target is outside observed window')
+        if target_ref in self._menu_targets.get(window_ref, set()):
+            _, _, app, window = self._windows[window_ref]
+            main = self._get(app, 'AXMainWindow')
+            if main is None or not self._load()[2].CFEqual(main, window):
+                raise AXStaleError('selected document is no longer main; menu action not dispatched')
         if operation == 'fill':
             error = ax.AXUIElementSetAttributeValue(element, 'AXValue', value)
         elif operation == 'press':
