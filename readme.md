@@ -1,8 +1,10 @@
-![Kage — a computer agent that learns how to evolve](docs/assets/readme/hero.svg)
+![Kage — an anime companion and evolving agent](docs/assets/readme/companion-cover.png)
+
+<p align="center"><sub>Haru-inspired concept illustration · Current cover character, not a permanent Kage identity · <a href="docs/assets/readme/VISUAL_STYLE.md">Visual style guide</a></sub></p>
 
 <p align="center">
-  <strong>Toward Self-Evolving General-Purpose Computer Agents</strong><br>
-  Computer use · Continual adaptation · Procedural memory · Agent self-modification
+  <strong>Your companion. Your evolving agent.</strong><br>
+  Live2D presence · Voice interaction · Personal memory · Evolving capabilities
 </p>
 
 <p align="center">
@@ -12,21 +14,22 @@
   <a href="https://github.com/lemon5227/Kage/issues">Contribute</a>
 </p>
 
-## Research thesis
+## An anime companion with an agent mind
 
-Kage explores a larger question than desktop automation: **can an agent become more capable through its own experience, human teaching, and selective changes to the system that drives its decisions?**
+**Kage (影) is an anime-style personal assistant for macOS:** a Live2D presence on your desktop, a voice to talk to, a personality to interact with, and an agent runtime for getting things done.
 
-The goal is a general-purpose computer agent that works across browsers, files, and native applications, accumulates transferable skills, and evolves beyond a fixed collection of prompts and tools. macOS is the first execution environment. Local small models and cloud teachers provide a practical setting for studying this on an Apple Silicon Mac with 16 GB of memory.
+Its ambition is to grow from a desktop companion into a personal agent that works across browsers, files, and native apps, remembers useful experience, learns from teaching, and improves selected parts of its own execution system. The character makes that experience personal; memory, tools, and learning make it useful.
 
-The central research loop is:
+**Kage is not a fixed character.** The current free Live2D model is a demonstration asset, not the project's permanent face or canonical identity. Appearance, persona configuration, and agent capabilities are separate concerns. A different character should not require redefining the assistant's memory, skills, or evolution mechanisms.
 
-> **Act → Verify → Remember → Learn → Modify → Evaluate → Reuse**
+### Companion first. Capabilities underneath.
 
-Execution produces evidence. Evidence becomes episodic memory and executable skill candidates. Failures identify where the agent's procedure or scaffolding needs to change. Candidate improvements must demonstrate value on independent tasks before becoming part of the agent's capabilities.
+- **Presence and conversation:** Live2D expressions, optional speech input/output, and a configurable interaction persona.
+- **Personal assistance:** system controls, file tools, and model/tool workflows behind a desktop interface.
+- **Teaching and memory:** capture corrections and verified experience, then build reusable procedures.
+- **An agent that can grow:** explore skill learning, cloud teaching, and selected scaffold changes through independent experiments.
 
-Kage began as a voice-driven desktop companion with Live2D. Its current direction is an **experimental platform for computer-use agents, continual adaptation, and agent self-evolution**. The interface is the entry point; the learning and evolution loop is the core ambition.
-
-Kage connects **computer-use execution, experience-driven adaptation, and agent scaffold evolution** within one experimental system. The research program and the implementation evidence are presented separately below.
+The target experience is a companion that becomes more useful as you work together. The research loop underneath is **act → verify → remember → learn → evaluate → reuse**. Local small models, optional cloud teachers, and modest Mac hardware provide the development setting.
 
 ## Research agenda
 
@@ -56,7 +59,7 @@ Use local models for affordable execution and cloud models for selective teachin
 
 ## From memory to self-modification
 
-![Four adaptation layers: episodic memory, procedural memory, scaffold evolution and future parametric learning](docs/assets/readme/adaptation.svg)
+![Four adaptation layers: episodic memory, procedural memory, scaffold evolution and future parametric learning](docs/assets/readme/learning-companion.svg)
 
 **L0 / Episodic memory** retrieves relevant experience. **L1 / Procedural memory** turns behavior into executable skills. **L2 / Scaffold evolution** changes selected components of the agent itself. **L3 / Parametric learning** is the future distillation path into local-model adapters or weights.
 
@@ -64,7 +67,7 @@ The central question is which layer produces **persistent, transferable capabili
 
 ## An execution loop coupled to an evolution loop
 
-![Coupled execution and evolution loops: observe, execute and verify feed memory, candidate generation, comparison and capability transfer](docs/assets/readme/architecture.svg)
+![Coupled execution and evolution loops: observe, execute and verify feed memory, candidate generation, comparison and capability transfer](docs/assets/readme/architecture-companion.svg)
 
 The action loop and experiment loop share execution and evidence infrastructure. Browser workflows resolve semantic targets on the current page; they do not replay old element IDs or coordinates. Independent checks inspect actual saved state where a reliable checker exists. Tasks without one remain **unknown**, rather than being labeled successful because the agent stopped.
 
