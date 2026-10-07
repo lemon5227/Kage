@@ -1,16 +1,18 @@
-<div align="center">
+![Kage — a computer agent that learns how to evolve](docs/assets/readme/hero.svg)
 
-# Kage (影)
+<p align="center">
+  <strong>Toward Self-Evolving General-Purpose Computer Agents</strong><br>
+  Computer use · Continual adaptation · Procedural memory · Agent self-modification
+</p>
 
-### Toward Self-Evolving General-Purpose Computer Agents
+<p align="center">
+  <a href="docs/agent-memory-evolution-master-plan-2026-09-29.md">Research roadmap</a> ·
+  <a href="docs/experiments/README.md">Experimental evidence</a> ·
+  <a href="#try-the-browser-teaching-flow">Get started</a> ·
+  <a href="https://github.com/lemon5227/Kage/issues">Contribute</a>
+</p>
 
-**Computer use × Continual learning × Procedural memory × Agent self-modification**
-
-An experimental agent system that turns execution experience into reusable capabilities—and explores how agents can improve their own architecture.
-
-[Roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Task queue](docs/plans/task-queue-2026-10-01.md) · [Experiment reports](docs/experiments/README.md) · [Issues](https://github.com/lemon5227/Kage/issues)
-
-</div>
+## Research thesis
 
 Kage explores a larger question than desktop automation: **can an agent become more capable through its own experience, human teaching, and selective changes to the system that drives its decisions?**
 
@@ -24,7 +26,7 @@ Execution produces evidence. Evidence becomes episodic memory and executable ski
 
 Kage began as a voice-driven desktop companion with Live2D. Its current direction is an **experimental platform for computer-use agents, continual adaptation, and agent self-evolution**. The interface is the entry point; the learning and evolution loop is the core ambition.
 
-**Research prototype, actively developed.** The sections below separate the research agenda from implemented mechanisms and measured results.
+Kage connects **computer-use execution, experience-driven adaptation, and agent scaffold evolution** within one experimental system. The research program and the implementation evidence are presented separately below.
 
 ## Research agenda
 
@@ -52,50 +54,17 @@ Develop a mechanism for choosing **what to improve**: retrieve an experience, re
 
 Use local models for affordable execution and cloud models for selective teaching and candidate generation. Study how verified teacher experience can become local capabilities, and measure the trade-off between assistance, task success, latency, tokens, and learning cost. Weight distillation becomes a separate experiment when trajectory quality and training/export support are sufficient.
 
-## Layers of adaptation
+## From memory to self-modification
 
-| Layer | What changes | Research question |
-|---|---|---|
-| Episodic memory | Retrieved experience and context | Which past evidence helps this task? |
-| Procedural memory | Executable, parameterized skills | Can a learned procedure transfer to new inputs and states? |
-| Agent scaffolding | Selected planning/retrieval/recovery/workflow modules | Can the agent improve the algorithm governing its own execution? |
-| Model parameters — future | Distillation adapters or weights | Can verified experience become better local-model decisions? |
+![Four adaptation layers: episodic memory, procedural memory, scaffold evolution and future parametric learning](docs/assets/readme/adaptation.svg)
 
-The research target is **persistent capability growth across tasks**, rather than a longer transcript or a larger prompt. Each layer needs its own evidence; improving one does not establish improvement in the others.
+**L0 / Episodic memory** retrieves relevant experience. **L1 / Procedural memory** turns behavior into executable skills. **L2 / Scaffold evolution** changes selected components of the agent itself. **L3 / Parametric learning** is the future distillation path into local-model adapters or weights.
 
-## Available today
-
-| Area | Implemented and observed | Current boundary |
-|---|---|---|
-| Agent runtime | Multi-step model/tool/observation loop, structured tool contracts, local/cloud provider routing, background jobs and cancellation | Broad task reliability is still under development |
-| Desktop assistant | System commands, file tools, optional speech input/output, Tauri and Live2D interface | These features do not establish general GUI competence |
-| Browser execution | DOM observations, semantic actions, stale-reference recovery, bounded workflows, actual save/readback checks | Controlled task environments; arbitrary logged-in websites are not yet supported |
-| Task and teaching UI | Launcher/API task states, budgets and artifacts; browser recording, corrections, editable parameters and fresh-page replay | Teaching supports single forms with text fields, checkboxes and a save button; actual human acceptance remains pending |
-| Experience and skills | Hash-bound episodes, filtered generation feedback, candidate digests, real local/cloud skill execution | Browser generalization gains remain unproven; candidates are not automatically installed |
-| Module evolution | A recovery-module self-modification pilot with actual candidate code loading and independent evaluation | Selected experimental module; not ongoing autonomous rewriting of the daily runtime |
-
-The validated local setup uses **Agents-A1-4B Q4_K_M with llama.cpp**. Cloud teaching experiments have used DeepSeek. Backends are configurable; model choice alone does not determine task success.
+The central question is which layer produces **persistent, transferable capability growth**—and at what cost.
 
 ## An execution loop coupled to an evolution loop
 
-```mermaid
-flowchart TD
-    U[Text / Voice / Launcher] --> R[Routing and background task lane]
-    R --> M[Local model / Optional cloud provider]
-    M --> A[Agent loop]
-    A --> T[Tool registry and executor]
-    T --> E[Browser DOM / Files / Desktop tools]
-    E --> O[Fresh observations]
-    O --> A
-    E --> V[Independent task checks]
-    V --> J[Run journal / Budgets / Evidence]
-    H[Demonstration or cloud assistance] --> J
-    J --> K[Episode memory and skill candidates]
-    K --> A
-    K --> C[Candidate comparison and promotion]
-    C --> X[Selected skills or module versions]
-    X --> A
-```
+![Coupled execution and evolution loops: observe, execute and verify feed memory, candidate generation, comparison and capability transfer](docs/assets/readme/architecture.svg)
 
 The action loop and experiment loop share execution and evidence infrastructure. Browser workflows resolve semantic targets on the current page; they do not replay old element IDs or coordinates. Independent checks inspect actual saved state where a reliable checker exists. Tasks without one remain **unknown**, rather than being labeled successful because the agent stopped.
 
@@ -152,7 +121,25 @@ Cloud-assisted task learning is an explicit experimental chain. Existing runtime
 
 ## Experimental evidence and reproducibility
 
+<details>
+<summary><strong>Implementation status and measured results</strong></summary>
+
+### Implemented mechanisms and current validation
+
+| Area | Implemented and observed | Current boundary |
+|---|---|---|
+| Agent runtime | Multi-step model/tool/observation loop, structured tool contracts, local/cloud provider routing, background jobs and cancellation | Broad task reliability is still under development |
+| Desktop assistant | System commands, file tools, optional speech input/output, Tauri and Live2D interface | These features do not establish general GUI competence |
+| Browser execution | DOM observations, semantic actions, stale-reference recovery, bounded workflows, actual save/readback checks | Controlled task environments; arbitrary logged-in websites are not yet supported |
+| Task and teaching UI | Launcher/API task states, budgets and artifacts; browser recording, corrections, editable parameters and fresh-page replay | Teaching supports single forms with text fields, checkboxes and a save button; actual human acceptance remains pending |
+| Experience and skills | Hash-bound episodes, filtered generation feedback, candidate digests, real local/cloud skill execution | Browser generalization gains remain unproven; candidates are not automatically installed |
+| Module evolution | A recovery-module self-modification pilot with actual candidate code loading and independent evaluation | Selected experimental module; not ongoing autonomous rewriting of the daily runtime |
+
+The validated local setup uses **Agents-A1-4B Q4_K_M with llama.cpp**. Cloud teaching experiments have used DeepSeek. Backends are configurable; model choice alone does not determine task success.
+
 The latest browser teaching package passed **992 engineering tests** and verified two captures plus two fresh-input workflow replays. Its local 4B model completed both pilot tasks, but made **zero calls to the new skills**. The capture/reuse path works; automatic skill adoption and a learning advantage remain unproven. See the [full report](docs/experiments/2026-10-07-browser-demonstration.md).
+
+</details>
 
 The project records successes **and failures**, including model attempts, actual actions, saved-state checks, tokens, time, candidate versions and provenance. Engineering tests, real-model pilots, new-input transfer and held-out comparisons are separate levels of evidence.
 
