@@ -146,13 +146,37 @@ def test_helper_waits_for_actual_foreground_without_relaunch(tmp_path,monkeypatc
         return Running()
     monkeypatch.setattr(cli.subprocess,'Popen',launch)
     states=iter([999,123])
-    monkeypatch.setattr(cli,'helper_frontmost_pid',lambda:next(states),raising=False)
+    monkeypatch.setattr(cli,'helper_frontmost_pid',lambda **kwargs:next(states),raising=False)
     helper=cli.OwnedForegroundHelper(tmp_path)
     result=asyncio.run(helper.start())
     assert result['success'] is True
     assert result['foreground_samples']==[999,123]
     assert len(launches)==1
     helper.log.close()
+
+
+def test_ready_reader_timeout_does_not_exceed_remaining_setup_budget(tmp_path,monkeypatch):
+    cli=module()
+    class Running:
+        pid=123
+        def poll(self):return None
+    def launch(*args,**kwargs):
+        (tmp_path/'helper-ready.json').write_text('{"pid":123,"window_created":true}')
+        return Running()
+    monkeypatch.setattr(cli.subprocess,'Popen',launch)
+    ticks=iter([0,2.9,2.9])
+    from types import SimpleNamespace
+    monkeypatch.setattr(cli,'time',SimpleNamespace(monotonic=lambda:next(ticks)))
+    requested=[]
+    def read(**kwargs):
+        requested.append(kwargs.get('timeout_s',0.5));return 123
+    monkeypatch.setattr(cli,'helper_frontmost_pid',read)
+    helper=cli.OwnedForegroundHelper(tmp_path)
+    try:
+        assert asyncio.run(helper.start())['success']
+        assert 0 < requested[0] <= 0.101
+    finally:
+        helper.log.close()
 
 
 def test_fresh_frontmost_reader_uses_bounded_child_process(monkeypatch):

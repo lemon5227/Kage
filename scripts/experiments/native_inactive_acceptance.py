@@ -84,8 +84,8 @@ def fresh_frontmost_pid(*, timeout_s=0.5):
         return None
 
 
-def helper_frontmost_pid():
-    return fresh_frontmost_pid()
+def helper_frontmost_pid(*, timeout_s=0.5):
+    return fresh_frontmost_pid(timeout_s=timeout_s)
 
 
 class OwnedForegroundHelper:
@@ -110,7 +110,11 @@ class OwnedForegroundHelper:
                 return {'success': False, 'pid': self.pid, 'returncode': self.process.returncode}
             if ready.exists():
                 result = json.loads(ready.read_text())
-                frontmost = helper_frontmost_pid()
+                remaining = deadline-time.monotonic()
+                if remaining <= 0:
+                    break
+                frontmost = helper_frontmost_pid(timeout_s=min(
+                    PROTOCOL['fresh_frontmost_timeout_s'], remaining))
                 samples.append(frontmost)
                 if result.get('pid') == self.pid and result.get('window_created') is True and frontmost == self.pid:
                     return {**result, 'success': True, 'foreground_samples': samples}
