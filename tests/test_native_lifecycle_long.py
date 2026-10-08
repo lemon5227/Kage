@@ -39,7 +39,8 @@ def test_blocked_parent_does_not_stop_owned_observer(tmp_path):
            '\nfor i in range(5):\n with p.open("a") as f:f.write(str(i)+"\\n")\n time.sleep(.04)'
     child = m.start_owned([sys.executable, '-c', code, str(log)], tmp_path/'stdout', tmp_path/'stderr')
     try:
-        time.sleep(.35)
+        child.wait(timeout=3)  # Synchronously blocks this parent while child samples.
+        assert child.pid != __import__('os').getpid()
         assert log.read_text().splitlines() == ['0','1','2','3','4']
     finally:
         m.stop_owned(child)
@@ -152,3 +153,95 @@ def test_destroyed_ax_error_preserves_numeric_code():
     from core.computer_use.native_ax import AXInvalidElementError
     m = module()
     assert m.error(AXInvalidElementError('destroyed'))['ax_error_code'] == -25202
+
+
+def test_unowned_title_is_never_read(tmp_path):
+    from types import SimpleNamespace
+    m = module()
+    document = tmp_path/'owned.txt'
+    foreign = object()
+    app = object()
+    class Driver:
+        def _load(self):
+            return SimpleNamespace(AXUIElementCreateApplication=lambda pid:app), SimpleNamespace(
+                NSRunningApplication=SimpleNamespace(runningApplicationsWithBundleIdentifier_=lambda bundle:[SimpleNamespace(processIdentifier=lambda:123)]),
+                NSWorkspace=SimpleNamespace(sharedWorkspace=lambda:SimpleNamespace(frontmostApplication=lambda:None))), SimpleNamespace(CFEqual=lambda a,b:a is b)
+        def _get(self, element, key, default=None):
+            if element is app:
+                return [foreign] if key == 'AXWindows' else None
+            if key == 'AXTitle':
+                raise AssertionError('unowned title read')
+            return 'file:///foreign.txt'
+    reader = m.Reader(document)
+    reader.driver = Driver()
+    assert reader.sample()['owned_count'] == 0
+
+
+def test_unknown_original_pid_does_not_claim_relaunch_or_absence():
+    m = module()
+    state = m.identity_state(None, None, 123, [], None, lambda a,b:a is b)
+    assert state['pid_changed'] is None
+    assert state['original_present'] is None
+
+
+@pytest.mark.parametrize('leader_exits', [True, False])
+def test_owned_group_cleanup_survives_leader_exit(tmp_path, leader_exits):
+    import os
+    m = module()
+    pidfile = tmp_path/'reader.pid'
+    code = 'import subprocess,sys,pathlib; p=subprocess.Popen([sys.executable,"-c","import time;time.sleep(30)"]); pathlib.Path(sys.argv[1]).write_text(str(p.pid))'
+    if not leader_exits:
+        code += '; __import__("time").sleep(30)'
+    child = m.start_owned([sys.executable, '-c', code, str(pidfile)], tmp_path/'out', tmp_path/'err')
+    deadline = time.monotonic()+3
+    while not pidfile.exists() and time.monotonic() < deadline:
+        time.sleep(.01)
+    assert pidfile.exists()
+    reader_pid = int(pidfile.read_text())
+    if leader_exits:
+        child.wait(timeout=2)
+    try:
+        m.stop_owned(child, .1)
+        deadline = time.monotonic()+2
+        stopped = False
+        while time.monotonic() < deadline:
+            result = subprocess.run(['ps', '-p', str(reader_pid), '-o', 'stat='], capture_output=True, text=True)
+            if not result.stdout.strip() or result.stdout.strip().startswith('Z'):
+                stopped = True
+                break
+            time.sleep(.02)
+        assert stopped
+        assert os.getpgrp() != child.pid
+    finally:
+        try:
+            os.kill(reader_pid, 9)
+        except ProcessLookupError:
+            pass
+
+
+@pytest.mark.parametrize('count, status', [(0, 'absent'), (2, 'ambiguous')])
+def test_reader_nonunique_application_identity_is_explicit(tmp_path, count, status):
+    from types import SimpleNamespace
+    m = module()
+    reader = m.Reader(tmp_path/'owned.txt')
+    class Driver:
+        def _load(self):
+            return object(), SimpleNamespace(
+                NSRunningApplication=SimpleNamespace(runningApplicationsWithBundleIdentifier_=lambda bundle:[object()]*count),
+                NSWorkspace=SimpleNamespace(sharedWorkspace=lambda:SimpleNamespace(frontmostApplication=lambda:None))), object()
+    reader.driver = Driver()
+    result = reader.sample()
+    assert result['success'] is False
+    assert result['identity_status'] == status
+    assert result['original_present'] is None
+    assert result['pid_changed'] is None
+
+
+def test_partial_timeline_keeps_actual_count_and_incomplete_span(tmp_path):
+    m = module()
+    (tmp_path/'timeline.jsonl').write_text('{"sample":0,"elapsed_s":0.1}\n{"sample":1,"elapsed_s":3.7}\n{"sample":')
+    result = m.partial_evidence(tmp_path, {'error': 'MissingObserverReport'})
+    assert result['actual_sample_count'] == 2
+    assert result['actual_last_sample_elapsed_s'] == 3.7
+    assert result['partial_timeline_lines'] == 1
+    assert result['sampling_complete'] is False
