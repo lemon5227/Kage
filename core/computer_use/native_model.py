@@ -258,6 +258,7 @@ class NativeDocumentEnvironment:
     async def close(self,actor):
         import asyncio
         observation=(await self.observe(actor))['observation']
+        original_window_ref=observation['window_ref']
         def unique(predicate):
             targets=[t for t in observation['targets'] if predicate(t)]
             if len(targets)!=1:raise RuntimeError('close control not uniquely observed')
@@ -274,7 +275,9 @@ class NativeDocumentEnvironment:
             if not identified.get('success'):
                 self.record(actor,'close_probe',identified)
                 raise RuntimeError(json.dumps(identified))
-            if not any(same_document_url(w.get('document_url'),self.document) for w in identified['windows']):
+            if not any(w.get('window_ref')==original_window_ref or
+                       same_document_url(w.get('document_url'),self.document)
+                       for w in identified['windows']):
                 return self.record(actor,'close_probe',{'success':True,'window_disappeared':True})
             await asyncio.sleep(.1)
         raise RuntimeError('dedicated window remained after close; may have unsaved edits')

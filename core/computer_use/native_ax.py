@@ -355,6 +355,7 @@ class NativeAXAdapter:
             start = time.monotonic()
             window_ref = self.current['window_ref'] if self.current else None
             applied = False
+            observation_exhausted = False
             try:
                 if not self.current or observation_id != self.current['observation_id']:
                     raise AXStaleError('observe again before acting')
@@ -379,7 +380,10 @@ class NativeAXAdapter:
                             except AXReadUnavailableError as exc:
                                 self._record('observation_wait', start, attempt=read_attempt+1,
                                              error=str(exc), action_applied=True)
-                                if read_attempt==2:raise
+                                if read_attempt==2:
+                                    observation_exhausted = True
+                                    self.current = None
+                                    raise
                                 await asyncio.sleep(.05)
                     except AXWindowClosedError:
                         self.current = None
@@ -389,10 +393,10 @@ class NativeAXAdapter:
             except Exception as exc:
                 if isinstance(exc, AXActivationUnverified):
                     applied = True
-                if applied is None and isinstance(exc, (AXPermissionError, AXUnavailableError, AXStaleError)):
+                if applied is None and isinstance(exc, (AXPermissionError, AXUnavailableError, AXStaleError, AXReadUnavailableError)):
                     applied = False
                 result = self._error(exc, applied)
-            if not result['success'] and window_ref:
+            if not result['success'] and window_ref and not observation_exhausted:
                 try: result['observation'] = self._observe(window_ref)
                 except Exception as exc:
                     self.current = None

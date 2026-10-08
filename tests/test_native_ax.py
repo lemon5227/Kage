@@ -328,3 +328,24 @@ def test_activation_counts_same_scoped_action_quota_and_traces_explicit_dispatch
         entries=[json.loads(line) for line in (tmp_path/'trace.jsonl').read_text().splitlines()]
         assert [e['action']['operation'] for e in entries if e['phase']=='execute']==['activate']
     run(scenario())
+
+
+def test_predispatch_second_snapshot_read_failure_reports_no_mutation():
+    from core.computer_use.native_ax import NativeAXAdapter, AXReadUnavailableError
+    driver,api,app,window=focus_driver(active=True)
+    original=driver.snapshot
+    reads=0
+    def transient(ref):
+        nonlocal reads
+        reads+=1
+        if reads==3:raise AXReadUnavailableError('driver predispatch read failed')
+        return original(ref)
+    driver.snapshot=transient
+    adapter=NativeAXAdapter(driver)
+    async def scenario():
+        obs=(await adapter.observe('owned'))['observation']
+        target=next(t for t in obs['targets'] if t.get('command')=='S')
+        result=await adapter.act(obs['observation_id'],'press',target['target_ref'])
+        assert result['error']=='AXReadUnavailable' and result['action_applied'] is False
+        assert api.mutations==[]
+    run(scenario())

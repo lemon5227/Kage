@@ -40,12 +40,12 @@ def test_checker_observation_waits_only_for_retryable_read_state(tmp_path,monkey
 
 def test_close_waits_for_exact_document_url_not_same_basename(tmp_path):
     document=tmp_path/'owned.txt';other=tmp_path/'other'/'owned.txt'
-    observation={'observation_id':'current','targets':[
+    observation={'observation_id':'current','window_ref':'owned','targets':[
         {'role':'AXMenuBarItem','target_ref':'menu'},
         {'role':'AXMenuItem','target_ref':'close','command':'w'}]}
     class Adapter:
         async def act(self,*args):return {'success':True,'action_applied':True,'observation':observation}
-        async def windows(self,*args):return {'success':True,'windows':[{'title':'owned.txt','document_url':other.as_uri()}]}
+        async def windows(self,*args):return {'success':True,'windows':[{'window_ref':'other','title':'owned.txt','document_url':other.as_uri()}]}
     env=native.NativeDocumentEnvironment(document,tmp_path);env.adapter=Adapter()
     async def observe(actor):return {'success':True,'observation':observation}
     env.observe=observe
@@ -73,3 +73,41 @@ def test_post_save_observation_settles_without_redispatching_save(tmp_path):
         assert scope.save_applied is True and scope.actions==1
     asyncio.run(scenario())
     assert driver.applied==1
+
+
+def test_missing_document_url_does_not_prove_original_window_disappeared(tmp_path):
+    observation={'observation_id':'current','window_ref':'owned','targets':[
+        {'role':'AXMenuBarItem','target_ref':'menu'},
+        {'role':'AXMenuItem','target_ref':'close','command':'w'}]}
+    class Adapter:
+        reads=0
+        async def act(self,*args):return {'success':True,'action_applied':True,'observation':observation}
+        async def windows(self,*args):
+            self.reads+=1
+            if self.reads==1:return {'success':True,'windows':[{'window_ref':'owned','title':'changed','document_url':''}]}
+            return {'success':False,'error':'AXPermissionDenied'}
+    env=native.NativeDocumentEnvironment(tmp_path/'owned.txt',tmp_path);env.adapter=Adapter()
+    async def observe(actor):return {'success':True,'observation':observation}
+    env.observe=observe
+    with pytest.raises(RuntimeError,match='AXPermissionDenied'):
+        asyncio.run(env.close('checker'))
+
+
+def test_exhausted_post_action_read_wait_keeps_three_reads_and_invalidates_refs():
+    from core.computer_use.native_ax import AXReadUnavailableError
+    class Driver:
+        applied=0;reads=0
+        def snapshot(self,ref):
+            if self.applied:
+                self.reads+=1
+                raise AXReadUnavailableError('still transitioning')
+            return {'window_ref':'owned','targets':[{'target_ref':'save','operations':['press']}]}
+        def act(self,*args):self.applied+=1
+    driver=Driver();adapter=NativeAXAdapter(driver)
+    async def scenario():
+        obs=(await adapter.observe('owned'))['observation']
+        result=await adapter.act(obs['observation_id'],'press','save')
+        assert result['success'] is False and result['action_applied'] is True
+        assert driver.reads==3 and driver.applied==1
+        assert adapter.current is None
+    asyncio.run(scenario())
