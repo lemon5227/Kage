@@ -99,3 +99,24 @@ def test_probe_fixed_stage_order_fresh_refs_and_cleanup(monkeypatch, tmp_path):
     phases = [s['phase'] for s in result['stages'] if s['phase'] != 'passive']
     assert phases.index('fresh_before_menu') < phases.index('document_menu') < phases.index('save')
     assert sum(s['phase'] == 'passive' for s in result['stages']) <= 21
+
+
+def test_first_context_missing_file_retains_report_and_second_executes(monkeypatch, tmp_path):
+    calls = []
+    async def broken_probe(output, context):
+        output.mkdir()
+        calls.append(context)
+        if context == 'main':
+            (output/'timeline.jsonl').write_text(json.dumps({'phase': 'invalid_snapshot', 'result': {'success': False}})+'\n')
+            (output/'missing.txt').read_text()
+        return {'context': context, 'status': 'unknown'}
+    monkeypatch.setattr(diagnosis, '_probe', broken_probe)
+    monkeypatch.setattr(diagnosis, 'freeze', lambda output: {})
+    output = tmp_path/'artifacts'
+    results = asyncio.run(diagnosis.run(output))
+    first = json.loads((output/'main'/'report.json').read_text())
+    assert first['error'] == 'FileNotFoundError' and first['status'] == 'unknown'
+    assert first['stages'][0]['phase'] == 'invalid_snapshot'
+    assert 'preserve' in first['cleanup']
+    assert calls == ['main', 'run_sync'] and len(results) == 2
+    assert (output/'summary.json').exists()

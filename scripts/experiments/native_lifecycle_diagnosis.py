@@ -90,7 +90,7 @@ def freeze(output):
     return manifest
 
 
-async def probe(output, context):
+async def _probe(output, context):
     output.mkdir()
     document = output/f'kage-lifecycle-{context}.txt'
     document.write_text(INITIAL)  # Dedicated setup only.
@@ -122,12 +122,15 @@ async def probe(output, context):
             await asyncio.sleep(PROTOCOL['passive_interval_s'])
 
     def audit(phase, result):
-        obs = result.get('observation', {})
-        areas = [t for t in obs.get('targets', []) if t['role'] == 'AXTextArea']
-        record(phase, {'observation_id': obs.get('observation_id'), 'window_ref': obs.get('window_ref'),
-                       'areas': [{'target_ref': t['target_ref'], **metrics(t['value']),
-                                  'expected_matches': t['value'] == EXPECTED} for t in areas],
-                       'disk': metrics(document.read_text()), 'disk_matches': document.read_text() == EXPECTED})
+        try:
+            obs = result.get('observation', {})
+            areas = [t for t in obs.get('targets', []) if t['role'] == 'AXTextArea']
+            record(phase, {'observation_id': obs.get('observation_id'), 'window_ref': obs.get('window_ref'),
+                           'areas': [{'target_ref': t['target_ref'], **metrics(t['value']),
+                                      'expected_matches': t['value'] == EXPECTED} for t in areas],
+                           'disk': metrics(document.read_text()), 'disk_matches': document.read_text() == EXPECTED})
+        except Exception as exc:
+            record(phase, {'success': False, 'status': 'unknown', 'error': type(exc).__name__, 'message': str(exc)})
 
     await safe('setup', environment.setup)
     initial = await safe('initial', scoped.initial)
@@ -165,18 +168,38 @@ async def probe(output, context):
             await task
         except asyncio.CancelledError:
             pass
-    if scoped.save_applied and document.read_text() == EXPECTED:
+    try:
+        disk_matches = document.read_text() == EXPECTED
+    except Exception as exc:
+        disk_matches = None
+        record('disk_final_error', {'success': False, 'status': 'unknown', 'error': type(exc).__name__, 'message': str(exc)})
+    if scoped.save_applied and disk_matches:
         reread = await safe('trusted_reopen', environment.reread)
         audit('reopened_audit', reread)
         await safe('cleanup', environment.cleanup)
     else:
         record('cleanup', {'success': False, 'reason': 'preserve unsaved/uncertain state; no destructive prompt response'})
     report['saved'] = scoped.save_applied
-    report['disk_matches'] = document.read_text() == EXPECTED
+    report['disk_matches'] = disk_matches
     report['actions'] = scoped.actions
     report['elapsed_s'] = round(time.monotonic()-started, 6)
     (output/'report.json').write_text(json.dumps(report, indent=2))
     return report
+
+
+async def probe(output, context):
+    """Retain partial evidence on any failure; never prevent the second context."""
+    try:
+        return await _probe(output, context)
+    except Exception as exc:
+        output.mkdir(parents=True, exist_ok=True)
+        timeline = output/'timeline.jsonl'
+        stages = [json.loads(line) for line in timeline.read_text().splitlines()] if timeline.exists() else []
+        report = {'context': context, 'status': 'unknown', 'model_requests': 0, 'cloud_calls': 0,
+                  'error': type(exc).__name__, 'message': str(exc), 'stages': stages,
+                  'cleanup': 'preserve uncertain state; no rescue or destructive action'}
+        (output/'report.json').write_text(json.dumps(report, indent=2))
+        return report
 
 
 async def run(output):
