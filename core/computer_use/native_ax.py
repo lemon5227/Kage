@@ -100,6 +100,8 @@ class MacOSAXDriver:
         if name not in names:
             return default
         error, value = ax.AXUIElementCopyAttributeValue(element, name, None)
+        if error == -25202:
+            raise AXInvalidElementError(f'AX element was destroyed during {name} read')
         if error in (-25205, -25212) or (error == -25200 and name == 'AXDescription'):
             # TextEdit advertises AXDescription on some menu nodes but returns
             # AXErrorFailure. It is an optional label; state attributes still fail.

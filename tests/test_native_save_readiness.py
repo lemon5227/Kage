@@ -25,6 +25,60 @@ def test_read_timeout_is_typed_and_not_a_mutation_retry():
     assert result['error']=='AXReadUnavailable' and result['action_applied'] is False
 
 
+def test_destroyed_element_during_value_read_is_typed_stale():
+    class API:
+        def AXUIElementSetMessagingTimeout(self,*args):return 0
+        def AXUIElementCopyAttributeNames(self,*args):return 0,['AXTitle']
+        def AXUIElementCopyAttributeValue(self,*args):return -25202,None
+    driver=MacOSAXDriver();driver._load=lambda:(API(),None,None)
+    driver.windows=lambda bundle:driver._get(object(),'AXTitle')
+    result=asyncio.run(NativeAXAdapter(driver).windows('com.apple.TextEdit'))
+    assert result['error']=='StaleObservation' and result['action_applied'] is False
+
+
+def test_close_rechecks_fresh_windows_after_destroyed_element_without_redispatch(tmp_path):
+    observation={'observation_id':'current','window_ref':'owned','targets':[
+        {'role':'AXMenuBarItem','target_ref':'menu'},
+        {'role':'AXMenuItem','target_ref':'close','command':'w'}]}
+    class Adapter:
+        reads=0;actions=[]
+        async def act(self,oid,operation,target,value=None):
+            self.actions.append(target)
+            return {'success':True,'action_applied':True,'observation':observation}
+        async def windows(self,*args):
+            self.reads+=1
+            if self.reads==1:return {'success':False,'error':'StaleObservation','action_applied':False}
+            return {'success':True,'windows':[]}
+    env=native.NativeDocumentEnvironment(tmp_path/'owned.txt',tmp_path);env.adapter=Adapter()
+    async def observe(actor):return {'success':True,'observation':observation}
+    env.observe=observe
+    assert asyncio.run(env.close('checker'))=={'success':True,'window_disappeared':True}
+    assert env.adapter.actions==['menu','close'] and env.adapter.reads==2
+    assert env.events[-2]['result']['error']=='StaleObservation'
+
+
+def test_close_cannot_claim_disappearance_when_all_fresh_reads_are_stale(tmp_path,monkeypatch):
+    observation={'observation_id':'current','window_ref':'owned','targets':[
+        {'role':'AXMenuBarItem','target_ref':'menu'},
+        {'role':'AXMenuItem','target_ref':'close','command':'w'}]}
+    class Adapter:
+        reads=0;actions=0
+        async def act(self,*args):
+            self.actions+=1
+            return {'success':True,'action_applied':True,'observation':observation}
+        async def windows(self,*args):
+            self.reads+=1
+            return {'success':False,'error':'StaleObservation','action_applied':False}
+    env=native.NativeDocumentEnvironment(tmp_path/'owned.txt',tmp_path);env.adapter=Adapter()
+    async def observe(actor):return {'success':True,'observation':observation}
+    async def no_delay(*args):pass
+    env.observe=observe
+    monkeypatch.setattr(asyncio,'sleep',no_delay)
+    with pytest.raises(RuntimeError,match='remained'):
+        asyncio.run(env.close('checker'))
+    assert env.adapter.actions==2 and env.adapter.reads==30
+
+
 def test_checker_observation_waits_only_for_retryable_read_state(tmp_path,monkeypatch):
     responses=[{'success':False,'error':'AXReadUnavailable','action_applied':False},
                {'success':True,'observation':{'window_ref':'owned','targets':[]}}]

@@ -274,6 +274,9 @@ class NativeDocumentEnvironment:
             identified=await self.adapter.windows('com.apple.TextEdit')
             if not identified.get('success'):
                 self.record(actor,'close_probe',identified)
+                if identified.get('error') in {'StaleObservation','AXReadUnavailable'}:
+                    await asyncio.sleep(.1)
+                    continue
                 raise RuntimeError(json.dumps(identified))
             if not any(w.get('window_ref')==original_window_ref or
                        same_document_url(w.get('document_url'),self.document)
