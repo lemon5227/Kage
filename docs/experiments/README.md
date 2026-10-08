@@ -4,7 +4,7 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
-| 2026-10-09 C1.2-R-active | 两项受控非激活 TextEdit 前台/AX 激活验收 | [菜单修复报告](2026-10-08-native-menu-repair.md)：0/2，AX active/main 与同进程 NSWorkspace 前台 PID 不一致；无 fill/Save，辅助进程均清理。问题台账记录新鲜观测边界，Task6 Unicode dev2 暂停 |
+| 2026-10-09 C1.2-R-active | 两轮各两项受控非激活 TextEdit 前台/AX 激活验收 | [菜单修复报告](2026-10-08-native-menu-repair.md)：controls1/2均0/2；改用新鲜 NSWorkspace 子进程后仍见 AX active/main 与真实前台不一致，无 fill/Save。Task6 Unicode dev2 暂停 |
 | 2026-10-08 C1.2-R-menu | 激活/菜单边界、保存时序、AX只读就绪、关闭身份与预算修复 | [修复及验收](2026-10-08-native-menu-repair.md)：v1控制0/2保留，v2确定性2/2，单项本地模型dev1/1、5请求零云，1062 passed；[问题台账](../computer-use-issues.md)，下一真实非激活验收/第二任务，旧0/2不回写 |
 | 2026-10-08 C1.2-R生命周期 | 固定main/run_sync两个无模型长间隔探针 | [生命周期诊断](2026-10-08-native-lifecycle-diagnosis.md)：窗口稳定与精确值均有证据，menu已作用但Save目标不可用；无模型成绩，下一菜单/应用激活限次诊断 |
 | 2026-10-07 C1.2-model | 原生模型链、限定文档范围、冻结两项真实本地实验 | [模型链报告](2026-10-07-native-model-chain.md)：0/2通过、完整检查unknown；16本地请求/零云，末尾换行/保存/窗口生命周期待C1.2-R限次dev诊断 |

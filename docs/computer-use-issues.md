@@ -15,7 +15,7 @@
 | CU-AX-007 | 检查器把Save尚未落盘的磁盘读数缓存为最终成绩，关闭重开AX已正确仍failed | 已修0b7faff：保留前读数、以重开后的新磁盘+AX判断；v2两项before=false/最终true，模型dev1/1 |
 | CU-AX-008 | 同名文档会阻塞关闭判定；URL缺失又不能证明原窗口关闭 | 已修6e374f2：同时核验原窗口引用与精确URL均消失，回归与实际关闭重开通过 |
 | CU-BUDGET-001 | 原验证协议仅计编辑4动作，漏记验证/清理另4动作 | 已修4c8c138：执行前分阶段与总量守卫，原语按actor记录；模型协议亦显式计Agent16+验证4 |
-| CU-AX-009 | 非激活受控验收中，AX 激活写入后的 AX 观察已为 active/main，但同一进程的 NSWorkspace 前台读取仍返回已退出辅助进程 PID；run_sync 就绪轮询也继承旧 PID。新进程读到当前 TextEdit，AXFocusedApplication 系统读为 -25204 | 2026-10-09 controls1 明确0/2、无 fill/Save；辅助进程均清理。已确认是前台观测边界，具体缓存/事件循环根因未定。下一步使用新鲜有期限只读消费者复现后再决定生产修复；不把 stale 读数转换成 activation success |
+| CU-AX-009 | 非激活受控验收中，AX 激活写入后的 AX 观察已为 active/main，但前台读取仍指向辅助窗口；controls1 的同进程读取疑似陈旧，controls2 改用每次新鲜短生命周期 AppKit 读取后仍复现辅助窗口存活期间的不一致。AXFocusedApplication 系统读为 -25204 | controls1/controls2 均0/2，无 fill/Save，辅助进程均清理；`f251b81` 的新鲜观测修复已验证但未解决真实激活。保持 AX+真实前台双重门控，具体 macOS 激活/事件循环根因未确认；Task6 暂停，不增加重试放宽门控 |
 
 ## 修复记录要求
 
@@ -24,3 +24,5 @@
 本轮最终共用执行器回归：源码`9de41b8`，1062 passed、4 skipped、1 xfailed，退出0。分阶段证据、命令与限制见[菜单修复报告](experiments/2026-10-08-native-menu-repair.md)。
 
 非激活 controls1 另有独立负结果：0/2，编辑动作 `[1, 0]`，Save 0，模型/云请求 0；见[菜单修复报告](experiments/2026-10-08-native-menu-repair.md)与 `artifacts/native-inactive/2026-10-08-controls1/audit.json`。
+
+新鲜观测复验 controls2 同样为0/2，编辑动作 `[1, 0]`，Save 0，模型/云请求0；证据目录为`artifacts/native-inactive/2026-10-09-controls2/`。

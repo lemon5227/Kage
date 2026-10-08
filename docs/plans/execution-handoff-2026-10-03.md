@@ -161,4 +161,4 @@ C6仅在DOM/AX覆盖缺口出现时；C8仅在同权重兼容和任务时间证�
 
 ## C1.2-R-menu交接（2026-10-08）
 
-C1.2-R-menu窄修复与已激活窗口验收已完成；非激活controls1 为0/2：AX 激活回报 active/main，但同一 NSWorkspace 消费者仍返回旧辅助 PID，run_sync 就绪也受旧 PID影响；没有 fill/Save。源码冻结`9de41b8`用于上一包，新增探针提交`536d926`；[报告](../experiments/2026-10-08-native-menu-repair.md)及[问题台账](../computer-use-issues.md)含失败、预算与限制。原始目录新增`artifacts/native-inactive/2026-10-08-controls1`，不可删除。下一包先验证新鲜前台只读观测，再重新非激活控制；Task6 Unicode dev2 暂停，旧controlled2不回写。
+C1.2-R-menu窄修复与已激活窗口验收已完成；非激活controls1/2均为0/2：AX 激活回报 active/main，但同进程及新鲜 NSWorkspace 读取仍指向辅助窗口；没有 fill/Save。源码冻结`9de41b8`用于上一包，探针提交`536d926`，新鲜读数修复`f251b81`；[报告](../experiments/2026-10-08-native-menu-repair.md)及[问题台账](../computer-use-issues.md)含失败、预算与限制。原始目录新增`artifacts/native-inactive/2026-10-08-controls1`、`artifacts/native-inactive/2026-10-09-controls2`，不可删除。AX 与真实前台不一致的 macOS 根因未定；Task6 Unicode dev2 暂停，不放宽门控、不回写旧controlled2。

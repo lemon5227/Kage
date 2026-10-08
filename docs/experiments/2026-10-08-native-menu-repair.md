@@ -88,3 +88,11 @@ Commit `853202b` also repairs the previously encountered P3 pilot classification
 随后只读核查确认旧辅助 PID 已退出；一个新进程中的 `NSWorkspace` 读取返回当前 TextEdit PID，而 `AXFocusedApplication` 系统级读取返回`-25204`。这些事实支持“同一观测消费者/事件循环保留旧前台 PID”的诊断，但还不足以证明具体的 AppKit 缓存或 worker 线程根因。原始结果、timeline、helper日志、源码冻结和核查摘要保留在 `artifacts/native-inactive/2026-10-08-controls1/`，其中 `audit.json` 明确记录了这次负结果。
 
 因此下一包不是模型验收，也不运行 Task6 的 Unicode dev2。先为前台观测增加新鲜、带期限的只读消费者并做离线回归，再重新冻结最多两项非激活控制；旧 controlled2、validation1 和本次 controls1 均不重跑救分。
+
+## 新鲜前台观测复验（2026-10-09）
+
+针对 controls1 的假设，提交`f251b81`让辅助进程就绪和激活后状态都通过新的短生命周期 AppKit 子进程读取 `NSWorkspace.frontmostApplication()`，每次有明确超时。离线聚焦回归为 **35 passed**。
+
+新冻结目录 `artifacts/native-inactive/2026-10-09-controls2/` 仍为 **0/2**。main 上下文完成一次 AX 激活写入；AX 观察为`application_active=true`和`main_window=true`，但新鲜读取仍指向存活的辅助进程，故停止在 fill 前。run_sync 上下文的辅助窗口也无法满足自有 TextEdit 非前台的初始门控，未发激活或编辑动作。两项 Save 均未发出，辅助进程均清理。
+
+这次复验排除了“仅由同一 `NSWorkspace` 消费者缓存旧 PID”这一单一解释：即使换用新进程，辅助窗口存活期间也观察到同样的前台不一致；辅助窗口退出后新进程才读到 TextEdit。结论仍是 AX 的 active/main 读数不能替代真实前台验证，具体 macOS 激活/事件循环根因尚未确认。不会再通过增加重试或放宽门控来制造通过，Task6 Unicode dev2 保持暂停。
