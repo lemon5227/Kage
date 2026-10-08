@@ -4,6 +4,7 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
+| 2026-10-09 C1.2激活消费者修复/优化与Unicode dev | 修漏改消费者、读取余时边界、Close后失效值读取；单次新模型任务 | [最新报告](2026-10-09-native-activation-verification.md)：controls3真实非激活闭环2/2；dev2 0/1、8本地请求零云；controls4 helper未前台0/2。旧controls2推断更正，下一文本精确值/失效恢复新dev |
 | 2026-10-09 C1.2-R-active | 两轮各两项受控非激活 TextEdit 前台/AX 激活验收 | [菜单修复报告](2026-10-08-native-menu-repair.md)：controls1/2均0/2；改用新鲜 NSWorkspace 子进程后仍见 AX active/main 与真实前台不一致，无 fill/Save。Task6 Unicode dev2 暂停 |
 | 2026-10-08 C1.2-R-menu | 激活/菜单边界、保存时序、AX只读就绪、关闭身份与预算修复 | [修复及验收](2026-10-08-native-menu-repair.md)：v1控制0/2保留，v2确定性2/2，单项本地模型dev1/1、5请求零云，1062 passed；[问题台账](../computer-use-issues.md)，下一真实非激活验收/第二任务，旧0/2不回写 |
 | 2026-10-08 C1.2-R生命周期 | 固定main/run_sync两个无模型长间隔探针 | [生命周期诊断](2026-10-08-native-lifecycle-diagnosis.md)：窗口稳定与精确值均有证据，menu已作用但Save目标不可用；无模型成绩，下一菜单/应用激活限次诊断 |
