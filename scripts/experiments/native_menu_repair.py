@@ -19,10 +19,14 @@ ROOT=Path(__file__).resolve().parents[2]
 INITIAL='Kage menu repair validation.\nStatus: pending.\n'
 EXPECTED='Kage menu repair validation.\nStatus: explicitly saved.\n'
 PROTOCOL={'version':'native-menu-repair-v1','contexts':['main','run_sync'],'attempts_per_context':1,
-          'max_actions_per_context':4,'activation_dispatches_max':1,'activation_checks_max':10,
+          'max_editor_actions_per_context':4,'max_checker_cleanup_actions_per_context':4,
+          'max_native_actions_per_context':8,'max_app_open_requests_per_context':2,
+          'activation_dispatches_max':1,'activation_checks_max':10,
           'model_requests':0,'cloud_calls':0,'mutation_retries':0}
 SOURCES=['scripts/experiments/native_menu_repair.py','tests/test_native_menu_repair.py',
-         'core/computer_use/native_ax.py','core/computer_use/native_model.py']
+         'core/computer_use/native_ax.py','core/computer_use/native_model.py',
+         'core/computer_use/browser.py','core/evolution/agent_provider.py',
+         'scripts/experiments/native_lifecycle_diagnosis.py']
 
 
 def freeze(output):
@@ -34,10 +38,30 @@ def freeze(output):
     (output/'freeze.json').write_text(json.dumps(manifest,indent=2))
 
 
+class BoundedOwnedTraceAdapter(OwnedTraceAdapter):
+    """Count every native attempt across editing and trusted verification."""
+    def __init__(self, document, trace_path):
+        super().__init__(document, trace_path)
+        self.actor='editor'
+        self.attempts={'editor':0,'checker_cleanup':0}
+
+    async def act(self, observation_id, operation, target_ref, value=None):
+        phase='checker_cleanup' if self.actor in {'checker','cleanup'} else 'editor'
+        if self.attempts[phase]>=4 or sum(self.attempts.values())>=8:
+            result={'success':False,'error':'ActionLimit','outcome':'rejected',
+                    'message':'native repair phase/total attempt cap reached','action_applied':False}
+            self._record('quota_rejection',time.monotonic(),actor=self.actor,result=result)
+            return result
+        self.attempts[phase]+=1
+        self._record('attempt',time.monotonic(),actor=self.actor,
+                     operation=operation,attempts=dict(self.attempts))
+        return await super().act(observation_id,operation,target_ref,value)
+
+
 async def probe(output,context):
     output.mkdir()
     document=(output/f'kage-menu-validation-{context}.txt').resolve();document.write_text(INITIAL)
-    env=NativeDocumentEnvironment(document,output);env.adapter=OwnedTraceAdapter(document,output/'ax-trace.jsonl')
+    env=NativeDocumentEnvironment(document,output);env.adapter=BoundedOwnedTraceAdapter(document,output/'ax-trace.jsonl')
     scope=ScopedNativeAdapter(env.adapter,'com.apple.TextEdit',document.name,document_path=document,max_actions=4)
     started=time.monotonic();stages=[]
     def record(phase,result):
@@ -60,14 +84,20 @@ async def probe(output,context):
         obs=observation(await action(obs,'press',lambda t:t['role']=='AXMenuBarItem'))
         obs=observation(await action(obs,'press',lambda t:str(t.get('command','')).lower()=='s'))
         if not scope.save_applied:raise RuntimeError('no verified app Save applied')
+        env.adapter.actor='checker'
         checked=record('completion',await check_native_completion(document,EXPECTED,env.reread))
-        if checked['status']=='passed':record('cleanup',await env.cleanup())
+        if checked['status']=='passed':
+            env.adapter.actor='cleanup'
+            record('cleanup',await env.cleanup())
     except Exception as exc:
         record('failure',{'error':type(exc).__name__,'message':str(exc)})
         if checked['status']!='passed':checked={'status':'unknown','error':f'{type(exc).__name__}: {exc}'}
         record('preserve',{'reason':'no mutation retry; retain uncertain owned document'})
     report={'context':context,'document':str(document),'completion':checked,'actions':scope.actions,
-            'save_applied':scope.save_applied,'stages':stages,'model_requests':0,'cloud_calls':0}
+            'save_applied':scope.save_applied,'stages':stages,'model_requests':0,'cloud_calls':0,
+            'native_attempts_by_phase':env.adapter.attempts,
+            'native_attempts_total':sum(env.adapter.attempts.values()),
+            'app_open_requests':sum(e['operation'] in {'open','reopen'} for e in env.events)}
     try:report['disk']={'expected_matches':document.read_text()==EXPECTED,**metrics(document.read_text())}
     except Exception as exc:report['disk']={'error':f'{type(exc).__name__}: {exc}'}
     (output/'report.json').write_text(json.dumps(report,indent=2));return report
