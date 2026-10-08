@@ -19,6 +19,10 @@ class AXUnavailableError(RuntimeError):
     pass
 
 
+class AXReadUnavailableError(RuntimeError):
+    """A pure AX read could not complete during a UI transition."""
+
+
 class AXStaleError(RuntimeError):
     pass
 
@@ -89,6 +93,8 @@ class MacOSAXDriver:
         error, names = ax.AXUIElementCopyAttributeNames(element, None)
         if error == -25202:
             raise AXInvalidElementError('AX element was destroyed')
+        if error == -25204:
+            raise AXReadUnavailableError('AX attribute discovery temporarily unavailable: -25204')
         if error:
             raise RuntimeError(f'AX attribute discovery failed: {error}')
         if name not in names:
@@ -98,6 +104,8 @@ class MacOSAXDriver:
             # TextEdit advertises AXDescription on some menu nodes but returns
             # AXErrorFailure. It is an optional label; state attributes still fail.
             return default
+        if error == -25204:
+            raise AXReadUnavailableError(f'AX attribute {name} temporarily unavailable: -25204')
         if error:
             raise RuntimeError(f'AX attribute {name} failed: {error}')
         return value
@@ -314,7 +322,8 @@ class NativeAXAdapter:
 
     def _error(self, exc, action_applied=False):
         code, outcome = ('AXDriverError', 'tool_error')
-        if isinstance(exc, AXActivationUnverified): code = 'AXActivationUnverified'
+        if isinstance(exc, AXReadUnavailableError): code = 'AXReadUnavailable'
+        elif isinstance(exc, AXActivationUnverified): code = 'AXActivationUnverified'
         elif isinstance(exc, AXPermissionError): code, outcome = 'AXPermissionDenied', 'rejected'
         elif isinstance(exc, AXUnavailableError): code, outcome = 'NotAvailable', 'rejected'
         elif isinstance(exc, AXStaleError): code, outcome = 'StaleObservation', 'rejected'
@@ -363,7 +372,15 @@ class NativeAXAdapter:
                     self.driver.act(window_ref, target_ref, operation, value)
                     applied = True
                     try:
-                        observed = self._observe(window_ref)
+                        for read_attempt in range(3):
+                            try:
+                                observed = self._observe(window_ref)
+                                break
+                            except AXReadUnavailableError as exc:
+                                self._record('observation_wait', start, attempt=read_attempt+1,
+                                             error=str(exc), action_applied=True)
+                                if read_attempt==2:raise
+                                await asyncio.sleep(.05)
                     except AXWindowClosedError:
                         self.current = None
                         observed = {'source': 'ax', 'surface_id': self.surface_id,

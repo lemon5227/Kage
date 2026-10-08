@@ -18,10 +18,12 @@ from scripts.experiments.native_lifecycle_diagnosis import OwnedTraceAdapter, un
 ROOT=Path(__file__).resolve().parents[2]
 INITIAL='Kage menu repair validation.\nStatus: pending.\n'
 EXPECTED='Kage menu repair validation.\nStatus: explicitly saved.\n'
-PROTOCOL={'version':'native-menu-repair-v1','contexts':['main','run_sync'],'attempts_per_context':1,
+PROTOCOL={'version':'native-menu-repair-v2-readiness','contexts':['main','run_sync'],'attempts_per_context':1,
           'max_editor_actions_per_context':4,'max_checker_cleanup_actions_per_context':4,
           'max_native_actions_per_context':8,'max_app_open_requests_per_context':2,
           'activation_dispatches_max':1,'activation_checks_max':10,
+          'post_action_read_checks_max':3,'checker_observation_attempts_max':30,
+          'checker_observation_deadline_s':3,'deadline_semantics':'cooperative before AX calls',
           'model_requests':0,'cloud_calls':0,'mutation_retries':0}
 SOURCES=['scripts/experiments/native_menu_repair.py','tests/test_native_menu_repair.py',
          'core/computer_use/native_ax.py','core/computer_use/native_model.py',

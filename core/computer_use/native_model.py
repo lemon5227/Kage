@@ -42,6 +42,12 @@ def append_json(path, value):
         stream.write(json.dumps(value, ensure_ascii=False)+'\n')
 
 
+def same_document_url(url, document):
+    if not isinstance(url,str):return False
+    parsed=urlparse(url)
+    return parsed.scheme=='file' and parsed.netloc in {'','localhost'} and Path(unquote(parsed.path)).resolve()==Path(document).resolve()
+
+
 class ScopedNativeAdapter:
     """Expose only one allowed document, with cooperative deadline/action guards."""
     def __init__(self, adapter, bundle_id, document_name, *, max_actions=16, deadline=None, document_path=None):
@@ -58,8 +64,7 @@ class ScopedNativeAdapter:
     def owns(self, observation):
         if observation.get("title")!=self.document_name:return False
         if self.document_path is None:return True
-        parsed=urlparse(observation.get("document_url", ""))
-        return parsed.scheme=="file" and parsed.netloc in {"", "localhost"} and Path(unquote(parsed.path)).resolve()==self.document_path
+        return same_document_url(observation.get("document_url", ""),self.document_path)
 
     async def windows(self, bundle_id):
         if self.expired():return self.rejected('Deadline','native task deadline reached')
@@ -203,11 +208,13 @@ async def check_native_completion(document,expected,reopen_observation):
     result={'status':'unknown','disk_matches':None,'reopened_ax_matches':None}
     try:
         result['disk_matches']=Path(document).read_text(encoding='utf-8')==expected
+        result['disk_matches_before_reopen']=result['disk_matches']
         observation=await reopen_observation()
         if not observation.get('success'):raise RuntimeError(json.dumps(observation))
         areas=[t for t in observation['observation']['targets'] if t.get('role')=='AXTextArea']
         if len(areas)!=1:raise RuntimeError('expected exactly one independently reopened text area')
         result['reopened_ax_matches']=areas[0].get('value')==expected
+        result['disk_matches']=Path(document).read_text(encoding='utf-8')==expected
         result['status']='passed' if result['disk_matches'] and result['reopened_ax_matches'] else 'failed'
     except Exception as exc:result['error']=f'{type(exc).__name__}: {exc}'
     return result
@@ -236,15 +243,17 @@ class NativeDocumentEnvironment:
     async def observe(self,actor):
         import asyncio
         scoped=ScopedNativeAdapter(self.adapter,'com.apple.TextEdit',self.document.name,document_path=self.document)
+        deadline=time.monotonic()+3
+        result={'success':False,'error':'ObservationDeadline'}
         for _ in range(30):
+            if time.monotonic()>=deadline:break
             result=await scoped.initial()
-            if result.get('success'):return self.record(actor,'observe',result)
-            if result.get('error') not in {'ScopeUnavailable'}:
-                self.record(actor,'observe',result)
+            self.record(actor,'observe',result)
+            if result.get('success'):return result
+            if result.get('error') not in {'ScopeUnavailable','AXReadUnavailable'}:
                 raise RuntimeError(json.dumps(result))
             await asyncio.sleep(.1)
-        self.record(actor,'observe',result)
-        raise RuntimeError('dedicated document not uniquely available')
+        raise RuntimeError('dedicated document observation not ready before bounded deadline')
 
     async def close(self,actor):
         import asyncio
@@ -265,7 +274,7 @@ class NativeDocumentEnvironment:
             if not identified.get('success'):
                 self.record(actor,'close_probe',identified)
                 raise RuntimeError(json.dumps(identified))
-            if not any(w['title']==self.document.name for w in identified['windows']):
+            if not any(same_document_url(w.get('document_url'),self.document) for w in identified['windows']):
                 return self.record(actor,'close_probe',{'success':True,'window_disappeared':True})
             await asyncio.sleep(.1)
         raise RuntimeError('dedicated window remained after close; may have unsaved edits')
