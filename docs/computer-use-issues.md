@@ -4,8 +4,8 @@
 
 | 编号 | 问题与证据 | 状态 / 验收要求 |
 |---|---|---|
-| CU-AX-001 | 应用未激活且 Save/Close 明确 AXEnabled=false 时，适配器仍暴露文档 File 菜单容器 press（并未暴露disabled的Save/Close控件）。2026-10-08 两项 raw AX 诊断确认命令/修饰键过滤并非缺失原因 | 已修安全边界a5c633b：显式激活/实际状态验证、未激活菜单拒绝；已激活窗口Save闭环2/2、真实模型dev1/1，非激活AX写入实测仍缺 |
-| CU-AX-002 | 普通激活请求返回 true，但有界轮询没有观察到应用激活；框架请求接受不等于完成 | 完成判定已修a5c633b并回归；系统未执行原NS请求的原因仍未确认，AXFrontmost激活写入尚待非激活场景实测 |
+| CU-AX-001 | 应用未激活且 Save/Close 明确 AXEnabled=false 时，适配器仍暴露文档 File 菜单容器 press（并未暴露disabled的Save/Close控件）。2026-10-08 两项 raw AX 诊断确认命令/修饰键过滤并非缺失原因 | 已修安全边界a5c633b：显式激活/实际状态验证、未激活菜单拒绝；已激活窗口闭环2/2、模型dev1 1/1，非激活controls3实际写入/独立验证2/2 |
+| CU-AX-002 | 普通激活请求返回 true，但有界轮询没有观察到应用激活；框架请求接受不等于完成 | 完成判定已修a5c633b并回归；AXFrontmost在controls3非激活main/run_sync实际2/2，原NS请求及controls4 helper未前台原因仍未确认 |
 | CU-AX-003 | 旧 controlled2 两项模型任务在菜单操作前失去原窗口，随后 AXWindows 为0；无 Agent Close/Save | 待定位；无模型两上下文窗口稳定不解释旧消失，不重跑救回0/2结果；[模型链报告](experiments/2026-10-07-native-model-chain.md) |
 | CU-AX-004 | 两项模型 fill 都少了目标末尾换行，独立磁盘精确匹配失败 | 明确JSON文本的新dev已通过1次，57字符/末尾换行核验；旧失败不回写，没有隔离对照证明方法收益；[生命周期报告](experiments/2026-10-08-native-lifecycle-diagnosis.md) |
 | CU-AX-005 | 菜单动作已作用，但读取后续 AX 状态发生 -25204（AXCannotComplete） | 已修0b7faff/6e374f2：类型明确的纯读错误、最多3次只读观察、不重发写动作；回归通过，故障分支尚无正向实测 |
@@ -15,7 +15,11 @@
 | CU-AX-007 | 检查器把Save尚未落盘的磁盘读数缓存为最终成绩，关闭重开AX已正确仍failed | 已修0b7faff：保留前读数、以重开后的新磁盘+AX判断；v2两项before=false/最终true，模型dev1/1 |
 | CU-AX-008 | 同名文档会阻塞关闭判定；URL缺失又不能证明原窗口关闭 | 已修6e374f2：同时核验原窗口引用与精确URL均消失，回归与实际关闭重开通过 |
 | CU-BUDGET-001 | 原验证协议仅计编辑4动作，漏记验证/清理另4动作 | 已修4c8c138：执行前分阶段与总量守卫，原语按actor记录；模型协议亦显式计Agent16+验证4 |
-| CU-AX-009 | 非激活受控验收中，AX 激活写入后的 AX 观察已为 active/main，但前台读取仍指向辅助窗口；controls1 的同进程读取疑似陈旧，controls2 改用每次新鲜短生命周期 AppKit 读取后仍复现辅助窗口存活期间的不一致。AXFocusedApplication 系统读为 -25204 | controls1/controls2 均0/2，无 fill/Save，辅助进程均清理；`f251b81` 的新鲜观测修复已验证但未解决真实激活。保持 AX+真实前台双重门控，具体 macOS 激活/事件循环根因未确认；Task6 暂停，不增加重试放宽门控 |
+| CU-AX-009 | `f251b81`仅修改helper就绪读取，激活前/后sample_state仍cached；controls2不能排除缓存读数，先前macOS激活异常推断无依据 | 已修3a0c4c2：完整消费者均fresh，回归先2失败后通过，controls3真实非激活/Save/关闭重开2/2；旧controls1/2各0/2保留，见[纠正报告](experiments/2026-10-09-native-activation-verification.md) |
+| CU-AX-010 | dev2可信Close后AXTitle值读取-25202被泛型分类，fresh窗口探测立即退出unknown | 已修79b9ef5：与属性名称读取同一失效类型；Close后最多30次只读复查、不重发动作，权限立即退出；95原生回归通过，持续失效不能冒认关闭。新controls4止于helper setup未覆盖真实故障分支；dev2原成绩不改 |
+| CU-AX-011 | controls4两次自有helper未取得前台，fresh读取维持其他前台PID | 明确0/2，零编辑/Save，helper均清理；系统为何未执行本次helper NS激活请求原因未定。已有controls3的AX激活2/2保留；不操作其他前台app，不重复采样救分 |
+| CU-TEXT-001 | Unicode dev2唯一精确文本差异为缺末尾换行，两次Save观察失效被拒绝；独立checkerunknown | 模型开发验收0/1、8本地请求，未追加尝试。下一新dev研究文本读回核对/失效恢复，不能把工具静默补文本或检查器修复当模型学会 |
+| CU-EVAL-003 | 首轮全量浏览器硬超时测试：即时PID消失断言失败，timeout/score0/检查点/返回<8秒已通过；7个PID稍后均不存在 | ac9b85d仅测试改为总2秒只读等待，保留全部最终消失断言和原硬期限；持续残留仍失败。目标1 passed，首轮1fail/1086pass日志保留，最终1087 passed/4 skipped/1 xfailed、退出0；未确认延迟退出或zombie回收的具体原因 |
 
 ## 修复记录要求
 
@@ -25,4 +29,4 @@
 
 非激活 controls1 另有独立负结果：0/2，编辑动作 `[1, 0]`，Save 0，模型/云请求 0；见[菜单修复报告](experiments/2026-10-08-native-menu-repair.md)与 `artifacts/native-inactive/2026-10-08-controls1/audit.json`。
 
-新鲜观测复验 controls2 同样为0/2，编辑动作 `[1, 0]`，Save 0，模型/云请求0；证据目录为`artifacts/native-inactive/2026-10-09-controls2/`。
+仅helper读取新鲜的controls2复验为0/2，编辑动作 `[1, 0]`，Save 0，模型/云请求0；原始目录为`/Users/wenbo/Kage/artifacts/native-inactive/2026-10-09-controls2/`，不能声称激活状态也已使用新鲜读取。完整修复后controls3 2/2，后续controls4 helper就绪0/2，见[最新报告](experiments/2026-10-09-native-activation-verification.md)。

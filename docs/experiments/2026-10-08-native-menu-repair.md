@@ -89,10 +89,10 @@ Commit `853202b` also repairs the previously encountered P3 pilot classification
 
 因此下一包不是模型验收，也不运行 Task6 的 Unicode dev2。先为前台观测增加新鲜、带期限的只读消费者并做离线回归，再重新冻结最多两项非激活控制；旧 controlled2、validation1 和本次 controls1 均不重跑救分。
 
-## 新鲜前台观测复验（2026-10-09）
+## 前台观测复验（2026-10-09；下述解释已纠正）
 
-针对 controls1 的假设，提交`f251b81`让辅助进程就绪和激活后状态都通过新的短生命周期 AppKit 子进程读取 `NSWorkspace.frontmostApplication()`，每次有明确超时。离线聚焦回归为 **35 passed**。
+针对 controls1 的假设，提交`f251b81`让辅助进程就绪阶段通过新的短生命周期 AppKit 子进程读取 `NSWorkspace.frontmostApplication()`，每次有明确超时。离线聚焦回归为 **35 passed**。后续代码复核发现激活前/后`sample_state()`仍用缓存读取，前轮关于“激活后也已新鲜读取”的说明有误。
 
-新冻结目录 `artifacts/native-inactive/2026-10-09-controls2/` 仍为 **0/2**。main 上下文完成一次 AX 激活写入；AX 观察为`application_active=true`和`main_window=true`，但新鲜读取仍指向存活的辅助进程，故停止在 fill 前。run_sync 上下文的辅助窗口也无法满足自有 TextEdit 非前台的初始门控，未发激活或编辑动作。两项 Save 均未发出，辅助进程均清理。
+新冻结目录 `artifacts/native-inactive/2026-10-09-controls2/` 仍为 **0/2**。main 上下文完成一次 AX 激活写入；AX 观察为`application_active=true`和`main_window=true`，但激活后缓存读取仍指向辅助进程，故停止在 fill 前。run_sync 上下文的辅助窗口也无法满足自有 TextEdit 非前台的初始门控，未发激活或编辑动作。两项 Save 均未发出，辅助进程均清理。
 
-这次复验排除了“仅由同一 `NSWorkspace` 消费者缓存旧 PID”这一单一解释：即使换用新进程，辅助窗口存活期间也观察到同样的前台不一致；辅助窗口退出后新进程才读到 TextEdit。结论仍是 AX 的 active/main 读数不能替代真实前台验证，具体 macOS 激活/事件循环根因尚未确认。不会再通过增加重试或放宽门控来制造通过，Task6 Unicode dev2 保持暂停。
+controls2不能排除缓存读数解释：关键激活状态仍来自旧消费者。`3a0c4c2`补齐该调用链后，新固定controls3通过2/2，独立实际前台和自有窗口身份均验证。详细修复、回归和限制见[纠正与后续验收](2026-10-09-native-activation-verification.md)。原controls1/2结果各0/2不改写。
