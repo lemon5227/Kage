@@ -162,7 +162,7 @@ def test_native_menu_never_dispatches_when_main_window_switches_during_final_sna
     file_menu = Element(AXRole='AXMenuBarItem', AXTitle='File', AXEnabled=True, AXChildren=[submenu])
     menu = Element(AXChildren=[Element(), Element(), file_menu])
     window = Element(AXRole='AXWindow', AXTitle='pilot.txt', AXChildren=[text])
-    app = Element(AXWindows=[window, other], AXMenuBar=menu)
+    app = Element(AXWindows=[window, other], AXMenuBar=menu, AXFrontmost=True)
     class API:
         kAXValueCGPointType, kAXValueCGSizeType = 1, 2
         def __init__(self): self.main = window; self.switch = False; self.presses = []
@@ -201,4 +201,130 @@ def test_pilot_cleanup_requires_observed_window_disappearance():
     async def scenario():
         assert await wait_window_disappeared(Windows(True), 'pilot.txt', attempts=2, interval=0) is False
         assert await wait_window_disappeared(Windows(False), 'pilot.txt', attempts=2, interval=0) is True
+    run(scenario())
+
+
+def focus_driver(*, active=False, writable=True, activation_error=0, change_main=False, settle=True):
+    from core.computer_use.native_ax import MacOSAXDriver
+    class Element:
+        def __init__(self, **attrs): self.attrs=attrs
+    save=Element(AXRole='AXMenuItem',AXTitle='Save',AXMenuItemCmdChar='S',AXMenuItemCmdModifiers=0,AXEnabled=True)
+    menuitem=Element(AXRole='AXMenuBarItem',AXTitle='File',AXEnabled=True,AXChildren=[Element(AXChildren=[save])])
+    bar=Element(AXChildren=[Element(),Element(),menuitem])
+    window=Element(AXRole='AXWindow',AXTitle='owned.txt',AXDocument='file:///owned.txt',AXChildren=[])
+    other=Element(AXRole='AXWindow')
+    app=Element(AXWindows=[window,other],AXMainWindow=window,AXFrontmost=active,AXMenuBar=bar)
+    class API:
+        kAXValueCGPointType,kAXValueCGSizeType=1,2
+        def __init__(self):self.mutations=[]
+        def AXUIElementSetMessagingTimeout(self,*args):return 0
+        def AXUIElementCopyAttributeNames(self,e,out):return 0,list(e.attrs)
+        def AXUIElementCopyAttributeValue(self,e,name,out):return 0,e.attrs[name]
+        def AXUIElementCopyActionNames(self,e,out):return 0,['AXPress'] if e in (save,menuitem) else []
+        def AXUIElementIsAttributeSettable(self,e,name,out):return 0,writable if e is app and name=='AXFrontmost' else False
+        def AXUIElementSetAttributeValue(self,e,name,value):
+            self.mutations.append((e,name,value))
+            if activation_error:return activation_error
+            if settle:e.attrs[name]=value
+            if change_main:app.attrs['AXMainWindow']=other
+            return 0
+        def AXUIElementPerformAction(self,e,action):self.mutations.append((e,action));return 0
+    class CF:
+        @staticmethod
+        def CFEqual(a,b):return a is b
+    api=API();driver=MacOSAXDriver(timeout_seconds=.1);driver._load=lambda:(api,None,CF)
+    driver._windows['owned']=(1,'com.example.fixture',app,window)
+    return driver,api,app,window
+
+
+def test_inactive_app_hides_menu_press_and_exposes_explicit_owned_activation():
+    driver,api,app,window=focus_driver()
+    obs=driver.snapshot('owned')
+    assert obs['application_active'] is False
+    assert obs['activation_supported'] is True
+    assert not any(t['role']=='AXMenuBarItem' or t.get('command') for t in obs['targets'])
+    target=next(t for t in obs['targets'] if t['role']=='AXWindow')
+    assert target['operations']==['activate']
+    driver.act('owned',target['target_ref'],'activate',None)
+    assert api.mutations==[(app,'AXFrontmost',True)]
+    assert driver.snapshot('owned')['application_active'] is True
+
+
+def test_activation_rejects_changed_main_before_dispatch_and_after_dispatch():
+    import pytest
+    from core.computer_use.native_ax import AXStaleError
+    driver,api,app,window=focus_driver(change_main=True)
+    obs=driver.snapshot('owned');target=next(t for t in obs['targets'] if t['role']=='AXWindow')
+    with pytest.raises(Exception,match='main'):
+        driver.act('owned',target['target_ref'],'activate',None)
+    assert len(api.mutations)==1
+    assert not any(t.get('command') for t in driver.snapshot('owned')['targets'])
+
+
+def test_unsupported_activation_is_read_only_and_has_no_menu_target():
+    driver,api,app,window=focus_driver(writable=False)
+    obs=driver.snapshot('owned')
+    assert obs['activation_supported'] is False
+    assert obs['targets']==[] and api.mutations==[]
+
+
+def test_activation_timeout_preserves_known_applied_request_and_single_dispatch():
+    from core.computer_use.native_ax import NativeAXAdapter
+    async def scenario():
+        driver,api,app,window=focus_driver(settle=False)
+        adapter=NativeAXAdapter(driver)
+        obs=(await adapter.observe('owned'))['observation']
+        target=next(t for t in obs['targets'] if t['role']=='AXWindow')
+        result=await adapter.act(obs['observation_id'],'activate',target['target_ref'])
+        assert result['success'] is False and result['action_applied'] is True
+        assert result['error']=='AXActivationUnverified'
+        assert result['observation']['application_active'] is False
+        assert len(api.mutations)==1
+    run(scenario())
+
+
+def test_activation_transport_error_preserves_unknown_and_never_retries():
+    from core.computer_use.native_ax import NativeAXAdapter
+    async def scenario():
+        driver,api,app,window=focus_driver(activation_error=-25204)
+        adapter=NativeAXAdapter(driver)
+        obs=(await adapter.observe('owned'))['observation']
+        targets=[t for t in obs['targets'] if t['role']=='AXWindow'];assert len(targets)==1
+        result=await adapter.act(obs['observation_id'],'activate',targets[0]['target_ref'])
+        assert result['success'] is False and result['action_applied'] is None
+        assert len(api.mutations)==1
+    run(scenario())
+
+
+def test_menu_dispatch_rechecks_foreground_after_final_snapshot():
+    import pytest
+    from core.computer_use.native_ax import AXStaleError
+    driver,api,app,window=focus_driver(active=True)
+    obs=driver.snapshot('owned');target=next(t for t in obs['targets'] if t.get('command')=='S')
+    original=driver.snapshot
+    def switch(ref):
+        result=original(ref)
+        app.attrs['AXFrontmost']=False
+        return result
+    driver.snapshot=switch
+    with pytest.raises(AXStaleError):driver.act('owned',target['target_ref'],'press',None)
+    assert api.mutations==[]
+
+
+def test_activation_counts_same_scoped_action_quota_and_traces_explicit_dispatch(tmp_path):
+    from core.computer_use.native_ax import NativeAXAdapter
+    from core.computer_use.native_model import ScopedNativeAdapter
+    async def scenario():
+        driver,api,app,window=focus_driver()
+        driver.windows=lambda bundle:[{'window_ref':'owned','title':'owned.txt','document_url':'file:///owned.txt'}]
+        adapter=NativeAXAdapter(driver,tmp_path/'trace.jsonl')
+        scope=ScopedNativeAdapter(adapter,'com.example.fixture','owned.txt',document_path='/owned.txt',max_actions=1)
+        obs=(await scope.initial())['observation'];target=next(t for t in obs['targets'] if t['role']=='AXWindow')
+        result=await scope.act(obs['observation_id'],'activate',target['target_ref'])
+        assert result['success'] and scope.actions==1
+        menu=next(t for t in result['observation']['targets'] if t['role']=='AXMenuBarItem')
+        refused=await scope.act(result['observation']['observation_id'],'press',menu['target_ref'])
+        assert refused['error']=='ActionLimit' and len(api.mutations)==1
+        entries=[json.loads(line) for line in (tmp_path/'trace.jsonl').read_text().splitlines()]
+        assert [e['action']['operation'] for e in entries if e['phase']=='execute']==['activate']
     run(scenario())

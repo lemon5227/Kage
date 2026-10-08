@@ -22,7 +22,10 @@ NATIVE_SOUL = '''You are Kage completing a dedicated native document task throug
 Only use provided native tools. Initial native observation is the actual current state.
 Use current observation_id and target_ref exactly. Every action returns fresh refs.
 On stale errors use the returned fresh observation, or observe the owned window again.
-Use semantic roles, values and menu command keys. Fill the text area with the complete
+Use semantic roles, values and menu command keys. If application_active is false,
+use the observed window activate operation once and require success before editing.
+Activation consumes a native action. If activation is unsupported or fails, stop.
+Fill the text area with the complete
 requested text, then open the document menu and press its Save command (command s).
 Tool success and your final statement do not prove completion. Save through the app.
 Never use file writes, global keystrokes, other windows or invented references.

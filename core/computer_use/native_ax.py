@@ -31,6 +31,10 @@ class AXWindowClosedError(AXStaleError):
     pass
 
 
+class AXActivationUnverified(RuntimeError):
+    """The activation write succeeded, but its scoped postcondition did not."""
+
+
 class MacOSAXDriver:
     """Lazy optional PyObjC bridge. Handles never leave this driver.
 
@@ -150,7 +154,11 @@ class MacOSAXDriver:
         menu_elements = []
         # Menus are application-scoped; only expose them when this window is main.
         main = self._get(app, 'AXMainWindow')
-        if main is not None and cf.CFEqual(main, window):
+        active = self._get(app, 'AXFrontmost')
+        error, writable = ax.AXUIElementIsAttributeSettable(app, 'AXFrontmost', None) if active is not None else (0, False)
+        activation_supported = error == 0 and bool(writable)
+        activation_support_error = int(error)
+        if active is True and main is not None and cf.CFEqual(main, window):
             menu = self._get(app, 'AXMenuBar')
             if menu is not None:
                 # Only document Save/Close commands are exposed from menus.
@@ -183,6 +191,8 @@ class MacOSAXDriver:
             if error not in (0, -25205):
                 raise RuntimeError(f'AX action discovery failed: {error}')
             operations = ['press'] if enabled and 'AXPress' in (names or []) else []
+            if role == 'AXWindow' and cf.CFEqual(element, window) and active is False and activation_supported and main is not None and cf.CFEqual(main, window):
+                operations.append('activate')
             if enabled and role in {'AXTextArea', 'AXTextField'}:
                 error, writable = ax.AXUIElementIsAttributeSettable(element, 'AXValue', None)
                 if error:
@@ -222,6 +232,9 @@ class MacOSAXDriver:
                 'title': str(self._get(window, 'AXTitle', '')),
                 'document_url': str(self._get(window, 'AXDocument', '')), 'targets': targets,
                 'main_window': main is not None and bool(cf.CFEqual(main, window)),
+                'application_active': bool(active) if active is not None else None,
+                'activation_supported': activation_supported,
+                'activation_support_error': activation_support_error,
                 'truncated': truncated}
         self._snapshots[window_ref] = snapshot
         return snapshot
@@ -237,8 +250,35 @@ class MacOSAXDriver:
         if target_ref in self._menu_targets.get(window_ref, set()):
             _, _, app, window = self._windows[window_ref]
             main = self._get(app, 'AXMainWindow')
-            if main is None or not self._load()[2].CFEqual(main, window):
+            if main is None or not self._load()[2].CFEqual(main, window) or self._get(app, 'AXFrontmost') is not True:
                 raise AXStaleError('selected document is no longer main; menu action not dispatched')
+        if operation == 'activate':
+            _, _, app, window = self._windows[window_ref]
+            cf = self._load()[2]
+            main = self._get(app, 'AXMainWindow')
+            if not cf.CFEqual(element, window) or main is None or not cf.CFEqual(main, window):
+                raise AXStaleError('selected document is no longer main; activation not dispatched')
+            error, writable = ax.AXUIElementIsAttributeSettable(app, 'AXFrontmost', None)
+            if error or not writable:
+                raise AXStaleError('owned application activation is unavailable; not dispatched')
+            error = ax.AXUIElementSetAttributeValue(app, 'AXFrontmost', True)
+            if error:
+                raise RuntimeError(f'AX activate returned {error}; action state uncertain')
+            # One mutation only. These bounded IPC reads never redispatch it.
+            for check in range(10):
+                try:
+                    main = self._get(app, 'AXMainWindow')
+                    if main is None or not cf.CFEqual(main, window):
+                        raise AXActivationUnverified('activation applied but selected document is no longer main')
+                    if self._get(app, 'AXFrontmost') is True:
+                        return
+                except AXActivationUnverified:
+                    raise
+                except Exception as exc:
+                    raise AXActivationUnverified(f'activation applied but verification failed: {exc}') from exc
+                if check < 9:
+                    time.sleep(.05)
+            raise AXActivationUnverified('activation applied but owned application did not become active in 10 checks')
         if operation == 'fill':
             error = ax.AXUIElementSetAttributeValue(element, 'AXValue', value)
         elif operation == 'press':
@@ -274,7 +314,8 @@ class NativeAXAdapter:
 
     def _error(self, exc, action_applied=False):
         code, outcome = ('AXDriverError', 'tool_error')
-        if isinstance(exc, AXPermissionError): code, outcome = 'AXPermissionDenied', 'rejected'
+        if isinstance(exc, AXActivationUnverified): code = 'AXActivationUnverified'
+        elif isinstance(exc, AXPermissionError): code, outcome = 'AXPermissionDenied', 'rejected'
         elif isinstance(exc, AXUnavailableError): code, outcome = 'NotAvailable', 'rejected'
         elif isinstance(exc, AXStaleError): code, outcome = 'StaleObservation', 'rejected'
         elif isinstance(exc, ValueError): code, outcome = 'InvalidArgument', 'rejected'
@@ -329,6 +370,8 @@ class NativeAXAdapter:
                                     'window_ref': window_ref, 'window_closed': True, 'targets': []}
                     result = {'success': True, 'action_applied': True, 'observation': observed}
             except Exception as exc:
+                if isinstance(exc, AXActivationUnverified):
+                    applied = True
                 if applied is None and isinstance(exc, (AXPermissionError, AXUnavailableError, AXStaleError)):
                     applied = False
                 result = self._error(exc, applied)
@@ -352,7 +395,7 @@ class NativeAXAdapter:
             ('native_observe', native_observe, {'window_ref': {'type': 'string'}}, ['window_ref'],
              'Observe AX controls in an identified window; OCR fallback is unavailable.'),
             ('native_act', native_act, {'observation_id': {'type': 'string'}, 'target_ref': {'type': 'string'},
-              'operation': {'type': 'string', 'enum': ['fill', 'press']}, 'value': {'type': 'string'}},
+              'operation': {'type': 'string', 'enum': ['fill', 'press', 'activate']}, 'value': {'type': 'string'}},
              ['observation_id', 'operation', 'target_ref'], 'Act only on fresh observed AX controls; stale refs require reobservation.')]:
             registry.register(ToolDefinition(name, description, {'type': 'object', 'properties': properties,
                 'required': required, 'additionalProperties': False}, handler))
