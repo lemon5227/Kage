@@ -17,11 +17,17 @@ from core.computer_use.native_ax import NativeAXAdapter
 EXPECTED = 'Kage dedicated native AX pilot fixture.\nStatus: semantic AX edit saved and independently verified.\n'
 
 
+class CloseCompletionProbeError(RuntimeError):
+    def __init__(self, result):
+        self.result = result
+        super().__init__(f'close completion probe: {result}')
+
+
 async def wait_window_disappeared(adapter, document_name, attempts=30, interval=0.1):
     for _ in range(attempts):
         identified = await adapter.windows('com.apple.TextEdit')
         if not identified.get('success'):
-            raise RuntimeError(f'close completion probe: {identified}')
+            raise CloseCompletionProbeError(identified)
         if not any(w['title'] == document_name for w in identified['windows']):
             return True
         await asyncio.sleep(interval)
@@ -106,6 +112,8 @@ async def pilot(output):
         report['file_sha256'] = hashlib.sha256(document.read_bytes()).hexdigest()
         report['status'] = 'passed' if all(report[k] for k in ['saved_file_matches','window_disappeared_after_close','reopened_ax_matches','independent_file_matches','cleanup_close_applied','cleanup_window_disappeared']) else 'failed'
     except Exception as exc:
+        if isinstance(exc, CloseCompletionProbeError):
+            report['stages'].append({'stage': 'close_completion_probe', 'result': exc.result})
         report['status'] = 'blocked' if any(s['result'].get('error') in {'AXPermissionDenied','NotAvailable'} for s in report['stages']) else 'failed'
         report['error'] = f'{type(exc).__name__}: {exc}'
     report['elapsed_ms'] = round((time.monotonic()-start)*1000,3)
