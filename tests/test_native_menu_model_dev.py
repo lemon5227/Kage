@@ -39,9 +39,10 @@ def test_selected_task_reaches_existing_chain_and_freeze(monkeypatch, tmp_path, 
     monkeypatch.setattr(dev, 'LocalService', Service)
     monkeypatch.setattr(dev, 'local_broker', lambda port: type('Broker', (), {'background_provider': None})())
     monkeypatch.setattr(dev, 'DeterministicLocalModel', lambda provider: provider)
-    selected = []
+    selected = [];prompts=[]
     def stop(provider, task, **kwargs):
         selected.append(task)
+        prompts.append(kwargs.get('native_soul',dev.NATIVE_SOUL))
         raise StopBeforeModel
     monkeypatch.setattr(dev, 'NativeChainProvider', stop)
     with pytest.raises(StopBeforeModel):
@@ -55,6 +56,12 @@ def test_selected_task_reaches_existing_chain_and_freeze(monkeypatch, tmp_path, 
     frozen = json.loads((output / 'freeze.json').read_text())
     assert frozen['task'] == task
     assert frozen['selected_task'] == (selection[1] if selection else 'dev1')
+    assert frozen['prompt']==prompts[0]
+    if selection==['--task','dev3']:
+        assert 'then open the document menu and press its Save command' not in prompts[0]
+        assert 'verify the returned text value' in prompts[0]
+    else:
+        assert prompts[0]==dev.NATIVE_SOUL
     assert frozen['task_sha256'] == hashlib.sha256(json.dumps(task, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
     assert frozen['protocol_sha256'] == hashlib.sha256(json.dumps(frozen['protocol'], sort_keys=True).encode()).hexdigest()
     test_name = 'tests/test_native_menu_model_dev.py'

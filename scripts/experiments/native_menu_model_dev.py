@@ -31,6 +31,10 @@ TASKS={'dev1':TASK,'dev2':{
     'initial_files':{'kage-menu-unicode-dev2.txt':'项目进度\n状态：待保存\n'},
     'expected':UNICODE_TEXT,'output_file':'kage-menu-unicode-dev2.txt'}}
 RECOVERY_TEXT='项目复核\n结论：已核对\n操作：保存并读回\n'
+RECOVERY_SOUL=NATIVE_SOUL.replace(
+    'then open the document menu and press its Save command (command s).',
+    'verify the returned text value including every newline. '
+    'Press the currently observed Save command (s) directly; open its document menu only if Save is absent.')
 TASKS['dev3']={
     'task_id':'native_text_recovery_dev3','document_name':'kage-text-recovery-dev3.txt',
     'instruction':
@@ -55,7 +59,8 @@ PROTOCOL={'version':'native-menu-model-dev-v1','tasks':1,'attempts_per_task':1,'
           'temperature':0,'max_output_per_request':300,'split':'dev','purpose':'post-repair integration, not holdout'}
 SOURCES=sorted(set(SOURCE_FILES+['scripts/experiments/native_menu_model_dev.py',
                                'core/computer_use/native_model.py','core/computer_use/native_ax.py',
-                               'core/computer_use/browser.py','tests/test_native_menu_model_dev.py']))
+                               'core/computer_use/browser.py','tests/test_native_menu_model_dev.py',
+                               'tests/test_native_model_chain.py']))
 
 
 def main():
@@ -65,6 +70,7 @@ def main():
     parser.add_argument('--task',choices=tuple(TASKS),default='dev1')
     args=parser.parse_args()
     task=TASKS[args.task]
+    soul=RECOVERY_SOUL if args.task=='dev3' else NATIVE_SOUL
     dirty=subprocess.check_output(['git','status','--porcelain','--',*SOURCES],cwd=ROOT,text=True)
     if dirty:parser.error('commit source before the frozen dev attempt')
     output=args.output.resolve();output.mkdir(parents=True,exist_ok=False)
@@ -72,7 +78,7 @@ def main():
         frozen={'protocol':PROTOCOL,'task':task,'selected_task':args.task,
                 'task_sha256':hashlib.sha256(json.dumps(task,sort_keys=True,ensure_ascii=False).encode('utf-8')).hexdigest(),
                 'protocol_sha256':hashlib.sha256(json.dumps(PROTOCOL,sort_keys=True).encode()).hexdigest(),
-                'prompt':NATIVE_SOUL,'runtime':service.runtime,
+                'prompt':soul,'prompt_sha256':hashlib.sha256(soul.encode()).hexdigest(),'runtime':service.runtime,
                 'frozen_at_utc':datetime.now(timezone.utc).isoformat(),
                 'git_revision':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
                 'source_hashes':{name:file_hash(ROOT/name) for name in SOURCES},
@@ -84,7 +90,7 @@ def main():
                                          output_cost_per_million=0),output/'budget.sqlite')
         journal=Journal(output/'journal.sqlite')
         provider=NativeChainProvider(DeterministicLocalModel(local_broker(args.port).background_provider),
-                                     task,model_label='agents-a1-4b',max_model_calls=10)
+                                     task,model_label='agents-a1-4b',max_model_calls=10,native_soul=soul)
         runner=EvolutionRunner(journal,budget,output/'workspaces',provider,step_isolation='inline')
         runner.evaluator=NativeEvaluator()
         candidate=Candidate('native-menu-model-dev-v1',(),'workflow',str(ROOT),

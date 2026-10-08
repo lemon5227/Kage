@@ -23,6 +23,27 @@ class Provider:
     def generate(self,messages,**kwargs):
         self.messages.append(copy.deepcopy(messages));return self.callback(messages,kwargs)
 
+def test_selected_native_prompt_reaches_model_and_matches_provider_identity(tmp_path):
+    import hashlib
+    from core.computer_use.native_model import NativeChainProvider
+    selected='Selected native recovery protocol: verify text then press observed Save directly.'
+    task={'task_id':'prompt-selection','document_name':'owned.txt',
+          'initial_files':{'owned.txt':'initial'},'instruction':'Read the owned document.','expected':'initial'}
+    (tmp_path/'owned.txt').write_text('initial')
+    class Environment:
+        def __init__(self,document,output):
+            driver=Driver();driver.document_url=document.as_uri();self.adapter=NativeAXAdapter(driver)
+        async def setup(self):pass
+        async def reread(self):return {'success':True,'observation':{'targets':[{'role':'AXTextArea','value':'initial'}]}}
+        async def cleanup(self):return {'success':True}
+    model=Provider(lambda messages,kwargs:ModelResponse(text='done'))
+    provider=NativeChainProvider(model,task,native_soul=selected,environment_factory=Environment)
+    provider.generate_step(task,0,[],tmp_path)
+    system='\n'.join(m['content'] for m in model.messages[0] if m['role']=='system')
+    assert selected in system
+    assert 'then open the document menu' not in system
+    assert provider.metadata()['experiment_prompt_sha256']==hashlib.sha256(selected.encode()).hexdigest()
+
 def test_scope_filters_private_windows_and_rejects_foreign_refs():
     from core.computer_use.native_model import ScopedNativeAdapter
     async def scenario():

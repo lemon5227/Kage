@@ -169,10 +169,11 @@ class NativeRecordedModel:
 
 
 class NativeModelChain:
-    def __init__(self,model,adapter,bundle_id,document_name,output,*,max_requests=10,max_steps=8,max_actions=16,timeout_s=480,budget=None,document_path=None):
+    def __init__(self,model,adapter,bundle_id,document_name,output,*,max_requests=10,max_steps=8,max_actions=16,timeout_s=480,budget=None,document_path=None,native_soul=NATIVE_SOUL):
         self.model=model;self.adapter=adapter;self.bundle_id=bundle_id;self.document_name=document_name
         self.output=Path(output);self.max_requests=max_requests;self.max_steps=max_steps
         self.max_actions=max_actions;self.timeout_s=timeout_s;self.budget=budget;self.document_path=document_path
+        self.native_soul=native_soul
 
     async def run(self,instruction):
         self.output.mkdir(parents=True,exist_ok=True)
@@ -185,7 +186,7 @@ class NativeModelChain:
         executor=NativeExecutor(registry,self.output)
         recorded=NativeRecordedModel(self.model,self.output,deadline,self.budget)
         metered=MeteredProvider(recorded,max_calls=self.max_requests)
-        builder=NativePromptBuilder(ExperimentIdentityStore(NATIVE_SOUL),None,registry,prune_tools=False,memory_cfg={'recall_enabled':False})
+        builder=NativePromptBuilder(ExperimentIdentityStore(self.native_soul),None,registry,prune_tools=False,memory_cfg={'recall_enabled':False})
         loop=AgenticLoop(metered,executor,builder,HistorySession());loop.MAX_STEPS=self.max_steps
         try:
             result=await loop.run(instruction+'\nInitial native observation:\n'+json.dumps(initial,ensure_ascii=False))
@@ -306,12 +307,13 @@ class NativeChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=1_000_000
     RESERVATION_OUTPUT_CAP=3_000
 
-    def __init__(self,model_provider,task_def,*,environment_factory=NativeDocumentEnvironment,**kwargs):
+    def __init__(self,model_provider,task_def,*,environment_factory=NativeDocumentEnvironment,native_soul=NATIVE_SOUL,**kwargs):
+        self.native_soul=native_soul
         kwargs.setdefault('max_model_calls',10)
         super().__init__(model_provider,**kwargs)
         self.task_def=json.loads(json.dumps(task_def));self.environment_factory=environment_factory
 
-    def _experiment_soul(self):return NATIVE_SOUL
+    def _experiment_soul(self):return self.native_soul
 
     def cache_identity(self):
         return {**super().cache_identity(),'native_task':self.task_def,'max_loop_steps':8,'max_actions':16,'timeout_s':480}
@@ -342,7 +344,8 @@ class NativeChainProvider(KageChainProvider):
         try:
             await environment.setup()
             chain=NativeModelChain(self._model.inner,environment.adapter,'com.apple.TextEdit',document.name,workspace,
-                                   max_requests=self.max_model_calls,timeout_s=max(0,480-(time.monotonic()-start)),document_path=document)
+                                   max_requests=self.max_model_calls,timeout_s=max(0,480-(time.monotonic()-start)),document_path=document,
+                                   native_soul=self._experiment_soul())
             report=await chain.run(self.task_def['instruction'])
             checked=await check_native_completion(document,self.task_def['expected'],environment.reread)
             checked['agent_save_applied']=report.get('agent_save_applied',False)
