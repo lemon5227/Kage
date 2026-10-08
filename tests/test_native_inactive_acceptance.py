@@ -171,6 +171,33 @@ def test_fresh_frontmost_reader_uses_bounded_child_process(monkeypatch):
     assert calls[0][1]['check'] is False
 
 
+def test_activation_state_reads_fresh_foreground_instead_of_cached_appkit(monkeypatch):
+    cli = module()
+    monkeypatch.setattr(cli, 'passive_sample', lambda *args: {
+        'success': True, 'app_pid': 100, 'main_window_owned': True,
+        'owned_windows': [{'window_ref': 'same-owned-window'}],
+    })
+    class CachedWorkspace:
+        def _load(self):
+            raise AssertionError('cached AppKit frontmost reader must not be used')
+    monkeypatch.setattr(cli, 'fresh_frontmost_pid', lambda **kwargs: 100)
+    state = cli.sample_state(CachedWorkspace(), object())
+    assert state['success'] is True
+    assert state['frontmost_pid'] == 100
+    assert state['owned_window_ref'] == 'same-owned-window'
+
+
+def test_unavailable_fresh_foreground_cannot_be_successful_state(monkeypatch):
+    cli = module()
+    monkeypatch.setattr(cli, 'passive_sample', lambda *args: {
+        'success': True, 'owned_windows': [{'window_ref': 'owned'}],
+    })
+    monkeypatch.setattr(cli, 'fresh_frontmost_pid', lambda **kwargs: None)
+    state = cli.sample_state(object(), object())
+    assert state['success'] is False
+    assert state['error'] == 'FreshFrontmostUnavailable'
+
+
 def test_unknown_completion_never_has_overall_acceptance(tmp_path,monkeypatch):
     cli=module();harness(monkeypatch,cli)
     report=asyncio.run(cli.probe(tmp_path/'probe','main'))

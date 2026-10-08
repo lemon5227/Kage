@@ -25,12 +25,13 @@ BUNDLE = 'com.apple.TextEdit'
 INITIAL = 'Kage inactive acceptance.\nStatus: pending.\n'
 EXPECTED = 'Kage inactive acceptance.\nStatus: explicitly saved.\n'
 PROTOCOL = {
-    'version': 'native-inactive-acceptance-v1', 'contexts': ['main', 'run_sync'],
+    'version': 'native-inactive-acceptance-v2-all-fresh', 'contexts': ['main', 'run_sync'],
     'attempts_per_context': 1, 'max_editor_actions_per_context': 4,
     'max_checker_cleanup_actions_per_context': 4, 'max_native_actions_per_context': 8,
     'max_app_open_requests_per_context': 2, 'activation_dispatches_max': 1,
     'helper_readiness_deadline_s': 3, 'helper_poll_interval_s': .1,
     'fresh_frontmost_reader': 'short-lived AppKit subprocess per read',
+    'fresh_frontmost_timeout_s': 0.5,
     'precondition_samples': 1, 'postcondition_samples': 1,
     'checker_observation_attempts_max': 30, 'checker_observation_deadline_s': 3,
     'deadline_semantics': 'cooperative before AX calls',
@@ -138,8 +139,10 @@ def sample_state(observer, scope):
     result = passive_sample(observer, scope)
     if result.get('success'):
         try:
-            front = observer._load()[1].NSWorkspace.sharedWorkspace().frontmostApplication()
-            result['frontmost_pid'] = int(front.processIdentifier()) if front else None
+            result['frontmost_pid'] = fresh_frontmost_pid(
+                timeout_s=PROTOCOL['fresh_frontmost_timeout_s'])
+            if result['frontmost_pid'] is None:
+                return {**result, 'success': False, 'error': 'FreshFrontmostUnavailable'}
             owned = result['owned_windows']
             result['owned_window_ref'] = owned[0]['window_ref'] if len(owned) == 1 else None
         except Exception as exc:
