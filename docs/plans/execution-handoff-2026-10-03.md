@@ -1,6 +1,6 @@
 # 执行交接：浏览器学习闭环与后续E/C顺序
 
-更新：2026-10-07；原审查基线da5f675。本文保留实施规格；B2.1/B2.2、可靠性R1–R3-a与C5.0入口均完成相应工程/真实pilot，浏览器相对raw技能分数收益未证明。C4.5-DOM工程与冻结集成pilot已交付，真人DOM验收待实际操作；C1.2 AX工程与确定性TextEdit驱动pilot已交付，下一补C1.2真实原生模型链与按需OCR候选，不能当完整能力验收。[AX报告](../experiments/2026-10-07-macos-ax.md)。[教学报告](../experiments/2026-10-07-browser-demonstration.md)记录录制/直接复用/真实本地各2/2、0次新技能调用、992 passed和7请求零云。E/C全部状态以[任务队列](task-queue-2026-10-01.md)为准；历史设计未勾选项不意味着需重复实施。
+更新：2026-10-07；原审查基线da5f675。本文保留实施规格；B2.1/B2.2、可靠性R1–R3-a与C5.0入口均完成相应工程/真实pilot，浏览器相对raw技能分数收益未证明。C4.5-DOM工程与冻结集成pilot已交付，真人DOM验收待实际操作；C1.2 AX工程与确定性TextEdit驱动pilot已交付，真实原生模型链已接通，两项冻结任务0/2、完整检查unknown；下一C1.2-R窗口生命周期/精确文本/保存限次dev诊断，OCR仍待做，不能当完整能力验收。 [模型报告](../experiments/2026-10-07-native-model-chain.md)。[AX报告](../experiments/2026-10-07-macos-ax.md)。[教学报告](../experiments/2026-10-07-browser-demonstration.md)记录录制/直接复用/真实本地各2/2、0次新技能调用、992 passed和7请求零云。E/C全部状态以[任务队列](task-queue-2026-10-01.md)为准；历史设计未勾选项不意味着需重复实施。
 
 ## 0. 开始工作：只读最小材料
 
@@ -123,7 +123,7 @@ descriptor的digest由工具生成并写入，不让调用方随意指定；实�
 
 用户最新确认覆盖原默认次序：先完成[可靠性规格](browser-reliability-2026-10-03.md)中R1状态、R2技能发现、R3步数诊断与新留出，再领取下列入口/示范任务。各诊断固定小预算，依据轨迹推进，不反复调旧test。
 
-当前R1/R2云、本地六次dev、新v2九次、R3-a四次及C5.0入口已完成，不重做；默认5保持，6显式可选。[入口报告](../experiments/2026-10-04-browser-task-entry.md)记录源码e1e9fff、946 passed、7本地请求/零云、真实保存的completed/unknown各一次。C4.5-DOM工程/自动化集成pilot也已完成，不重做；[教学报告](../experiments/2026-10-07-browser-demonstration.md)记录新输入实际保存/读回及模型0技能调用，真人验收另待操作。C1.2 AX工程/确定性保存重读pilot已交付；下一仍补C1.2原生模型链与按需OCR候选，完整验收后再C4.5-AX；[v2报告](../experiments/2026-10-03-browser-local-transfer-v2.md)的唯一失败不救回，v2不用于修复后盲测，不强行晋级候选。
+当前R1/R2云、本地六次dev、新v2九次、R3-a四次及C5.0入口已完成，不重做；默认5保持，6显式可选。[入口报告](../experiments/2026-10-04-browser-task-entry.md)记录源码e1e9fff、946 passed、7本地请求/零云、真实保存的completed/unknown各一次。C4.5-DOM工程/自动化集成pilot也已完成，不重做；[教学报告](../experiments/2026-10-07-browser-demonstration.md)记录新输入实际保存/读回及模型0技能调用，真人验收另待操作。C1.2 AX工程/确定性保存重读pilot已交付；原生模型链已接通且两项冻结任务0/2、完整检查unknown；下一C1.2-R窗口/精确值/保存限次诊断，按需OCR仍待做，完整验收后再C4.5-AX；[v2报告](../experiments/2026-10-03-browser-local-transfer-v2.md)的唯一失败不救回，v2不用于修复后盲测，不强行晋级候选。
 
 1. **C5.0最小集成（已完成，以下为保留规格）**：Launcher/API已接显式受控实验浏览器模式，提供执行器、运行ID/结果/费用/停止；复用core/server.py与现有前端。只有对应任务检查器通过才自动标completed；无可靠检查器标unknown/待确认，不能把fixture的隐藏评分文件当通用完成检测器。实际用户页面通知为事件/面板，不启浏览器语音；服务重启历史恢复、自由任务接入属于后续C5。
    - 复用core/background_lane.py、core/background_worker.py及kage-avatar/public/launcher.html的kage:job通道。现有worker正常返回就发completed，它仅说明运行结束；浏览器result须单独提供任务检查状态与证据，通知/页面不得直接写成任务成功。core/server.py的_background_completion_notification也须按任务检查结果表达。
@@ -147,4 +147,9 @@ C6仅在DOM/AX覆盖缺口出现时；C8仅在同权重兼容和任务时间证�
 
 ## 9. 给执行模型的起始指令
 
-> 在Kage仓库先读总规划、E/C统一队列、本文§0/§7及C4.5-DOM教学报告。当前C1.2 macOS AX窗口/控件工程和确定性TextEdit保存/关闭消失/重开AX读回/独立文件/清理已交付；读AX报告后继续真实模型决策链与按需OCR候选验收，从可可靠重置的专用原生测试文档开始，观察真实窗口/辅助功能树，按语义目标编辑，实际保存、关闭/重新读取并独立检查；记录权限/执行错误与过程证据，不能将任意桌面控制接口或应用启动当任务通过。随后C4.5-AX再做原生示范，C2.2补跨应用。C4.5-DOM工程/自动化录制/直接复用/真实本地pilot已完成；真人验收需实际人类操作，本地新技能调用0且学习收益未证明，不补造或救回该轮。C5.0与R/B2旧包不重做，未晋级候选不设默认，无checker仍unknown。复用活动worktree，代码/报告/README分提交，保存全部原始证据；本阶段用户已明确授权GitHub推送。E2/E3/E4研究线按队列交替领取，新学习方法另冻新盲测。
+> 在Kage仓库先读总规划、E/C统一队列、本文§0/§7及C4.5-DOM教学报告。当前C1.2 macOS AX窗口/控件工程和确定性TextEdit保存/关闭消失/重开AX读回/独立文件/清理已交付；真实模型链亦已接通，读取原生模型链报告：两项冻结任务0/2、完整检查unknown。当前领取C1.2-R，先在另建dev目录限次诊断无模型窗口生命周期，再分别诊断精确文本和Save；不要重跑controlled2救分。诊断后另冻模型验收；记录权限/执行错误与过程证据，不能将任意桌面控制接口或应用启动当任务通过。随后C4.5-AX再做原生示范，C2.2补跨应用。C4.5-DOM工程/自动化录制/直接复用/真实本地pilot已完成；真人验收需实际人类操作，本地新技能调用0且学习收益未证明，不补造或救回该轮。C5.0与R/B2旧包不重做，未晋级候选不设默认，无checker仍unknown。复用活动worktree，代码/报告/README分提交，保存全部原始证据；本阶段用户已明确授权GitHub推送。E2/E3/E4研究线按队列交替领取，新学习方法另冻新盲测。
+
+
+## C1.2-model交接（2026-10-07）
+
+源码58e6446/abd0acd，原生模型链复用既有runner/journal/budget。两项冻结任务各一次，合计16本地请求/零云；末尾换行不匹配、未有效Save，原窗口随后不可观察，完整checker均unknown。原始目录artifacts/native-model/controlled2及[报告](../experiments/2026-10-07-native-model-chain.md)保留；controlled1无模型调用。下一只领取C1.2-R：独立dev先限次记录无模型窗口生命周期，再分开诊断精确值/Save；窗口消失原因未定，不自动吞错误、重开救分或升级OCR。旧controlled2不得做新盲测，不补造能力通过。
