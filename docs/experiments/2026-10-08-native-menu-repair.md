@@ -78,3 +78,13 @@ Commit `853202b` also repairs the previously encountered P3 pilot classification
 [问题台账](../computer-use-issues.md)记录每项根因证据、实现修复、测试和未确认事项。初始诊断的AX窗口识别轨迹对其他窗口标题/URL做了显式脱敏，保留数量和自有文件信息，provenance记录这一处理；菜单错误与命令属性证据保留。旧实验数据未更改。
 
 最终全量命令：`.venv-computer-use/bin/python -m pytest -q`，冻结源码`9de41b8`，退出0：**1062 passed、4 skipped、1 xfailed、1 warning，232.53秒**。日志`artifacts/native-menu/final-pytest-9de41b8.txt`。warning来自pygame使用已弃用pkg_resources，未影响结果。原生模型运行结束后才开始回归，两者不争抢推理资源。
+
+## 非激活窗口受控验收（2026-10-09）
+
+命令：`.venv-computer-use/bin/python -m scripts.experiments.native_inactive_acceptance --output artifacts/native-inactive/2026-10-08-controls1`。源码/测试提交`536d926`，严格运行两个上下文，各一次，无模型请求和云调用。
+
+结果为 **0/2 acceptance passed**，该结果保留，不能升级为激活能力通过。main 上下文确实建立了辅助窗口前台、观察到 TextEdit 非前台且自有主窗口，然后只发出一次 `AXFrontmost=true` 写入；AX 动作回报已作用且新的 AX 观察回报 active/main，但独立 `NSWorkspace.frontmostApplication()` 仍返回已知的辅助进程 PID，因此未通过“实际前台 + 同一窗口”门控，未执行 fill/menu/Save。run_sync 上下文在 3 秒就绪窗口内始终读到旧辅助 PID，未开始编辑。两项都停止并清理了各自辅助进程，真实编辑动作数为`[1, 0]`，Save均未发出。
+
+随后只读核查确认旧辅助 PID 已退出；一个新进程中的 `NSWorkspace` 读取返回当前 TextEdit PID，而 `AXFocusedApplication` 系统级读取返回`-25204`。这些事实支持“同一观测消费者/事件循环保留旧前台 PID”的诊断，但还不足以证明具体的 AppKit 缓存或 worker 线程根因。原始结果、timeline、helper日志、源码冻结和核查摘要保留在 `artifacts/native-inactive/2026-10-08-controls1/`，其中 `audit.json` 明确记录了这次负结果。
+
+因此下一包不是模型验收，也不运行 Task6 的 Unicode dev2。先为前台观测增加新鲜、带期限的只读消费者并做离线回归，再重新冻结最多两项非激活控制；旧 controlled2、validation1 和本次 controls1 均不重跑救分。

@@ -15,9 +15,12 @@
 | CU-AX-007 | 检查器把Save尚未落盘的磁盘读数缓存为最终成绩，关闭重开AX已正确仍failed | 已修0b7faff：保留前读数、以重开后的新磁盘+AX判断；v2两项before=false/最终true，模型dev1/1 |
 | CU-AX-008 | 同名文档会阻塞关闭判定；URL缺失又不能证明原窗口关闭 | 已修6e374f2：同时核验原窗口引用与精确URL均消失，回归与实际关闭重开通过 |
 | CU-BUDGET-001 | 原验证协议仅计编辑4动作，漏记验证/清理另4动作 | 已修4c8c138：执行前分阶段与总量守卫，原语按actor记录；模型协议亦显式计Agent16+验证4 |
+| CU-AX-009 | 非激活受控验收中，AX 激活写入后的 AX 观察已为 active/main，但同一进程的 NSWorkspace 前台读取仍返回已退出辅助进程 PID；run_sync 就绪轮询也继承旧 PID。新进程读到当前 TextEdit，AXFocusedApplication 系统读为 -25204 | 2026-10-09 controls1 明确0/2、无 fill/Save；辅助进程均清理。已确认是前台观测边界，具体缓存/事件循环根因未定。下一步使用新鲜有期限只读消费者复现后再决定生产修复；不把 stale 读数转换成 activation success |
 
 ## 修复记录要求
 
 每项修复记录根因证据、源码提交、失败后通过的回归、实际验收与未解决边界。确认不了原因时写清事实和缺口；诊断完成、工程修复、确定性执行、真实模型通过分别报告。自动保存、请求接受或模型自述都不能代替对应的独立检查。
 
 本轮最终共用执行器回归：源码`9de41b8`，1062 passed、4 skipped、1 xfailed，退出0。分阶段证据、命令与限制见[菜单修复报告](experiments/2026-10-08-native-menu-repair.md)。
+
+非激活 controls1 另有独立负结果：0/2，编辑动作 `[1, 0]`，Save 0，模型/云请求 0；见[菜单修复报告](experiments/2026-10-08-native-menu-repair.md)与 `artifacts/native-inactive/2026-10-08-controls1/audit.json`。

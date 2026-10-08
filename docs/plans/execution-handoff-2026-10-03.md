@@ -161,4 +161,4 @@ C6仅在DOM/AX覆盖缺口出现时；C8仅在同权重兼容和任务时间证�
 
 ## C1.2-R-menu交接（2026-10-08）
 
-C1.2-R-menu窄修复与验收已完成：v1控制0/2保留；修复保存检查时序/AX只读就绪后v2确定性2/2，另冻单项真实本地模型dev1/1、实际Save与关闭重开独立读回通过，5请求零云，全量1062 passed。旧controlled2仍0/2、unknown2。下一C1.2-R-active受控非激活窗口验收，再冻结第二原生任务；旧窗口消失原因、OCR及原生示范尚未完成。 源码冻结`9de41b8`；[报告](../experiments/2026-10-08-native-menu-repair.md)及[问题台账](../computer-use-issues.md)含各修复提交、失败、预算与限制。原始目录`artifacts/native-menu/2026-10-08-{diagnosis1,diagnosis2,validation1,validation2,model-dev1}`，全量日志`artifacts/native-menu/final-pytest-9de41b8.txt`；仅存在活动worktree，不能因报告提交而删去。正验收初始应用均active，激活写入/瞬态故障分支仅单测覆盖，下一包必须补真实非激活状态，而非重复已有成功样本。
+C1.2-R-menu窄修复与已激活窗口验收已完成；非激活controls1 为0/2：AX 激活回报 active/main，但同一 NSWorkspace 消费者仍返回旧辅助 PID，run_sync 就绪也受旧 PID影响；没有 fill/Save。源码冻结`9de41b8`用于上一包，新增探针提交`536d926`；[报告](../experiments/2026-10-08-native-menu-repair.md)及[问题台账](../computer-use-issues.md)含失败、预算与限制。原始目录新增`artifacts/native-inactive/2026-10-08-controls1`，不可删除。下一包先验证新鲜前台只读观测，再重新非激活控制；Task6 Unicode dev2 暂停，旧controlled2不回写。
