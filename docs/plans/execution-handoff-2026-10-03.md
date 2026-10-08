@@ -1,6 +1,6 @@
 # 执行交接：浏览器学习闭环与后续E/C顺序
 
-更新：2026-10-08；原审查基线da5f675。本文保留实施规格；B2.1/B2.2、可靠性R1–R3-a与C5.0入口均完成相应工程/真实pilot，浏览器相对raw技能分数收益未证明。C4.5-DOM工程与冻结集成pilot已交付，真人DOM验收待实际操作；C1.2 AX工程与确定性TextEdit驱动pilot已交付，真实原生模型链已接通，两项冻结任务0/2、完整检查unknown；无模型生命周期两项诊断已完成，窗口稳定且精确填值，但Save目标不可用；下一C1.2-R-menu菜单/应用激活限次dev诊断，OCR仍待做，不能当完整能力验收。 [模型报告](../experiments/2026-10-07-native-model-chain.md)。[AX报告](../experiments/2026-10-07-macos-ax.md)。[教学报告](../experiments/2026-10-07-browser-demonstration.md)记录录制/直接复用/真实本地各2/2、0次新技能调用、992 passed和7请求零云。E/C全部状态以[任务队列](task-queue-2026-10-01.md)为准；历史设计未勾选项不意味着需重复实施。
+更新：2026-10-08；原审查基线da5f675。C1.2-R-menu窄修复与验收已完成：v1控制0/2保留；修复保存检查时序/AX只读就绪后v2确定性2/2，另冻单项真实本地模型dev1/1、实际Save与关闭重开独立读回通过，5请求零云，全量1062 passed。旧controlled2仍0/2、unknown2。下一C1.2-R-active受控非激活窗口验收，再冻结第二原生任务；旧窗口消失原因、OCR及原生示范尚未完成。 [本轮报告](../experiments/2026-10-08-native-menu-repair.md)、[问题台账](../computer-use-issues.md)。E/C全部状态以[任务队列](task-queue-2026-10-01.md)为准；历史规格与实验不回写。
 
 ## 0. 开始工作：只读最小材料
 
@@ -123,7 +123,7 @@ descriptor的digest由工具生成并写入，不让调用方随意指定；实�
 
 用户最新确认覆盖原默认次序：先完成[可靠性规格](browser-reliability-2026-10-03.md)中R1状态、R2技能发现、R3步数诊断与新留出，再领取下列入口/示范任务。各诊断固定小预算，依据轨迹推进，不反复调旧test。
 
-当前R1/R2云、本地六次dev、新v2九次、R3-a四次及C5.0入口已完成，不重做；默认5保持，6显式可选。[入口报告](../experiments/2026-10-04-browser-task-entry.md)记录源码e1e9fff、946 passed、7本地请求/零云、真实保存的completed/unknown各一次。C4.5-DOM工程/自动化集成pilot也已完成，不重做；[教学报告](../experiments/2026-10-07-browser-demonstration.md)记录新输入实际保存/读回及模型0技能调用，真人验收另待操作。C1.2 AX工程/确定性保存重读pilot已交付；原生模型链已接通且两项冻结任务0/2、完整检查unknown；下一C1.2-R窗口/精确值/保存限次诊断，按需OCR仍待做，完整验收后再C4.5-AX；[v2报告](../experiments/2026-10-03-browser-local-transfer-v2.md)的唯一失败不救回，v2不用于修复后盲测，不强行晋级候选。
+R1/R2、R3-a、C5.0与C4.5-DOM已完成相应工程/pilot，不重做，真人DOM验收另待操作。C1.2-R-menu窄修复与验收已完成：v1控制0/2保留；修复保存检查时序/AX只读就绪后v2确定性2/2，另冻单项真实本地模型dev1/1、实际Save与关闭重开独立读回通过，5请求零云，全量1062 passed。旧controlled2仍0/2、unknown2。下一C1.2-R-active受控非激活窗口验收，再冻结第二原生任务；旧窗口消失原因、OCR及原生示范尚未完成。 未晋级候选不设默认；暴露的旧留出不用于修复后盲测。
 
 1. **C5.0最小集成（已完成，以下为保留规格）**：Launcher/API已接显式受控实验浏览器模式，提供执行器、运行ID/结果/费用/停止；复用core/server.py与现有前端。只有对应任务检查器通过才自动标completed；无可靠检查器标unknown/待确认，不能把fixture的隐藏评分文件当通用完成检测器。实际用户页面通知为事件/面板，不启浏览器语音；服务重启历史恢复、自由任务接入属于后续C5。
    - 复用core/background_lane.py、core/background_worker.py及kage-avatar/public/launcher.html的kage:job通道。现有worker正常返回就发completed，它仅说明运行结束；浏览器result须单独提供任务检查状态与证据，通知/页面不得直接写成任务成功。core/server.py的_background_completion_notification也须按任务检查结果表达。
@@ -147,7 +147,7 @@ C6仅在DOM/AX覆盖缺口出现时；C8仅在同权重兼容和任务时间证�
 
 ## 9. 给执行模型的起始指令
 
-> 在Kage仓库先读总规划、E/C统一队列、本文§0/§7及C4.5-DOM教学报告。当前C1.2 macOS AX窗口/控件工程和确定性TextEdit保存/关闭消失/重开AX读回/独立文件/清理已交付；真实模型链亦已接通，读取原生模型链报告：两项冻结任务0/2、完整检查unknown。当前领取C1.2-R-menu：先读2026-10-08生命周期报告；两个无模型上下文均窗口稳定/精确填值，但按菜单后Save目标未出现。另建dev目录限次记录激活/前台与菜单enabled/command状态，再决定窄修复；不要重跑controlled2救分。诊断后另冻模型验收；记录权限/执行错误与过程证据，不能将任意桌面控制接口或应用启动当任务通过。随后C4.5-AX再做原生示范，C2.2补跨应用。C4.5-DOM工程/自动化录制/直接复用/真实本地pilot已完成；真人验收需实际人类操作，本地新技能调用0且学习收益未证明，不补造或救回该轮。C5.0与R/B2旧包不重做，未晋级候选不设默认，无checker仍unknown。复用活动worktree，代码/报告/README分提交，保存全部原始证据；本阶段用户已明确授权GitHub推送。E2/E3/E4研究线按队列交替领取，新学习方法另冻新盲测。
+> 在Kage仓库先读统一队列、本文§0/§7及2026-10-08菜单修复报告、问题台账。当前领取C1.2-R-active：复用活动worktree，冻结最多两个无模型受控非激活文档探针，验证AXFrontmost单次请求/实际前台与同一主窗口，拒绝用请求accepted冒认激活成功；若不支持或未验证即停止编辑并记录。保留全部负结果及旧controlled2 0/2，不重跑救分。通过后另冻第二原生模型dev，沿用runner/journal/budget与真实Save、关闭重开、AX+磁盘独立检查；不将单项成功当通用能力。OCR按AX覆盖缺口领取，C4.5-AX在原生验收后实施。用户既有专用文档和其他桌面内容不操作；代码/报告/状态分别提交，原始数据尚在活动worktree，勿归档。E2/E3/E4研究线按队列交替领取。
 
 
 ## C1.2-model交接（2026-10-07）
@@ -158,3 +158,7 @@ C6仅在DOM/AX覆盖缺口出现时；C8仅在同权重兼容和任务时间证�
 ## C1.2-R生命周期交接（2026-10-08）
 
 [报告](../experiments/2026-10-08-native-lifecycle-diagnosis.md)：源码6ded6f5/3e373d4只增加诊断/测试，未改运行时；固定main/run_sync两项，16样本各自窗口稳定，精确67字符/末尾换行AX值正确，menu已作用但Save目标均不可用；结束时磁盘初始，稍后只读检查变为目标文本，无Save调用、原因/来源未知。零模型/云，未复现controlled2消失，不计能力成绩。下一C1.2-R-menu限次dev记录NSRunningApplication激活/前台状态及自有窗口菜单的enabled/command/modifier；不能由现有证据推定焦点根因或直接加无边界重试。保留两份未保存专用诊断文档，若继续使用先核对精确URL，勿操作其他文档。旧模型成绩不回写。
+
+## C1.2-R-menu交接（2026-10-08）
+
+C1.2-R-menu窄修复与验收已完成：v1控制0/2保留；修复保存检查时序/AX只读就绪后v2确定性2/2，另冻单项真实本地模型dev1/1、实际Save与关闭重开独立读回通过，5请求零云，全量1062 passed。旧controlled2仍0/2、unknown2。下一C1.2-R-active受控非激活窗口验收，再冻结第二原生任务；旧窗口消失原因、OCR及原生示范尚未完成。 源码冻结`9de41b8`；[报告](../experiments/2026-10-08-native-menu-repair.md)及[问题台账](../computer-use-issues.md)含各修复提交、失败、预算与限制。原始目录`artifacts/native-menu/2026-10-08-{diagnosis1,diagnosis2,validation1,validation2,model-dev1}`，全量日志`artifacts/native-menu/final-pytest-9de41b8.txt`；仅存在活动worktree，不能因报告提交而删去。正验收初始应用均active，激活写入/瞬态故障分支仅单测覆盖，下一包必须补真实非激活状态，而非重复已有成功样本。
