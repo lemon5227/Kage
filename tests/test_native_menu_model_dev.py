@@ -19,6 +19,8 @@ class StopBeforeModel(Exception):
      'Kage native menu dev.\nStatus: verified through TextEdit.\n'),
     (['--task', 'dev2'], 'native_menu_unicode_dev2', 'kage-menu-unicode-dev2.txt',
      '项目进度\n状态：已保存\n复核：AX + 磁盘\n'),
+    (['--task', 'dev3'], 'native_text_recovery_dev3', 'kage-text-recovery-dev3.txt',
+     '项目复核\n结论：已核对\n操作：保存并读回\n'),
 ])
 def test_selected_task_reaches_existing_chain_and_freeze(monkeypatch, tmp_path, selection, task_id, filename, expected):
     output = tmp_path / 'attempt'
@@ -52,7 +54,7 @@ def test_selected_task_reaches_existing_chain_and_freeze(monkeypatch, tmp_path, 
     assert list(task['initial_files']) == [filename]
     frozen = json.loads((output / 'freeze.json').read_text())
     assert frozen['task'] == task
-    assert frozen['selected_task'] == ('dev2' if selection == ['--task', 'dev2'] else 'dev1')
+    assert frozen['selected_task'] == (selection[1] if selection else 'dev1')
     assert frozen['task_sha256'] == hashlib.sha256(json.dumps(task, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
     assert frozen['protocol_sha256'] == hashlib.sha256(json.dumps(frozen['protocol'], sort_keys=True).encode()).hexdigest()
     test_name = 'tests/test_native_menu_model_dev.py'

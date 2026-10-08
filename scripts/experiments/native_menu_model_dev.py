@@ -30,6 +30,25 @@ TASKS={'dev1':TASK,'dev2':{
     'instruction':TASK['instruction'].split('Exact JSON text:\n')[0]+'Exact JSON text:\n'+json.dumps(UNICODE_TEXT,ensure_ascii=False),
     'initial_files':{'kage-menu-unicode-dev2.txt':'项目进度\n状态：待保存\n'},
     'expected':UNICODE_TEXT,'output_file':'kage-menu-unicode-dev2.txt'}}
+RECOVERY_TEXT='项目复核\n结论：已核对\n操作：保存并读回\n'
+TASKS['dev3']={
+    'task_id':'native_text_recovery_dev3','document_name':'kage-text-recovery-dev3.txt',
+    'instruction':
+        'Replace the entire dedicated TextEdit text with the decoded JSON below. '
+        'It has 21 Unicode characters and 3 real LF newlines, including a final LF after 读回. '
+        'Your fill JSON value must include that final newline. '
+        'Check the fresh AXTextArea.value returned after fill against the requested text before Save; '
+        'if the final LF is missing, fill again with the complete requested text. '
+        'On StaleObservation, use its returned fresh observation immediately. '
+        'If application_active is false, activate the current AXWindow target_ref with activate in its operations; '
+        'require active true, then use the NEW Save target (command s) from that result. '
+        'When Save is already observed, press it directly without opening the menu or another observe. '
+        'If no fresh observation is returned, observe only the owned window. '
+        'Do not invent references or claim success without an applied Save.\nExact JSON text:\n'
+        +json.dumps(RECOVERY_TEXT,ensure_ascii=False),
+    'initial_files':{'kage-text-recovery-dev3.txt':'项目复核\n结论：待核对\n'},
+    'expected':RECOVERY_TEXT,'output_file':'kage-text-recovery-dev3.txt',
+}
 PROTOCOL={'version':'native-menu-model-dev-v1','tasks':1,'attempts_per_task':1,'max_loop_steps':8,
           'max_requests':10,'max_agent_actions':16,'max_checker_cleanup_native_actions':4,
           'max_total_native_actions':20,'max_app_open_requests':2,'cooperative_timeout_s':480,'cloud_calls':0,
