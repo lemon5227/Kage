@@ -20,6 +20,10 @@
 | CU-AX-011 | controls4两次自有helper未取得前台，fresh读取维持其他前台PID | 明确0/2，零编辑/Save，helper均清理；系统为何未执行本次helper NS激活请求原因未定。已有controls3的AX激活2/2保留；不操作其他前台app，不重复采样救分 |
 | CU-TEXT-001 | Unicode dev2唯一精确文本差异为缺末尾换行，两次Save观察失效被拒绝；独立checkerunknown | 模型开发验收0/1、8本地请求，未追加尝试。下一新dev研究文本读回核对/失效恢复，不能把工具静默补文本或检查器修复当模型学会 |
 | CU-EVAL-003 | 首轮全量浏览器硬超时测试：即时PID消失断言失败，timeout/score0/检查点/返回<8秒已通过；7个PID稍后均不存在 | ac9b85d仅测试改为总2秒只读等待，保留全部最终消失断言和原硬期限；持续残留仍失败。目标1 passed，首轮1fail/1086pass日志保留，最终1087 passed/4 skipped/1 xfailed、退出0；未确认延迟退出或zombie回收的具体原因 |
+| CU-PROMPT-001 | dev3初版task要求直接Save，但原系统Soul强制先open menu；仅改任务指令无法确保真正使用一致的模型策略 | 已修6bf2fb2：显式Soul从CLI选取→provider身份/cache→真实chain/system消息→freeze统一；默认dev1/2不变。真实消费者回归先失败后通过，dev3实际首请求的专用提示/hash已审计 |
+| CU-AX-012 | dev3首次激活已作用但未确认active，随后原窗口不在AX列表；七次重复observe未有进展 | dev3原0/1/checkerunknown保留，无fill/Save，来源未确认。0c519d2对确认的原窗口scope丢失阻止后续推理请求，离线8→1请求；普通控件stale仍可恢复。99原生回归通过，优化未再做真实模型尝试 |
+
+本轮最终全量源码`0c519d2`，1091 passed、4 skipped、1 xfailed，退出0。模型dev3先于终止优化，分数不重写；[文本/恢复报告](experiments/2026-10-09-native-text-recovery.md)记录完整分母、代码/提示/预算和剩余边界。
 
 ## 修复记录要求
 
