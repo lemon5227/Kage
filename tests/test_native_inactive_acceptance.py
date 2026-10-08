@@ -155,6 +155,22 @@ def test_helper_waits_for_actual_foreground_without_relaunch(tmp_path,monkeypatc
     helper.log.close()
 
 
+def test_fresh_frontmost_reader_uses_bounded_child_process(monkeypatch):
+    cli = module()
+    calls = []
+    class Result:
+        returncode = 0
+        stdout = "4242\n"
+        stderr = ""
+    def run(*args, **kwargs):
+        calls.append((args, kwargs))
+        return Result()
+    monkeypatch.setattr(cli.subprocess, 'run', run)
+    assert cli.fresh_frontmost_pid(timeout_s=0.4) == 4242
+    assert calls and calls[0][1]['timeout'] == 0.4
+    assert calls[0][1]['check'] is False
+
+
 def test_unknown_completion_never_has_overall_acceptance(tmp_path,monkeypatch):
     cli=module();harness(monkeypatch,cli)
     report=asyncio.run(cli.probe(tmp_path/'probe','main'))

@@ -30,6 +30,7 @@ PROTOCOL = {
     'max_checker_cleanup_actions_per_context': 4, 'max_native_actions_per_context': 8,
     'max_app_open_requests_per_context': 2, 'activation_dispatches_max': 1,
     'helper_readiness_deadline_s': 3, 'helper_poll_interval_s': .1,
+    'fresh_frontmost_reader': 'short-lived AppKit subprocess per read',
     'precondition_samples': 1, 'postcondition_samples': 1,
     'checker_observation_attempts_max': 30, 'checker_observation_deadline_s': 3,
     'deadline_semantics': 'cooperative before AX calls',
@@ -61,10 +62,29 @@ app.run()
 '''
 
 
+FRESH_FRONTMOST_SOURCE = (
+    'import AppKit; front = AppKit.NSWorkspace.sharedWorkspace().frontmostApplication(); '
+    'print(int(front.processIdentifier()) if front else "")'
+)
+
+
+def fresh_frontmost_pid(*, timeout_s=0.5):
+    """Read frontmost PID in a new AppKit consumer to avoid stale local state."""
+    try:
+        result = subprocess.run(
+            [sys.executable, '-c', FRESH_FRONTMOST_SOURCE],
+            capture_output=True, text=True, timeout=timeout_s, check=False,
+        )
+        if result.returncode != 0:
+            return None
+        value = result.stdout.strip()
+        return int(value) if value else None
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return None
+
+
 def helper_frontmost_pid():
-    import AppKit
-    front = AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
-    return int(front.processIdentifier()) if front else None
+    return fresh_frontmost_pid()
 
 
 class OwnedForegroundHelper:
