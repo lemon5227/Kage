@@ -116,6 +116,16 @@ def test_browser_worker_hard_timeout_retains_checkpoint_and_stops_descendants(tm
     assert (ws/'browser-check.json').exists() and (ws/'worker-processes.json').exists()
     import os
     process_ids=json.loads((ws/'worker-processes.json').read_text())
+    # Termination and orphan descendant reaping are separate OS events.
+    # Keep the hard runner deadline above and require every PID to disappear.
+    pending=set(process_ids)
+    reap_deadline=time.monotonic()+2
+    while pending and time.monotonic()<reap_deadline:
+        for pid in tuple(pending):
+            try:os.kill(pid,0)
+            except ProcessLookupError:pending.remove(pid)
+        if pending:time.sleep(.02)
+    assert not pending, f'timed-out worker descendants still exist: {sorted(pending)}'
     for pid in process_ids:
         with pytest.raises(ProcessLookupError): os.kill(pid,0)
 
