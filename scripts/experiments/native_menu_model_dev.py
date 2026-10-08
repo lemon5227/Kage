@@ -25,7 +25,8 @@ TASK={'task_id':'native_menu_repair_dev1','document_name':'kage-menu-repair-dev1
       'initial_files':{'kage-menu-repair-dev1.txt':'Kage native menu dev.\nStatus: pending.\n'},
       'expected':TEXT,'output_file':'kage-menu-repair-dev1.txt'}
 PROTOCOL={'version':'native-menu-model-dev-v1','tasks':1,'attempts_per_task':1,'max_loop_steps':8,
-          'max_requests':10,'max_actions':16,'cooperative_timeout_s':480,'cloud_calls':0,
+          'max_requests':10,'max_agent_actions':16,'max_checker_cleanup_native_actions':4,
+          'max_total_native_actions':20,'max_app_open_requests':2,'cooperative_timeout_s':480,'cloud_calls':0,
           'temperature':0,'max_output_per_request':300,'split':'dev','purpose':'post-repair integration, not holdout'}
 SOURCES=sorted(set(SOURCE_FILES+['scripts/experiments/native_menu_model_dev.py',
                                'core/computer_use/native_model.py','core/computer_use/native_ax.py',
