@@ -330,9 +330,12 @@ class NativeAXAdapter:
         elif isinstance(exc, AXUnavailableError): code, outcome = 'NotAvailable', 'rejected'
         elif isinstance(exc, AXStaleError): code, outcome = 'StaleObservation', 'rejected'
         elif isinstance(exc, ValueError): code, outcome = 'InvalidArgument', 'rejected'
-        return {'success': False, 'error': code, 'message': str(exc), 'outcome': outcome,
+        result = {'success': False, 'error': code, 'message': str(exc), 'outcome': outcome,
                 'action_applied': action_applied,
                 'ocr_fallback': {'available': False, 'source': None, 'reason': 'no OCR provider configured'}}
+        if isinstance(exc, AXWindowClosedError):
+            result['window_closed'] = True
+        return result
 
     async def windows(self, bundle_id):
         async with self._lock:

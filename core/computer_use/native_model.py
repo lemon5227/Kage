@@ -137,18 +137,26 @@ class NativePromptBuilder(PromptBuilder):
 class NativeExecutor(ToolExecutor):
     def __init__(self,registry,output):
         super().__init__(registry,str(output));self.output=output;self.entries=[]
+        self.scope_closed=False
     async def execute(self,name,arguments,require_confirmation=None):
         result=await super().execute(name,arguments,require_confirmation)
         entry={**asdict(result),'arguments':arguments,'actor':'agent'}
         self.entries.append(entry);append_json(self.output/'agent-tools.jsonl',entry)
+        try:payload=json.loads(result.result)
+        except (TypeError,ValueError):payload={}
+        if isinstance(payload,dict) and payload.get('success') is False and payload.get('window_closed') is True:
+            self.scope_closed=True
         return result
 
 
 class NativeRecordedModel:
-    def __init__(self,model,output,deadline,budget=None):
+    def __init__(self,model,output,deadline,budget=None,stop_check=None):
         self.model=model;self.output=output;self.deadline=deadline;self.budget=budget;self.dispatched=0
+        self.stop_check=stop_check
     def generate(self,**kwargs):
         kwargs['temperature']=0
+        if self.stop_check and self.stop_check():
+            raise ModelCallLimitExceeded('owned native window closed; no further model request')
         if time.monotonic()>=self.deadline:raise ModelCallLimitExceeded('cooperative task deadline reached')
         reservation=None
         if self.budget:
@@ -184,7 +192,7 @@ class NativeModelChain:
             return {'loop':asdict(LoopResult('',stop_reason='initial_observation_error')),'agent_actions':0,'model_requests':0,'usage':{'api_calls':0},'tool_results':[]}
         registry=ToolRegistry();scoped.register_tools(registry)
         executor=NativeExecutor(registry,self.output)
-        recorded=NativeRecordedModel(self.model,self.output,deadline,self.budget)
+        recorded=NativeRecordedModel(self.model,self.output,deadline,self.budget,stop_check=lambda:executor.scope_closed)
         metered=MeteredProvider(recorded,max_calls=self.max_requests)
         builder=NativePromptBuilder(ExperimentIdentityStore(self.native_soul),None,registry,prune_tools=False,memory_cfg={'recall_enabled':False})
         loop=AgenticLoop(metered,executor,builder,HistorySession());loop.MAX_STEPS=self.max_steps
@@ -197,7 +205,9 @@ class NativeModelChain:
         actual_calls=metered.calls[:recorded.dispatched]
         if all('input_tokens' in c['usage'] and 'output_tokens' in c['usage'] for c in actual_calls):
             usage.update({key:sum(c['usage'][key] for c in actual_calls) for key in ['input_tokens','output_tokens']})
-        report={'loop':asdict(result),'agent_actions':scoped.actions,'agent_save_applied':scoped.save_applied,'model_requests':recorded.dispatched,
+        loop_result=asdict(result)
+        if executor.scope_closed:loop_result['stop_reason']='native_window_closed'
+        report={'loop':loop_result,'scope_closed':executor.scope_closed,'agent_actions':scoped.actions,'agent_save_applied':scoped.save_applied,'model_requests':recorded.dispatched,
                 'usage':usage,'tool_results':executor.entries,
                 'timing_semantics':'cooperative deadline; synchronous model/AX requests may overrun deadline'}
         write_json(self.output/'chain.json',report)

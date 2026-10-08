@@ -44,6 +44,41 @@ def test_selected_native_prompt_reaches_model_and_matches_provider_identity(tmp_
     assert 'then open the document menu' not in system
     assert provider.metadata()['experiment_prompt_sha256']==hashlib.sha256(selected.encode()).hexdigest()
 
+def test_confirmed_owned_window_loss_stops_before_another_model_request(tmp_path):
+    from core.computer_use.native_model import NativeModelChain
+    from core.computer_use.native_ax import AXWindowClosedError
+    class ClosingDriver(Driver):
+        closed=False
+        def snapshot(self,ref):
+            if self.closed:raise AXWindowClosedError('owned window is no longer present')
+            return super().snapshot(ref)
+    driver=ClosingDriver()
+    def callback(messages,kwargs):
+        driver.closed=True
+        return ModelResponse(text='',tool_calls=[{'name':'native_observe','arguments':{'window_ref':'owned'}}])
+    provider=Provider(callback)
+    chain=NativeModelChain(provider,NativeAXAdapter(driver),'com.apple.TextEdit','owned.txt',tmp_path)
+    result=asyncio.run(chain.run('Save the owned document.'))
+    assert result['model_requests']==1 and len(provider.messages)==1
+    assert result['loop']['stop_reason']=='native_window_closed'
+    assert not driver.actions and result['agent_save_applied'] is False
+
+def test_changed_control_remains_recoverable_and_does_not_end_native_scope(tmp_path):
+    from core.computer_use.native_model import NativeModelChain
+    driver=Driver()
+    def callback(messages,kwargs):
+        if len(provider.messages)==1:
+            obs=json.loads(messages[-1]['content'].split('Initial native observation:\n')[1])['observation']
+            driver.value='external update'
+            return ModelResponse(text='',tool_calls=[{'name':'native_act','arguments':{
+                'observation_id':obs['observation_id'],'target_ref':'text','operation':'fill','value':'never applied'}}])
+        assert any(m['role']=='tool' and 'external update' in m['content'] for m in messages)
+        return ModelResponse(text='stopped safely')
+    provider=Provider(callback)
+    result=asyncio.run(NativeModelChain(provider,NativeAXAdapter(driver),'com.apple.TextEdit','owned.txt',tmp_path).run('Read.'))
+    assert result['model_requests']==2 and result['scope_closed'] is False
+    assert result['loop']['stop_reason']!='native_window_closed' and not driver.actions
+
 def test_scope_filters_private_windows_and_rejects_foreign_refs():
     from core.computer_use.native_model import ScopedNativeAdapter
     async def scenario():
