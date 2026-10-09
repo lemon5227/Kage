@@ -1,6 +1,6 @@
 # E/C统一任务队列
 
-更新：2026-10-09；E为学习/演化，C为电脑执行，编号不代表顺序。**新dev4固定一次0/1、checker failed：4本地请求，实际Save但写入双重编码文本26字符/0LF。30个Agent独立样本稳定，另1个可信重开后的replacement；0次activate，旧来源未知。961fb57新增通用观测text metrics，收益未验；下一新dev5验证反馈消费。** [取证报告](../experiments/2026-10-09-native-observed-text-dev.md)、[问题台账](../computer-use-issues.md)。失败、工程改进与模型收益分开记录。
+更新：2026-10-09；E为学习/演化，C为电脑执行，编号不代表顺序。**新dev4固定一次0/1、checker failed：4本地请求，实际Save但写入双重编码文本26字符/0LF。30个Agent独立样本稳定，另1个可信重开后的replacement；0次activate，旧来源未知。961fb57新增通用观测text metrics，收益未验；dev5暂缓，最新主线为Agent经验/技能消费与E2/E3/E4。** [取证报告](../experiments/2026-10-09-native-observed-text-dev.md)、[问题台账](../computer-use-issues.md)。失败、工程改进与模型收益分开记录。
 
 领取说明见[2026-10-03执行交接](execution-handoff-2026-10-03.md)，审查证据见[规划复核](../experiments/2026-10-03-progress-plan-review.md)。只读领取包与所需报告，勿把全部历史注入模型上下文。旧详细路线的未勾选项是设计清单，状态以本页为准。
 

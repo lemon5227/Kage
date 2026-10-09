@@ -1,6 +1,6 @@
 # 执行交接：浏览器学习闭环与后续E/C顺序
 
-更新：2026-10-09；原审查基线da5f675。新dev4源码e3e7ccb固定0/1 checker failed，4本地请求，实际Save却写入26字符/0LF的JSON表示。30Agent样本原身份稳定，另1个可信Close/reopen后的replacement；0次activate。961fb57补通用观测text metrics，未重模型/未证明收益，下一新dev5反馈消费；见[最新报告](../experiments/2026-10-09-native-observed-text-dev.md)、[问题台账](../computer-use-issues.md)。队列为状态入口，旧成绩保留。
+更新：2026-10-09；原审查基线da5f675。新dev4源码e3e7ccb固定0/1 checker failed，4本地请求，实际Save却写入26字符/0LF的JSON表示。30Agent样本原身份稳定，另1个可信Close/reopen后的replacement；0次activate。961fb57补通用观测text metrics，未重模型/未证明收益，dev5暂缓，Agent本体优先，见§9；见[最新报告](../experiments/2026-10-09-native-observed-text-dev.md)、[问题台账](../computer-use-issues.md)。队列为状态入口，旧成绩保留。
 
 ## 0. 开始工作：只读最小材料
 
