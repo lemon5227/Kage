@@ -1,6 +1,6 @@
 # E/C统一任务队列
 
-更新：2026-10-09；E为学习/演化，C为电脑执行，编号不代表顺序。**C1.2-R-parent-reference完成：两项180秒后setup原AX对象/scope/snapshot均有效，独立/新鲜各90样本一致，129原生聚焦与16项完整性检查通过。同步项observer末尾1.457ms缺口/coverage=false保留。下一单次新文本dev4取证实际推理/激活，旧失败不回写。** [原引用报告](../experiments/2026-10-09-native-parent-reference.md)、[问题台账](../computer-use-issues.md)。无模型诊断不计模型能力成绩。
+更新：2026-10-09；E为学习/演化，C为电脑执行，编号不代表顺序。**新dev4固定一次0/1、checker failed：4本地请求，实际Save但写入双重编码文本26字符/0LF。30个Agent独立样本稳定，另1个可信重开后的replacement；0次activate，旧来源未知。961fb57新增通用观测text metrics，收益未验；下一新dev5验证反馈消费。** [取证报告](../experiments/2026-10-09-native-observed-text-dev.md)、[问题台账](../computer-use-issues.md)。失败、工程改进与模型收益分开记录。
 
 领取说明见[2026-10-03执行交接](execution-handoff-2026-10-03.md)，审查证据见[规划复核](../experiments/2026-10-03-progress-plan-review.md)。只读领取包与所需报告，勿把全部历史注入模型上下文。旧详细路线的未勾选项是设计清单，状态以本页为准。
 
@@ -22,7 +22,7 @@
 | 编号 | 工作与作用 | 当前已完成 | 剩余验收 |
 |---|---|---|---|
 | C0 | 多步执行、原生工具历史、重复检测修复 | 核心完成；两种模型各文件任务9/9；完成状态移入C2.0已做 | 原同权重后端对照并入C8，不重复领取C0 |
-| C1 | DOM/AX观察与真实操作 | AX工程、已激活v2及非激活controls3各2/2；模型dev1 1/1、dev2 0/1、dev3前置失效0/1分表；提示wire/闭窗终止已接通，无模型长时及父原引用各两项稳定 | 真实推理/激活交互与旧来源待验证，文本策略仍未真实验证；OCR/原生示范/跨应用待补 |
+| C1 | DOM/AX观察与真实操作 | AX工程、v2/controls3各2/2；模型dev1 1/1、dev2/dev3/dev4各0/1分表；闭窗终止/提示一致性，长时及父原引用稳定；dev4真实Save/重开/独立取证 | 新text metrics的模型反馈收益未验，双重编码精确文本未过；旧来源/非激活推理交互、OCR/示范/跨应用待补 |
 | C2 | 独立完成检查、任务集、电脑迁移评测 | C2.0六族12/18；四浏览器族6/8；旧五臂45次保留；新v2三臂raw3/3、search2/3、preview3/3 | 相对raw学习收益/统计、多任务族与原生/跨应用；至少12电脑任务未完成 |
 | C3 | 可替换决策后端 | 仅规划 | 候选协议、可选Jev API与同任务对照；Jev自训暂缓 |
 | C4 | 失败→云/人类示范→技能与经验 | 文件C4.1–4.4完成；浏览器R2已有实际工作流调用；C4.5-DOM教学入口/参数提取/复用工程、冻结集成pilot完成 | 更广稳定迁移收益；C4.5-DOM真人验收及模型自动采用待验；C4.5-AX待做 |
@@ -68,12 +68,13 @@ C2.0实际产物检查 → C4.1任务级接管 → C4.2/E2.0最小档案 → C4.
 | C1.2-R-text | 提示一致性/终止优化工程完成，单次dev前置失效 | dev3 0/1，8本地请求零云，无fill/Save；选择提示实际wire与hash一致，闭窗后续推理guard离线8→1，普通stale仍可恢复，99原生回归；[报告](../experiments/2026-10-09-native-text-recovery.md)。下一独立长时取证；文本方法收益未验 |
 | C1.2-R-lifecycle-long | 两项固定长时无模型诊断完成，生产执行器未改 | 源码40f43ae；各180秒/90样本原窗口与应用身份稳定，新鲜消费者一致、磁盘未变，12项完整性检查通过，117原生聚焦；[报告](../experiments/2026-10-09-native-lifecycle-long.md)。未覆盖父原引用、真实推理负载或激活动作，不解释旧失效；下一parent-reference |
 | C1.2-R-parent-reference | 两项固定无模型原引用对照完成，生产执行器未改 | ff00d4a；180秒前后setup原对象、scope与snapshot均有效，独立/新鲜各90样本一致；16项完整性检查、129原生聚焦。blocking末尾1.457ms覆盖缺口保留，旧来源未知；[报告](../experiments/2026-10-09-native-parent-reference.md)。下一text-dev4实际推理/激活期取证 |
+| C1.2-R-text-dev4 | 新固定模型尝试与生命周期取证完成，文本failed | e3e7ccb真实0/1，4请求零云，fill+Save作用但26字符/0LF双重编码；30Agent样本原身份稳定，另1个可信重开replacement，0activate。961fb57补通用text metrics，模型收益未验；[报告](../experiments/2026-10-09-native-observed-text-dev.md)。下一新text-feedback dev5 |
 
 每个包的文件、接口、测试、固定预算、证据标准在[执行交接§2–6](execution-handoff-2026-10-03.md)。修复、生成和评测分别提交，候选冻结后才运行test，不反复看test调技能。不因网络不稳定无限采样成功；受控教师恢复探针和自然失败接管分表。
 
 ## 浏览器闭环之后
 
-当前C1.2-R-text-dev4：停止纯sleep重复，预注册一个新文本开发任务，在实际本地推理/激活期间加入有界独立只读observer。先对齐owned baseline与模型起点，冻结源码/提示/协议并落实8次本地请求预算；原语与observer读取/清理分列，checker正常Close按actor/stage标注。精确文本与Save/关闭重开检查沿用，不补救旧分数；有持续observer不能单变量归因模型/激活。原生示范/跨应用及OCR待补，真人DOM验收须实际操作；E2/E3/E4可交替推进。
+当前C1.2-R-text-feedback：冻结一个新dev5，在公开指令中要求核对value_metrics的字符/LF/末尾LF及原值再Save。实际使用修复后adapter，8请求门控、16Agent+4可信原语和有界独立observer沿用；最多一次，失败不追加。metrics不解码/补文本，不输入隐藏expected/checker；先验证实际反馈消费与精确文本，再谈方法收益。旧生命周期来源未知，非激活模型交互/示范/跨应用/OCR待补；E2/E3/E4可交替推进。
 
 B2.2发现两条待验证瓶颈：compact省略false可能误导勾选状态解释、提供技能后模型仍不发现/调用。R1在dev用真实云执行者从干净页面做6次状态投影对照；R2分别对照搜索和最小技能预览，不同时改多个变量；旧test不用来调技能。C5.0只提供显式实验模式与可信完成/失败/unknown，不把未晋级候选设默认。
 

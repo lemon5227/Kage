@@ -1,6 +1,6 @@
 # 执行交接：浏览器学习闭环与后续E/C顺序
 
-更新：2026-10-09；原审查基线da5f675。C1.2-R-parent-reference完成，源码ff00d4a两项180秒后setup原引用/scope/snapshot均有效，独立/新鲜各90样本一致；129原生聚焦、16项完整性核验。同步项observer末尾1.457ms缺口与coverage=false保留，旧故障原因未定。下一新文本dev4实际推理/激活期取证；见[最新报告](../experiments/2026-10-09-native-parent-reference.md)、[问题台账](../computer-use-issues.md)。E/C状态以[任务队列](task-queue-2026-10-01.md)为准，旧成绩不回写。
+更新：2026-10-09；原审查基线da5f675。新dev4源码e3e7ccb固定0/1 checker failed，4本地请求，实际Save却写入26字符/0LF的JSON表示。30Agent样本原身份稳定，另1个可信Close/reopen后的replacement；0次activate。961fb57补通用观测text metrics，未重模型/未证明收益，下一新dev5反馈消费；见[最新报告](../experiments/2026-10-09-native-observed-text-dev.md)、[问题台账](../computer-use-issues.md)。队列为状态入口，旧成绩保留。
 
 ## 0. 开始工作：只读最小材料
 
@@ -147,7 +147,7 @@ C6仅在DOM/AX覆盖缺口出现时；C8仅在同权重兼容和任务时间证�
 
 ## 9. 给执行模型的起始指令
 
-> 在Kage仓库读统一队列、2026-10-09原引用报告、问题台账。当前领取C1.2-R-text-dev4：两项纯等待未复现父原引用失效，结束sleep重复。预注册一个新专用TextEdit文本任务，源码/实际提示/协议/预算冻结后仅一次；8次本地请求上限落实实际链/预算，原语与可信checker/observer读取分列。先只读建立owned baseline，对齐observer与模型起点，在实际推理/激活期间有界观察，记录PID/原引用/精确URL/新鲜消费者及actor/stage。checker正常Close不算异常丢失；group清理与partial保留，其他窗口仅计数，禁止操作其他文档。沿用精确文本、实际Save及关闭重开AX/磁盘检查；失败原样，不重跑旧dev或补救成绩。observer/pump可能影响状态，不单变量归因模型/激活；无复现不改生产执行器。129原生聚焦与历史1091全量分开，复用活动worktree、保留两个checkout全部证据；E2/E3/E4可交替推进。
+> 在Kage仓库读统一队列、2026-10-09真实模型文本取证报告、问题台账。当前C1.2-R-text-feedback：dev4不是原窗口丢失，而是JSON表示被保存；961fb57仅增加可见字符串metrics，未验证模型消费。冻结一个新dev5，公开指令要求字符/LF/末尾LF及原值核对，再Save；不得自动JSON解码、补值或把隐藏expected/checker输入生成器。实际使用新adapter/Soul/task/source明确冻结，8请求provider/chain/kernel门控、16Agent+4可信/20原语、2opens、480合作式沿用；有效baseline先于派发、有界独立observer、actor/stage和清理/partial保留。checker Close/reopen是正常lineage，间隔读取不证明连续存在或关闭因果。每任务一次，失败不追加，不重跑dev4救分；报告实际反馈是否送达/模型是否采用及精确AX/磁盘结果。旧失效来源与非激活真实推理交互仍未知，生产改动须聚焦+一次全量；复用活动worktree保存跨两个checkout证据，E2/E3/E4可交替推进。
 
 
 ## C1.2-model交接（2026-10-07）
