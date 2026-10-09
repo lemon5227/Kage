@@ -349,3 +349,48 @@ def test_predispatch_second_snapshot_read_failure_reports_no_mutation():
         assert result['error']=='AXReadUnavailable' and result['action_applied'] is False
         assert api.mutations==[]
     run(scenario())
+
+
+def test_text_value_metrics_distinguish_decoded_and_literal_escaped_fill():
+    from core.computer_use.native_ax import NativeAXAdapter, revision
+    decoded='文档复核\n结论：已确认\n操作：保存并验证\n'
+    encoded=json.dumps(decoded,ensure_ascii=False)
+    async def scenario():
+        driver=FakeDriver();adapter=NativeAXAdapter(driver)
+        obs=(await adapter.observe('w1'))['observation']
+        assert obs['targets'][0]['value_metrics']=={
+            'characters':3,'lf_count':0,'ends_with_lf':False,
+            'literal_backslash_n_count':0,'scope':'observed_value'}
+        for value,characters,lf_count,ends_with_lf,literal_count in [
+            (decoded,21,3,True,0),(encoded,26,0,False,3)]:
+            result=await adapter.act(obs['observation_id'],'fill','e1',value)
+            assert result['success'] and result['action_applied'] is True
+            obs=result['observation'];target=obs['targets'][0]
+            assert target['value']==value and driver.actions[-1][-1]==value
+            assert target['value_metrics']=={
+                'characters':characters,'lf_count':lf_count,'ends_with_lf':ends_with_lf,
+                'literal_backslash_n_count':literal_count,'scope':'observed_value'}
+            assert obs['revision']==revision(driver.snapshot('w1'))
+            assert 'value_metrics' not in driver.state['targets'][0]
+    run(scenario())
+
+
+def test_metrics_copy_targets_and_cover_only_observed_text_strings():
+    from core.computer_use.native_ax import NativeAXAdapter
+    class SharedSnapshot(FakeDriver):
+        def snapshot(self,ref):return self.state
+    async def scenario():
+        driver=SharedSnapshot()
+        driver.state['targets']=[
+            {'target_ref':'field','role':'AXTextField','value':'"quoted"\n'},
+            {'target_ref':'button','role':'AXButton','value':'a\n'},
+            {'target_ref':'unknown','role':'AXTextArea','value':None}]
+        before=copy.deepcopy(driver.state)
+        obs=(await NativeAXAdapter(driver).observe('w1'))['observation']
+        assert obs['targets'][0]['value']=='"quoted"\n'
+        assert obs['targets'][0]['value_metrics']['ends_with_lf'] is True
+        assert 'value_metrics' not in obs['targets'][1]
+        assert 'value_metrics' not in obs['targets'][2]
+        assert driver.state==before and obs['targets'] is not driver.state['targets']
+        assert all(observed is not original for observed,original in zip(obs['targets'],driver.state['targets']))
+    run(scenario())

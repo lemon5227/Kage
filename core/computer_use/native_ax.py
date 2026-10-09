@@ -316,8 +316,19 @@ class NativeAXAdapter:
 
     def _observe(self, window_ref):
         snapshot = self.driver.snapshot(window_ref)
+        snapshot_revision = revision(snapshot)
+        targets = []
+        for original in snapshot['targets']:
+            target = dict(original)
+            value = target.get('value')
+            if target.get('role') in {'AXTextArea', 'AXTextField'} and isinstance(value, str):
+                target['value_metrics'] = {'characters': len(value), 'lf_count': value.count('\n'),
+                    'ends_with_lf': value.endswith('\n'), 'literal_backslash_n_count': value.count('\\n'),
+                    'scope': 'observed_value'}
+            targets.append(target)
+        snapshot = {**snapshot, 'targets': targets}
         self.current = {'observation_id': uuid.uuid4().hex, 'surface_id': self.surface_id,
-                        'revision': revision(snapshot), 'source': 'ax',
+                        'revision': snapshot_revision, 'source': 'ax',
                         'ocr_fallback': {'available': False, 'source': None,
                                          'reason': 'no OCR provider configured'}, **snapshot}
         return self.current
