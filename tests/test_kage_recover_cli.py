@@ -88,3 +88,20 @@ def test_missing_authorization_preflight_preserves_state_without_dispatch(tmp_pa
     with pytest.raises(RuntimeError,match='paid_teacher_not_authorized'):
         cli.main(['--config',str(path),'--task',str(source)])
     assert state.read_bytes()==before
+
+
+def test_paths_expand_home_and_teacher_defaults_to_canonical(tmp_path,monkeypatch):
+    from scripts import kage_recover as cli
+    path=config(tmp_path); cfg=json.loads(path.read_text())
+    cfg.pop('teacher_settings')
+    cfg['root']='~/persistent-root'
+    path.write_text(json.dumps(cfg))
+    monkeypatch.setenv('HOME',str(tmp_path))
+    private=tmp_path/'.config/kage/teachers/deepseek.json'; private.parent.mkdir(parents=True)
+    private.write_text(json.dumps({'model':{'cloud_api':{'api_key':'PRIVATE-KEY','model_name':'deepseek-flash','base_url':'https://api.deepseek.com'}}}))
+    monkeypatch.setattr(cli,'DockerSkillRunner',lambda **kw:object())
+    loop=cli.build_loop(path,True)
+    assert loop.root==tmp_path/'persistent-root'
+    mutator=loop.mutator_factory(tmp_path/'slot')
+    assert mutator.model.model_name=='deepseek-flash'
+    assert 'PRIVATE-KEY' not in (loop.root/'teacher-protocol.json').read_text()

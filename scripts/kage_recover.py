@@ -43,10 +43,10 @@ class FiveStepLoop(AgenticLoop):
 
 
 def build_loop(config_path, allow_paid_teacher=False):
-    config_path=Path(config_path).resolve()
+    config_path=Path(config_path).expanduser().resolve()
     cfg=json.loads(config_path.read_text())
     def path(value):
-        return (config_path.parent / value).resolve()
+        return (config_path.parent / Path(value).expanduser()).resolve()
     def record(value):
         return json.loads(path(value).read_text()) if isinstance(value,str) else value
     root=path(cfg['root'])
@@ -108,10 +108,8 @@ def build_loop(config_path, allow_paid_teacher=False):
     def mutator_factory(slot):
         if not allow_paid_teacher:
             raise RuntimeError('paid_teacher_not_authorized')
-        if not cfg.get('teacher_settings'):
-            raise RuntimeError('teacher_settings_required')
         try:
-            cloud=record(cfg['teacher_settings'])['model']['cloud_api']
+            cloud=record(cfg.get('teacher_settings') or '~/.config/kage/teachers/deepseek.json')['model']['cloud_api']
             public={k:cloud[k] for k in ('model_name','base_url')}
             if not cloud.get('api_key'): raise ValueError()
         except (OSError, ValueError, KeyError, TypeError):
@@ -135,12 +133,13 @@ def main(argv=None):
     args=parser.parse_args(argv)
     if not args.allow_paid_teacher:
         raise RuntimeError('paid_teacher_not_authorized: task execution requires explicit --allow-paid-teacher and an approved fixed teacher budget')
+    args.config=args.config.expanduser().resolve()
     cfg=json.loads(args.config.read_text())
-    task_path=(args.config.resolve().parent/args.task).resolve()
+    task_path=(args.config.parent/Path(args.task).expanduser()).resolve()
     if task_path.is_file():
         task=json.loads(task_path.read_text())
     else:
-        suite=json.loads((args.config.resolve().parent/cfg['task_suite']).read_text())
+        suite=json.loads((args.config.parent/Path(cfg['task_suite']).expanduser()).read_text())
         tasks=[t for t in suite['tasks'] if t['task_id']==args.task]
         if len(tasks)!=1: raise ValueError('unique task ID required')
         task=tasks[0]
