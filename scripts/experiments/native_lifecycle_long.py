@@ -235,7 +235,7 @@ def sample_loop(timeline, sample, wait, interval=2, maximum=90):
     return {'sample_count': count, 'elapsed_s': time.monotonic()-started}
 
 
-def observer(document, output):
+def observer(document, output, *, start_gate=None, gate_timeout=15):
     reader = Reader(document)
     def sample():
         try:
@@ -253,12 +253,29 @@ def observer(document, output):
         while time.monotonic() < until:
             Foundation.NSRunLoop.currentRunLoop().runUntilDate_(Foundation.NSDate.dateWithTimeIntervalSinceNow_(min(.05, until-time.monotonic())))
     report = {'pid': os.getpid(), 'main_thread': threading.current_thread() is threading.main_thread()}
-    write_json(output/'observer-ready.json', report)
+    if start_gate is None:
+        write_json(output/'observer-ready.json', report)
     try:
+        if start_gate is not None:
+            report['baseline'] = reader.sample()
+            report['baseline_monotonic'] = time.monotonic()
+            write_json(output/'observer-ready.json', report)
+            deadline = time.monotonic()+gate_timeout
+            while not start_gate.exists():
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('parent start gate')
+                time.sleep(.01)
+            gate = json.loads(start_gate.read_text())
+            stamp = gate.get('parent_wait_start_monotonic')
+            if not isinstance(stamp, (int, float)) or not __import__('math').isfinite(stamp):
+                raise ValueError('invalid parent start gate')
+            report['parent_wait_start_monotonic'] = stamp
+        report['sampling_start_monotonic'] = time.monotonic()
         report.update(sample_loop(output/'timeline.jsonl', sample, pump))
     except Exception as exc:
         report.update(error(exc))
     finally:
+        report['observer_end_monotonic'] = time.monotonic()
         write_json(output/'observer-report.json', report)
 
 
