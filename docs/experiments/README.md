@@ -4,7 +4,8 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
-| 2026-10-09 C1.2-R-lifecycle-long | 两项独立长时只读观察，passive/同步阻塞对照 | [长时报告](2026-10-09-native-lifecycle-long.md)：各180秒/90样本身份稳定，新鲜消费者一致，12项审计通过，117原生聚焦；0模型，生产执行器未改，旧失效原因未知，下一父原引用对照 |
+| 2026-10-09 C1.2-R-parent-reference | 保留真实setup原AX对象，180秒前后查询并对照独立消费者 | [原引用报告](2026-10-09-native-parent-reference.md)：两项原引用前后有效、独立/新鲜各90样本一致；16项审计、129原生聚焦，blocking末尾1.457ms覆盖缺口保留；0模型，旧原因未知，下一新文本dev4 |
+| 2026-10-09 C1.2-R-lifecycle-long | 两项独立长时只读观察，passive/同步阻塞对照 | [长时报告](2026-10-09-native-lifecycle-long.md)：各180秒/90样本身份稳定，新鲜消费者一致，12项审计通过，117原生聚焦；0模型，生产执行器未改，旧失效原因未知，后续父原引用见上行 |
 | 2026-10-09 C1.2-R-text | 新中文dev指引、显式提示wire/身份及窗口丢失推理终止 | [文本与恢复报告](2026-10-09-native-text-recovery.md)：dev3前置失效0/1，8本地请求零云，无fill/Save；99原生回归，离线闭窗请求8→1，文本方法收益未验。后续长时取证见上行 |
 | 2026-10-09 C1.2激活消费者修复/优化与Unicode dev | 修漏改消费者、读取余时边界、Close后失效值读取；单次新模型任务 | [最新报告](2026-10-09-native-activation-verification.md)：controls3真实非激活闭环2/2；dev2 0/1、8本地请求零云；controls4 helper未前台0/2。旧controls2推断更正，下一文本精确值/失效恢复新dev |
 | 2026-10-09 C1.2-R-active | 两轮各两项受控非激活 TextEdit 前台/AX 激活验收 | [菜单修复报告](2026-10-08-native-menu-repair.md)：controls1/2均0/2；改用新鲜 NSWorkspace 子进程后仍见 AX active/main 与真实前台不一致，无 fill/Save。Task6 Unicode dev2 暂停 |
