@@ -65,8 +65,26 @@ def test_cli_runs_and_writes_report_without_private_config(tmp_path,monkeypatch,
                 'chain':{'model_errors':[],'stop_reason':'model_returned'}}
     monkeypatch.setattr(cli,'KageChainProvider',Provider)
     source=tmp_path/'source.json'; source.write_text(json.dumps(task('source')))
-    report=cli.main(['--config',str(path),'--task',str(source)])
+    report=cli.main(['--config',str(path),'--task',str(source),'--allow-paid-teacher'])
     assert report['result']['status']=='failed'
-    assert 'paid_teacher_not_authorized' in report['learning_error']
+    assert 'invalid_private_teacher_settings' in report['learning_error']
     assert list((tmp_path/'cli'/'task-reports').glob('*.json'))
     assert 'PRIVATE-MISSING' not in capsys.readouterr().out
+
+
+def test_missing_authorization_preflight_preserves_state_without_dispatch(tmp_path,monkeypatch):
+    from scripts import kage_recover as cli
+    path=config(tmp_path)
+    root=tmp_path/'cli'; root.mkdir()
+    state=root/'recovery_state.json'
+    state.write_text(json.dumps({'candidates':1,'evaluations':3}))
+    before=state.read_bytes()
+    def forbidden(*args,**kwargs):
+        pytest.fail('preflight must not construct or dispatch execution')
+    monkeypatch.setattr(cli,'build_loop',forbidden)
+    monkeypatch.setattr(cli,'DockerSkillRunner',forbidden)
+    monkeypatch.setattr(cli,'RecordedLocalProvider',forbidden)
+    source=tmp_path/'source.json'; source.write_text(json.dumps(task('source')))
+    with pytest.raises(RuntimeError,match='paid_teacher_not_authorized'):
+        cli.main(['--config',str(path),'--task',str(source)])
+    assert state.read_bytes()==before

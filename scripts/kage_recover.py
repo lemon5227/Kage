@@ -133,6 +133,8 @@ def main(argv=None):
     parser.add_argument('--task',required=True)
     parser.add_argument('--allow-paid-teacher',action='store_true')
     args=parser.parse_args(argv)
+    if not args.allow_paid_teacher:
+        raise RuntimeError('paid_teacher_not_authorized: task execution requires explicit --allow-paid-teacher and an approved fixed teacher budget')
     cfg=json.loads(args.config.read_text())
     task_path=(args.config.resolve().parent/args.task).resolve()
     if task_path.is_file():
