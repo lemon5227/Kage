@@ -7,3 +7,4 @@
 - 当前主线是自学习、自演化 Agent；按 roadmap 的验收阶段推进，不能以工程测试数代替成长证据。
 - 开工先检查本 checkout 与活动 worktree 的 HEAD 和未提交修改；保留其他模型工作及被 Git 忽略的原始实验。
 - 阶段完成后，用证据更新 roadmap 的当前状态与下一项；没有验收证据不标完成。
+- 教师配置先读 [私有配置约定](docs/development/teacher-credentials.md)：DeepSeek规范路径`~/.config/kage/teachers/deepseek.json`，无需在worktree复制key。已有授权/预算持续有效，不重复索要同一key或额度；不得输出密钥。
