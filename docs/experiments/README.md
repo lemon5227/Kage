@@ -4,7 +4,8 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
-| 2026-10-09 C1.2-R-text-dev4 | 新单次本地文本任务、独立生命周期与actor/stage取证 | [取证报告](2026-10-09-native-observed-text-dev.md)：0/1 checker failed，4请求，实际Save但写入JSON表示26字符/0LF；Agent30样本稳定，另1个可信重开replacement；新增观测text metrics，收益未验，下一新dev5 |
+| 2026-10-09 独立路径审查 | 只读核对69条结果汇总、E3源码/轨迹、执行聊天及ledger | [纠偏与执行规格](../plans/agent-evolution-execution-correction-2026-10-09.md)：确认原生诊断偏航；G1持久自动闭环优先，明确人工诊断与test激活限制；未运行新能力实验 |
+| 2026-10-09 C1.2-R-text-dev4 | 新单次本地文本任务、独立生命周期与actor/stage取证 | [取证报告](2026-10-09-native-observed-text-dev.md)：0/1 checker failed，4请求，实际Save但写入JSON表示26字符/0LF；Agent30样本稳定，另1个可信重开replacement；新增观测text metrics，收益未验，dev5已暂缓 |
 | 2026-10-09 C1.2-R-parent-reference | 保留真实setup原AX对象，180秒前后查询并对照独立消费者 | [原引用报告](2026-10-09-native-parent-reference.md)：两项原引用前后有效、独立/新鲜各90样本一致；16项审计、129原生聚焦，blocking末尾1.457ms覆盖缺口保留；0模型，旧原因未知，后续dev4见上行 |
 | 2026-10-09 C1.2-R-lifecycle-long | 两项独立长时只读观察，passive/同步阻塞对照 | [长时报告](2026-10-09-native-lifecycle-long.md)：各180秒/90样本身份稳定，新鲜消费者一致，12项审计通过，117原生聚焦；0模型，生产执行器未改，旧失效原因未知，后续父原引用见上行 |
 | 2026-10-09 C1.2-R-text | 新中文dev指引、显式提示wire/身份及窗口丢失推理终止 | [文本与恢复报告](2026-10-09-native-text-recovery.md)：dev3前置失效0/1，8本地请求零云，无fill/Save；99原生回归，离线闭窗请求8→1，文本方法收益未验。后续长时取证见上行 |
