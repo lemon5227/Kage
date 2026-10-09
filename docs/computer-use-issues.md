@@ -22,8 +22,11 @@
 | CU-EVAL-003 | 首轮全量浏览器硬超时测试：即时PID消失断言失败，timeout/score0/检查点/返回<8秒已通过；7个PID稍后均不存在 | ac9b85d仅测试改为总2秒只读等待，保留全部最终消失断言和原硬期限；持续残留仍失败。目标1 passed，首轮1fail/1086pass日志保留，最终1087 passed/4 skipped/1 xfailed、退出0；未确认延迟退出或zombie回收的具体原因 |
 | CU-PROMPT-001 | dev3初版task要求直接Save，但原系统Soul强制先open menu；仅改任务指令无法确保真正使用一致的模型策略 | 已修6bf2fb2：显式Soul从CLI选取→provider身份/cache→真实chain/system消息→freeze统一；默认dev1/2不变。真实消费者回归先失败后通过，dev3实际首请求的专用提示/hash已审计 |
 | CU-AX-012 | dev3首次激活已作用但未确认active，随后原窗口不在AX列表；七次重复observe未有进展 | dev3原0/1/checkerunknown保留，无fill/Save，来源未确认。0c519d2对确认的原窗口scope丢失阻止后续推理请求，离线8→1请求；普通控件stale仍可恢复。99原生回归通过，优化未再做真实模型尝试 |
+| CU-EVAL-004 | 长时observer-ready仅表示进程启动，未确保独立owned baseline；不足以对齐父原引用等待区间 | ff00d4a新增可选baseline/start握手及实际时间戳；真实两项90样本，父原引用前后有效。同步项observer比wait-end早1.457ms，coverage=false保留；间隔采样不能认定连续覆盖。129原生聚焦通过，见[原引用报告](experiments/2026-10-09-native-parent-reference.md) |
 
 长时独立取证`40f43ae`：passive/blocking各180秒、90样本，原窗口/应用身份与新鲜文档读取均稳定，零模型、无setup后UI写入；未覆盖激活动作、推理负载或父原引用，CU-AX-003/012原因仍未确认。诊断脚本预检修复非匹配文档标题读取及fresh子进程清理范围，117项原生聚焦通过，12项实际证据完整性检查通过；见[长时报告](experiments/2026-10-09-native-lifecycle-long.md)。下一原调用者引用对照。
+
+原调用者引用对照`ff00d4a`已完成：两项180秒后保留的setup原对象、scope与snapshot均有效，独立/新鲜各90样本一致，16项完整性核验通过；仅诊断源/测试改动。未复现旧失效，不改CU-AX-003/012的未知状态。下一单次新文本dev4记录真实推理/激活期，只读observer可能影响状态需明确，不能由本轮推定旧根因。
 
 此前最终全量源码`0c519d2`，1091 passed、4 skipped、1 xfailed，退出0；这是历史全量，本轮仅改诊断CLI/tests。模型dev3先于终止优化，分数不重写；[文本/恢复报告](experiments/2026-10-09-native-text-recovery.md)记录完整分母、代码/提示/预算和剩余边界。
 
