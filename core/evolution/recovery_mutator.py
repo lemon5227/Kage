@@ -10,6 +10,11 @@ from core.evolution.skills import SkillCatalog
 class RecoveryMutator(Mutator):
     target = 'recovery'
 
+    def _validate_request(self, messages):
+        size = len(json.dumps(messages, ensure_ascii=False).encode('utf-8'))
+        if size > 12_000:
+            raise ValueError('recovery teacher request exceeds 12000 bytes')
+
     def _validate_parent(self, source):
         super()._validate_parent(source)
         RecoveryPolicy.from_bundle(source)

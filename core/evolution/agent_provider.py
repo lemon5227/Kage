@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 from core.agentic_loop import AgenticLoop
 from core.model_provider import ModelProvider, ModelResponse, ModelCallLimitExceeded
 from core.prompt_builder import PromptBuilder
-from core.tool_executor import ToolExecutor
+from core.tool_executor import ToolExecutor, ToolResult
 from core.tool_registry import ToolDefinition, ToolRegistry
 
 KAGE_PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -257,7 +257,12 @@ class KageChainProvider:
         skill_catalog: SkillCatalog | None = None,
         skill_context_mode: str = "search",
         recovery_policy=None,
+        max_tool_actions: int | None = None,
     ) -> None:
+        if max_tool_actions is not None and (isinstance(max_tool_actions, bool) or not isinstance(max_tool_actions, int) or max_tool_actions < 1):
+            raise ValueError("max_tool_actions must be a positive integer")
+        self.max_tool_actions = max_tool_actions
+        self._tool_actions_attempted = self._tool_actions_executed = 0
         self.provider_mode = provider_mode
         self.model_label = model_label or type(model_provider).__name__
         self.provider_label = provider_label or type(model_provider).__name__
@@ -286,6 +291,7 @@ class KageChainProvider:
             "provider_class": self.provider_label,
             "model": self.model_label,
             "max_model_calls": self.max_model_calls,
+            "max_tool_actions": self.max_tool_actions,
             "agentic_loop": self.agentic_loop_cls.__name__,
             "skills": self.skill_catalog.digests if self.skill_catalog else {},
             "recovery": self.recovery_policy.identity() if self.recovery_policy else None,
@@ -306,6 +312,7 @@ class KageChainProvider:
             "provider_class": self.provider_label,
             "model": self.model_label,
             "model_call_guard": self.max_model_calls,
+            "tool_action_guard": self.max_tool_actions,
             "agentic_loop": self.agentic_loop_cls.__name__,
             "agentic_loop_max_steps": int(getattr(self.agentic_loop_cls, "MAX_STEPS", 0)),
             "tool_registry": "ToolRegistry(workspace-scoped: read_file/write_file/list_files)",
@@ -348,6 +355,16 @@ class KageChainProvider:
         if self.skill_catalog is not None:
             self.skill_catalog.register_tools(registry, workspace_dir)
         executor = ToolExecutor(tool_registry=registry, workspace_dir=str(workspace_dir))
+        if self.max_tool_actions is not None:
+            execute = executor.execute
+            async def bounded_execute(name, arguments, require_confirmation=None):
+                self._tool_actions_attempted += 1
+                if self._tool_actions_executed >= self.max_tool_actions:
+                    return ToolResult(name=name, success=False, result="tool action budget exhausted",
+                                      error_type="ToolActionLimit", error_message="tool action budget exhausted", outcome="rejected")
+                self._tool_actions_executed += 1
+                return await execute(name, arguments, require_confirmation)
+            executor.execute = bounded_execute
         prompt_builder = PromptBuilder(
             identity_store=ExperimentIdentityStore(self._experiment_soul()),
             memory_system=None,
@@ -390,7 +407,12 @@ class KageChainProvider:
             "stop_reason": getattr(result, "stop_reason", "model_returned"),
             "model_calls": len(call_slice),
             "tool_calls": len(tool_results),
+            "tool_errors": [{key: item.get(key) for key in ("error_type", "error_message", "outcome")}
+                            for item in tool_results if item.get("error_type") or item.get("error_message")],
             "model_errors": [c["error"] for c in call_slice if c["error"]],
+            "tool_actions_attempted": self._tool_actions_attempted,
+            "tool_actions_executed": self._tool_actions_executed,
+            "tool_action_limit_reached": self.max_tool_actions is not None and self._tool_actions_attempted > self.max_tool_actions,
             "call_usage": [c["usage"] for c in call_slice],
             "final_text": str(getattr(result, "final_text", "") or "")[:2000],
             "recovery_events": getattr(loop, "recovery_events", []),

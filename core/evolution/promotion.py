@@ -41,7 +41,7 @@ class Promoter:
         split = task.get("split", "dev")
         if repeat_id is not None and (not isinstance(repeat_id,int) or isinstance(repeat_id,bool) or repeat_id<0):
             raise ValueError('repeat_id must be a nonnegative integer')
-        if split not in {"dev", "reuse", "test"}:
+        if split not in {"dev", "validation", "reuse", "test"}:
             raise ValueError("unknown evaluation split")
         provider = self.provider_factory(candidate)
         runner = EvolutionRunner(self.journal, self.budget, self.root / "runs", provider,
@@ -52,11 +52,14 @@ class Promoter:
         return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id,
                           task["task_id"], self.seed, self.kernel_max_steps, self.timeout_s))
 
-    def compare(self, parent: Candidate, child: Candidate, tasks: list[dict], repeats: int = 1) -> dict:
+    def compare(self, parent: Candidate, child: Candidate, tasks: list[dict], repeats: int = 1,
+                promotion_split: str = "dev") -> dict:
         if not isinstance(repeats,int) or isinstance(repeats,bool) or repeats<1:
             raise ValueError('repeats must be a positive integer')
-        if not tasks or any(task.get("split") != "dev" for task in tasks):
-            raise ValueError("promotion requires explicit dev tasks only")
+        if promotion_split not in {"dev", "validation"}:
+            raise ValueError("promotion split must be dev or validation")
+        if not tasks or any(task.get("split") != promotion_split for task in tasks):
+            raise ValueError(f"promotion requires explicit {promotion_split} tasks only")
         if len({task["task_id"] for task in tasks}) != len(tasks):
             raise ValueError("duplicate dev task IDs")
         if parent.candidate_id not in child.parent_ids:
@@ -79,8 +82,29 @@ class Promoter:
                 pairs.append(pair)
         parent_score = sum(pair["parent"]["score"] for pair in pairs) / len(pairs)
         child_score = sum(pair["child"]["score"] for pair in pairs) / len(pairs)
-        valid = all(item["status"] in {"passed", "failed"} for pair in pairs
-                    for item in (pair["parent"], pair["child"]))
+        def valid_run(item):
+            if item['status'] not in {'passed', 'failed'}:
+                return False
+            for chain in item.get('metadata', {}).get('chain', []):
+                if chain.get('model_errors') or chain.get('tool_action_limit_reached'):
+                    return False
+                for error in chain.get('tool_errors', []):
+                    signal = str(error.get('error_type', '')) + ' ' + str(error.get('error_message', ''))
+                    if error.get('outcome') in {'denied', 'needs_confirmation'} or any(
+                        marker in signal.lower() for marker in ('permissionerror', 'permission denied',
+                            'timeouterror', 'connectionerror', 'connection reset', 'service unavailable')):
+                        return False
+                if chain.get('stop_reason') in {'call_limit', 'step_limit', 'timeout', 'budget_exhausted'}:
+                    return False
+                if any(event.get('error') for event in chain.get('recovery_events', [])):
+                    return False
+                if any(isinstance(event.get('result'), dict) and
+                       (event['result'].get('error') or event['result'].get('traceback'))
+                       for event in chain.get('recovery_trace', [])):
+                    return False
+            return True
+        valid = all(valid_run(item) for pair in pairs
+                    for item in (pair['parent'], pair['child']))
         no_regression = all(pair["child"]["score"] >= pair["parent"]["score"] for pair in pairs)
         promoted = valid and no_regression and child_score > parent_score
         comparison = {"promoted": promoted, "parent_score": parent_score, "child_score": child_score,
@@ -90,8 +114,8 @@ class Promoter:
         comparison_id = hashlib.sha256(json.dumps(comparison, sort_keys=True).encode()).hexdigest()
         atomic_json(self.root / "comparisons" / f"{comparison_id}.json", comparison)
         if promoted:
-            atomic_json(self.root / "active.json", {"candidate": asdict(child), "comparison_id": comparison_id})
+            atomic_json(self.root / "active.json", {"candidate": asdict(child), "last_verified_parent": asdict(parent), "comparison_id": comparison_id})
         self.journal.record_event(EvolutionEvent("promotion-" + comparison_id, child.candidate_id,
-            "dev", 0, "promotion", {"promoted": promoted, "parent_score": parent_score,
+            promotion_split, 0, "promotion", {"promoted": promoted, "parent_score": parent_score,
                                      "child_score": child_score, "comparison_id": comparison_id}))
         return comparison

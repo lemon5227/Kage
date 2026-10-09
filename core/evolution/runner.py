@@ -482,6 +482,8 @@ class EvolutionRunner:
                             "outcome": item.get("outcome") or ("ok" if item.get("success") else "error"),
                             "success": bool(item.get("success")),
                             "tool_reported_success": item.get("tool_reported_success"),
+                            "error_type": item.get("error_type"),
+                            "error_message": item.get("error_message"),
                             "content": str(item.get("result") or item.get("error_message") or ""),
                             "executed_by": "kage_chain",
                             "actor": item.get("actor", "agent"),
