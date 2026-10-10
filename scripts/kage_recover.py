@@ -10,6 +10,7 @@ import argparse
 from dataclasses import asdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -51,6 +52,8 @@ def build_loop(config_path, allow_paid_teacher=False):
     def record(value):
         return json.loads(path(value).read_text()) if isinstance(value,str) else value
     root=path(cfg['root'])
+    if (root/'continuation.json').exists():
+        raise ValueError('recovery root delegated to its continuation')
     raw=record(cfg['bootstrap_candidate']); raw=raw.get('candidate',raw)
     bootstrap=Candidate(**{**raw,'parent_ids':tuple(raw['parent_ids']), 'bundle_path':str(path(raw['bundle_path']))})
     if bootstrap.target != 'recovery' or bundle_digest(Path(bootstrap.bundle_path)) != bootstrap.digest:
@@ -124,10 +127,28 @@ def build_loop(config_path, allow_paid_teacher=False):
                 'protocol_sha256':hashlib.sha256((budget_root/'protocol.json').read_bytes()).hexdigest(),
                 'active_sha256':hashlib.sha256(active_bytes).hexdigest() if active_bytes is not None else None,
                 'prior_candidates':prior['candidates'],'prior_evaluations':prior['evaluations']})
-    root.mkdir(parents=True,exist_ok=True)
     protocol_path=root/'protocol.json'
     if protocol_path.exists() and json.loads(protocol_path.read_text())!=protocol:
         raise ValueError('persistent CLI protocol changed')
+    if budget_root!=root:
+        claim_path=budget_root/'continuation.json'
+        claim={'root':str(root),'prior_state_sha256':protocol['continuation']['state_sha256'],
+               'prior_protocol_sha256':protocol['continuation']['protocol_sha256']}
+        try:
+            fd=os.open(claim_path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        except FileExistsError:
+            try:
+                existing=json.loads(claim_path.read_text())
+            except (OSError,ValueError):
+                raise ValueError('continuation allowance already claimed; invalid claim') from None
+            if existing!=claim:
+                raise ValueError('continuation allowance already claimed by another root or snapshot')
+        else:
+            with os.fdopen(fd,'w') as out:
+                json.dump(claim,out,sort_keys=True)
+                out.flush()
+                os.fsync(out.fileno())
+    root.mkdir(parents=True,exist_ok=True)
     atomic_json(protocol_path,protocol)
     journal=Journal(root/'journal.sqlite')
     budget=BudgetTracker(BudgetConfig(max_api_calls=72,max_input_tokens_total=1_000_000,

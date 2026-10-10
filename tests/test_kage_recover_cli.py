@@ -159,3 +159,21 @@ def test_continuation_rejects_invalid_prior(tmp_path,monkeypatch,bad):
     else: prior.state_path.write_text(json.dumps(state))
     with pytest.raises(ValueError,match='continuation'):
         cli.build_loop(path)
+
+
+def test_continuation_exclusively_claims_one_root_and_retires_prior(tmp_path,monkeypatch):
+    cli,path,prior=continuation(tmp_path,monkeypatch)
+    first=cli.build_loop(path)
+    assert cli.build_loop(path).root==first.root
+    claim=prior.root/'continuation.json'
+    assert json.loads(claim.read_text())['root']==str(first.root)
+    cfg=json.loads(path.read_text()); cfg['root']=str(tmp_path/'second-root')
+    second=tmp_path/'second-config.json'; second.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError,match='claimed'):
+        cli.build_loop(second)
+    assert not (tmp_path/'second-root'/'local-budget.sqlite').exists()
+    assert not (tmp_path/'second-root'/'teacher-budget.sqlite').exists()
+    cfg.pop('continuation_root'); cfg['root']=str(prior.root)
+    old=tmp_path/'old-config.json'; old.write_text(json.dumps(cfg))
+    with pytest.raises(ValueError,match='delegated'):
+        cli.build_loop(old)
