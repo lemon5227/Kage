@@ -510,3 +510,24 @@ def test_parse_failure_without_usable_tool_can_trigger_generation(tmp_path):
     assert report['failure_kind']=='capability'
     assert len(teacher.messages)==1
     assert report['comparison']['promoted']
+
+
+def test_superseded_root_cannot_dispatch_or_mutate_after_quota_delegation(tmp_path):
+    loop,teacher,_=setup(tmp_path)
+    snapshot=loop.state_path.read_bytes()
+    def forbidden(candidate):
+        (tmp_path/'unexpected-side-effect').write_text('dispatched')
+        raise AssertionError('superseded root must not create provider')
+    loop.promoter.provider_factory=forbidden
+    (loop.root/'continuation.json').write_text('{"next_root":"new-bounded-root"}')
+    with pytest.raises(RuntimeError,match='recovery root superseded by bounded continuation'):
+        loop.run_task(task('old-controller'))
+    assert loop.state_path.read_bytes()==snapshot
+    assert loop.state['evaluations']==0 and loop.state['candidates']==0
+    assert not (tmp_path/'unexpected-side-effect').exists()
+    assert not teacher.messages
+    restarted,teacher2,_=setup(tmp_path)
+    with pytest.raises(RuntimeError,match='superseded'):
+        restarted.run_task(task('new-controller-old-root'))
+    assert restarted.state['evaluations']==0 and restarted.state['candidates']==0
+    assert not teacher2.messages

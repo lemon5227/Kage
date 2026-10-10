@@ -196,6 +196,8 @@ class RecoveryLoop:
             return self._disable(candidate, f'{type(exc).__name__}: {exc}')
 
     def run_task(self, task):
+        if (self.root/'continuation.json').exists():
+            raise RuntimeError('recovery root superseded by bounded continuation')
         if task.get('split') not in {'dev', 'reuse', 'test'}:
             raise ValueError('continuous tasks require explicit dev/reuse/test split')
         if task['task_id'] in {t['task_id'] for t in self.validation_tasks}:
