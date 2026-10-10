@@ -1,6 +1,7 @@
 """One persistent G1 recovery entry: --config CONFIG --task TASK_JSON_OR_ID.
 
-Config: root, bootstrap_candidate (record/path), validation_suite, task_suite
+Config: root, optional continuation_root (frozen prior run, shared budgets),
+bootstrap_candidate (record/path), validation_suite, task_suite
 (optional for task IDs), student_settings (mapping/path), teacher_settings
 (optional private path), teacher_budget (explicit caps/rates). Paths are relative
  to CONFIG. Paid generation additionally requires --allow-paid-teacher.
@@ -83,6 +84,46 @@ def build_loop(config_path, allow_paid_teacher=False):
             ('scripts/kage_recover.py','core/evolution/recovery_loop.py','core/evolution/agent_provider.py',
              'core/evolution/recovery_mutator.py','core/evolution/promotion.py')}}
     protocol=json.loads(json.dumps(protocol))
+    max_candidates,max_evaluations=2,12
+    budget_root=root
+    if cfg.get('continuation_root'):
+        budget_root=path(cfg['continuation_root'])
+        if budget_root==root:
+            raise ValueError('continuation requires a distinct root')
+        try:
+            prior_bytes=(budget_root/'recovery_state.json').read_bytes()
+            prior=json.loads(prior_bytes)
+            prior_protocol=json.loads((budget_root/'protocol.json').read_text())
+            expected=protocol['bootstrap']
+            if (prior['protocol']['bootstrap']!=expected or prior_protocol['bootstrap']!=expected
+                    or prior['last_verified_parent']!=expected):
+                raise ValueError('bootstrap lineage mismatch')
+            if any(prior['protocol'][key]!=cap or prior_protocol[key]!=cap
+                   for key,cap in (('max_candidates',2),('max_evaluations',12))):
+                raise ValueError('prior caps mismatch')
+            for key in ('student','teacher_budget','max_model_calls','max_steps','max_tool_actions',
+                        'timeout_s','teacher_input_bytes','teacher_output_tokens','step_isolation','validation_sha256'):
+                if prior_protocol[key]!=protocol[key]:
+                    raise ValueError('prior execution protocol mismatch')
+            active_path=budget_root/'active.json'
+            active_bytes=active_path.read_bytes() if active_path.exists() else None
+            if active_bytes is not None and json.loads(active_bytes)['candidate']!=expected:
+                raise ValueError('active child migration is unsupported')
+            for key,cap in (('candidates',2),('evaluations',12)):
+                count=prior[key]
+                if isinstance(count,bool) or not isinstance(count,int) or not 0<=count<cap:
+                    raise ValueError('prior limit exhausted or invalid')
+            if not all((budget_root/name).is_file() for name in ('local-budget.sqlite','teacher-budget.sqlite')):
+                raise ValueError('prior budget ledger missing')
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            raise ValueError('invalid continuation state or protocol') from exc
+        max_candidates=2-prior['candidates']
+        max_evaluations=12-prior['evaluations']
+        protocol.update(max_candidates=max_candidates,max_evaluations=max_evaluations,
+            continuation={'root':str(budget_root),'state_sha256':hashlib.sha256(prior_bytes).hexdigest(),
+                'protocol_sha256':hashlib.sha256((budget_root/'protocol.json').read_bytes()).hexdigest(),
+                'active_sha256':hashlib.sha256(active_bytes).hexdigest() if active_bytes is not None else None,
+                'prior_candidates':prior['candidates'],'prior_evaluations':prior['evaluations']})
     root.mkdir(parents=True,exist_ok=True)
     protocol_path=root/'protocol.json'
     if protocol_path.exists() and json.loads(protocol_path.read_text())!=protocol:
@@ -90,8 +131,8 @@ def build_loop(config_path, allow_paid_teacher=False):
     atomic_json(protocol_path,protocol)
     journal=Journal(root/'journal.sqlite')
     budget=BudgetTracker(BudgetConfig(max_api_calls=72,max_input_tokens_total=1_000_000,
-        max_output_tokens_total=24_000,input_cost_per_million=0,output_cost_per_million=0),root/'local-budget.sqlite')
-    teacher_budget=BudgetTracker(teacher_budget_cfg,root/'teacher-budget.sqlite')
+        max_output_tokens_total=24_000,input_cost_per_million=0,output_cost_per_million=0),budget_root/'local-budget.sqlite')
+    teacher_budget=BudgetTracker(teacher_budget_cfg,budget_root/'teacher-budget.sqlite')
     # Broker receives no cloud credentials or routing, even if private student settings contain them.
     student_provider=ModelBroker(local).background_provider
     runtime=local['model']['local_runtime']
@@ -114,6 +155,10 @@ def build_loop(config_path, allow_paid_teacher=False):
             if not cloud.get('api_key'): raise ValueError()
         except (OSError, ValueError, KeyError, TypeError):
             raise RuntimeError('invalid_private_teacher_settings') from None
+        if budget_root!=root:
+            prior_teacher_protocol=budget_root/'teacher-protocol.json'
+            if prior_teacher_protocol.exists() and json.loads(prior_teacher_protocol.read_text())!=public:
+                raise ValueError('continuation teacher protocol changed')
         teacher_protocol=root/'teacher-protocol.json'
         if teacher_protocol.exists() and json.loads(teacher_protocol.read_text())!=public:
             raise ValueError('persistent teacher protocol changed')
@@ -122,7 +167,7 @@ def build_loop(config_path, allow_paid_teacher=False):
             model_name=cloud['model_name'],base_url=cloud['base_url'],thinking=False,output_limit=3000,timeout_sec=60)
         return BoundedRecoveryMutator(provider,teacher_budget,journal,slot)
     promoter=Promoter(journal,budget,provider_factory,root,timeout_s=150,step_isolation='fork',kernel_max_steps=1)
-    return RecoveryLoop(promoter,mutator_factory,root,bootstrap,validation,max_candidates=2,max_evaluations=12)
+    return RecoveryLoop(promoter,mutator_factory,root,bootstrap,validation,max_candidates=max_candidates,max_evaluations=max_evaluations)
 
 
 def main(argv=None):

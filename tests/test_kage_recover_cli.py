@@ -105,3 +105,57 @@ def test_paths_expand_home_and_teacher_defaults_to_canonical(tmp_path,monkeypatc
     mutator=loop.mutator_factory(tmp_path/'slot')
     assert mutator.model.model_name=='deepseek-flash'
     assert 'PRIVATE-KEY' not in (loop.root/'teacher-protocol.json').read_text()
+
+
+def continuation(tmp_path,monkeypatch):
+    from scripts import kage_recover as cli
+    path=config(tmp_path)
+    monkeypatch.setattr(cli,'DockerSkillRunner',lambda **kw:object())
+    prior=cli.build_loop(path)
+    state=json.loads(prior.state_path.read_text()); state.update(candidates=1,evaluations=3)
+    prior.state_path.write_text(json.dumps(state))
+    reservation=prior.promoter.budget.reserve(10,10,api_call_cap=8)
+    prior.promoter.budget.settle(reservation,{'input_tokens':8,'output_tokens':8,'api_calls':8})
+    from core.evolution.budget import BudgetTracker, BudgetConfig
+    teacher=BudgetTracker(BudgetConfig(max_api_calls=6,max_cost_usd=.03,input_cost_per_million=.3,output_cost_per_million=1.2),prior.root/'teacher-budget.sqlite')
+    reservation=teacher.reserve(100,100,'optimizer'); teacher.settle(reservation,{'input_tokens':100,'output_tokens':100})
+    cfg=json.loads(path.read_text()); cfg['continuation_root']=str(prior.root); cfg['root']=str(tmp_path/'continued')
+    path.write_text(json.dumps(cfg))
+    return cli,path,prior
+
+
+def test_continuation_deducts_limits_and_reuses_spent_budgets(tmp_path,monkeypatch):
+    cli,path,prior=continuation(tmp_path,monkeypatch)
+    before=prior.state_path.read_bytes()
+    resumed=cli.build_loop(path)
+    assert (resumed.max_candidates,resumed.max_evaluations)==(1,9)
+    assert resumed.promoter.budget.db_path==prior.root/'local-budget.sqlite'
+    assert resumed.promoter.budget.total_api_calls==8
+    cfg=json.loads(path.read_text()); cfg['teacher_settings']=None; path.write_text(json.dumps(cfg))
+    private=tmp_path/'.config/kage/teachers/deepseek.json'; private.parent.mkdir(parents=True)
+    private.write_text(json.dumps({'model':{'cloud_api':{'api_key':'secret','model_name':'deepseek-flash','base_url':'https://api.deepseek.com'}}}))
+    monkeypatch.setenv('HOME',str(tmp_path))
+    mutator=cli.build_loop(path,True).mutator_factory(tmp_path/'slot')
+    assert mutator.budget.db_path==prior.root/'teacher-budget.sqlite'
+    assert mutator.budget.total_api_calls==1
+    assert prior.state_path.read_bytes()==before
+    state=json.loads(before); state['evaluations']=4; prior.state_path.write_text(json.dumps(state))
+    with pytest.raises(ValueError,match='protocol changed'):
+        cli.build_loop(path)
+
+
+@pytest.mark.parametrize('bad',['bootstrap','caps','active_child','exhausted','corrupt','missing_budget'])
+def test_continuation_rejects_invalid_prior(tmp_path,monkeypatch,bad):
+    cli,path,prior=continuation(tmp_path,monkeypatch)
+    state=json.loads(prior.state_path.read_text())
+    if bad=='bootstrap': state['protocol']['bootstrap']['digest']='other'
+    elif bad=='caps': state['protocol']['max_candidates']=3
+    elif bad=='active_child':
+        candidate=dict(state['protocol']['bootstrap']); candidate['digest']='child'
+        (prior.root/'active.json').write_text(json.dumps({'candidate':candidate}))
+    elif bad=='exhausted': state['candidates']=2
+    elif bad=='missing_budget': (prior.root/'teacher-budget.sqlite').unlink()
+    if bad=='corrupt': prior.state_path.write_text('invalid')
+    else: prior.state_path.write_text(json.dumps(state))
+    with pytest.raises(ValueError,match='continuation'):
+        cli.build_loop(path)
