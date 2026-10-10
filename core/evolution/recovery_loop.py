@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from core.evolution.artifacts import atomic_json
+from core.evolution.agent_provider import has_infrastructure_model_errors
 from core.evolution.bundle import RecoveryPolicy
 from core.evolution.contracts import Candidate, EvolutionEvent
 from core.evolution.mutator import bundle_digest
@@ -33,7 +34,7 @@ def classify_failure(result):
     if result.status in {'timeout', 'crashed'}:
         return 'infrastructure'
     for chain in result.metadata.get('chain', []):
-        if chain.get('model_errors') or chain.get('tool_action_limit_reached'):
+        if has_infrastructure_model_errors(chain.get('model_errors', [])) or chain.get('tool_action_limit_reached'):
             return 'infrastructure'
         for error in chain.get('tool_errors', []):
             kind = str(error.get('error_type', '')).lower()

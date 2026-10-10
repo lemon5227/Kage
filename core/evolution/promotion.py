@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 from core.evolution.artifacts import atomic_json
+from core.evolution.agent_provider import has_infrastructure_model_errors
 
 from core.evolution.contracts import Candidate, EvolutionEvent, RunSpec
 from core.evolution.mutator import bundle_digest
@@ -86,7 +87,7 @@ class Promoter:
             if item['status'] not in {'passed', 'failed'}:
                 return False
             for chain in item.get('metadata', {}).get('chain', []):
-                if chain.get('model_errors') or chain.get('tool_action_limit_reached'):
+                if has_infrastructure_model_errors(chain.get('model_errors', [])) or chain.get('tool_action_limit_reached'):
                     return False
                 for error in chain.get('tool_errors', []):
                     signal = str(error.get('error_type', '')) + ' ' + str(error.get('error_message', ''))

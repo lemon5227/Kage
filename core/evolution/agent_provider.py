@@ -62,6 +62,20 @@ SKILL_DISCOVERY_GUIDANCE = (
 MAX_TOOL_RESULT_CHARS = 20_000
 
 
+def has_infrastructure_model_errors(errors) -> bool:
+    """Only the local provider's typed argument-parse error is a capability signal.
+
+    Preserve the original error list as evidence. Unknown/API/transport errors,
+    including any mixture with a parse error, fail closed for learning/selection.
+    """
+    if errors is None:
+        return False
+    if not isinstance(errors, (list, tuple)):
+        return True
+    return any(not isinstance(error, str) or
+               not error.startswith("InvalidToolArguments: ") for error in errors)
+
+
 class ProviderUnavailableError(RuntimeError):
     """Raised before a live run starts when the configured provider cannot be used."""
 
@@ -393,8 +407,9 @@ class KageChainProvider:
             raise RuntimeError(f"agent chain failed: {type(exc).__name__}: {exc}") from exc
 
         call_slice = self._model.calls[calls_before:]
-        first_error = next((c["error"] for c in call_slice if c["error"]), None)
-        if first_error is not None and not any(c["tool_calls"] for c in call_slice):
+        model_errors = [c["error"] for c in call_slice if c["error"]]
+        first_error = next(iter(model_errors), None)
+        if has_infrastructure_model_errors(model_errors) and not any(c["tool_calls"] for c in call_slice):
             # No usable model output at all: never pretend this run worked.
             raise RuntimeError(f"model unavailable: {first_error}")
 
@@ -409,7 +424,7 @@ class KageChainProvider:
             "tool_calls": len(tool_results),
             "tool_errors": [{key: item.get(key) for key in ("error_type", "error_message", "outcome")}
                             for item in tool_results if item.get("error_type") or item.get("error_message")],
-            "model_errors": [c["error"] for c in call_slice if c["error"]],
+            "model_errors": model_errors,
             "tool_actions_attempted": self._tool_actions_attempted,
             "tool_actions_executed": self._tool_actions_executed,
             "tool_action_limit_reached": self.max_tool_actions is not None and self._tool_actions_attempted > self.max_tool_actions,

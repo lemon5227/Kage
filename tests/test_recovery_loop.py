@@ -2,6 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from core.evolution.budget import BudgetTracker
 from core.evolution.bundle import RecoveryPolicy
 from core.evolution.contracts import Candidate
@@ -170,7 +172,12 @@ def test_tool_action_cap_blocks_thirteenth_write(tmp_path):
     assert result['chain']['tool_actions_executed']==12
 
 
-def test_validation_transport_error_after_correct_output_rejects(tmp_path):
+@pytest.mark.parametrize('errors', [
+    ['network failure after tool'],
+    ['InvalidToolArguments: write_file (finish_reason=length)', 'HTTPError: 503'],
+    ['TimeoutError: timed out'],
+])
+def test_validation_transport_error_after_correct_output_rejects(tmp_path, errors):
     loop,_,_=setup(tmp_path)
     original=loop.promoter.provider_factory
     def factory(candidate):
@@ -179,7 +186,7 @@ def test_validation_transport_error_after_correct_output_rejects(tmp_path):
         def fail(task,*args):
             output=generate(task,*args)
             if task['task_id']=='validation' and candidate.parent_ids:
-                output['chain']['model_errors']=['network failure after tool']
+                output['chain']['model_errors']=errors
             return output
         provider.generate_step=fail
         return provider
@@ -187,7 +194,8 @@ def test_validation_transport_error_after_correct_output_rejects(tmp_path):
     assert not loop.run_task(task('source'))['comparison']['promoted']
 
 
-def test_real_chain_generated_source_frozen_skill_and_feedback_boundary(tmp_path):
+@pytest.mark.parametrize('malformed', [False, True])
+def test_real_chain_generated_source_frozen_skill_and_feedback_boundary(tmp_path, monkeypatch, malformed):
     from core.evolution.agent_provider import KageChainProvider
     from core.evolution.skills import SkillCatalog
     from core.model_provider import ModelResponse
@@ -213,10 +221,21 @@ def recover(error, history, checkpoints):
     return {'action':'switch_tool', 'tool_call':{'name':'skill_call', 'arguments':{'skill_id':skill['skill_id'],'digest':skill['digest'],'arguments':{'records':rows}}}}
 '''
     model=_Generator([{'hypothesis':'Use the available transform after observed read', 'code':code}])
+    parsed_error = None
+    if malformed:
+        from core.model_provider import OpenAICompatibleProvider
+        import io
+        import urllib.request
+        body = {'choices':[{'finish_reason':'length','message':{'content':'', 'tool_calls':[
+            {'function':{'name':'write_file','arguments':'{"path": "truncated'}}]}}],
+            'usage':{'prompt_tokens':3,'completion_tokens':2}}
+        monkeypatch.setattr(urllib.request, 'urlopen', lambda *a, **kw:io.BytesIO(json.dumps(body).encode()))
+        parsed_error = OpenAICompatibleProvider('fixture-key', base_url='https://fixture.invalid').generate([])
+        assert parsed_error.error == 'InvalidToolArguments: write_file (finish_reason=length)'
     def factory(candidate):
         catalog=SkillCatalog.from_bundle(candidate.bundle_path)
         policy=RecoveryPolicy.from_bundle(candidate.bundle_path,skill_catalog=catalog)
-        responses=[call('read_file',path='input.json'),ModelResponse(text='thinking'),ModelResponse(text='done')]
+        responses=[call('read_file',path='input.json'),parsed_error if malformed else ModelResponse(text='thinking'),ModelResponse(text='done')]
         return KageChainProvider(SequenceModel(responses),provider_mode='fixture',skill_catalog=catalog,recovery_policy=policy,max_tool_actions=12)
     promoter=Promoter(loop.promoter.journal,loop.promoter.budget,factory,loop.root,kernel_max_steps=1)
     def case(name,split):
@@ -227,6 +246,11 @@ def recover(error, history, checkpoints):
     loop=RecoveryLoop(promoter,lambda slot:RecoveryMutator(model,promoter.budget,promoter.journal,slot),loop.root,parent,[case('blind','validation')])
     report=loop.run_task(case('source','dev'))
     assert report['comparison']['promoted']
+    if malformed:
+        child_run = report['comparison']['pairs'][0]['child']
+        assert child_run['status']=='passed'
+        assert child_run['metadata']['chain'][0]['model_errors']==[parsed_error.error]
+        assert child_run['metadata']['chain'][0]['recovery_events'][0]['decision']['action']=='switch_tool'
     reused=loop.run_task(case('reuse','reuse'))
     assert reused['result']['status']=='passed'
     chain=reused['result']['metadata']['chain'][0]
@@ -452,3 +476,37 @@ def test_validation_machine_tool_permission_error_rejects(tmp_path):
         return provider
     loop.promoter.provider_factory=factory
     assert not loop.run_task(task('validation-permission'))['comparison']['promoted']
+
+
+@pytest.mark.parametrize('errors,expected', [
+    (['InvalidToolArguments: write_file (finish_reason=length)'],'capability'),
+    (['InvalidToolArguments: skill_call (arguments must be an object)'],'capability'),
+    (['InvalidToolArguments: write_file (finish_reason=length)', 'HTTPError: 503'],'infrastructure'),
+    (['HTTPError: 503'],'infrastructure'),
+    (['TimeoutError: timed out'],'infrastructure'),
+    (['unrecognized provider failure'],'infrastructure'),
+])
+def test_model_error_classification_is_narrow(tmp_path, errors, expected):
+    from core.evolution.contracts import RunResult
+    from core.evolution.recovery_loop import classify_failure
+    trace=tmp_path/'empty.jsonl'; trace.write_text('')
+    result=RunResult('classified','failed',0,str(trace),metadata={'chain':[{'model_errors':errors}]})
+    assert classify_failure(result)==expected
+
+
+def test_parse_failure_without_usable_tool_can_trigger_generation(tmp_path):
+    from core.evolution.agent_provider import KageChainProvider
+    from core.model_provider import ModelResponse
+    from test_agentic_loop_multistep import SequenceModel
+    loop,teacher,_=setup(tmp_path)
+    original=loop.promoter.provider_factory
+    def factory(candidate):
+        if not candidate.parent_ids:
+            return KageChainProvider(SequenceModel([ModelResponse(text='',error='InvalidToolArguments: write_file (finish_reason=length)')]),provider_mode='fixture')
+        return original(candidate)
+    loop.promoter.provider_factory=factory
+    report=loop.run_task(task('parse-source'))
+    assert report['result']['status']=='failed'
+    assert report['failure_kind']=='capability'
+    assert len(teacher.messages)==1
+    assert report['comparison']['promoted']
