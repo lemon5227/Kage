@@ -4,6 +4,7 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
+| 2026-10-11 G1持久恢复闭环 | 真实失败→生成→validation晋级→新进程采用；首轮拒绝保留 | [G1验收](2026-10-11-g1-persistent-recovery.md)：第二轮父0/子1、重启应用1；共2候选/7运行/21本地/2教师请求；窄域恢复调用成立，下一G2第二类学习与旧能力保留 |
 | 2026-10-09 独立路径审查 | 只读核对69条结果汇总、E3源码/轨迹、执行聊天及ledger | [纠偏与执行规格](../plans/agent-evolution-execution-correction-2026-10-09.md)：确认原生诊断偏航；G1持久自动闭环优先，明确人工诊断与test激活限制；未运行新能力实验 |
 | 2026-10-09 C1.2-R-text-dev4 | 新单次本地文本任务、独立生命周期与actor/stage取证 | [取证报告](2026-10-09-native-observed-text-dev.md)：0/1 checker failed，4请求，实际Save但写入JSON表示26字符/0LF；Agent30样本稳定，另1个可信重开replacement；新增观测text metrics，收益未验，dev5已暂缓 |
 | 2026-10-09 C1.2-R-parent-reference | 保留真实setup原AX对象，180秒前后查询并对照独立消费者 | [原引用报告](2026-10-09-native-parent-reference.md)：两项原引用前后有效、独立/新鲜各90样本一致；16项审计、129原生聚焦，blocking末尾1.457ms覆盖缺口保留；0模型，旧原因未知，后续dev4见上行 |
