@@ -85,3 +85,44 @@ def test_repeat_ids_are_real_runs_and_restart_reuses_only_same_repeat(tmp_path):
     assert used==6
     assert promoter.evaluate(child,task,repeat_id=1).run_id==comparison['pairs'][1]['child']['run_id']
     assert promoter.budget.total_api_calls==used
+
+
+def test_run_namespaces_separate_usage_in_shared_budget(tmp_path):
+    from core.evolution.promotion import Promoter
+    parent=_parent(tmp_path/'parent')
+    budget=BudgetTracker(db_path=tmp_path/'shared-budget.sqlite')
+    first=Promoter(Journal(tmp_path/'root1/journal.sqlite'),budget,_SkillProvider,
+                   tmp_path/'root1',kernel_max_steps=1,run_namespace='root1')
+    second=Promoter(Journal(tmp_path/'root2/journal.sqlite'),budget,_SkillProvider,
+                    tmp_path/'root2',kernel_max_steps=1,run_namespace='root2')
+    task={**_task('same','Ada'),'split':'validation'}
+    one=first.evaluate(parent,task)
+    two=second.evaluate(parent,task)
+    assert one.run_id!=two.run_id
+    assert one.run_id.startswith('validation-') and one.run_id.endswith('-nroot1')
+    assert two.run_id.endswith('-nroot2')
+    assert one.usage['api_calls']==two.usage['api_calls']==1
+    assert budget.total_api_calls==2
+    assert second.evaluate(parent,task).usage['api_calls']==1
+    assert budget.total_api_calls==2
+
+
+def test_default_run_namespace_preserves_existing_id(tmp_path):
+    import hashlib
+    from core.evolution.promotion import Promoter
+    parent=_parent(tmp_path/'parent')
+    promoter=Promoter(Journal(tmp_path/'journal.sqlite'),BudgetTracker(),_SkillProvider,
+                      tmp_path/'root',kernel_max_steps=1)
+    task=_task('compat','Ada')
+    digest=hashlib.sha256(json.dumps(task,sort_keys=True).encode()).hexdigest()[:16]
+    assert promoter.evaluate(parent,task).run_id==f'dev-{parent.digest[:24]}-{digest}-s42'
+    assert promoter.evaluate(parent,task,repeat_id=1).run_id==f'dev-{parent.digest[:24]}-{digest}-s42-r1'
+
+
+@pytest.mark.parametrize('namespace',['../escape','a/b','white space','\n',None,123])
+def test_run_namespace_rejects_unsafe_values_before_artifacts(tmp_path,namespace):
+    from core.evolution.promotion import Promoter
+    with pytest.raises(ValueError,match='run_namespace'):
+        Promoter(Journal(tmp_path/'journal.sqlite'),BudgetTracker(),_SkillProvider,
+                 tmp_path/'root',run_namespace=namespace)
+    assert not (tmp_path/'root').exists()

@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import hashlib
 import json
+import re
 from pathlib import Path
 from core.evolution.artifacts import atomic_json
 from core.evolution.agent_provider import has_infrastructure_model_errors
@@ -15,7 +16,11 @@ from core.evolution.runner import EvolutionRunner
 
 class Promoter:
     def __init__(self, journal, budget, provider_factory, root: Path, seed: int = 42,
-                 timeout_s: int = 120, step_isolation: str = "inline",kernel_max_steps: int = 5):
+                 timeout_s: int = 120, step_isolation: str = "inline",kernel_max_steps: int = 5,
+                 run_namespace: str = ""):
+        if not isinstance(run_namespace, str) or (run_namespace and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", run_namespace)):
+            raise ValueError("run_namespace must be empty or filename-safe")
+        self.run_namespace = run_namespace
         self.journal, self.budget = journal, budget
         self.provider_factory = provider_factory
         self.root = Path(root)
@@ -50,6 +55,8 @@ class Promoter:
         run_id = f"{split}-{candidate.digest[:24]}-{task_digest}-s{self.seed}"
         if repeat_id is not None:
             run_id += f'-r{repeat_id}'
+        if self.run_namespace:
+            run_id += f'-n{self.run_namespace}'
         return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id,
                           task["task_id"], self.seed, self.kernel_max_steps, self.timeout_s))
 
