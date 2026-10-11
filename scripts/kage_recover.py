@@ -81,6 +81,7 @@ def build_loop(config_path, allow_paid_teacher=False):
     # Only sanitized, behavior-relevant settings enter public artifacts.
     protocol={'bootstrap':asdict(bootstrap),'validation_sha256':hashlib.sha256(validation_path.read_bytes()).hexdigest(),
         'student':local,'teacher_budget':asdict(teacher_budget_cfg), 'max_candidates':2,'max_evaluations':12,
+        'run_namespace':hashlib.sha256(str(root).encode()).hexdigest()[:12],
         'max_model_calls':6,'max_steps':5,'max_tool_actions':12,'timeout_s':150,
         'teacher_input_bytes':12000,'teacher_output_tokens':3000,'step_isolation':'fork',
         'source_sha256':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in
@@ -187,7 +188,7 @@ def build_loop(config_path, allow_paid_teacher=False):
         provider=RecordedLocalProvider(root/'teacher-model.jsonl',api_key=cloud['api_key'],
             model_name=cloud['model_name'],base_url=cloud['base_url'],thinking=False,output_limit=3000,timeout_sec=60)
         return BoundedRecoveryMutator(provider,teacher_budget,journal,slot)
-    promoter=Promoter(journal,budget,provider_factory,root,timeout_s=150,step_isolation='fork',kernel_max_steps=1)
+    promoter=Promoter(journal,budget,provider_factory,root,timeout_s=150,step_isolation='fork',kernel_max_steps=1,run_namespace=protocol['run_namespace'])
     return RecoveryLoop(promoter,mutator_factory,root,bootstrap,validation,max_candidates=max_candidates,max_evaluations=max_evaluations)
 
 

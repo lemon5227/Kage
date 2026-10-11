@@ -177,3 +177,22 @@ def test_continuation_exclusively_claims_one_root_and_retires_prior(tmp_path,mon
     old=tmp_path/'old-config.json'; old.write_text(json.dumps(cfg))
     with pytest.raises(ValueError,match='delegated'):
         cli.build_loop(old)
+
+
+def test_cli_supplies_stable_disjoint_root_run_namespaces(tmp_path,monkeypatch):
+    from scripts import kage_recover as cli
+    path=config(tmp_path)
+    monkeypatch.setattr(cli,'DockerSkillRunner',lambda **kw:object())
+    received=[]
+    original=cli.Promoter
+    def capture(*args,**kwargs):
+        received.append(kwargs.pop('run_namespace',None))
+        return original(*args,**kwargs)
+    monkeypatch.setattr(cli,'Promoter',capture)
+    first=cli.build_loop(path); cli.build_loop(path)
+    cfg=json.loads(path.read_text()); cfg['root']=str(tmp_path/'another-root')
+    path.write_text(json.dumps(cfg)); another=cli.build_loop(path)
+    assert received[0] and received[0]==received[1] and received[0]!=received[2]
+    assert len(received[0])==12
+    assert json.loads((first.root/'protocol.json').read_text())['run_namespace']==received[0]
+    assert json.loads((another.root/'protocol.json').read_text())['run_namespace']==received[2]
