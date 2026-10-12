@@ -57,8 +57,12 @@ class Evaluator:
     """Deterministic, external task scoring engine."""
 
     @staticmethod
-    def score(task_def: dict[str, Any], workspace_dir: Path) -> float:
+    def score(task_def: dict[str, Any], workspace_dir: Path, *, history=None) -> float:
         criteria = task_def.get("scoring_criteria", {})
+        if not isinstance(criteria, dict):
+            return 0.0
+        if criteria.get("type") == "read_preserve":
+            return Evaluator._read_preserve(criteria, workspace_dir, history)
         ctype = criteria.get("type")
         target_file = criteria.get("file")
 
@@ -98,6 +102,51 @@ class Evaluator:
                 return 0.0
 
         return 0.0
+
+
+    @staticmethod
+    def _read_preserve(criteria: dict[str, Any], workspace_dir: Path, history: Any) -> float:
+        if set(criteria) != {"type", "file", "sha256"}:
+            return 0.0
+        relative, digest = criteria["file"], criteria["sha256"]
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            return 0.0
+        try:
+            target = _workspace_file(workspace_dir, relative)
+            if not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != digest:
+                return 0.0
+        except (ValueError, TypeError, OSError, RuntimeError):
+            return 0.0
+        if not isinstance(history, list) or not history:
+            return 0.0
+        read_success = False
+        for row in history:
+            if not isinstance(row, dict):
+                return 0.0
+            action, observation = row.get("action"), row.get("observation")
+            if not isinstance(action, dict) or not isinstance(observation, dict):
+                return 0.0
+            name = action.get("name")
+            if not isinstance(name, str) or not name or name == "skill_call":
+                return 0.0
+            if name != "read_file":
+                continue
+            arguments = action.get("arguments", {})
+            if not isinstance(arguments, dict):
+                return 0.0
+            path = arguments.get("path", action.get("path"))
+            if "path" in arguments and "path" in action and arguments["path"] != action["path"]:
+                return 0.0
+            try:
+                _workspace_file(workspace_dir, path)
+            except (ValueError, TypeError, OSError, RuntimeError):
+                return 0.0
+            if (path == relative and observation.get("status") == "ok"
+                    and observation.get("outcome", "ok") == "ok"
+                    and ("success" not in observation or observation["success"] is True)
+                    and observation.get("tool_reported_success") is not False):
+                read_success = True
+        return float(read_success)
 
 
 class FakeEvolutionProvider:
@@ -577,7 +626,11 @@ class EvolutionRunner:
                     )
 
             # 3. Deterministic Evaluation
-            score = self.evaluator.score(task_def, ws)
+            criteria = task_def.get("scoring_criteria")
+            if isinstance(criteria, dict) and criteria.get("type") == "read_preserve":
+                score = self.evaluator.score(task_def, ws, history=history)
+            else:
+                score = self.evaluator.score(task_def, ws)
             if status not in ("timeout", "budget_exhausted", "crashed"):
                 status = "passed" if score >= 1.0 else "failed"
 
