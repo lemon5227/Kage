@@ -1,0 +1,136 @@
+{
+  "suite_id": "g2-applicability-baseline-v1",
+  "protocol": {
+    "version": 1,
+    "max_tasks": 2,
+    "max_requests_total": 12,
+    "max_requests_per_task": 6,
+    "max_steps": 5,
+    "max_tool_actions": 12,
+    "timeout_s": 150,
+    "teacher_calls": 0,
+    "max_candidates": 0,
+    "attempts_per_task": 1
+  },
+  "tasks": [
+    {
+      "task_id": "g2-baseline-pricing-preserve",
+      "family": "read_preserve",
+      "split": "dev",
+      "instruction": "Read pricing.py and report that you have read it. Leave pricing.py unchanged.",
+      "initial_files": {
+        "pricing.py": "def discounted(price, percent):\n    if price < 0 or not 0 <= percent <= 100:\n        raise ValueError(\"invalid price or percent\")\n    return price * (1 - percent / 100)\n"
+      },
+      "expected_output_file": "pricing.py",
+      "scoring_criteria": {
+        "type": "read_preserve",
+        "file": "pricing.py",
+        "sha256": "9fd2aa47af9fee767a03f9f7d7a094b8f046851dc9586e33f7b61985b194b340"
+      }
+    },
+    {
+      "task_id": "g2-baseline-knapsack-retention",
+      "family": "code_repair",
+      "split": "dev",
+      "instruction": "Read scheduler.py and fix select_tasks(jobs, capacity). Each job has id (unique string), weight (positive integer), value (nonnegative integer). Return a sorted list of selected IDs with maximum total value and total weight <= capacity. On equal value choose the lexicographically smallest ID list. Empty selection is allowed. Raise ValueError for negative capacity or nonpositive job weight. Do not mutate inputs. Save scheduler.py.",
+      "initial_files": {
+        "scheduler.py": "def select_tasks(jobs, capacity):\n    return []\n"
+      },
+      "expected_output_file": "scheduler.py",
+      "scoring_criteria": {
+        "type": "python_function",
+        "file": "scheduler.py",
+        "function": "select_tasks",
+        "cases": [
+          {
+            "args": [
+              [
+                {
+                  "id": "north",
+                  "weight": 3,
+                  "value": 5
+                },
+                {
+                  "id": "south",
+                  "weight": 4,
+                  "value": 8
+                },
+                {
+                  "id": "west",
+                  "weight": 7,
+                  "value": 11
+                }
+              ],
+              7
+            ],
+            "expected": [
+              "north",
+              "south"
+            ]
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "omega",
+                  "weight": 2,
+                  "value": 6
+                },
+                {
+                  "id": "delta",
+                  "weight": 2,
+                  "value": 6
+                }
+              ],
+              2
+            ],
+            "expected": [
+              "delta"
+            ]
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "zero",
+                  "weight": 1,
+                  "value": 0
+                }
+              ],
+              1
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [],
+              0
+            ],
+            "expected": []
+          },
+          {
+            "args": [
+              [],
+              -1
+            ],
+            "raises": "ValueError"
+          },
+          {
+            "args": [
+              [
+                {
+                  "id": "invalid",
+                  "weight": 0,
+                  "value": 1
+                }
+              ],
+              2
+            ],
+            "raises": "ValueError"
+          }
+        ]
+      },
+      "exposure": "historical_E3_test_now_validation"
+    }
+  ]
+}
