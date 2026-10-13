@@ -39,7 +39,7 @@ def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, 'DockerSkillRunner', lambda **kw: SimpleNamespace(image_id='docker-image'))
     monkeypatch.setattr(cli, 'ModelBroker', lambda settings: SimpleNamespace(background_provider=SimpleNamespace(model_name='agents-a1-4b')))
     monkeypatch.setattr(cli.SkillCatalog, 'from_bundle', lambda *a, **kw: SimpleNamespace(digests={'old': 'unchanged'}))
-    monkeypatch.setattr(cli.RecoveryPolicy, 'from_bundle', lambda *a, **kw: object())
+    monkeypatch.setattr(cli.RecoveryPolicy, 'from_bundle', lambda *a, **kw: SimpleNamespace(digest='policy-digest'))
     monkeypatch.setattr(cli, 'RecordedLocalProvider', lambda *a, **kw: SimpleNamespace(kwargs=kw))
     monkeypatch.setattr(cli, 'KageChainProvider', lambda model, **kw: SimpleNamespace(model=model, kwargs=kw))
     results = []
@@ -81,6 +81,24 @@ def test_frozen_local_baseline_and_reentry(setup, monkeypatch):
     config.write_text(json.dumps(cfg))
     with pytest.raises(ValueError, match='protocol'):
         cli.run_baseline(config)
+
+
+def test_protocol_hashes_manifest_recovery_not_unused_parent_file(setup, monkeypatch):
+    import hashlib
+    config, cfg, suite, path, boundaries, results = setup
+    bundle = Path(json.loads(Path(cfg['candidate_record']).read_text())['candidate']['bundle_path'])
+    code = b'def recover(error, history, checkpoints):\n    return {"action": "stop"}\n'
+    digest = hashlib.sha256(code).hexdigest()
+    (bundle / 'generated.py').write_bytes(code)
+    (bundle / 'manifest.json').write_text(json.dumps({'version': 1,
+        'modules': {'recovery': {'entrypoint': 'generated.py:recover', 'digest': digest}}, 'skills': []}))
+    # This preflight is real manifest/source validation, never source execution.
+    monkeypatch.undo()
+    monkeypatch.setattr(cli, 'bundle_digest', lambda p: 'frozen')
+    monkeypatch.setattr(cli, '_source_identity', lambda p: {'revision': 'committed', 'hashes': {}})
+    root, candidate, tasks, local, protocol, source = cli._inputs(config)
+    assert protocol['candidate_source_sha256'] == digest
+    assert protocol['candidate_source_sha256'] != hashlib.sha256((bundle / 'recovery.py').read_bytes()).hexdigest()
 
 
 @pytest.mark.parametrize('change', ['cloud', 'host', 'port', 'alias', 'teacher', 'too_many', 'duplicate', 'split', 'protocol'])

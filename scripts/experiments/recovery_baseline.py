@@ -114,7 +114,7 @@ def _inputs(config_path):
     # Revision is retained as provenance, but unrelated future commits do not alter protocol.
     protocol = {'limits': PROTOCOL, 'root': str(root), 'candidate': asdict(candidate),
                 'candidate_record_path': str(candidate_path), 'candidate_record_sha256': _sha(candidate_path),
-                'candidate_source_sha256': _sha(Path(candidate.bundle_path) / 'recovery.py'),
+                'candidate_source_sha256': RecoveryPolicy.from_bundle(candidate.bundle_path).digest,
                 'suite_path': str(suite_path), 'suite_sha256': _sha(suite_path), 'tasks': tasks,
                 'student_settings': local, 'source_hashes': source['hashes'],
                 'run_namespace': hashlib.sha256(str(root).encode()).hexdigest()[:12],
