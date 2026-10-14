@@ -12,7 +12,7 @@ from core.evolution.journal import Journal
 from core.evolution.mutator import Mutator, bundle_digest
 from core.evolution.sandbox import ProcessSkillRunner
 from core.evolution.stream import StreamLearner, TeacherCache, chain_runner
-from core.evolution.stream_tasks import log_aggregation, make_task
+from core.evolution.stream_tasks import make_task
 from core.model_provider import ModelProvider, ModelResponse
 
 GENERAL = '''def build(fn, key, only):

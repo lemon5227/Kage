@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from core.evolution.contracts import Candidate, RunResult
-from core.evolution.stream import StreamLearner, TeacherCache, skill_calls
+from core.evolution.stream import StreamLearner, TeacherCache
 from core.evolution.stream_tasks import make_task
 
 EMPTY = Candidate('no-skills', (), 'skill', '/tmp/none', 'e' * 64)
