@@ -114,9 +114,9 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T12 | 安全 | 远程技能自动安装加同意门 | T02 | 任意 | 完成 | [T12](../task-logs/T12-remote-skill-install-consent.md) |
 | T13 | 安全 | `skills_save_local` 写入目录白名单 | T02 | 任意 | 完成 | [T13](../task-logs/T13-skill-save-dir-whitelist.md) |
 | T14 | 演化 | E2.1 候选谱系（lineage）记录与查询 | T08 | 任意 | 完成（工程） | [T14](../task-logs/T14-evolution-lineage.md) |
-| T15 | 演化 | E3.1 recovery 模块第二种失败类型 | T14 | 任意+云key | 待领取 | |
-| T16 | 演化 | E5 进化谱系与 diff 展示（Launcher） | T14 | 任意 | 待领取 | |
-| T17 | 演化 | E4 失败条件化演化路由（FCER）对照实验 | T15 | 任意+云key | 待领取 | |
+| T15 | 演化 | E3.1 recovery 模块第二种失败类型 | T14 | macOS+云key+Docker | 待领取（云端做不了，见 §五） | |
+| T16 | 外壳 | E5 进化谱系与 diff 展示（Launcher，UI 低优先级） | T14 | 任意 | 待领取 | |
+| T17 | 演化 | E4 失败条件化演化路由（FCER）对照实验 | T15, T25 | macOS+云key+Docker | 待领取 | |
 | T18 | 执行 | C1.2 macOS 辅助功能（AX）文档编辑与保存读回 | T01 | macOS | 待领取 | |
 | T19 | 执行 | C4.5-DOM 真人教学验收 | T01 | macOS+真人 | 待领取 | |
 | T20 | 执行 | C4.5-AX 原生应用示范 | T18 | macOS+真人 | 待领取 | |
@@ -124,8 +124,12 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T22 | 治理 | 根目录与文档清理 | T00 | 任意 | 待领取 | |
 | T23 | 研究 | E6 可复现研究报告 | T17, T21 | 任意+云key | 待领取 | |
 | T24 | 研究 | E7 经验蒸馏进本地模型（条件启动） | T23 | GPU | 待领取 | |
+| T25 | 演化 | 练习内容与失败对应：浏览器工作流生成接入调度器 | T09, T14 | 任意（真实运行需云key） | 待领取 | |
+| T26 | 主动 | 记忆抽取自动识别日期并写入提醒 | T06 | 任意 | 待领取 | |
+| T27 | 演化 | 已采用技能的列出 / 撤销工具 + 多个待采用候选的入口 | T10 | 任意 | 待领取 | |
+| T28 | 基础 | 测试不写入真实 `~/.kage`；BM25 回退合并改用相对阈值 | T01 | 任意 | 待领取 | |
 
-**推荐领取顺序**：T01 → T02 → T03 → T04/T05 → T06/T07 → T08 → T09 → T10 → T11，安全线 T12/T13 可随时插入；macOS 线 T18→T19→T20→T21 由作者在 Mac 上并行推进；研究线 T14→T15→T16→T17 在 T08 之后交替领取。
+**推荐领取顺序（2026-10-14 更新）**：T00–T14 已完成（T04b/T16 是 UI 外壳，低优先级）。云端/便宜模型下一步：**T25 → T27 → T26 → T28 → T22**；作者在 Mac 上：先做 §五 的本地验证清单，再 T15 → T17，以及 macOS 线 T18 → T19 → T20 → T21。
 
 ---
 
@@ -395,9 +399,67 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 
 - 规格见 [E/C 任务队列](task-queue-2026-10-01.md) 的 E6、E7 行与执行交接 §7。T24 仅在有足够去重、多样、已验证的轨迹和可用 GPU 时启动。
 
+### T25 练习内容与失败对应：浏览器工作流生成接入调度器
+
+- **目标**：T09 的空闲练习目前跑的是固定的文件技能套件（`eval/evolution/pilot.json`），与触发它的浏览器失败无关。本任务让"哪类任务失败，就练哪类"。
+- **背景**：浏览器工作流候选的生成与对比已存在于实验脚本：`core/computer_use/skill_mutator.py`（`BrowserWorkflowMutator`）、`scripts/experiments/browser_workflow_learning.py`；调度器在 `core/evolution/scheduler.py`，失败记录 `pending_failures` 里有 `task_id`。
+- **涉及文件**：`core/evolution/scheduler.py`、新建 `core/evolution/browser_practice.py`、`config/settings.json`、新建 `tests/test_browser_practice.py`。
+- **实施步骤**：
+  1. 阅读 `scripts/experiments/browser_workflow_learning.py`，找出"给定 dev 任务 → 生成候选 → Promoter 对比"的最小调用序列，把它抽成函数 `run_browser_practice(task_ids, output_dir, provider_mode, budget) -> report`，报告结构与 `run_search` 一致（`comparisons`、`active_candidate`、`estimated_cost_usd`、`stop_reason`）。不改原实验脚本的行为。
+  2. 调度器 `_run()`：若本批失败的 `task_id` 都属于浏览器任务家族（用 `core/computer_use/task_worker.py::task_catalog()` 查 family），改为调用浏览器练习（子进程方式，同 `subprocess_launcher`，新增 CLI 入口 `scripts/kage_evolve.py browser-practice`）；否则保持原 search。
+  3. 练习只能使用 dev 任务，**不得**使用触发失败的那次运行的隐藏评分文件作为生成输入（遵守执行交接 §3 的白名单规则）。
+  4. 提供 fixture 模式（预制动作计划，不调用模型）用于测试；live 模式需要云 key。
+  5. 采用（T10）目前只支持文件技能 manifest v1；浏览器 v2 工作流的采用另外列出，不在本任务范围。
+- **验收标准**：fixture 模式下，记录一条 `preferences_dev` 失败后触发的练习，报告中候选的 lineage 来源为该任务；测试通过；全量不回退。
+
+### T26 记忆抽取自动识别日期并写入提醒
+
+- **目标**：用户随口说"下周三是我妈生日"时，即使模型没调用 `remember_date`，记忆抽取也能把日期写入 `important_dates`。
+- **涉及文件**：`core/memory_extractor.py`（或 `core/agentic_loop.py` 约第 1080–1110 行的画像更新逻辑）、`core/proactive_sources.py::make_remember_date_handler`（复用其校验）、新建测试。
+- **实施步骤**：
+  1. 只处理**明确日期**：`YYYY-MM-DD`、`M月D日`、`M/D`；相对日期（明天、下周三）需要当前日期，用 `datetime.date.today()` 计算，并在测试中注入固定日期。
+  2. 需要同时出现事件关键词（生日、纪念日、截止、考试、面试、体检……）才写入，避免误记。
+  3. 写入前查重（同日期同事件不重复）。
+- **验收标准**：至少 8 个正例 + 5 个反例（无关数字、价格、时间点）测试。
+
+### T27 已采用技能的列出 / 撤销工具 + 多个待采用候选的入口
+
+- **目标**：用户可以问"你学会了哪些技能""把 X 技能停掉"；多个晋级候选时不只提供最近一个。
+- **涉及文件**：`core/server.py`（注册工具，同 `remember_date` 的方式）、`core/skill_adoption.py`、`core/tool_visibility.py`（`SERVER_SLOTS` 与关键词分组）、新建测试。
+- **实施步骤**：
+  1. 工具 `learned_skills_list()`：返回已采用（`adopted.json`）与待采用（调度器日志中 promoted 但未采用）的列表。
+  2. 工具 `learned_skill_revoke(digest)`：安全等级 `DANGEROUS`（经用户确认），调用 `SkillAdoption.revoke`。
+  3. 采用仍只能通过主动消息的 accept（不提供模型直接采用的工具）。
+- **验收标准**：测试覆盖列出、撤销需确认、撤销后工具不可见。
+
+### T28 测试不写入真实 `~/.kage`；BM25 回退合并改用相对阈值
+
+- **目标**：跑测试不污染开发者的真实数据目录；无嵌入模型时记忆合并仍可用。
+- **实施步骤**：
+  1. `tests/conftest.py` 增加 autouse fixture：把 `HOME` 设为 `tmp_path_factory` 下的临时目录（注意浏览器测试使用 `KAGE_BROWSER_PYTHON` 与 `PLAYWRIGHT_BROWSERS_PATH`，先确认它们不依赖 HOME；有依赖的显式传绝对路径）。
+  2. `core/memory.py::_merge_similar_bm25`：把 `scores[j] > 5` 改为相对分数（例如 `scores[j] >= 0.6 * self_score`，`self_score` 为条目对自身的得分），恢复 `test_memory_merge` 在 BM25 模式下运行。
+- **验收标准**：跑全量测试前后 `ls ~/.kage` 无变化；`test_memory_merge` 在无嵌入模型时通过。
+
 ---
 
-## 五、与旧文档的关系
+## 五、云端做不了、需要在本地（Mac）完成的事项
+
+以下事项依赖 macOS、真实音频、Docker（arm64 镜像）、云模型 key 或真人操作，云端容器无法完成。按顺序做，每项结果写进对应任务日志。
+
+| # | 事项 | 怎么做 | 期望结果 |
+|---|---|---|---|
+| 1 | 复核 3 个进程回收测试 | `python -m pytest -q tests/test_browser_suite.py tests/test_browser_task_service.py tests/test_browser_demonstration_routes.py --timeout=90` | 在 Mac 上全部通过（云端失败是容器 PID 1 不回收孤儿进程）；若仍失败，新开任务 |
+| 2 | 主动提醒端到端（T03/T05/T06） | 启动服务后对 Kage 说"后天是测试纪念日，记得提醒我"；把 `heartbeat.interval_minutes` 设为 5，并把系统日期或该条日期调到明天；保持 2 分钟以上不输入 | 听到"明天是测试纪念日"；`~/.kage/proactive_sent.jsonl` 有记录；免打扰时段内不播报 |
+| 3 | 失败后请求示范（T07） | Launcher 里运行 `preferences_unchecked`（结束为 unknown）或让任务失败；之后用 WebSocket 客户端发 `{"type":"proactive_feedback","id":<收到的id>,"action":"accept"}`（T04b 前端完成前只能这样） | 弹出可见的示范浏览器窗口，进入 C4.5 教学流程 |
+| 4 | 构建演化沙箱镜像 | `docker build -t kage-evolution:local sandbox/evolution` | `docker image inspect kage-evolution:local` 成功 |
+| 5 | 空闲自演化真跑（T09/T11） | `~/.kage/config.json` 设 `"evolution": {"auto": true}`，确认 `model.cloud_api` 可用；制造一次浏览器任务失败后空闲 30 分钟 | `~/.kage/evolution/scheduler.jsonl` 有 started/finished；回来后收到"我练习了 N 次……"的主动消息；费用不超过 $0.05/天 |
+| 6 | 采用技能（T10） | 对第 5 项的汇报点"好的"（或发送 accept） | 收到 `skill_adopted` 事件；之后对话中模型可调用 `custom_<技能>`，执行发生在 Docker 容器中 |
+| 7 | T15 recovery 第二失败类型 | 需要 `artifacts/` 中原 E3 的冻结候选记录、DeepSeek 配置与本地模型服务，按 T15 小节执行 | 实验报告入 `docs/experiments/` |
+| 8 | T19 真人教学验收 | 按 README.zh-CN「体验浏览器教学流程」亲自操作 | 日志中有人工操作记录 |
+
+---
+
+## 六、与旧文档的关系
 
 | 文档 | 现在的角色 |
 |---|---|
