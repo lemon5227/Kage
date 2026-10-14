@@ -59,14 +59,24 @@ class SkillCatalog:
             entries[skill_id] = (descriptor, digest, source, function)
         return cls(entries, runner or ProcessSkillRunner(timeout_s=timeout_s))
 
+    @staticmethod
+    def _terms(text: str) -> set[str]:
+        # Split ids like log_line_count on underscores; fold a plural "s" so level/levels meet.
+        words = re.findall(r"[a-z0-9]+", str(text).casefold())
+        return {w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words if len(w) >= 3}
+
     def search(self, query: str, limit: int = 5) -> dict:
-        terms = str(query).casefold().split()
-        matches = []
+        # Rank by shared words: a student's natural query rarely contains only words of the
+        # description, and all-terms matching returned nothing in E-0 (2026-10-14).
+        terms = self._terms(query)
+        scored = []
         for skill_id, (descriptor, digest, _, _) in sorted(self._entries.items()):
-            if all(term in f"{skill_id} {descriptor['description']}".casefold() for term in terms):
-                matches.append({"skill_id": skill_id, "digest": digest,
-                                "description": descriptor["description"],
-                                "parameters": descriptor["parameters"]})
+            score = len(terms & self._terms(f"{skill_id} {descriptor['description']}")) if terms else 1
+            if score > 0:
+                scored.append((-score, skill_id, {"skill_id": skill_id, "digest": digest,
+                                                  "description": descriptor["description"],
+                                                  "parameters": descriptor["parameters"]}))
+        matches = [item for _, _, item in sorted(scored, key=lambda row: row[:2])]
         return {"success": True, "skills": json.loads(json.dumps(matches[:max(1, min(10, limit))]))}
 
     def call(self, skill_id: str, digest: str, arguments: dict, workspace: Path) -> dict:

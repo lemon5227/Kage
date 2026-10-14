@@ -37,6 +37,12 @@ SKILL_FEEDBACK = ('The local student failed this task; the teacher demonstration
                   'Extract ONE reusable skill for this whole task family, not for this instance: take the target file path '
                   'and function name as parameters, implement the general procedure, and do not hardcode example names, '
                   'values or answers. Describe in the description exactly when the skill applies and when it does not.')
+# W2-5 (E-0 diagnosis, 2026-10-14): skills were too narrow (one grouping field only) and one 6 KB
+# reply was malformed JSON whose repair then exceeded the 12000-byte request cap. Same text for all arms.
+SKILL_FEEDBACK += (' Instances of this family vary (for example which field to group or count by, optional filters); '
+                   'expose every such variation stated in the instruction as a parameter instead of fixing one. '
+                   'Start the description with "Use this when". Keep code compact (under 60 lines, no docstrings) '
+                   'so the JSON reply stays small and valid.')
 
 
 def experiment_spend(cache_dir: Path, remaining: float) -> float:
