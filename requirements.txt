@@ -11,6 +11,7 @@ websockets
 vosk
 openwakeword
 jieba
+rank-bm25
 onnxruntime
 
 # Added based on codebase analysis

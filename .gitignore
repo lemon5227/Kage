@@ -32,6 +32,7 @@ wheels/
 
 # Virtual Env
 venv/
+.venv/
 env/
 ENV/
 
@@ -53,4 +54,4 @@ runs/
 artifacts/
 
 # Optional computer-use experiment environment
-/.venv-computer-use/
+/.venv-computer-use

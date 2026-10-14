@@ -1,5 +1,11 @@
 # Kage 迭代测试指南
 
+## 快速开始（2026-10-14）
+
+- 依赖：`pip install -r requirements.txt -r requirements-computer-use.txt -r requirements-dev.txt`（Linux 不装音频依赖时见下方链接）。
+- macOS 与 Linux/云端的完整命令、Playwright 浏览器版本不匹配的处理办法、已知与环境相关的失败，统一见 [总任务规划「二、测试环境」](plans/MASTER-TASK-PLAN.md#二测试环境)。
+- 全量命令：`python -m pytest -q --timeout=90`（Linux 加 `--ignore=tests/test_round14_audio.py`）。
+
 ## 概述
 
 本文档描述如何对 Kage AI 助手进行迭代测试和改进。

@@ -14,3 +14,4 @@
 | 任务 | 日志 | 状态 |
 |---|---|---|
 | T00 | [T00-audit-and-plan.md](T00-audit-and-plan.md) | 完成 |
+| T01 | [T01-dependencies-and-test-env.md](T01-dependencies-and-test-env.md) | 完成 |
