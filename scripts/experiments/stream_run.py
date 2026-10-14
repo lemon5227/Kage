@@ -52,6 +52,12 @@ def experiment_spend(cache_dir: Path, remaining: float) -> float:
     return max(0.0, json.loads(base.read_text())['remaining_usd_at_start'] - remaining)
 
 
+def _spend_row(root: Path, when: str, task: dict, remaining: float) -> None:
+    """Ledger snapshots around each stream task: per-arm cloud spend for stream_report."""
+    with (root / 'spend.jsonl').open('a') as out:
+        out.write(json.dumps({'task_id': task['task_id'], 'when': when, 'ledger_remaining_usd': remaining}) + '\n')
+
+
 def plan(args):
     stream = [('read_preserve' if i % 5 == 4 else 'log_aggregation', 1000 + i) for i in range(args.stream)]
     evals = [('log_aggregation', 9000 + i) for i in range(args.eval_capability)] + \
@@ -173,7 +179,11 @@ def run(args, config, stream_m, eval_m, checkpoints):
         if capped:
             continue
         start = time.monotonic()
+        if teacher:
+            _spend_row(args.root, 'before', task, remaining_usd(global_teacher_budget()))
         row = learner.step(task)
+        if teacher:
+            _spend_row(args.root, 'after', task, remaining_usd(global_teacher_budget()))
         print(json.dumps({k: row.get(k) for k in ('index', 'task_id', 'solved_by_student', 'helped', 'student_score',
               'teacher_score', 'learning', 'library_after')} | {'seconds': round(time.monotonic() - start, 1)},
               default=str), flush=True)
