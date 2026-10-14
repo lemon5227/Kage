@@ -89,6 +89,7 @@ def test_agentic_loop_auto_installs_after_remote_find():
         tool_executor=_DummyExecutor(),
         prompt_builder=_DummyPrompt(tool_defs),
         session_manager=_DummySession(),
+        auto_install_remote_skills=True,  # opt-in (T12); default is off
     )
 
     res = asyncio.run(loop.run("need skill"))
@@ -97,3 +98,23 @@ def test_agentic_loop_auto_installs_after_remote_find():
     assert "skills_find_remote" in names
     assert "skills_install" in names
     assert "skills_read" in names
+
+
+def test_agentic_loop_does_not_auto_install_by_default():
+    """T12: installing third-party skills needs the user's opt-in or confirmation."""
+    from core.agentic_loop import AgenticLoop
+
+    tool_defs = [{"type": "function", "function": {
+        "name": "skills_find_remote", "description": "",
+        "parameters": {"type": "object", "properties": {"query": {"type": "string"}}}}}]
+    loop = AgenticLoop(model_provider=_DummyModel(), tool_executor=_DummyExecutor(),
+                       prompt_builder=_DummyPrompt(tool_defs), session_manager=_DummySession())
+    res = asyncio.run(loop.run("need skill"))
+    names = [x["name"] for x in res.tool_calls_executed]
+    assert "skills_find_remote" in names
+    assert "skills_install" not in names
+
+
+def test_skills_install_requires_confirmation():
+    from core.tool_registry import create_default_registry
+    assert create_default_registry().get_security_level("skills_install") == "DANGEROUS"

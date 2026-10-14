@@ -311,8 +311,8 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
             "required": ["repo", "skill"],
         },
         handler=skills_install,
-        # Project policy: skills.sh-discovered installs are non-interactive.
-        safety_level="SAFE",
+        # Installing runs third-party code (npx + remote package): needs user confirmation.
+        safety_level="DANGEROUS",
     ))
 
     registry.register(ToolDefinition(

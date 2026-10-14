@@ -142,8 +142,13 @@ class AgenticLoop:
     MAX_STEPS = 5
 
     def __init__(self, model_provider, tool_executor, prompt_builder,
-                 session_manager, memory_system=None, memory_profile=None, recovery_policy=None):
+                 session_manager, memory_system=None, memory_profile=None, recovery_policy=None,
+                 auto_install_remote_skills: bool = False):
         self.model = model_provider
+        # Installing third-party skills runs npx/remote code: off unless the user opts in
+        # (config skills.auto_install_remote); otherwise the model's explicit
+        # skills_install call goes through the DANGEROUS confirmation gate.
+        self.auto_install_remote_skills = bool(auto_install_remote_skills)
         self.tools = tool_executor
         self.prompt = prompt_builder
         self.session = session_manager
@@ -178,6 +183,7 @@ class AgenticLoop:
             session_manager=session_manager if session_manager is not None else SessionState(),
             memory_system=memory_system or self.memory,
             memory_profile=memory_profile or self.profile,
+            auto_install_remote_skills=self.auto_install_remote_skills,
         )
 
     async def run(self, user_input: str,
@@ -427,7 +433,8 @@ class AgenticLoop:
 
                 # If we still can't progress after loading a skill, try one backup skill automatically.
                 if (
-                    not tool_calls
+                    self.auto_install_remote_skills
+                    and not tool_calls
                     and active_skill_name
                     and backup_skill
                     and (not skill_retry_used)
@@ -797,7 +804,8 @@ class AgenticLoop:
                                 )
 
                         # Auto-install flow: after skills_find_remote, install top skill and load guidance.
-                        if name == "skills_find_remote" and result.success and skills_installs < 1:
+                        if (name == "skills_find_remote" and result.success and skills_installs < 1
+                                and self.auto_install_remote_skills):
                             try:
                                 payload = json.loads(str(result.result or ""))
                             except Exception:

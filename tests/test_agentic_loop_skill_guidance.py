@@ -107,6 +107,7 @@ def test_skill_guidance_forces_next_step_tool_call():
         tool_executor=ex,
         prompt_builder=prompt,
         session_manager=_DummySession(),
+        auto_install_remote_skills=True,  # opt-in (T12); default is off
     )
 
     res = asyncio.run(loop.run("整理一下文件"))

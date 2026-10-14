@@ -115,6 +115,9 @@
         "max_per_hour": 2,
         "snooze_minutes": 60
     },
+    "skills": {
+        "auto_install_remote": false
+    },
     "evolution": {
         "auto": false,
         "idle_minutes": 30,

@@ -735,6 +735,10 @@ class KageServer:
             session_manager=self.session_manager,
             memory_system=self.memory,
             memory_profile=memory_profile,
+            auto_install_remote_skills=bool(
+                (cfg.get("skills") or {}).get("auto_install_remote", False)
+                if isinstance(cfg.get("skills"), dict) else False
+            ),
         )
 
         # --- Idle-time self-evolution (opt-in via evolution.auto) ---
@@ -1652,7 +1656,7 @@ class KageServer:
                     self.dialog_state.set_pending(
                         make_pending_confirm_tool(tool_name, tool_args)
                     )
-                    confirm_prompt = f"要执行删除类操作：{preview}\n确认吗？回复‘确认’或‘取消’。"
+                    confirm_prompt = f"这个操作需要你确认：{preview}\n确认吗？回复‘确认’或‘取消’。"
                     await self.mouth_speak(confirm_prompt, current_emotion_str)
                     self._record_turn_completed(user_input, confirm_prompt)
                     self._log_turn_done(path="need_confirmation", route=route_hint, elapsed_ms=_turn_elapsed_ms())
