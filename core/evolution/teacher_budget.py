@@ -22,7 +22,11 @@ def ledger_path() -> Path:
     return Path(os.environ.get('KAGE_TEACHER_LEDGER', str(DEFAULT_LEDGER))).expanduser()
 
 
-def global_teacher_budget(cap_usd: float = GLOBAL_TEACHER_CAP_USD) -> BudgetTracker:
+def global_teacher_budget(cap_usd: float | None = None) -> BudgetTracker:
+    # A remote host (e.g. Kaggle) starts with an empty ledger, so it runs under the allocation it was
+    # given (KAGE_TEACHER_CAP_USD) and its spend is charged back to the home ledger afterwards.
+    if cap_usd is None:
+        cap_usd = float(os.environ.get('KAGE_TEACHER_CAP_USD', GLOBAL_TEACHER_CAP_USD))
     if not 0 < cap_usd <= GLOBAL_TEACHER_CAP_USD:
         raise ValueError(f'teacher cap must be in (0, {GLOBAL_TEACHER_CAP_USD}] USD')
     config = BudgetConfig(max_input_tokens_total=50_000_000, max_output_tokens_total=5_000_000,

@@ -128,13 +128,21 @@ class TeacherCache:
         self.fresh_calls = 0
 
     def get(self, task: dict) -> RunResult:
+        # Arms running in parallel share this cache: one lock per task, atomic writes, so a
+        # demonstration is paid for once and never read half-written.
+        import fcntl
+        import os
         path = self.root / f"{task['task_id']}.json"
-        if path.exists():
-            return RunResult(**json.loads(path.read_text()))
-        self.fresh_calls += 1
-        result = self.solve(task)
-        path.write_text(json.dumps(asdict(result), ensure_ascii=False, default=str))
-        return result
+        with open(self.root / f".{task['task_id']}.lock", 'w') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            if path.exists():
+                return RunResult(**json.loads(path.read_text()))
+            self.fresh_calls += 1
+            result = self.solve(task)
+            tmp = path.with_suffix('.tmp')
+            tmp.write_text(json.dumps(asdict(result), ensure_ascii=False, default=str))
+            os.replace(tmp, path)
+            return result
 
 
 class StreamLearner:

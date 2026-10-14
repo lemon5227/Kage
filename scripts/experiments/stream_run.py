@@ -108,6 +108,8 @@ def main():
     p.add_argument('--stream-manifest', type=Path, help='frozen stream manifest (eval/stream_v1/stream-seedN.json)')
     p.add_argument('--eval-manifest', type=Path, help='frozen eval manifest (eval/stream_v1/eval.json)')
     p.add_argument('--checkpoints', help='comma-separated stream indexes for evaluation (default 0/middle/end)')
+    p.add_argument('--eval-only', metavar='LABEL',
+                   help='skip the stream; evaluate the bootstrap state once under LABEL (non-learning arms, shared cp0)')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
     p.add_argument('--skill-runner', choices=['docker', 'process'], default='docker',
                    help='process: run skills in a subprocess (hosts without Docker, e.g. a disposable Kaggle VM)')
@@ -139,6 +141,10 @@ def main():
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0, 'teacher_input_bytes': TEACHER_INPUT_BYTES}
     if ARMS[args.arm]['help'] != 'never':
         config['experiment_cap_usd'] = args.experiment_cap_usd
+    if args.eval_only:
+        if ARMS[args.arm]['learn'] and args.eval_only != 'cp0':
+            p.error('--eval-only on a learning arm is only meaningful for cp0 (empty library)')
+        config['eval_only'] = args.eval_only
     if args.skill_runner != 'docker':
         config['skill_runner'] = args.skill_runner
     if args.stream_manifest:
@@ -235,6 +241,9 @@ def run(args, config, stream_m, eval_m, checkpoints):
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
                             teacher=teacher, propose_skill=proposer, memory=memory)
     eval_tasks = eval_m['tasks']
+    if args.eval_only:
+        print(json.dumps(learner.evaluate(eval_tasks, args.eval_only)), flush=True)
+        return
     capped = False
     for index, task in enumerate(stream_m['tasks'] + [None]):
         if index in checkpoints:            # evaluate() skips tasks already logged for this checkpoint

@@ -105,3 +105,15 @@ def test_missing_checkpoint_marked_no_data(tmp_path):
     out = tmp_path / 'r'
     R.main(['--arm-dir', f'A1={empty}', '--out', str(out)])
     assert '| A1 | 无数据 |' in (out / 'report.md').read_text()
+
+
+def test_constant_arms_and_shared_cp0_pair_across_checkpoints_and_seeds(tmp_path):
+    a0, a4s1, a4s2 = tmp_path / 'A0', tmp_path / 'A4s1', tmp_path / 'A4s2'
+    write(a0, 'checkpoints.jsonl', [cp('cp0', 't1', 'log_aggregation', 0.0), cp('cp0', 't2', 'log_aggregation', 1.0)])
+    for d in (a4s1, a4s2):
+        write(d, 'checkpoints.jsonl', [cp('cp60', 't1', 'log_aggregation', 1.0), cp('cp60', 't2', 'log_aggregation', 1.0)])
+        write(d, 'stream.jsonl', [{'index': 0, 'task_id': 's', 'family': 'log_aggregation', 'student_score': 0.0}])
+    s = R.build({'A0': [a0], 'A4': [a4s1, a4s2]}, cp0_from='A0', constant=('A0',))
+    assert s['paired']['A4 vs A0']['cp60'] == {'pairs': 4, 'a_only': 2, 'b_only': 0, 'p': 0.5}
+    assert s['paired']['A4 vs A0']['cp0']['pairs'] == 4 and s['paired']['A4 vs A0']['cp0']['a_only'] == 0
+    assert s['arms']['A4']['checkpoints']['cp0']['in_family']['n'] == 4

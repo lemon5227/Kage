@@ -153,8 +153,29 @@ def _fmt(r: dict) -> str:
     return f"{r['k']}/{r['n']} ({r['rate']:.0%}, CI {r['ci95'][0]:.2f}–{r['ci95'][1]:.2f})"
 
 
-def build(arms: dict[str, list[Path]]) -> dict:
+def build(arms: dict[str, list[Path]], cp0_from: str | None = None, constant: tuple[str, ...] = ()) -> dict:
     data = {name: load_arm(dirs) for name, dirs in arms.items()}
+    others = [a for n, a in data.items() if n not in constant]
+    labels = sorted({r['checkpoint'] for a in others for r in a['checkpoints']} | {'cp0'}, key=_cp_order)
+    positions = sorted({r['key'][0] for a in others for r in a['checkpoints']} |
+                       {r['seed_pos'] for a in others for r in a['stream']}) or [0]
+    for name in constant:
+        # A non-learning arm never changes state: its one evaluation stands for every checkpoint and seed.
+        rows = data[name]['checkpoints']
+        base = [r for r in rows if r['key'][0] == 0]
+        first = sorted({r['checkpoint'] for r in base}, key=_cp_order)[:1]
+        base = [r for r in base if r['checkpoint'] in first]
+        data[name]['checkpoints'] = [{**r, 'checkpoint': label, 'key': (pos, r['task_id']), 'constant': True}
+                                     for label in labels for pos in positions for r in base]
+    if cp0_from:
+        # cp0 evaluates the empty bootstrap state, identical for every arm: reuse one measurement.
+        shared = [r for r in data[cp0_from]['checkpoints'] if r['checkpoint'] == 'cp0' and r['key'][0] == 0]
+        for name, arm in data.items():
+            if name == cp0_from or any(r['checkpoint'] == 'cp0' for r in arm['checkpoints']):
+                continue
+            positions = sorted({r['key'][0] for r in arm['checkpoints']} | {r['seed_pos'] for r in arm['stream']}) or [0]
+            arm['checkpoints'] += [{**r, 'key': (pos, r['task_id']), 'shared_from': cp0_from}
+                                   for pos in positions for r in shared]
     summary = {'arms': {}, 'paired': {}}
     for name, arm in data.items():
         summary['arms'][name] = {'checkpoints': checkpoint_table(arm), 'stream': stream_blocks(arm),
@@ -227,6 +248,8 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--arm-dir', action='append', required=True, help='ARM=DIR; repeat for arms and seeds')
     p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--constant', action='append', default=[], help='non-learning arm evaluated once (repeatable)')
+    p.add_argument('--cp0-from', help='arm whose cp0 (empty bootstrap) is shared by arms without their own cp0')
     args = p.parse_args(argv)
     arms: dict[str, list[Path]] = defaultdict(list)
     for item in args.arm_dir:
@@ -235,7 +258,8 @@ def main(argv=None):
             p.error(f'--arm-dir expects ARM=DIR, got {item!r}')
         arms[name].append(Path(path))
     args.out.mkdir(parents=True, exist_ok=True)
-    summary = build(dict(arms))
+    summary = build(dict(arms), args.cp0_from, tuple(args.constant))
+    summary['cp0_from'], summary['constant_arms'] = args.cp0_from, args.constant
     plotted = plot(summary, args.out / 'curves.png')
     (args.out / 'summary.json').write_text(json.dumps(summary, indent=2, ensure_ascii=False))
     (args.out / 'report.md').write_text(render(summary, plotted))

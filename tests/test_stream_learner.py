@@ -130,3 +130,21 @@ def test_interrupted_checkpoint_resumes_per_task(tmp_path):
     assert ran == [t['task_id'] for t in tasks[1:]]          # only the unfinished tasks run
     assert (summary['passed'], summary['total']) == (2, 3)    # summary covers the whole checkpoint
     assert learner.evaluate(tasks, 'cp0')['total'] == 3 and len(ran) == 2
+
+
+def test_teacher_cache_pays_once_under_parallel_arms(tmp_path):
+    import threading
+    from core.evolution.contracts import RunResult
+    from core.evolution.stream import TeacherCache
+    calls = []
+
+    def solve(task):
+        calls.append(task['task_id'])
+        import time
+        time.sleep(0.05)
+        return RunResult('r', 'passed', 1.0, '', {}, '')
+    caches = [TeacherCache(tmp_path / 'cache', solve) for _ in range(4)]
+    threads = [threading.Thread(target=c.get, args=({'task_id': 't1'},)) for c in caches]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert calls == ['t1']

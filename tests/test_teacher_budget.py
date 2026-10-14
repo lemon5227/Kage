@@ -29,3 +29,10 @@ def test_charge_external_counts_against_the_global_cap(tmp_path, monkeypatch):
     assert abs(remaining_usd(global_teacher_budget()) - 0.95) < 1e-4
     charge_external(global_teacher_budget(), 0.0, run_id='free')
     assert abs(remaining_usd(global_teacher_budget()) - 0.95) < 1e-4
+
+
+def test_remote_allocation_cap_from_env(tmp_path, monkeypatch):
+    from core.evolution.teacher_budget import global_teacher_budget, remaining_usd
+    monkeypatch.setenv('KAGE_TEACHER_LEDGER', str(tmp_path / 'remote.sqlite'))
+    monkeypatch.setenv('KAGE_TEACHER_CAP_USD', '0.4')
+    assert abs(remaining_usd(global_teacher_budget()) - 0.4) < 1e-9
