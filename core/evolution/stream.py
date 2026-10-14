@@ -257,7 +257,7 @@ class StreamLearner:
 # ---------------------------------------------------------------------- real wiring
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
-                 tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None):
+                 tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -284,13 +284,16 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
 
     def run(candidate, task, run_id):
         catalog = None if cloud else SkillCatalog.from_bundle(Path(candidate.bundle_path), runner=skill_runner)
+        lessons = playbook.select(task['instruction']) if playbook is not None else []
+        guidance = playbook.render(lessons) if playbook is not None else ''
 
         def make_chain(call_cap=max_model_calls, step_cap=max_steps):
             cls = loop_cls if step_cap == max_steps else type('StreamLoop', (AgenticLoop,), {
                 'MAX_STEPS': step_cap, 'TOOL_MAX_TOKENS': tool_max_tokens})
             kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
                           max_model_calls=call_cap, agentic_loop_cls=cls, skill_catalog=catalog,
-                          skill_context_mode='preview', max_tool_actions=max_tool_actions)
+                          skill_context_mode='preview', max_tool_actions=max_tool_actions,
+                          extra_guidance=guidance)
             if mode == 'memory':
                 return MemoryChain(model_factory(run_id), demonstration=memory.retrieve(task['instruction']), **kwargs)
             return KageChainProvider(model_factory(run_id), **kwargs)
@@ -299,6 +302,10 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
         if cloud:
             chain.RESERVATION_OUTPUT_CAP = 6144
         runner = EvolutionRunner(journal, budget, Path(workspaces), chain)
-        return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task['task_id'],
-                                                   max_steps=1, timeout_s=timeout_s))
+        result = runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task['task_id'],
+                                                     max_steps=1, timeout_s=timeout_s))
+        if lessons:
+            playbook.record_use(lessons, result.score >= 1.0)
+            playbook.save()
+        return result
     return run

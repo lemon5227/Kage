@@ -45,11 +45,16 @@ class MutationFailed(ValueError):
 
 class Mutator:
     target = "skill"
+    LESSONS_REQUEST = (" Optionally add \"lessons\": 1-3 objects {scope: \"general\"|\"task\", when, do, avoid}, "
+                       "each field under 200 characters, stating what the failure teaches beyond this skill.")
+
     def __init__(self, model, budget: BudgetTracker, journal: Journal, root: Path,
-                 input_cap: int = 12_000, output_cap: int = 3_000):
+                 input_cap: int = 12_000, output_cap: int = 3_000, request_lessons: bool = False):
         self.model, self.budget, self.journal = model, budget, journal
         self.root = Path(root)
         self.input_cap, self.output_cap = input_cap, output_cap
+        # W2-6: lessons ride in the same proposal call (no extra teacher request); off by default.
+        self.request_lessons = request_lessons
 
     def _messages(self, source, manifest, feedback):
         return [{"role": "system", "content": (
@@ -58,6 +63,7 @@ class Mutator:
             "(JSON Schema object), and code. code must define run(arguments, context)->dict. "
             "context['workspace_dir'] is the task directory. Use relative workspace files. "
             "Do not hardcode example answers. Your hypothesis is a proposal, not verified evidence."
+            + (self.LESSONS_REQUEST if self.request_lessons else "")
         )}, {"role": "user", "content": json.dumps({
             "parent_manifest": manifest,
             "failure": _visible_feedback({key: feedback[key] for key in
@@ -120,6 +126,8 @@ class Mutator:
         atomic_json(request_path, {"fingerprint": fingerprint})
         def publish(raw, proposal_id, attempt, attempt_path):
             proposal = json.loads(raw)
+            if self.request_lessons and isinstance(proposal, dict) and "lessons" in proposal:
+                atomic_json(self.root / "lessons.json", {"lessons": proposal["lessons"]})
             hypothesis = proposal["hypothesis"]
             if not isinstance(hypothesis, str) or not hypothesis.strip():
                 raise ValueError("non-empty hypothesis required")

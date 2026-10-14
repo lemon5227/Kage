@@ -25,6 +25,7 @@ from core.evolution.budget import BudgetConfig, BudgetTracker
 from core.evolution.contracts import Candidate
 from core.evolution.journal import Journal
 from core.evolution.mutator import Mutator, bundle_digest
+from core.evolution.playbook import Playbook, parse_lessons
 from core.evolution.stream import ARMS, MemoryStore, StreamLearner, TeacherCache, chain_runner
 from core.evolution.stream_tasks import manifest
 from core.evolution.teacher_budget import global_teacher_budget, ledger_path, remaining_usd
@@ -84,6 +85,7 @@ def main():
     p.add_argument('--teacher-config', type=Path, default=TEACHER_CONFIG)
     p.add_argument('--experiment-cap-usd', type=float, default=0.10,
                    help='stop before the next stream task once this experiment has spent this much (all arms)')
+    p.add_argument('--playbook', action='store_true', help='W2-6: lessons from skill proposals join the student prompt')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
     p.add_argument('--no-manage-server', action='store_true', help='use an already running llama-server instead of the owned one')
     args = p.parse_args()
@@ -98,6 +100,10 @@ def main():
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0}
     if ARMS[args.arm]['help'] != 'never':
         config['experiment_cap_usd'] = args.experiment_cap_usd
+    if args.playbook:
+        if ARMS[args.arm]['learn'] is not True:
+            p.error('--playbook needs a skill-learning arm (A4/A5)')
+        config['playbook'] = True
     args.root.mkdir(parents=True, exist_ok=True)
     cfg_path = args.root / 'config.json'
     if cfg_path.exists() and json.loads(cfg_path.read_text()) != config:
@@ -135,8 +141,9 @@ def run(args, config, stream_m, eval_m, checkpoints):
             model_name='agents-a1-4b', base_url=f'http://127.0.0.1:{args.port}/v1', timeout_sec=120)
     learn = ARMS[args.arm]['learn']
     memory = MemoryStore(args.root / 'memory.jsonl') if learn == 'memory' else None
+    playbook = Playbook(args.root / 'playbook.json') if args.playbook else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
-                               tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory,
+                               tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory, playbook=playbook,
                                mode='memory' if memory else 'retry' if args.arm == 'A1' else 'plain')
 
     teacher = proposer = None
@@ -161,8 +168,17 @@ def run(args, config, stream_m, eval_m, checkpoints):
             trace = [json.loads(l) for l in Path(demo.trace_path).read_text().splitlines() if l.strip()]
             feedback = {'task_id': task['task_id'], 'instruction': task['instruction'],
                         'failure_reason': SKILL_FEEDBACK, 'trace': trace}
-            return Mutator(optimizer, global_teacher_budget(), journal,
-                           args.root / 'mutations' / task['task_id']).propose(parent, feedback)
+            root = args.root / 'mutations' / task['task_id']
+            try:
+                return Mutator(optimizer, global_teacher_budget(), journal, root,
+                               request_lessons=playbook is not None).propose(parent, feedback)
+            finally:
+                # Lessons are kept even when the skill is later rejected: the failure taught them.
+                if playbook is not None and (root / 'lessons.json').exists():
+                    lessons = parse_lessons(json.loads((root / 'lessons.json').read_text()))
+                    playbook.add(lessons, source_task=task['task_id'], family=task['family'],
+                                 trigger=task['instruction'])
+                    playbook.save()
         proposer = propose if learn is True else None
 
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,

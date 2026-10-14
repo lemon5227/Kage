@@ -40,3 +40,70 @@ def test_injection_general_always_task_only_when_relevant(tmp_path):
     used = pb.select('Count log lines per level')
     pb.record_use(used, success=True)
     assert all(e['injected'] == 1 and e['injected_success'] == 1 for e in pb.entries)
+
+
+def test_mutator_requests_lessons_only_when_enabled_and_saves_them(tmp_path):
+    import json
+    from core.evolution.budget import BudgetConfig, BudgetTracker
+    from core.evolution.contracts import Candidate
+    from core.evolution.journal import Journal
+    from core.evolution.mutator import Mutator, bundle_digest
+    from core.model_provider import ModelProvider, ModelResponse
+
+    seen = []
+
+    class Optimizer(ModelProvider):
+        def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+            seen.append(messages[0]['content'])
+            return ModelResponse(text=json.dumps({
+                'hypothesis': 'h', 'skill_id': 'noop', 'description': 'Use this when testing.',
+                'parameters': {'type': 'object', 'properties': {}},
+                'code': 'def run(arguments, context):\n    return {"success": True}\n',
+                'lessons': [{'scope': 'general', 'when': '', 'do': 'read the file first', 'avoid': ''}]}),
+                usage={'input_tokens': 10, 'output_tokens': 10})
+
+    boot = tmp_path / 'boot'
+    boot.mkdir()
+    (boot / 'manifest.json').write_text('{"version":1,"skills":[]}')
+    parent = Candidate('p', (), 'skill', str(boot), bundle_digest(boot))
+    feedback = {'task_id': 't', 'instruction': 'x', 'failure_reason': 'y', 'trace': []}
+    for enabled in (False, True):
+        root = tmp_path / f'm-{enabled}'
+        Mutator(Optimizer(), BudgetTracker(BudgetConfig(max_api_calls=10), tmp_path / f'b{enabled}.sqlite'),
+                Journal(tmp_path / 'j.sqlite'), root, request_lessons=enabled).propose(parent, feedback)
+        assert (root / 'lessons.json').exists() is enabled
+    assert 'lessons' not in seen[0] and 'lessons' in seen[1]
+    saved = json.loads((tmp_path / 'm-True' / 'lessons.json').read_text())
+    assert parse_lessons(saved)[0]['do'] == 'read the file first'
+
+
+def test_chain_runner_injects_selected_lessons_into_system_prompt(tmp_path):
+    from core.evolution.budget import BudgetConfig, BudgetTracker
+    from core.evolution.contracts import Candidate
+    from core.evolution.journal import Journal
+    from core.evolution.mutator import bundle_digest
+    from core.evolution.sandbox import ProcessSkillRunner
+    from core.evolution.stream import chain_runner
+    from core.evolution.stream_tasks import make_task
+    from core.model_provider import ModelProvider, ModelResponse
+
+    log = tmp_path / 'system.txt'
+
+    class Recorder(ModelProvider):
+        def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+            log.write_text(messages[0]['content'])
+            return ModelResponse(text='Done.', usage={'input_tokens': 1, 'output_tokens': 1})
+
+    pb = Playbook(tmp_path / 'playbook.json')
+    pb.add([{'scope': 'general', 'when': '', 'do': 'read the target file before writing', 'avoid': ''}], source_task='g')
+    boot = tmp_path / 'boot'
+    boot.mkdir()
+    (boot / 'manifest.json').write_text('{"version":1,"skills":[]}')
+    bootstrap = Candidate('no-skills', (), 'skill', str(boot), bundle_digest(boot))
+    for book, expected in ((None, False), (pb, True)):
+        run = chain_runner(Journal(tmp_path / 'j.sqlite'), BudgetTracker(BudgetConfig(max_api_calls=100), tmp_path / 'b.sqlite'),
+                           tmp_path / 'ws', lambda run_id: Recorder(), skill_runner=ProcessSkillRunner(timeout_s=10),
+                           playbook=book)
+        run(bootstrap, make_task('log_aggregation', 1000 + int(expected)), f'run-{expected}')
+        assert ('read the target file before writing' in log.read_text()) is expected
+    assert Playbook(tmp_path / 'playbook.json').entries[0]['injected'] == 1

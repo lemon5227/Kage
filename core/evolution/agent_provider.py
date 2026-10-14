@@ -272,7 +272,9 @@ class KageChainProvider:
         skill_context_mode: str = "search",
         recovery_policy=None,
         max_tool_actions: int | None = None,
+        extra_guidance: str = "",
     ) -> None:
+        self.extra_guidance = str(extra_guidance or "")
         if max_tool_actions is not None and (isinstance(max_tool_actions, bool) or not isinstance(max_tool_actions, int) or max_tool_actions < 1):
             raise ValueError("max_tool_actions must be a positive integer")
         self.max_tool_actions = max_tool_actions
@@ -346,6 +348,8 @@ class KageChainProvider:
             preview = [{**item, "description": item["description"][:200]} for item in skills]
             soul += "\nLocal reusable skill preview (descriptors only, not source code): " + json.dumps(preview, ensure_ascii=False)
             soul += "\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual editing.\n"
+        if self.extra_guidance:
+            soul += "\n" + self.extra_guidance    # W2-6 playbook lessons; empty unless enabled
         return soul
 
     def generate_step(
