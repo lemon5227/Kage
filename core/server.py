@@ -743,7 +743,9 @@ class KageServer:
 
         # --- Idle-time self-evolution (opt-in via evolution.auto) ---
         from core.evolution.scheduler import EvolutionScheduler
+        from core.evolution.notices import DEFAULT_PATH as NOTICES_PATH, NoticeSource, NoticeStore
         evolution_cfg = cfg.get("evolution", {}) if isinstance(cfg.get("evolution", {}), dict) else {}
+        self._notices_path = os.path.expanduser(str(evolution_cfg.get("notices_path", NOTICES_PATH)))
         self.evolution_scheduler = EvolutionScheduler(evolution_cfg, self.session_manager)
         # Promoted skills enter the daily registry only after the user accepts (adopt_skill).
         from core.skill_adoption import SkillAdoption
@@ -765,13 +767,15 @@ class KageServer:
             interval_minutes=heartbeat_interval,
             on_notifications=self._deliver_proactive_notifications,
             proactive_config=heartbeat_cfg,
-            sources=[ImportantDateSource(lambda: memory_profile), self.evolution_scheduler],
+            sources=[ImportantDateSource(lambda: memory_profile), self.evolution_scheduler,
+                     NoticeSource(NoticeStore(self._notices_path))],
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
         self._proactive_action_handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = {
             "start_teaching": self._start_teaching,
             "adopt_skill": self._adopt_skill,
+            "notice_reply": self._notice_reply,
         }
 
         # Short-lived interactive dialog state unified with SessionManager
@@ -1040,6 +1044,11 @@ class KageServer:
             {"task_id": str(action.get("task_id") or ""), "source_kind": "human_declared"}
         )
         await self.send_message("proactive", {"event": "teaching_started", "job": job})
+
+    async def _notice_reply(self, action: dict[str, Any]) -> None:
+        # Learning-loop notices (help request / adoption confirm): record the user's yes.
+        from core.evolution.notices import record_reply
+        record_reply(os.path.join(os.path.dirname(self._notices_path), "notice_replies.jsonl"), action)
 
     async def _adopt_skill(self, action: dict[str, Any]) -> None:
         """User accepted a learned skill: adopt the candidate the scheduler recorded as promoted.
