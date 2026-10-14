@@ -4,6 +4,7 @@
 
 | 日期/任务 | 范围 | 结论与报告 |
 |---|---|---|
+| 2026-10-14 学生模型/引擎筛选 | 已暴露 files-v1+knapsack dev 7题；4模型×5引擎，Kage采样，不改G2冻结 | [筛选报告](2026-10-14-student-model-screening.md)：Agents-A1 27/42、Nemotron 28/42、Rapid-MLX+Agents-A1 29/42（噪声内）；MiniCPM5-2B与Qwen3.5-9B淘汰；knapsack全0。不换学生、不迁移引擎；Nemotron/Rapid-MLX留作G3后候选，零云请求 |
 | 2026-10-13 G2适用性基线 | 冻结两项真实本地任务，教师0/候选0 | [基线报告](2026-10-13-g2-applicability-baseline.md)：读取保留0分，恢复策略误用knapsack并改文件；旧能力1分且实际技能成功。共7本地请求，第二次学习尚未执行 |
 | 2026-10-11 G1持久恢复闭环 | 真实失败→生成→validation晋级→新进程采用；首轮拒绝保留 | [G1验收](2026-10-11-g1-persistent-recovery.md)：第二轮父0/子1、重启应用1；共2候选/7运行/21本地/2教师请求；窄域恢复调用成立，下一G2第二类学习与旧能力保留 |
 | 2026-10-09 独立路径审查 | 只读核对69条结果汇总、E3源码/轨迹、执行聊天及ledger | [纠偏与执行规格](../plans/agent-evolution-execution-correction-2026-10-09.md)：确认原生诊断偏航；G1持久自动闭环优先，明确人工诊断与test激活限制；未运行新能力实验 |
