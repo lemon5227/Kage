@@ -751,7 +751,9 @@ class KageServer:
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
-        self._proactive_action_handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = {}
+        self._proactive_action_handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = {
+            "start_teaching": self._start_teaching,
+        }
 
         # Short-lived interactive dialog state unified with SessionManager
         self.session = self.session_manager
@@ -951,6 +953,8 @@ class KageServer:
                 task_type=str(job.get("task_type")),
                 task_status=str(result.get('task_status') or job.get('status') or ''),
             )
+            if event in ("completed", "failed"):
+                await self._maybe_request_teaching(job)
             return
         notification = self._background_completion_notification(event, job)
         if notification:
@@ -979,6 +983,37 @@ class KageServer:
                 and str(self._ui_state or "IDLE") == "IDLE"
             ):
                 await self.mouth_speak(content, "neutral")
+
+    async def _maybe_request_teaching(self, job: dict[str, Any]) -> None:
+        """After a browser task fails or ends unchecked, offer to learn from a demonstration."""
+        heartbeat = getattr(self, "heartbeat", None)
+        if heartbeat is None:
+            return
+        try:
+            from core.computer_use.demonstration import demonstration_tasks
+            from core.computer_use.task_worker import task_catalog
+            from core.proactive_sources import teach_request_for_job
+
+            catalog = task_catalog()
+            note = teach_request_for_job(
+                job,
+                lambda task_id: (catalog.get(task_id) or {}).get("family"),
+                frozenset(demonstration_tasks()),
+            )
+            if note is None or heartbeat.policy.was_sent(note["source"], float(note["dedup_seconds"])):
+                return
+            await heartbeat.deliver_now([note])
+        except Exception:
+            logger.warning("Teaching request skipped", exc_info=True)
+
+    async def _start_teaching(self, action: dict[str, Any]) -> None:
+        """User accepted a teaching request: open a recorded demonstration session."""
+        from core.routes import browser_demonstrations
+
+        job = await browser_demonstrations._get_service().submit(
+            {"task_id": str(action.get("task_id") or ""), "source_kind": "human_declared"}
+        )
+        await self.send_message("proactive", {"event": "teaching_started", "job": job})
 
     async def handle_proactive_feedback(self, message: dict[str, Any]) -> Optional[dict[str, Any]]:
         """Apply a ``proactive_feedback`` message from the UI.

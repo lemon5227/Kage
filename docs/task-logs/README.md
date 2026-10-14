@@ -20,3 +20,4 @@
 | T04 | [T04-proactive-feedback.md](T04-proactive-feedback.md) | 完成（后端） |
 | T05 | [T05-proactive-policy.md](T05-proactive-policy.md) | 完成 |
 | T06 | [T06-important-date-reminders.md](T06-important-date-reminders.md) | 完成 |
+| T07 | [T07-teaching-request.md](T07-teaching-request.md) | 完成（后端） |

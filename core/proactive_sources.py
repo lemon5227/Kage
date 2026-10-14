@@ -104,3 +104,37 @@ def make_remember_date_handler(profile: Any) -> Callable[..., str]:
         return json.dumps({"success": True, "date": spec, "event": name}, ensure_ascii=False)
 
     return remember_date
+
+
+TEACH_REPEAT_SECONDS = 24 * 3600
+TEACHABLE_STATUSES = ("failed", "unknown")
+
+
+def teach_request_for_job(job: dict, family_of: Callable[[str], str | None],
+                          teaching_tasks: set[str] | frozenset[str]) -> dict | None:
+    """Turn a finished browser task that failed (or could not be checked) into a
+    proactive request for a human demonstration of the same task family.
+
+    Returns None when the job is not a terminal failed/unknown browser experiment
+    or when no teaching task exists for its family (nothing actionable to offer).
+    """
+    if str(job.get("task_type") or "") != "browser_experiment":
+        return None
+    status = str(job.get("status") or "")
+    if status not in TEACHABLE_STATUSES:
+        return None
+    task_id = str(job.get("task_id") or "")
+    family = family_of(task_id) if task_id else None
+    teaching_task = f"demo_{family}" if family else ""
+    if teaching_task not in teaching_tasks:
+        return None
+    outcome = "没完成" if status == "failed" else "没法确认有没有完成"
+    note = make_notification(
+        f"teach:{task_id}",
+        f"刚才的“{task_id}”任务我{outcome}。你愿意示范一次给我看吗？我会记下来，下次自己试。",
+        type_="teach_request",
+        action={"type": "start_teaching", "task_id": teaching_task,
+                "from_run": str(job.get("run_id") or job.get("job_id") or "")},
+    )
+    note["dedup_seconds"] = TEACH_REPEAT_SECONDS
+    return note

@@ -106,7 +106,7 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T04b | 外壳 | 前端主动消息气泡与三个反馈按钮（UI，低优先级） | T04 | 任意 | 待领取 | |
 | T05 | 主动 | 主动策略层：免打扰、频率上限、反馈学习 | T03 | 任意 | 完成 | [T05](../task-logs/T05-proactive-policy.md) |
 | T06 | 主动 | 触发源①：重要日期与提醒 | T05 | 任意 | 完成 | [T06](../task-logs/T06-important-date-reminders.md) |
-| T07 | 主动 | 触发源②：任务失败后主动请求示范 | T05 | 任意 | 待领取 | |
+| T07 | 主动 | 触发源②：任务失败后主动请求示范 | T05 | 任意 | 完成（后端） | [T07](../task-logs/T07-teaching-request.md) |
 | T08 | 演化 | 进化 smoke 不依赖 Docker 也能跑通 | T01 | 任意 | 待领取 | |
 | T09 | 演化 | 空闲时自演化作业（EvolutionScheduler） | T05, T08 | 任意 | 待领取 | |
 | T10 | 演化 | 晋级技能 → 用户同意 → 日常主链采用 | T02, T09 | 任意 | 待领取 | |
