@@ -257,7 +257,8 @@ class StreamLearner:
 # ---------------------------------------------------------------------- real wiring
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
-                 tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None):
+                 tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None,
+                 recovery_bundle: Path | None = None):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -266,7 +267,9 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
     from core.agentic_loop import AgenticLoop
     from core.evolution.agent_provider import KageChainProvider
     from core.evolution.contracts import RunSpec
+    from core.evolution.bundle import RecoveryPolicy
     from core.evolution.retries import LocalRetryProvider
+    from core.evolution.sandbox import ProcessSkillRunner
     from core.evolution.runner import EvolutionRunner
     from core.evolution.skills import SkillCatalog
     loop_cls = type('StreamLoop', (AgenticLoop,), {'MAX_STEPS': max_steps, 'TOOL_MAX_TOKENS': tool_max_tokens})
@@ -293,7 +296,9 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
             kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
                           max_model_calls=call_cap, agentic_loop_cls=cls, skill_catalog=catalog,
                           skill_context_mode='preview', max_tool_actions=max_tool_actions,
-                          extra_guidance=guidance)
+                          extra_guidance=guidance,
+                          recovery_policy=RecoveryPolicy.from_bundle(recovery_bundle, runner=skill_runner or ProcessSkillRunner())
+                          if recovery_bundle is not None else None)
             if mode == 'memory':
                 return MemoryChain(model_factory(run_id), demonstration=memory.retrieve(task['instruction']), **kwargs)
             return KageChainProvider(model_factory(run_id), **kwargs)

@@ -13,6 +13,7 @@ The teacher cache is shared on purpose: each task is demonstrated once from its 
 state and reused by every arm. All paid calls go through the global $1 ledger.
 """
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -59,6 +60,19 @@ def experiment_spend(cache_dir: Path, remaining: float) -> float:
     return max(0.0, json.loads(base.read_text())['remaining_usd_at_start'] - remaining)
 
 
+HELP_POLICY = ROOT / 'core/evolvable/recovery_help.py'
+
+
+def help_bundle(path: Path) -> Path:
+    """Recovery bundle holding the W3-2 request_help policy (same manifest shape as G1 bundles)."""
+    code = HELP_POLICY.read_text()
+    path.mkdir(parents=True, exist_ok=True)
+    (path / 'recovery.py').write_text(code)
+    (path / 'manifest.json').write_text(json.dumps({'version': 1, 'skills': [], 'modules': {'recovery': {
+        'entrypoint': 'recovery.py:recover', 'digest': hashlib.sha256(code.encode()).hexdigest()}}}))
+    return path
+
+
 def _spend_row(root: Path, when: str, task: dict, remaining: float) -> None:
     """Ledger snapshots around each stream task: per-arm cloud spend for stream_report."""
     with (root / 'spend.jsonl').open('a') as out:
@@ -86,6 +100,8 @@ def main():
     p.add_argument('--experiment-cap-usd', type=float, default=0.10,
                    help='stop before the next stream task once this experiment has spent this much (all arms)')
     p.add_argument('--playbook', action='store_true', help='W2-6: lessons from skill proposals join the student prompt')
+    p.add_argument('--in-task-help', action='store_true',
+                   help='W3-2: student runs with the request_help recovery policy (helping arms only)')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
     p.add_argument('--no-manage-server', action='store_true', help='use an already running llama-server instead of the owned one')
     args = p.parse_args()
@@ -104,6 +120,10 @@ def main():
         if ARMS[args.arm]['learn'] is not True:
             p.error('--playbook needs a skill-learning arm (A4/A5)')
         config['playbook'] = True
+    if args.in_task_help:
+        if ARMS[args.arm]['help'] == 'never':
+            p.error('--in-task-help needs an arm that can receive help')
+        config['in_task_help'] = hashlib.sha256(HELP_POLICY.read_bytes()).hexdigest()
     args.root.mkdir(parents=True, exist_ok=True)
     cfg_path = args.root / 'config.json'
     if cfg_path.exists() and json.loads(cfg_path.read_text()) != config:
@@ -142,8 +162,10 @@ def run(args, config, stream_m, eval_m, checkpoints):
     learn = ARMS[args.arm]['learn']
     memory = MemoryStore(args.root / 'memory.jsonl') if learn == 'memory' else None
     playbook = Playbook(args.root / 'playbook.json') if args.playbook else None
+    recovery_bundle = help_bundle(args.root / 'recovery-help') if args.in_task_help else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
                                tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory, playbook=playbook,
+                               recovery_bundle=recovery_bundle,
                                mode='memory' if memory else 'retry' if args.arm == 'A1' else 'plain')
 
     teacher = proposer = None
