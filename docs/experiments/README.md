@@ -75,3 +75,8 @@
 ## 规划复核（非新模型实验）
 
 - [2026-10-03进度与规划复核](2026-10-03-progress-plan-review.md)：真实浏览器复现错误观察丢失；核对技能/档案接口及示范来源，拆分下一执行包、统一E/C队列。未运行新云模型试验或训练。
+
+
+## 原始证据备份
+
+- 2026-10-14：活动 worktree 的 `artifacts/` + `.superpowers/` 打包为 `/Users/wenbo/Kage/artifacts/backups/worktree-artifacts-2026-10-14.tar.gz`，sha256 `1084e1cae766de47f90be80f18bf730346180ff006bb8e77b626e368ba010526`。需另拷外置盘。

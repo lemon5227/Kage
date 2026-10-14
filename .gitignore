@@ -55,3 +55,6 @@ artifacts/
 
 # Optional computer-use experiment environment
 /.venv-computer-use
+
+# Mac push agent queue (scripts/dev/push_agent.sh)
+.kage-push/

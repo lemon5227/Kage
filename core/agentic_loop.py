@@ -52,6 +52,42 @@ class LoopResult:
     stop_reason: str = "model_returned"
 
 
+RECOVERY_ACTIONS = {"stop", "switch_tool", "request_help"}
+_WRITE_TOOLS = {"write_file", "fs_write", "fs_apply", "skill_call"}
+
+
+def recovery_context(goal: str, final_text, executed: list[dict]) -> dict:
+    """Facts available to a recovery policy at the moment the model stops calling tools.
+
+    ``reason`` stays ``no_tool_calls`` so frozen historical policies behave unchanged;
+    ``trigger`` tells new policies whether this is an ordinary finish attempt or a
+    finish right after a failed tool, and what was actually written.
+    """
+    last = executed[-1] if executed else {}
+    written = []
+    for row in executed:
+        if row.get("name") in _WRITE_TOOLS and row.get("success"):
+            args = row.get("arguments") if isinstance(row.get("arguments"), dict) else {}
+            nested = args.get("arguments") if isinstance(args.get("arguments"), dict) else {}
+            if row.get("name") == "skill_call":
+                paths = [nested.get("file_path") or nested.get("path")]
+            elif args.get("path"):
+                paths = [args.get("path")]
+            else:
+                paths = [op.get("path") for op in args.get("ops", []) if isinstance(op, dict)]
+            written.extend(p for p in paths if isinstance(p, str) and p not in written)
+    failed = bool(last) and not last.get("success", False)
+    return {
+        "reason": "no_tool_calls",
+        "trigger": "finish_after_tool_error" if failed else "finish_attempt",
+        "goal": goal,
+        "final_text": str(final_text or "")[:2000],
+        "written_files": written,
+        "last_tool_success": (not failed) if last else None,
+        "tool_errors": sum(1 for row in executed if not row.get("success", False)),
+    }
+
+
 def detect_repetition(text: str, substr_len: int = 10, threshold: int = 3) -> bool:
     """Detect a contiguous repeated run, rather than recurring words in prose.
 
@@ -610,14 +646,24 @@ class AgenticLoop:
                 # observed evidence. It consumes this loop step, never a new budget.
                 if not tool_calls and tool_calls_executed and self.recovery_policy is not None and not recovery_used:
                     recovery_used = True
-                    event = {"step": step, "trigger": "no_tool_calls"}
+                    context = recovery_context(base_user_input, raw_text, tool_calls_executed)
+                    event = {"step": step, "trigger": context["trigger"]}
                     try:
                         decision = self.recovery_policy.recover(
-                            {"reason": "no_tool_calls", "goal": base_user_input},
-                            copy.deepcopy(tool_calls_executed), [])
+                            context, copy.deepcopy(tool_calls_executed), [])
                         event["decision"] = decision
-                        if not isinstance(decision, dict) or decision.get("action") not in {"stop", "switch_tool"}:
+                        if not isinstance(decision, dict) or decision.get("action") not in RECOVERY_ACTIONS:
                             raise ValueError("unsupported recovery action")
+                        if decision["action"] == "request_help":
+                            event["help_reason"] = str(decision.get("reason") or "")[:500]
+                            self.recovery_events.append(event)
+                            return LoopResult(
+                                final_text=str(raw_text or ""),
+                                emotion=self._determine_emotion(tool_calls_executed),
+                                tool_calls_executed=tool_calls_executed,
+                                steps=step,
+                                stop_reason="help_requested",
+                            )
                         if decision["action"] == "switch_tool":
                             action = decision.get("tool_call")
                             if not isinstance(action, dict) or not isinstance(action.get("name"), str) or not isinstance(action.get("arguments"), dict):
