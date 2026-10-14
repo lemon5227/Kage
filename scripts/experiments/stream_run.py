@@ -39,6 +39,19 @@ SKILL_FEEDBACK = ('The local student failed this task; the teacher demonstration
                   'values or answers. Describe in the description exactly when the skill applies and when it does not.')
 
 
+def experiment_spend(cache_dir: Path, remaining: float) -> float:
+    """US$ spent from the global ledger since this experiment's first paid run.
+
+    The baseline lives next to the shared teacher cache, so every arm of one experiment
+    draws from the same allocation (task book §4) and a new --root cannot reset it.
+    """
+    base = cache_dir.parent / 'ledger-baseline.json'
+    if not base.exists():
+        base.parent.mkdir(parents=True, exist_ok=True)
+        base.write_text(json.dumps({'remaining_usd_at_start': remaining}))
+    return max(0.0, json.loads(base.read_text())['remaining_usd_at_start'] - remaining)
+
+
 def plan(args):
     stream = [('read_preserve' if i % 5 == 4 else 'log_aggregation', 1000 + i) for i in range(args.stream)]
     evals = [('log_aggregation', 9000 + i) for i in range(args.eval_capability)] + \
@@ -57,6 +70,8 @@ def main():
     p.add_argument('--eval-negative', type=int, default=4)
     p.add_argument('--port', type=int, default=18082)
     p.add_argument('--teacher-config', type=Path, default=TEACHER_CONFIG)
+    p.add_argument('--experiment-cap-usd', type=float, default=0.10,
+                   help='stop before the next stream task once this experiment has spent this much (all arms)')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
     p.add_argument('--no-manage-server', action='store_true', help='use an already running llama-server instead of the owned one')
     args = p.parse_args()
@@ -69,6 +84,8 @@ def main():
               'max_steps': 5, 'max_tool_actions': 12, 'timeout_s': 150, 'skill_context_mode': 'preview',
               'output_tokens': STUDENT_OUTPUT_TOKENS},
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0}
+    if ARMS[args.arm]['help'] != 'never':
+        config['experiment_cap_usd'] = args.experiment_cap_usd
     args.root.mkdir(parents=True, exist_ok=True)
     cfg_path = args.root / 'config.json'
     if cfg_path.exists() and json.loads(cfg_path.read_text()) != config:
@@ -140,18 +157,27 @@ def run(args, config, stream_m, eval_m, checkpoints):
     cp_file = args.root / 'checkpoints.jsonl'
     if cp_file.exists():
         done_cps = {json.loads(l)['checkpoint'] for l in cp_file.read_text().splitlines()}
+    capped = False
     for index, task in enumerate(stream_m['tasks'] + [None]):
         if index in checkpoints and f'cp{index}' not in done_cps:
             summary = learner.evaluate(eval_tasks, f'cp{index}')
             print(json.dumps(summary), flush=True)
         if task is None or task['task_id'] in learner.done:
             continue
+        if teacher and not capped:
+            spent = experiment_spend(args.teacher_cache, remaining_usd(global_teacher_budget()))
+            if spent >= args.experiment_cap_usd:
+                capped = True     # remaining stream tasks are skipped; checkpoints still run
+                print(json.dumps({'stopped': 'experiment_cap', 'spent_usd': round(spent, 4),
+                                  'next_task': task['task_id']}), flush=True)
+        if capped:
+            continue
         start = time.monotonic()
         row = learner.step(task)
         print(json.dumps({k: row.get(k) for k in ('index', 'task_id', 'solved_by_student', 'helped', 'student_score',
               'teacher_score', 'learning', 'library_after')} | {'seconds': round(time.monotonic() - start, 1)},
               default=str), flush=True)
-    print(json.dumps({'done': True, 'competence': learner.competence.summary(),
+    print(json.dumps({'done': True, 'experiment_capped': capped, 'competence': learner.competence.summary(),
                       'ledger_remaining_usd': round(remaining_usd(global_teacher_budget()), 4) if teacher else None}), flush=True)
 
 
