@@ -105,20 +105,40 @@ def main():
     p.add_argument('--playbook', action='store_true', help='W2-6: lessons from skill proposals join the student prompt')
     p.add_argument('--in-task-help', action='store_true',
                    help='W3-2: student runs with the request_help recovery policy (helping arms only)')
+    p.add_argument('--stream-manifest', type=Path, help='frozen stream manifest (eval/stream_v1/stream-seedN.json)')
+    p.add_argument('--eval-manifest', type=Path, help='frozen eval manifest (eval/stream_v1/eval.json)')
+    p.add_argument('--checkpoints', help='comma-separated stream indexes for evaluation (default 0/middle/end)')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
     p.add_argument('--no-manage-server', action='store_true', help='use an already running llama-server instead of the owned one')
     args = p.parse_args()
 
-    stream, evals, checkpoints = plan(args)
-    stream_m, eval_m = manifest(stream), manifest(evals)
+    if bool(args.stream_manifest) != bool(args.eval_manifest):
+        p.error('give both --stream-manifest and --eval-manifest, or neither')
+    if args.stream_manifest:
+        from stream_freeze import load as load_frozen
+        try:
+            stream_m, eval_m = load_frozen(args.stream_manifest), load_frozen(args.eval_manifest)
+        except ValueError as exc:
+            p.error(str(exc))
+        n = len(stream_m['tasks'])
+        checkpoints = sorted({0, n // 2, n})
+    else:
+        stream, evals, checkpoints = plan(args)
+        stream_m, eval_m = manifest(stream), manifest(evals)
+    if args.checkpoints:
+        checkpoints = sorted({int(x) for x in args.checkpoints.split(',')})
+        if not checkpoints or checkpoints[0] < 0 or checkpoints[-1] > len(stream_m['tasks']):
+            p.error('checkpoints must lie within the stream length')
     config = {'arm': args.arm, 'arm_definition': ARMS[args.arm], 'stream_sha256': stream_m['sha256'],
-              'eval_sha256': eval_m['sha256'], 'stream_tasks': len(stream), 'eval_tasks': len(evals),
+              'eval_sha256': eval_m['sha256'], 'stream_tasks': len(stream_m['tasks']), 'eval_tasks': len(eval_m['tasks']),
               'checkpoints': checkpoints, 'student': {'model': 'agents-a1-4b', 'port': args.port, 'max_model_calls': 6,
               'max_steps': 5, 'max_tool_actions': 12, 'timeout_s': 150, 'skill_context_mode': 'preview',
               'output_tokens': STUDENT_OUTPUT_TOKENS},
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0, 'teacher_input_bytes': TEACHER_INPUT_BYTES}
     if ARMS[args.arm]['help'] != 'never':
         config['experiment_cap_usd'] = args.experiment_cap_usd
+    if args.stream_manifest:
+        config['stream_manifest'], config['eval_manifest'] = str(args.stream_manifest), str(args.eval_manifest)
     if args.playbook:
         if ARMS[args.arm]['learn'] is not True:
             p.error('--playbook needs a skill-learning arm (A4/A5)')
