@@ -723,6 +723,7 @@ class KageServer:
             session_manager=self.session_manager,
             interval_minutes=heartbeat_interval,
             on_notifications=self._deliver_proactive_notifications,
+            proactive_config=heartbeat_cfg,
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.

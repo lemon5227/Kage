@@ -91,3 +91,73 @@ class ProactiveFeedbackStore:
             if r.get("source") == source and r.get("action") == "snooze":
                 until = max(until, float(r.get("ts") or 0) + self.snooze_seconds)
         return until
+
+
+def _parse_quiet_hours(spec: str) -> tuple[int, int] | None:
+    """"23:00-08:00" -> (1380, 480) minutes of day; empty/invalid -> None (no quiet hours)."""
+    try:
+        start, end = str(spec or "").split("-")
+        sh, sm = (int(x) for x in start.strip().split(":"))
+        eh, em = (int(x) for x in end.strip().split(":"))
+    except ValueError:
+        return None
+    if not (0 <= sh < 24 and 0 <= eh < 24 and 0 <= sm < 60 and 0 <= em < 60):
+        return None
+    return sh * 60 + sm, eh * 60 + em
+
+
+class ProactivePolicy:
+    """Decides whether a proactive notification may be delivered now.
+
+    Verdicts: ``deliver``; ``hold`` (try again later: quiet hours, snooze, rate
+    limit); ``drop`` (the user muted this source). Defaults are permissive
+    (no quiet hours, no rate limit) so behaviour only changes when configured.
+    """
+
+    def __init__(self, feedback: ProactiveFeedbackStore, sent_path: str, *,
+                 quiet_hours: str = "", max_per_hour: int = 0,
+                 now_fn: Callable[[], float] = time.time) -> None:
+        self.feedback = feedback
+        self.sent_path = sent_path
+        self.quiet = _parse_quiet_hours(quiet_hours)
+        self.max_per_hour = max(0, int(max_per_hour or 0))
+        self.now_fn = now_fn
+
+    def in_quiet_hours(self) -> bool:
+        if self.quiet is None:
+            return False
+        start, end = self.quiet
+        local = datetime.datetime.fromtimestamp(self.now_fn())
+        minute = local.hour * 60 + local.minute
+        if start == end:
+            return False
+        if start < end:
+            return start <= minute < end
+        return minute >= start or minute < end  # window crosses midnight
+
+    def sent_rows(self) -> list[dict]:
+        return _read_jsonl(self.sent_path)
+
+    def was_sent(self, source: str, within_seconds: float) -> bool:
+        cutoff = self.now_fn() - within_seconds
+        return any(r.get("source") == source and float(r.get("ts") or 0) >= cutoff for r in self.sent_rows())
+
+    def verdict(self, notification: dict) -> tuple[str, str]:
+        source = str(notification.get("source") or "")
+        if source and self.feedback.is_muted(source):
+            return "drop", "muted"
+        if source and self.feedback.snoozed_until(source) > self.now_fn():
+            return "hold", "snoozed"
+        if self.in_quiet_hours():
+            return "hold", "quiet_hours"
+        if self.max_per_hour:
+            cutoff = self.now_fn() - 3600
+            recent = sum(1 for r in self.sent_rows() if float(r.get("ts") or 0) >= cutoff)
+            if recent >= self.max_per_hour:
+                return "hold", "rate_limited"
+        return "deliver", ""
+
+    def mark_sent(self, notification: dict) -> None:
+        _append_jsonl(self.sent_path, {
+            "ts": self.now_fn(), "id": notification.get("id"), "source": notification.get("source"),
+        })

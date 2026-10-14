@@ -104,7 +104,7 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T03 | 主动 | Heartbeat 主动通知真正送达用户 | T00 | 任意 | 完成 | [T03](../task-logs/T03-heartbeat-delivery.md) |
 | T04 | 主动 | 主动消息 id/来源 + 用户反馈回传（后端） | T03 | 任意 | 完成 | [T04](../task-logs/T04-proactive-feedback.md) |
 | T04b | 外壳 | 前端主动消息气泡与三个反馈按钮（UI，低优先级） | T04 | 任意 | 待领取 | |
-| T05 | 主动 | 主动策略层：免打扰、频率上限、反馈学习 | T03 | 任意 | 待领取 | |
+| T05 | 主动 | 主动策略层：免打扰、频率上限、反馈学习 | T03 | 任意 | 完成 | [T05](../task-logs/T05-proactive-policy.md) |
 | T06 | 主动 | 触发源①：重要日期与提醒 | T05 | 任意 | 待领取 | |
 | T07 | 主动 | 触发源②：任务失败后主动请求示范 | T05 | 任意 | 待领取 | |
 | T08 | 演化 | 进化 smoke 不依赖 Docker 也能跑通 | T01 | 任意 | 待领取 | |

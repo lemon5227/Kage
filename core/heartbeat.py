@@ -17,7 +17,7 @@ import time
 from collections import OrderedDict
 from typing import Awaitable, Callable, Optional
 
-from core.proactive import ProactiveFeedbackStore, make_notification
+from core.proactive import ProactiveFeedbackStore, ProactivePolicy, make_notification
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ MAX_INTERVAL_MIN = 120
 DEFAULT_INTERVAL_MIN = 30
 ACTIVE_THRESHOLD_SEC = 120  # 2 minutes
 DELIVERED_MEMORY = 200  # delivered notifications remembered for feedback lookup
+MAX_HELD = 50  # held (quiet hours / rate limited) notifications kept for later
 
 
 def clamp_interval(minutes: int | float) -> int:
@@ -39,7 +40,8 @@ class Heartbeat:
     def __init__(self, tool_executor, session_manager,
                  workspace_dir: str = "~/.kage",
                  interval_minutes: int = DEFAULT_INTERVAL_MIN,
-                 on_notifications: Optional[Callable[[list[dict]], Awaitable[None]]] = None):
+                 on_notifications: Optional[Callable[[list[dict]], Awaitable[None]]] = None,
+                 proactive_config: Optional[dict] = None):
         self.tool_executor = tool_executor
         self.on_notifications = on_notifications
         self.session = session_manager
@@ -49,7 +51,16 @@ class Heartbeat:
 
         self.heartbeat_file = os.path.join(workspace, "HEARTBEAT.md")
         self.error_log_file = os.path.join(workspace, "heartbeat_error.log")
-        self.feedback = ProactiveFeedbackStore(os.path.join(workspace, "proactive_feedback.jsonl"))
+        cfg = proactive_config or {}
+        self.feedback = ProactiveFeedbackStore(
+            os.path.join(workspace, "proactive_feedback.jsonl"),
+            snooze_minutes=int(cfg.get("snooze_minutes", 60) or 0),
+        )
+        self.policy = ProactivePolicy(
+            self.feedback, os.path.join(workspace, "proactive_sent.jsonl"),
+            quiet_hours=str(cfg.get("quiet_hours", "") or ""),
+            max_per_hour=int(cfg.get("max_per_hour", 0) or 0),
+        )
         self._delivered: "OrderedDict[str, dict]" = OrderedDict()
 
         self.interval_sec = clamp_interval(interval_minutes) * 60
@@ -96,6 +107,20 @@ class Heartbeat:
     async def _deliver(self, notifications: list[dict]) -> None:
         if not notifications or self.on_notifications is None:
             return
+        allowed: list[dict] = []
+        for n in notifications:
+            verdict, reason = self.policy.verdict(n)
+            if verdict == "deliver":
+                self.policy.mark_sent(n)
+                allowed.append(n)
+            elif verdict == "hold":
+                self._hold(n)
+                logger.debug("Proactive notification held (%s): %s", reason, n.get("source"))
+            else:
+                logger.debug("Proactive notification dropped (%s): %s", reason, n.get("source"))
+        notifications = allowed
+        if not notifications:
+            return
         for n in notifications:
             if n.get("id"):
                 self._delivered[str(n["id"])] = n
@@ -105,6 +130,22 @@ class Heartbeat:
             await self.on_notifications(notifications)
         except Exception as exc:
             self._log_error("deliver", exc)
+
+    def _hold(self, notification: dict) -> None:
+        """Keep a notification for a later cycle; a newer one from the same source replaces it."""
+        source = notification.get("source")
+        if source:
+            self._notification_queue = [q for q in self._notification_queue if q.get("source") != source]
+        self._notification_queue.append(notification)
+        del self._notification_queue[:-MAX_HELD]
+
+    async def deliver_now(self, notifications: list[dict]) -> None:
+        """Entry point for event-driven triggers (not tied to the heartbeat interval)."""
+        if self.is_user_active():
+            for n in notifications:
+                self._hold(n)
+            return
+        await self._deliver(notifications)
 
     def record_feedback(self, notification_id: str, action: str) -> Optional[dict]:
         """Record the user's reaction to a delivered notification.

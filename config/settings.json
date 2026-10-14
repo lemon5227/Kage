@@ -110,7 +110,10 @@
     "version": "1.0.0",
     "heartbeat": {
         "enabled": true,
-        "interval_minutes": 30
+        "interval_minutes": 30,
+        "quiet_hours": "23:00-08:00",
+        "max_per_hour": 2,
+        "snooze_minutes": 60
     },
     "memory": {
         "consolidation_days": 7,
