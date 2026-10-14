@@ -56,9 +56,9 @@ class ToolRegistry:
         return tool.handler if tool else None
 
     def get_security_level(self, tool_name: str) -> str:
-        """获取工具的安全等级，不存在返回 'SAFE'。"""
+        """获取工具的安全等级，不存在返回 'DANGEROUS'（未知即拒绝）。"""
         tool = self._tools.get(tool_name)
-        return tool.safety_level if tool else "SAFE"
+        return tool.safety_level if tool else "DANGEROUS"
 
     def get_all_schemas(self) -> list[dict]:
         """返回所有工具的 OpenAI Function Calling 格式 Schema (cached).

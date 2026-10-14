@@ -125,8 +125,9 @@ class TestSecurityLevel:
     def test_dangerous_tools(self, executor):
         assert executor.get_security_level("run_cmd") == "DANGEROUS"
 
-    def test_unknown_tool_defaults_safe(self, executor):
-        assert executor.get_security_level("some_new_tool") == "SAFE"
+    def test_unknown_tool_defaults_dangerous(self, executor):
+        # Fail closed (T02): an unregistered tool is never treated as safe.
+        assert executor.get_security_level("some_new_tool") == "DANGEROUS"
 
 
 # ---------------------------------------------------------------------------

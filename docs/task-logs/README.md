@@ -15,3 +15,4 @@
 |---|---|---|
 | T00 | [T00-audit-and-plan.md](T00-audit-and-plan.md) | 完成 |
 | T01 | [T01-dependencies-and-test-env.md](T01-dependencies-and-test-env.md) | 完成 |
+| T02 | [T02-confirmation-gate.md](T02-confirmation-gate.md) | 完成 |
