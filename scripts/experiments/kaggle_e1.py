@@ -129,8 +129,8 @@ def write_teacher_config() -> None:
             try:
                 key = client.get_secret(label)
                 break
-            except Exception:
-                continue
+            except Exception as exc:
+                print(f'secret {label!r}: {type(exc).__name__}: {str(exc)[:200]}', flush=True)
         if not key:
             raise SystemExit('no Kaggle secret named DEEPSEEK_API_KEY or deepseek is attached')
     path.parent.mkdir(parents=True, exist_ok=True)
