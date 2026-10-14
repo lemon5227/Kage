@@ -2,8 +2,8 @@
 
 Notebook (Accelerator: GPU T4 x2, Internet on, Secret DEEPSEEK_API_KEY):
 
-    !git clone -b claude/task-progress-861574 --depth 1 https://github.com/lemon5227/Kage.git
-    !cd Kage && python scripts/experiments/kaggle_e1.py
+    !cd /kaggle/tmp && git clone -b claude/task-progress-861574 --depth 1 https://github.com/lemon5227/Kage.git
+    !cd /kaggle/tmp/Kage && python scripts/experiments/kaggle_e1.py
 
 Same student as on the Mac: InternScience/Agents-A1-4B-Q4_K_M-GGUF at the locked revision (sha256
 checked) served by llama.cpp at the same commit and arguments, CUDA instead of Metal. Skills run in a
@@ -63,7 +63,8 @@ def sh(cmd: list[str] | str, **kw) -> None:
 def cuda_root() -> str:
     """Print what this host offers, then pick the system CUDA toolkit that contains nvcc."""
     probe = ('which -a nvcc; ls -d /usr/local/cuda* 2>&1; ls /usr/local/cuda/lib64/stubs 2>&1 | head -5; '
-             "find / -name 'libcuda.so*' -not -path '/proc/*' 2>/dev/null | head -5; cmake --version | head -1")
+             "ldconfig -p | grep -i libcuda; find / -name 'libcuda.so*' -not -path '/proc/*' -not -path '/root/.julia/*' "
+             "2>/dev/null | head -5; cmake --version | head -1")
     print(subprocess.run(probe, shell=True, capture_output=True, text=True).stdout, flush=True)
     for root in ['/usr/local/cuda', *sorted(str(p) for p in Path('/usr/local').glob('cuda-*'))]:
         if Path(root, 'bin', 'nvcc').exists():
@@ -87,7 +88,10 @@ def setup() -> dict:
         stubs = f'{cuda}/lib64/stubs'
         # Pin the system toolkit (a pip-installed nvcc may shadow it) and expose libcuda's stub,
         # which is all a driverless build container has for CUDA::cuda_driver.
-        sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DCMAKE_CUDA_ARCHITECTURES=75',
+        # The build image has no libcuda (not even a stub); GGML_CUDA_NO_VMM drops llama.cpp's direct
+        # link to the driver (used only for the VMM memory pool). Kernels and numerics are unchanged.
+        sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DGGML_CUDA_NO_VMM=ON',
+            '-DCMAKE_CUDA_ARCHITECTURES=75',
             f'-DCUDAToolkit_ROOT={cuda}', f'-DCMAKE_CUDA_COMPILER={cuda}/bin/nvcc',
             f'-DCMAKE_LIBRARY_PATH={stubs}', f'-DCMAKE_EXE_LINKER_FLAGS=-L{stubs}', f'-DCMAKE_SHARED_LINKER_FLAGS=-L{stubs}',
             '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release'], stdout=subprocess.DEVNULL)
