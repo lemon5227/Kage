@@ -46,6 +46,7 @@ SYSTEM_CTRL_KEYWORDS = frozenset((
     "音量", "亮度", "wifi", "蓝牙", "静音", "截屏", "截图", "截个图", "屏幕截图", "screenshot",
 ))
 SKILL_KEYWORDS = frozenset(("skill", "技能", "流程", "模板", "复用", "沉淀"))
+REMINDER_KEYWORDS = frozenset(("提醒", "生日", "纪念日", "记得", "别忘", "截止", "deadline", "remind"))
 
 # ---------------------------------------------------------------------------
 # CORE: present on every route. Kept small — it is paid for on every request.
@@ -77,6 +78,10 @@ BASE: frozenset[str] = CORE | LOCAL_SKILL_TOOLS | frozenset({
     "system_control",
 })
 
+# Tools the server registers after startup because they bind live state (not in
+# create_default_registry), so the phantom-name audit must not expect them there.
+SERVER_SLOTS: frozenset[str] = frozenset({"remember_date"})
+
 # Capability groups, selected by intent keywords on top of the route baseline.
 GROUPS: dict[str, frozenset[str]] = {
     "web": frozenset({"tinyfish_search", "tavily_search", "search_and_open", "fetch_content"}),
@@ -89,6 +94,8 @@ GROUPS: dict[str, frozenset[str]] = {
     "skills": LOCAL_SKILL_TOOLS | frozenset({
         "skills_find_remote", "skills_list", "skills_install", "proactive_agent",
     }),
+    # Registered by the server (needs the live MemoryProfile), feeds proactive reminders.
+    "reminders": SERVER_SLOTS,
 }
 
 # Command route: the action surface (system/file/browse plus search, which the old
@@ -136,6 +143,7 @@ def _route_groups(route: str, text: str, groups: dict[str, frozenset[str]]) -> s
     is_file = any(k in text for k in FILE_KEYWORDS)
     is_system = any(k in text for k in SYSTEM_CTRL_KEYWORDS)
     is_skill = any(k in text for k in SKILL_KEYWORDS)
+    is_reminder = any(k in text for k in REMINDER_KEYWORDS)
 
     if route == "command":
         # Commands act on the machine: browsing is always in scope; the rest is
@@ -151,6 +159,8 @@ def _route_groups(route: str, text: str, groups: dict[str, frozenset[str]]) -> s
         chosen |= groups["web"]
     if is_skill:
         chosen |= groups["skills"]
+    if is_reminder:
+        chosen |= groups["reminders"]
     return chosen
 
 

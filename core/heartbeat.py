@@ -41,7 +41,8 @@ class Heartbeat:
                  workspace_dir: str = "~/.kage",
                  interval_minutes: int = DEFAULT_INTERVAL_MIN,
                  on_notifications: Optional[Callable[[list[dict]], Awaitable[None]]] = None,
-                 proactive_config: Optional[dict] = None):
+                 proactive_config: Optional[dict] = None,
+                 sources: Optional[list] = None):
         self.tool_executor = tool_executor
         self.on_notifications = on_notifications
         self.session = session_manager
@@ -51,6 +52,7 @@ class Heartbeat:
 
         self.heartbeat_file = os.path.join(workspace, "HEARTBEAT.md")
         self.error_log_file = os.path.join(workspace, "heartbeat_error.log")
+        self.sources = list(sources or [])
         cfg = proactive_config or {}
         self.feedback = ProactiveFeedbackStore(
             os.path.join(workspace, "proactive_feedback.jsonl"),
@@ -181,6 +183,19 @@ class Heartbeat:
                 notifications.append(notification)
             except Exception as exc:
                 self._log_error(item.get("name", "unknown"), exc)
+
+        now = datetime.datetime.now()
+        for source in self.sources:
+            try:
+                collected = await source.collect(now)
+            except Exception as exc:
+                self._log_error(type(source).__name__, exc)
+                continue
+            for n in collected or []:
+                window = n.get("dedup_seconds")
+                if window and self.policy.was_sent(str(n.get("source") or ""), float(window)):
+                    continue
+                notifications.append(n)
 
         # Queue or return based on user activity
         if self.is_user_active():

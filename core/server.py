@@ -621,6 +621,8 @@ class KageServer:
         from core.prompt_builder import PromptBuilder
         from core.agentic_loop import AgenticLoop
         from core.heartbeat import Heartbeat
+        from core.proactive_sources import ImportantDateSource, make_remember_date_handler
+        from core.tool_registry import ToolDefinition
 
         cfg = config or {}
         voice = cfg.get("voice", {}).get("tts_voice") or "zh-CN-XiaoyiNeural"
@@ -704,6 +706,27 @@ class KageServer:
             memory_profile=memory_profile,
         )
 
+        # Dates the user asks to be reminded of feed the proactive ImportantDateSource.
+        self.tool_registry.register(ToolDefinition(
+            name="remember_date",
+            description=(
+                "记住用户希望被提醒的重要日期（生日、纪念日、截止日期等），到期前一天和当天会主动提醒。"
+                "date 用 YYYY-MM-DD；每年重复的日期用 MM-DD 或设置 repeat_yearly=true。"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "date": {"type": "string", "description": "YYYY-MM-DD 或 MM-DD"},
+                    "event": {"type": "string", "description": "事件名，如“妈妈生日”"},
+                    "reminder": {"type": "string", "description": "提醒时说的话（可选）", "default": ""},
+                    "repeat_yearly": {"type": "boolean", "description": "是否每年重复", "default": False},
+                },
+                "required": ["date", "event"],
+            },
+            handler=make_remember_date_handler(memory_profile),
+            safety_level="SAFE",
+        ))
+
         # --- Agentic Loop ---
         self.agentic_loop = AgenticLoop(
             model_provider=self.model_provider,
@@ -724,6 +747,7 @@ class KageServer:
             interval_minutes=heartbeat_interval,
             on_notifications=self._deliver_proactive_notifications,
             proactive_config=heartbeat_cfg,
+            sources=[ImportantDateSource(lambda: memory_profile)],
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.

@@ -19,3 +19,4 @@
 | T03 | [T03-heartbeat-delivery.md](T03-heartbeat-delivery.md) | 完成 |
 | T04 | [T04-proactive-feedback.md](T04-proactive-feedback.md) | 完成（后端） |
 | T05 | [T05-proactive-policy.md](T05-proactive-policy.md) | 完成 |
+| T06 | [T06-important-date-reminders.md](T06-important-date-reminders.md) | 完成 |
