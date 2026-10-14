@@ -67,6 +67,23 @@ class Journal:
                 );
                 """
             )
+            # E2.1 lineage: where each candidate came from and how it compared (T14).
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS lineage (
+                    candidate_digest TEXT PRIMARY KEY,
+                    candidate_id TEXT NOT NULL,
+                    parent_digest TEXT,
+                    generation INTEGER NOT NULL,
+                    target TEXT NOT NULL,
+                    hypothesis TEXT NOT NULL DEFAULT '',
+                    bundle_path TEXT NOT NULL,
+                    source_json TEXT NOT NULL DEFAULT '{}',
+                    compare_json TEXT NOT NULL DEFAULT '{}',
+                    created_at REAL NOT NULL
+                );
+                """
+            )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_events_run_id ON events (run_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_runs_candidate ON runs (candidate_id);")
             columns = {row[1] for row in conn.execute("PRAGMA table_info(runs)")}
@@ -74,6 +91,59 @@ class Journal:
                 conn.execute("ALTER TABLE runs ADD COLUMN input_fingerprint TEXT")
             if "metadata_json" not in columns:
                 conn.execute("ALTER TABLE runs ADD COLUMN metadata_json TEXT")
+
+    def record_lineage(self, candidate, parent=None, *, source: dict | None = None,
+                       compare: dict | None = None) -> int:
+        """Record ``candidate`` (and its parent as a root if unknown); returns its generation."""
+        with self._get_connection() as conn:
+            parent_generation = -1
+            if parent is not None:
+                row = conn.execute("SELECT generation FROM lineage WHERE candidate_digest = ?",
+                                   (parent.digest,)).fetchone()
+                if row is None:
+                    conn.execute(
+                        "INSERT INTO lineage (candidate_digest, candidate_id, parent_digest, generation, target,"
+                        " hypothesis, bundle_path, created_at) VALUES (?, ?, NULL, 0, ?, ?, ?, ?)",
+                        (parent.digest, parent.candidate_id, str(parent.target), parent.hypothesis or "",
+                         parent.bundle_path, time.time()))
+                    parent_generation = 0
+                else:
+                    parent_generation = int(row["generation"])
+            generation = parent_generation + 1
+            existing = conn.execute("SELECT created_at FROM lineage WHERE candidate_digest = ?",
+                                    (candidate.digest,)).fetchone()
+            conn.execute(
+                "INSERT OR REPLACE INTO lineage (candidate_digest, candidate_id, parent_digest, generation, target,"
+                " hypothesis, bundle_path, source_json, compare_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (candidate.digest, candidate.candidate_id, parent.digest if parent is not None else None,
+                 generation, str(candidate.target), candidate.hypothesis or "", candidate.bundle_path,
+                 json.dumps(source or {}, ensure_ascii=False, sort_keys=True),
+                 json.dumps(compare or {}, ensure_ascii=False, sort_keys=True),
+                 existing["created_at"] if existing else time.time()))
+        return generation
+
+    def lineage(self, candidate_digest: str) -> list[dict]:
+        """Chain from ``candidate_digest`` back to its root (first element is the candidate)."""
+        chain: list[dict] = []
+        seen: set[str] = set()
+        digest = candidate_digest
+        with self._get_connection() as conn:
+            while digest and digest not in seen:
+                seen.add(digest)
+                row = conn.execute("SELECT * FROM lineage WHERE candidate_digest = ?", (digest,)).fetchone()
+                if row is None:
+                    break
+                item = dict(row)
+                item["source"] = json.loads(item.pop("source_json") or "{}")
+                item["compare"] = json.loads(item.pop("compare_json") or "{}")
+                chain.append(item)
+                digest = item["parent_digest"]
+        return chain
+
+    def lineage_all(self) -> list[dict]:
+        with self._get_connection() as conn:
+            rows = conn.execute("SELECT candidate_digest FROM lineage ORDER BY generation, created_at").fetchall()
+        return [self.lineage(r["candidate_digest"])[0] for r in rows]
 
     def get_run_fingerprint(self, run_id: str) -> str | None:
         with self._get_connection() as conn:

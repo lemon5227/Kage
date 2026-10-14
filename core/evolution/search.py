@@ -145,7 +145,8 @@ def run_search(config_path, provider_mode=None, execution_mode=None):
         mutator = Mutator(optimizer, budget, journal, root / "mutations" / f"slot-{index}")
         try:
             child = mutator.propose(parent, feedback)
-            comparison = promoter.compare(parent, child, dev)
+            comparison = promoter.compare(parent, child, dev, source={
+                "failed_task_id": task["task_id"], "failed_run_id": failure.run_id})
             state["comparisons"].append(comparison)
             if comparison["promoted"]:
                 parent = child

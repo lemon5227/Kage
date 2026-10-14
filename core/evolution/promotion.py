@@ -52,7 +52,8 @@ class Promoter:
         return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id,
                           task["task_id"], self.seed, self.kernel_max_steps, self.timeout_s))
 
-    def compare(self, parent: Candidate, child: Candidate, tasks: list[dict], repeats: int = 1) -> dict:
+    def compare(self, parent: Candidate, child: Candidate, tasks: list[dict], repeats: int = 1,
+                source: dict | None = None) -> dict:
         if not isinstance(repeats,int) or isinstance(repeats,bool) or repeats<1:
             raise ValueError('repeats must be a positive integer')
         if not tasks or any(task.get("split") != "dev" for task in tasks):
@@ -91,6 +92,9 @@ class Promoter:
         atomic_json(self.root / "comparisons" / f"{comparison_id}.json", comparison)
         if promoted:
             atomic_json(self.root / "active.json", {"candidate": asdict(child), "comparison_id": comparison_id})
+        self.journal.record_lineage(child, parent, source=source, compare={
+            "comparison_id": comparison_id, "promoted": promoted,
+            "parent_score": parent_score, "child_score": child_score})
         self.journal.record_event(EvolutionEvent("promotion-" + comparison_id, child.candidate_id,
             "dev", 0, "promotion", {"promoted": promoted, "parent_score": parent_score,
                                      "child_score": child_score, "comparison_id": comparison_id}))

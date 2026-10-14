@@ -27,3 +27,4 @@
 | T11 | [T11-evolution-report.md](T11-evolution-report.md) | 完成 |
 | T12 | [T12-remote-skill-install-consent.md](T12-remote-skill-install-consent.md) | 完成 |
 | T13 | [T13-skill-save-dir-whitelist.md](T13-skill-save-dir-whitelist.md) | 完成 |
+| T14 | [T14-evolution-lineage.md](T14-evolution-lineage.md) | 完成（工程） |

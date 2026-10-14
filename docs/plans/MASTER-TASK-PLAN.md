@@ -113,7 +113,7 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T11 | 主动 | 触发源③：主动汇报"我学会了什么" | T09, T10 | 任意 | 完成 | [T11](../task-logs/T11-evolution-report.md) |
 | T12 | 安全 | 远程技能自动安装加同意门 | T02 | 任意 | 完成 | [T12](../task-logs/T12-remote-skill-install-consent.md) |
 | T13 | 安全 | `skills_save_local` 写入目录白名单 | T02 | 任意 | 完成 | [T13](../task-logs/T13-skill-save-dir-whitelist.md) |
-| T14 | 演化 | E2.1 候选谱系（lineage）记录与查询 | T08 | 任意 | 待领取 | |
+| T14 | 演化 | E2.1 候选谱系（lineage）记录与查询 | T08 | 任意 | 完成（工程） | [T14](../task-logs/T14-evolution-lineage.md) |
 | T15 | 演化 | E3.1 recovery 模块第二种失败类型 | T14 | 任意+云key | 待领取 | |
 | T16 | 演化 | E5 进化谱系与 diff 展示（Launcher） | T14 | 任意 | 待领取 | |
 | T17 | 演化 | E4 失败条件化演化路由（FCER）对照实验 | T15 | 任意+云key | 待领取 | |
