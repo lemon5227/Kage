@@ -202,3 +202,26 @@ def skills_save_local(name: str, description: str = "", body: str = "",
                   bytes_written=len(rendered.encode("utf-8")))
     except Exception as e:
         return err("SaveFailed", str(e))
+
+
+def _allowed_skill_roots() -> list[Path]:
+    from core.skill_parser import default_skill_sources
+    return [Path(d).expanduser().resolve() for d in default_skill_sources()]
+
+
+def skills_save_local_tool(name: str, description: str = "", body: str = "",
+                           target_dir: str = DEFAULT_SKILLS_DIR, overwrite: bool = False) -> str:
+    """Model-facing wrapper: ``target_dir`` must be one of Kage's skill directories.
+
+    ``target_dir`` comes from the model; without this check it could write a file
+    into any directory the user can write to.
+    """
+    try:
+        target = Path(str(target_dir or DEFAULT_SKILLS_DIR)).expanduser().resolve()
+    except Exception as e:
+        return err("InvalidArgument", f"target_dir 无效: {e}")
+    roots = _allowed_skill_roots()
+    if not any(target == root or target.is_relative_to(root) for root in roots):
+        allowed = ", ".join(str(r) for r in roots)
+        return err("InvalidArgument", f"target_dir 必须位于技能目录内: {allowed}", outcome="rejected")
+    return skills_save_local(name, description, body, str(target), overwrite)

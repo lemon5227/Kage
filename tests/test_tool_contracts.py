@@ -172,9 +172,12 @@ def test_search_source_is_wired_and_filters_removed():
     assert invalid["error"] == "InvalidArgument"
 
 
-def test_skills_save_local_accepts_model_facing_arguments():
+def test_skills_save_local_accepts_model_facing_arguments(monkeypatch):
+    from core.tools import skill_ops
     registry = _registry()
     with tempfile.TemporaryDirectory() as tmp:
+        # T13: the tool only writes into skill directories; treat tmp as one.
+        monkeypatch.setattr(skill_ops, "_allowed_skill_roots", lambda: [Path(tmp).resolve()])
         out = json.loads(registry.get_handler("skills_save_local")(
             name="my-skill", description="演示技能", body="step 1", target_dir=tmp))
         assert out["success"] is True, out

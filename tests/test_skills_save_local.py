@@ -67,3 +67,21 @@ def test_autosave_call_shape_from_agentic_loop_works(tmp_path):
                  "body": "## Goal\nx"}
     out = json.loads(skills_save_local(target_dir=str(tmp_path), **save_args))
     assert out["success"] is True
+
+
+def test_registered_tool_rejects_target_dir_outside_skill_dirs(tmp_path, monkeypatch):
+    """T13: the model-facing tool may only write into Kage's skill directories."""
+    from core.tool_registry import create_default_registry
+    from core.tools import skill_ops
+
+    allowed = tmp_path / "home" / ".kage" / "skills"
+    monkeypatch.setattr(skill_ops, "_allowed_skill_roots", lambda: [allowed.resolve()])
+    handler = create_default_registry().get_handler("skills_save_local")
+
+    for bad in (str(tmp_path / "elsewhere"), str(allowed / ".." / ".." / "x"), "/tmp"):
+        out = json.loads(handler(name="s", description="d", target_dir=bad))
+        assert out["success"] is False and out["error"] == "InvalidArgument", bad
+    assert not list(tmp_path.rglob("s.md"))
+
+    ok = json.loads(handler(name="s", description="d", target_dir=str(allowed / "team")))
+    assert ok["success"] is True and (allowed / "team" / "s.md").is_file()

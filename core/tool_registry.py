@@ -195,6 +195,7 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
         search,
         skills_save_local,
     )
+    from core.tools.skill_ops import skills_save_local_tool
     import functools
 
     registry = ToolRegistry()
@@ -766,14 +767,14 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
                 "name": {"type": "string", "description": "技能名称（小写字母/数字/. _ -）"},
                 "description": {"type": "string", "description": "一句话描述"},
                 "body": {"type": "string", "description": "markdown 正文", "default": ""},
-                "target_dir": {"type": "string", "description": "保存目录",
+                "target_dir": {"type": "string", "description": "保存目录（只能是技能目录，默认 ~/.kage/skills）",
                                "default": "~/.kage/skills"},
                 "overwrite": {"type": "boolean", "description": "是否覆盖已存在的技能",
                               "default": False},
             },
             "required": ["name", "description"],
         },
-        handler=skills_save_local,
+        handler=skills_save_local_tool,
         safety_level="SAFE",
     ))
 

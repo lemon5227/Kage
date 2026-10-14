@@ -150,7 +150,10 @@ def test_executor_reports_exceptions_as_errors():
     assert result.error_type == "RuntimeError"
 
 
-def test_real_skill_save_reports_success_then_already_exists(tmp_path):
+def test_real_skill_save_reports_success_then_already_exists(tmp_path, monkeypatch):
+    from core.tools import skill_ops
+    # T13: the tool only writes into skill directories; treat tmp_path as one.
+    monkeypatch.setattr(skill_ops, "_allowed_skill_roots", lambda: [tmp_path.resolve()])
     executor = ToolExecutor(create_default_registry(), workspace_dir=str(tmp_path))
     args = {"name": "demo-skill", "description": "d", "body": "b", "target_dir": str(tmp_path)}
 
