@@ -89,7 +89,7 @@ def main():
     if args.no_manage_server:
         service = contextlib.nullcontext()
     else:
-        from native_model_pilot import LocalService
+        from local_service import LocalService
         service = LocalService(args.port, args.root)
     with service:
         run_one = live_runner(args.root, args.port)
