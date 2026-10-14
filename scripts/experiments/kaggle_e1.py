@@ -177,9 +177,17 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'setup', 'calibration', 'e1', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'package'], default='all')
     args = p.parse_args(argv)
-    info = setup() if args.phase in ('all', 'setup', 'calibration', 'e1') else json.loads((OUT / 'host.json').read_text())
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1') else json.loads((OUT / 'host.json').read_text())
+    if args.phase == 'smoke':
+        # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
+        run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
+                                   '--per-family', '1', '--families', 'log_aggregation', '--port', '18099',
+                                   '--skill-runner', 'process'])], 'smoke')
+        print((OUT / 'smoke' / 'results.jsonl').read_text(), flush=True)
+        log('teacher config present', ok=Path('~/.config/kage/teachers/deepseek.json').expanduser().exists())
+        return
     if args.phase in ('all', 'calibration'):
         run_jobs(info, calibration_jobs(), 'calibration')
     if args.phase in ('all', 'e1'):
