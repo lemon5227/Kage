@@ -18,7 +18,7 @@ import urllib.request
 import urllib.error
 from uuid import uuid4
 from urllib.parse import quote
-from typing import Any
+from typing import Any, Awaitable, Callable, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketState
@@ -621,6 +621,8 @@ class KageServer:
         from core.prompt_builder import PromptBuilder
         from core.agentic_loop import AgenticLoop
         from core.heartbeat import Heartbeat
+        from core.proactive_sources import ImportantDateSource, make_remember_date_handler
+        from core.tool_registry import ToolDefinition
 
         cfg = config or {}
         voice = cfg.get("voice", {}).get("tts_voice") or "zh-CN-XiaoyiNeural"
@@ -704,6 +706,27 @@ class KageServer:
             memory_profile=memory_profile,
         )
 
+        # Dates the user asks to be reminded of feed the proactive ImportantDateSource.
+        self.tool_registry.register(ToolDefinition(
+            name="remember_date",
+            description=(
+                "记住用户希望被提醒的重要日期（生日、纪念日、截止日期等），到期前一天和当天会主动提醒。"
+                "date 用 YYYY-MM-DD；每年重复的日期用 MM-DD 或设置 repeat_yearly=true。"
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "date": {"type": "string", "description": "YYYY-MM-DD 或 MM-DD"},
+                    "event": {"type": "string", "description": "事件名，如“妈妈生日”"},
+                    "reminder": {"type": "string", "description": "提醒时说的话（可选）", "default": ""},
+                    "repeat_yearly": {"type": "boolean", "description": "是否每年重复", "default": False},
+                },
+                "required": ["date", "event"],
+            },
+            handler=make_remember_date_handler(memory_profile),
+            safety_level="SAFE",
+        ))
+
         # --- Agentic Loop ---
         self.agentic_loop = AgenticLoop(
             model_provider=self.model_provider,
@@ -712,7 +735,25 @@ class KageServer:
             session_manager=self.session_manager,
             memory_system=self.memory,
             memory_profile=memory_profile,
+            auto_install_remote_skills=bool(
+                (cfg.get("skills") or {}).get("auto_install_remote", False)
+                if isinstance(cfg.get("skills"), dict) else False
+            ),
         )
+
+        # --- Idle-time self-evolution (opt-in via evolution.auto) ---
+        from core.evolution.scheduler import EvolutionScheduler
+        evolution_cfg = cfg.get("evolution", {}) if isinstance(cfg.get("evolution", {}), dict) else {}
+        self.evolution_scheduler = EvolutionScheduler(evolution_cfg, self.session_manager)
+        # Promoted skills enter the daily registry only after the user accepts (adopt_skill).
+        from core.skill_adoption import SkillAdoption
+        self.skill_adoption = SkillAdoption(self.tool_registry)
+        try:
+            restored = self.skill_adoption.restore()
+            if restored:
+                logger.info("Restored adopted skills: %s", ", ".join(restored))
+        except Exception:
+            logger.warning("Adopted skill restore failed", exc_info=True)
 
         # --- Heartbeat ---
         heartbeat_cfg = cfg.get("heartbeat", {})
@@ -722,8 +763,16 @@ class KageServer:
             tool_executor=self.tool_executor,
             session_manager=self.session_manager,
             interval_minutes=heartbeat_interval,
+            on_notifications=self._deliver_proactive_notifications,
+            proactive_config=heartbeat_cfg,
+            sources=[ImportantDateSource(lambda: memory_profile), self.evolution_scheduler],
         )
         self._heartbeat_enabled = heartbeat_enabled
+        # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
+        self._proactive_action_handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = {
+            "start_teaching": self._start_teaching,
+            "adopt_skill": self._adopt_skill,
+        }
 
         # Short-lived interactive dialog state unified with SessionManager
         self.session = self.session_manager
@@ -923,6 +972,15 @@ class KageServer:
                 task_type=str(job.get("task_type")),
                 task_status=str(result.get('task_status') or job.get('status') or ''),
             )
+            if event in ("completed", "failed"):
+                if job.get('task_type') == 'browser_experiment' and str(job.get('status') or '') in ('failed', 'unknown'):
+                    scheduler = getattr(self, "evolution_scheduler", None)
+                    if scheduler is not None:
+                        try:
+                            scheduler.note_failure(job)
+                        except Exception:
+                            logger.warning("Could not record failure for evolution", exc_info=True)
+                await self._maybe_request_teaching(job)
             return
         notification = self._background_completion_notification(event, job)
         if notification:
@@ -933,6 +991,101 @@ class KageServer:
                 task_type=str(job.get("task_type") or ""),
             )
             await self.mouth_speak(notification, "neutral")
+
+    async def _deliver_proactive_notifications(self, notifications: list[dict[str, Any]]) -> None:
+        """Deliver heartbeat notifications: always as a UI event, spoken only when idle.
+
+        Speaking follows the background-completion rule: a connected UI in IDLE state,
+        so a proactive message never talks over the user or an ongoing reply.
+        """
+        for notification in notifications:
+            await self.send_message("proactive", {"event": "heartbeat", "notification": notification})
+            self._log_server_event("proactive.delivered", source=str(notification.get("type") or ""))
+            content = str(notification.get("content") or "").strip()
+            if (
+                content
+                and self.active_websocket is not None
+                and not self._text_only_mode
+                and str(self._ui_state or "IDLE") == "IDLE"
+            ):
+                await self.mouth_speak(content, "neutral")
+
+    async def _maybe_request_teaching(self, job: dict[str, Any]) -> None:
+        """After a browser task fails or ends unchecked, offer to learn from a demonstration."""
+        heartbeat = getattr(self, "heartbeat", None)
+        if heartbeat is None:
+            return
+        try:
+            from core.computer_use.demonstration import demonstration_tasks
+            from core.computer_use.task_worker import task_catalog
+            from core.proactive_sources import teach_request_for_job
+
+            catalog = task_catalog()
+            note = teach_request_for_job(
+                job,
+                lambda task_id: (catalog.get(task_id) or {}).get("family"),
+                frozenset(demonstration_tasks()),
+            )
+            if note is None or heartbeat.policy.was_sent(note["source"], float(note["dedup_seconds"])):
+                return
+            await heartbeat.deliver_now([note])
+        except Exception:
+            logger.warning("Teaching request skipped", exc_info=True)
+
+    async def _start_teaching(self, action: dict[str, Any]) -> None:
+        """User accepted a teaching request: open a recorded demonstration session."""
+        from core.routes import browser_demonstrations
+
+        job = await browser_demonstrations._get_service().submit(
+            {"task_id": str(action.get("task_id") or ""), "source_kind": "human_declared"}
+        )
+        await self.send_message("proactive", {"event": "teaching_started", "job": job})
+
+    async def _adopt_skill(self, action: dict[str, Any]) -> None:
+        """User accepted a learned skill: adopt the candidate the scheduler recorded as promoted.
+
+        The candidate is looked up again in the scheduler log by run id, so only a
+        Promoter-promoted candidate can ever be adopted.
+        """
+        run_id = str(action.get("run_id") or "")
+        rows = [r for r in self.evolution_scheduler.runs()
+                if r.get("event") == "finished" and r.get("run_id") == run_id and r.get("promoted")]
+        if not rows or not isinstance(rows[-1].get("active_candidate"), dict):
+            await self.send_message("proactive", {"event": "skill_adoption_failed", "run_id": run_id,
+                                                  "error": "no promoted candidate for this run"})
+            return
+        try:
+            row = await asyncio.to_thread(self.skill_adoption.adopt, rows[-1]["active_candidate"], source_run=run_id)
+        except Exception as exc:
+            await self.send_message("proactive", {"event": "skill_adoption_failed", "run_id": run_id,
+                                                  "error": f"{type(exc).__name__}: {exc}"})
+            return
+        await self.send_message("proactive", {"event": "skill_adopted", "run_id": run_id, "tools": row["tools"]})
+
+    async def handle_proactive_feedback(self, message: dict[str, Any]) -> Optional[dict[str, Any]]:
+        """Apply a ``proactive_feedback`` message from the UI.
+
+        ``accept`` on a notification that carries an ``action`` runs the handler
+        registered for that action type (e.g. open teaching, adopt a skill); the
+        user's click is the consent, the model never triggers these handlers.
+        """
+        action = str(message.get("action") or "")
+        heartbeat = getattr(self, "heartbeat", None)
+        if heartbeat is None or action not in ("accept", "snooze", "mute"):
+            return None
+        notification = heartbeat.record_feedback(str(message.get("id") or ""), action)
+        if notification is None:
+            return None
+        self._log_server_event("proactive.feedback", source=str(notification.get("source") or ""), action=action)
+        follow = notification.get("action") if isinstance(notification.get("action"), dict) else None
+        if action == "accept" and follow:
+            handler = getattr(self, "_proactive_action_handlers", {}).get(str(follow.get("type") or ""))
+            if handler is not None:
+                try:
+                    await handler(follow)
+                except Exception:
+                    logger.warning("Proactive action %s failed", follow.get("type"), exc_info=True)
+        return notification
 
     async def _notify_audio_event(self, event: str, **fields) -> None:
         await self.send_message("audio", self._audio_event_payload(event, **fields))
@@ -1054,7 +1207,7 @@ class KageServer:
                 await self.heartbeat.start()
                 logger.info("Heartbeat started")
             except Exception:
-                logger.warning("Heartbeat start failed: %s", exc_info=True)
+                logger.warning("Heartbeat start failed", exc_info=True)
 
         # Initial Greeting
         greeting = "Kage 在这。"
@@ -1503,7 +1656,7 @@ class KageServer:
                     self.dialog_state.set_pending(
                         make_pending_confirm_tool(tool_name, tool_args)
                     )
-                    confirm_prompt = f"要执行删除类操作：{preview}\n确认吗？回复‘确认’或‘取消’。"
+                    confirm_prompt = f"这个操作需要你确认：{preview}\n确认吗？回复‘确认’或‘取消’。"
                     await self.mouth_speak(confirm_prompt, current_emotion_str)
                     self._record_turn_completed(user_input, confirm_prompt)
                     self._log_turn_done(path="need_confirmation", route=route_hint, elapsed_ms=_turn_elapsed_ms())
@@ -1967,6 +2120,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         if not incoming_turn_id:
                             incoming_turn_id = f"ws-{uuid4().hex[:8]}"
                         await kage_server._text_input_queue.put((incoming_turn_id, msg["text"].strip()))
+                elif msg.get("type") == "proactive_feedback":
+                    await kage_server.handle_proactive_feedback(msg)
             except (json.JSONDecodeError, Exception):
                 pass
     except WebSocketDisconnect:

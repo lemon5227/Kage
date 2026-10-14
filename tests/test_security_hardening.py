@@ -128,3 +128,79 @@ class TestMemoryThreadSafety:
             mem.add_memory(f"entry {i}", importance=1)
 
         assert len(mem._entries) <= 20
+
+
+class TestConfirmationGate:
+    """T02: only the user (via the confirmation callback) can approve DANGEROUS calls."""
+
+    def _executor(self, tmp_path):
+        from core.tool_registry import ToolRegistry, ToolDefinition
+        from core.tool_executor import ToolExecutor
+
+        calls = []
+
+        def danger(path: str = "") -> str:
+            calls.append(path)
+            return json.dumps({"success": True})
+
+        registry = ToolRegistry()
+        registry.register(ToolDefinition(
+            name="danger_tool",
+            description="test-only dangerous tool",
+            parameters={"type": "object", "properties": {"path": {"type": "string"}}},
+            handler=danger,
+            safety_level="DANGEROUS",
+        ))
+        return ToolExecutor(registry, workspace_dir=str(tmp_path)), calls
+
+    def test_model_supplied_confirmed_flag_does_not_bypass(self, tmp_path):
+        import asyncio
+        executor, calls = self._executor(tmp_path)
+        result = asyncio.run(executor.execute("danger_tool", {"path": "x", "confirmed": True}))
+        assert result.success is False
+        assert result.error_type == "NeedConfirmation"
+        assert calls == []
+
+    def test_confirmation_callback_error_fails_closed(self, tmp_path):
+        import asyncio
+        executor, calls = self._executor(tmp_path)
+
+        async def broken(_name, _args):
+            raise RuntimeError("ui disconnected")
+
+        result = asyncio.run(executor.execute("danger_tool", {"path": "x"}, require_confirmation=broken))
+        assert result.success is False
+        assert result.error_type == "UserDenied"
+        assert calls == []
+
+    def test_user_confirmation_callback_still_allows(self, tmp_path):
+        import asyncio
+        executor, calls = self._executor(tmp_path)
+
+        async def yes(_name, _args):
+            return True
+
+        result = asyncio.run(executor.execute("danger_tool", {"path": "x"}, require_confirmation=yes))
+        assert result.success is True
+        assert calls == ["x"]
+
+    def test_unknown_tool_security_level_is_dangerous(self):
+        from core.tool_registry import ToolRegistry
+        assert ToolRegistry().get_security_level("no_such_tool") == "DANGEROUS"
+
+
+class TestProactiveAgentSkillName:
+    def test_rejects_path_traversal(self, tmp_path):
+        from core.tools.agent_ops import proactive_agent
+        skills_dir = tmp_path / "skills"
+        out = json.loads(proactive_agent("../../escaped", "desc", skills_dir=str(skills_dir)))
+        assert out.get("success") is False
+        assert not (tmp_path / "escaped.md").exists()
+        assert not list(tmp_path.rglob("escaped.md"))
+
+    def test_accepts_valid_name(self, tmp_path):
+        from core.tools.agent_ops import proactive_agent
+        skills_dir = tmp_path / "skills"
+        out = json.loads(proactive_agent("tidy_desktop", "desc", skills_dir=str(skills_dir)))
+        assert out.get("success") is True
+        assert (skills_dir / "tidy_desktop.md").is_file()

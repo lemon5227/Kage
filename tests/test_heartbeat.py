@@ -231,3 +231,81 @@ class TestErrorLogging:
         assert "天气提醒" in content
         assert "RuntimeError" in content
         assert "API timeout" in content
+
+
+# ---------------------------------------------------------------------------
+# T03: notifications produced by a tick are actually delivered
+# ---------------------------------------------------------------------------
+
+DELIVERY_HEARTBEAT_MD = """# Heartbeat
+
+## 天气检查
+- enabled: true
+- 描述：看看今天要不要带伞
+
+## 邮件检查
+- enabled: false
+- 描述：检查未读邮件
+"""
+
+
+class TestDelivery:
+    def _with_check(self, workspace):
+        with open(os.path.join(workspace, "HEARTBEAT.md"), "w", encoding="utf-8") as f:
+            f.write(DELIVERY_HEARTBEAT_MD)
+
+    def test_run_once_delivers_to_callback(self, tool_executor, session, workspace):
+        delivered = []
+
+        async def deliver(notifications):
+            delivered.extend(notifications)
+
+        hb = Heartbeat(tool_executor, session, workspace_dir=workspace, on_notifications=deliver)
+        self._with_check(workspace)
+        result = asyncio.run(hb._run_once())
+        assert [n["type"] for n in delivered] == ["天气检查"]
+        assert result == delivered
+
+    def test_active_user_queues_instead_of_delivering(self, tool_executor, session, workspace):
+        delivered = []
+
+        async def deliver(notifications):
+            delivered.extend(notifications)
+
+        session.get_last_user_time.return_value = time.time()
+        hb = Heartbeat(tool_executor, session, workspace_dir=workspace, on_notifications=deliver)
+        self._with_check(workspace)
+        asyncio.run(hb._run_once())
+        assert delivered == []
+        assert len(hb._notification_queue) == 1
+
+    def test_callback_error_is_logged_and_loop_survives(self, tool_executor, session, workspace):
+        async def broken(_notifications):
+            raise RuntimeError("socket closed")
+
+        hb = Heartbeat(tool_executor, session, workspace_dir=workspace, on_notifications=broken)
+        self._with_check(workspace)
+        asyncio.run(hb._run_once())  # must not raise
+        with open(hb.error_log_file, encoding="utf-8") as f:
+            assert "socket closed" in f.read()
+
+    def test_loop_calls_run_once(self, tool_executor, session, workspace):
+        delivered = []
+
+        async def deliver(notifications):
+            delivered.extend(notifications)
+
+        hb = Heartbeat(tool_executor, session, workspace_dir=workspace, on_notifications=deliver)
+        hb.interval_sec = 0
+        self._with_check(workspace)
+
+        async def scenario():
+            await hb.start()
+            for _ in range(50):
+                if delivered:
+                    break
+                await asyncio.sleep(0.01)
+            await hb.stop()
+
+        asyncio.run(scenario())
+        assert delivered

@@ -50,15 +50,35 @@ class ToolRegistry:
         # Invalidate cache
         self._schemas_cache = None
 
+    CUSTOM_PREFIX = "custom_"
+
+    def register_custom(self, tool_def: ToolDefinition) -> None:
+        """Register a self-learned tool: fixed ``custom_`` namespace, never overrides.
+
+        Learned skills must not shadow built-in tools (or each other), otherwise a
+        generated skill could silently change what an existing tool name does.
+        """
+        if not tool_def.name.startswith(self.CUSTOM_PREFIX):
+            raise ValueError(f"自学技能工具名必须以 {self.CUSTOM_PREFIX} 开头: {tool_def.name}")
+        if tool_def.name in self._tools:
+            raise ValueError(f"工具已存在，拒绝覆盖: {tool_def.name}")
+        self.register(tool_def)
+
+    def unregister(self, tool_name: str) -> bool:
+        removed = self._tools.pop(tool_name, None) is not None
+        if removed:
+            self._schemas_cache = None
+        return removed
+
     def get_handler(self, tool_name: str) -> Optional[Callable]:
         """获取工具的 handler 函数，不存在返回 None。"""
         tool = self._tools.get(tool_name)
         return tool.handler if tool else None
 
     def get_security_level(self, tool_name: str) -> str:
-        """获取工具的安全等级，不存在返回 'SAFE'。"""
+        """获取工具的安全等级，不存在返回 'DANGEROUS'（未知即拒绝）。"""
         tool = self._tools.get(tool_name)
-        return tool.safety_level if tool else "SAFE"
+        return tool.safety_level if tool else "DANGEROUS"
 
     def get_all_schemas(self) -> list[dict]:
         """返回所有工具的 OpenAI Function Calling 格式 Schema (cached).
@@ -175,6 +195,7 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
         search,
         skills_save_local,
     )
+    from core.tools.skill_ops import skills_save_local_tool
     import functools
 
     registry = ToolRegistry()
@@ -291,8 +312,8 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
             "required": ["repo", "skill"],
         },
         handler=skills_install,
-        # Project policy: skills.sh-discovered installs are non-interactive.
-        safety_level="SAFE",
+        # Installing runs third-party code (npx + remote package): needs user confirmation.
+        safety_level="DANGEROUS",
     ))
 
     registry.register(ToolDefinition(
@@ -746,14 +767,14 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
                 "name": {"type": "string", "description": "技能名称（小写字母/数字/. _ -）"},
                 "description": {"type": "string", "description": "一句话描述"},
                 "body": {"type": "string", "description": "markdown 正文", "default": ""},
-                "target_dir": {"type": "string", "description": "保存目录",
+                "target_dir": {"type": "string", "description": "保存目录（只能是技能目录，默认 ~/.kage/skills）",
                                "default": "~/.kage/skills"},
                 "overwrite": {"type": "boolean", "description": "是否覆盖已存在的技能",
                               "default": False},
             },
             "required": ["name", "description"],
         },
-        handler=skills_save_local,
+        handler=skills_save_local_tool,
         safety_level="SAFE",
     ))
 

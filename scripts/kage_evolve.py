@@ -358,6 +358,10 @@ def main() -> None:
     search_parser = subparsers.add_parser("search", help="Generate and evaluate executable skill candidates")
     search_parser.add_argument("--config", default="eval/evolution/pilot.json")
     search_parser.add_argument("--provider", choices=["live", "fixture"], default=None)
+    search_parser.add_argument("--runner", choices=["docker", "process"], default=None,
+                               help="Skill isolation backend (default: the config's execution_mode). "
+                                    "process is a development smoke for trusted fixtures only, "
+                                    "not a security boundary; live generated code always needs docker.")
 
     baseline_parser = subparsers.add_parser("baseline", help="Run baseline candidate on a test suite")
     baseline_parser.add_argument("--suite", default="eval/evolution/smoke.json", help="Path to evaluation suite JSON")
@@ -392,7 +396,9 @@ def main() -> None:
         from core.evolution.search import run_search, report_outcome
         from core.evolution.agent_provider import ProviderUnavailableError
         try:
-            report = run_search(args.config, args.provider)
+            if args.runner == "process":
+                print("WARNING: process runner is a development smoke, not a security sandbox", file=sys.stderr)
+            report = run_search(args.config, args.provider, args.runner)
             print(json.dumps({key: report[key] for key in
                   ("provider_mode", "execution_mode", "stop_reason", "estimated_cost_usd", "report_path")}, indent=2))
         except ProviderUnavailableError as exc:

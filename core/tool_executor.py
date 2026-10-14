@@ -626,27 +626,28 @@ class ToolExecutor:
         if level != "DANGEROUS" and self._requires_delete_confirmation(name, arguments or {}):
             level = "DANGEROUS"
         if level == "DANGEROUS":
-            # Allow bypass if caller marked confirmed.
-            if isinstance(arguments, dict) and arguments.get("confirmed") is True:
-                pass
-            elif require_confirmation is not None:
+            # Only the caller-provided confirmation callback (the user) can approve.
+            # Arguments are model-generated, so a "confirmed" flag in them is ignored.
+            if require_confirmation is not None:
                 try:
                     confirmed = await require_confirmation(name, arguments)
-                    if not confirmed:
-                        elapsed = (time.monotonic() - start) * 1000
-                        result = ToolResult(
-                            name=name, success=False,
-                            result="用户拒绝执行该操作",
-                            error_type="UserDenied",
-                            outcome="denied",
-                            error_message="用户拒绝执行危险操作",
-                            elapsed_ms=elapsed,
-                        )
-                        self.log_execution(result, arguments)
-                        self._write_audit_log(result, arguments)
-                        return result
                 except Exception as exc:
+                    # Fail closed: a broken confirmation channel is not consent.
                     logger.warning("Confirmation callback failed: %s", exc)
+                    confirmed = False
+                if not confirmed:
+                    elapsed = (time.monotonic() - start) * 1000
+                    result = ToolResult(
+                        name=name, success=False,
+                        result="用户拒绝执行该操作",
+                        error_type="UserDenied",
+                        outcome="denied",
+                        error_message="用户拒绝执行危险操作",
+                        elapsed_ms=elapsed,
+                    )
+                    self.log_execution(result, arguments)
+                    self._write_audit_log(result, arguments)
+                    return result
             else:
                 elapsed = (time.monotonic() - start) * 1000
                 preview = json.dumps(arguments or {}, ensure_ascii=False)

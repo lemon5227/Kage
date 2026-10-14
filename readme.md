@@ -161,7 +161,7 @@ See [configuration details](docs/project-guide.en.md#models-and-cloud-configurat
 2. <strong>Make experience reliably reusable.</strong> Improve memory selection, skill discovery, candidate lineage, and transfer evaluation; expand evolving modules and failure-driven routing.
 3. <strong>Bring verified learning into local models.</strong> Build diverse teacher trajectories, then evaluate small-model distillation, visual grounding, and inference engines against measured bottlenecks.
 
-[Complete E/C task queue](docs/plans/task-queue-2026-10-01.md) · [Research roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Execution handoff](docs/plans/execution-handoff-2026-10-03.md)
+[Master task plan (start here)](docs/plans/MASTER-TASK-PLAN.md) · [Task logs](docs/task-logs/README.md) · [Complete E/C task queue](docs/plans/task-queue-2026-10-01.md) · [Research roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Execution handoff](docs/plans/execution-handoff-2026-10-03.md)
 
 ## Explore the project
 

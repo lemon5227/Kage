@@ -161,7 +161,7 @@ npm run dev
 2. <strong>让经验可靠复用。</strong>改进记忆选择、技能发现、候选谱系与迁移评估；扩展可演化模块和失败驱动的路由。
 3. <strong>将经过验证的学习带入本地模型。</strong>积累多样教师轨迹，再针对实测瓶颈评估小模型蒸馏、视觉定位与推理引擎。
 
-[完整 E／C 任务队列](docs/plans/task-queue-2026-10-01.md) · [研究路线图](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [执行交接](docs/plans/execution-handoff-2026-10-03.md)
+[总任务规划（执行入口）](docs/plans/MASTER-TASK-PLAN.md) · [任务日志](docs/task-logs/README.md) · [完整 E／C 任务队列](docs/plans/task-queue-2026-10-01.md) · [研究路线图](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [执行交接](docs/plans/execution-handoff-2026-10-03.md)
 
 ## 深入了解
 

@@ -110,7 +110,24 @@
     "version": "1.0.0",
     "heartbeat": {
         "enabled": true,
-        "interval_minutes": 30
+        "interval_minutes": 30,
+        "quiet_hours": "23:00-08:00",
+        "max_per_hour": 2,
+        "snooze_minutes": 60
+    },
+    "skills": {
+        "auto_install_remote": false
+    },
+    "evolution": {
+        "auto": false,
+        "idle_minutes": 30,
+        "max_runs_per_day": 1,
+        "daily_budget_usd": 0.05,
+        "min_new_failures": 1,
+        "provider": "live",
+        "runner": "docker",
+        "search_config": "eval/evolution/pilot.json",
+        "run_timeout_s": 1800
     },
     "memory": {
         "consolidation_days": 7,

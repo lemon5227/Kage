@@ -61,3 +61,31 @@ def test_live_unreachable_endpoint_returns_infrastructure_exit_code(tmp_path):
     retry = subprocess.run([sys.executable, "scripts/kage_evolve.py", "search", "--config", str(config_path),
                             "--provider", "live"], cwd=ROOT, capture_output=True, timeout=20)
     assert retry.returncode == 1, "changing the effective model must not reuse the old report"
+
+
+def test_runner_flag_runs_fixture_without_docker_in_separate_directory(tmp_path):
+    """T08: --runner process lets the fixture loop run where Docker is unavailable."""
+    config = tmp_path / "pilot.json"
+    settings = json.loads((ROOT / "eval/evolution/pilot.json").read_text())
+    settings["output_dir"] = str(tmp_path / "runs")
+    assert settings["execution_mode"] == "docker"
+    config.write_text(json.dumps(settings))
+    result = subprocess.run([sys.executable, "scripts/kage_evolve.py", "search", "--config", str(config),
+                             "--provider", "fixture", "--runner", "process"],
+                            cwd=ROOT, capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stderr
+    assert "not a security sandbox" in result.stderr
+    report = json.loads((tmp_path / "runs/fixture/pilot-process/seed-42/report.json").read_text())
+    assert report["execution_mode"] == "process"
+    assert report["comparisons"][0]["promoted"] is True
+
+
+def test_runner_flag_refuses_process_isolation_for_live_generated_code(tmp_path):
+    from core.evolution.search import run_search
+
+    config = tmp_path / "pilot.json"
+    settings = json.loads((ROOT / "eval/evolution/pilot.json").read_text())
+    settings["output_dir"] = str(tmp_path / "runs")
+    config.write_text(json.dumps(settings))
+    with pytest.raises(ValueError, match="requires docker"):
+        run_search(config, "live", "process")

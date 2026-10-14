@@ -101,6 +101,7 @@ def test_skill_fallback_installs_backup_and_progresses():
         tool_executor=ex,
         prompt_builder=prompt,
         session_manager=_DummySession(),
+        auto_install_remote_skills=True,  # opt-in (T12); default is off
     )
 
     res = asyncio.run(loop.run("整理一下文件"))

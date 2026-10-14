@@ -85,7 +85,7 @@ def test_unclassified_tools_are_fail_open_not_hidden():
 def test_classified_names_are_registered_or_declared_alias_slots():
     """The policy must not classify tools that do not exist (phantom names), except the
     documented MCP alias slots that config/mcp.json may register at runtime."""
-    phantom = set(tv.CLASSIFIED) - _registered() - set(tv.ALIAS_SLOTS) - set(tv.EXPERIMENT_SLOTS)
+    phantom = set(tv.CLASSIFIED) - _registered() - set(tv.ALIAS_SLOTS) - set(tv.EXPERIMENT_SLOTS) - set(tv.SERVER_SLOTS)
     assert phantom == set(), f"policy references unregistered tools: {sorted(phantom)}"
 
 

@@ -6,6 +6,7 @@ Heartbeat — 主动行为系统
 - 按间隔执行检查（钳位到 [5, 120] 分钟）
 - 用户活跃时暂存通知，空闲后发送
 - 检查失败记录到 heartbeat_error.log，下周期重试
+- 生成的通知交给 on_notifications 回调送达用户（WebSocket/语音）
 """
 
 import asyncio
@@ -13,7 +14,10 @@ import datetime
 import logging
 import os
 import time
-from typing import Optional
+from collections import OrderedDict
+from typing import Awaitable, Callable, Optional
+
+from core.proactive import ProactiveFeedbackStore, ProactivePolicy, make_notification
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,8 @@ MIN_INTERVAL_MIN = 5
 MAX_INTERVAL_MIN = 120
 DEFAULT_INTERVAL_MIN = 30
 ACTIVE_THRESHOLD_SEC = 120  # 2 minutes
+DELIVERED_MEMORY = 200  # delivered notifications remembered for feedback lookup
+MAX_HELD = 50  # held (quiet hours / rate limited) notifications kept for later
 
 
 def clamp_interval(minutes: int | float) -> int:
@@ -33,8 +39,12 @@ class Heartbeat:
 
     def __init__(self, tool_executor, session_manager,
                  workspace_dir: str = "~/.kage",
-                 interval_minutes: int = DEFAULT_INTERVAL_MIN):
+                 interval_minutes: int = DEFAULT_INTERVAL_MIN,
+                 on_notifications: Optional[Callable[[list[dict]], Awaitable[None]]] = None,
+                 proactive_config: Optional[dict] = None,
+                 sources: Optional[list] = None):
         self.tool_executor = tool_executor
+        self.on_notifications = on_notifications
         self.session = session_manager
 
         workspace = os.path.expanduser(workspace_dir)
@@ -42,6 +52,18 @@ class Heartbeat:
 
         self.heartbeat_file = os.path.join(workspace, "HEARTBEAT.md")
         self.error_log_file = os.path.join(workspace, "heartbeat_error.log")
+        self.sources = list(sources or [])
+        cfg = proactive_config or {}
+        self.feedback = ProactiveFeedbackStore(
+            os.path.join(workspace, "proactive_feedback.jsonl"),
+            snooze_minutes=int(cfg.get("snooze_minutes", 60) or 0),
+        )
+        self.policy = ProactivePolicy(
+            self.feedback, os.path.join(workspace, "proactive_sent.jsonl"),
+            quiet_hours=str(cfg.get("quiet_hours", "") or ""),
+            max_per_hour=int(cfg.get("max_per_hour", 0) or 0),
+        )
+        self._delivered: "OrderedDict[str, dict]" = OrderedDict()
 
         self.interval_sec = clamp_interval(interval_minutes) * 60
         self._notification_queue: list[dict] = []
@@ -72,11 +94,73 @@ class Heartbeat:
         while self._running:
             try:
                 await asyncio.sleep(self.interval_sec)
-                await self.tick()
+                await self._run_once()
             except asyncio.CancelledError:
                 break
             except Exception as exc:
                 logger.error("Heartbeat loop error: %s", exc)
+
+    async def _run_once(self) -> list[dict]:
+        """Run one check cycle and hand any due notifications to the delivery callback."""
+        notifications = await self.tick()
+        await self._deliver(notifications)
+        return notifications
+
+    async def _deliver(self, notifications: list[dict]) -> None:
+        if not notifications or self.on_notifications is None:
+            return
+        allowed: list[dict] = []
+        for n in notifications:
+            verdict, reason = self.policy.verdict(n)
+            if verdict == "deliver":
+                self.policy.mark_sent(n)
+                allowed.append(n)
+            elif verdict == "hold":
+                self._hold(n)
+                logger.debug("Proactive notification held (%s): %s", reason, n.get("source"))
+            else:
+                logger.debug("Proactive notification dropped (%s): %s", reason, n.get("source"))
+        notifications = allowed
+        if not notifications:
+            return
+        for n in notifications:
+            if n.get("id"):
+                self._delivered[str(n["id"])] = n
+        while len(self._delivered) > DELIVERED_MEMORY:
+            self._delivered.popitem(last=False)
+        try:
+            await self.on_notifications(notifications)
+        except Exception as exc:
+            self._log_error("deliver", exc)
+
+    def _hold(self, notification: dict) -> None:
+        """Keep a notification for a later cycle; a newer one from the same source replaces it."""
+        source = notification.get("source")
+        if source:
+            self._notification_queue = [q for q in self._notification_queue if q.get("source") != source]
+        self._notification_queue.append(notification)
+        del self._notification_queue[:-MAX_HELD]
+
+    async def deliver_now(self, notifications: list[dict]) -> None:
+        """Entry point for event-driven triggers (not tied to the heartbeat interval)."""
+        if self.is_user_active():
+            for n in notifications:
+                self._hold(n)
+            return
+        await self._deliver(notifications)
+
+    def record_feedback(self, notification_id: str, action: str) -> Optional[dict]:
+        """Record the user's reaction to a delivered notification.
+
+        Returns the notification it refers to, or None when the id is unknown
+        (e.g. delivered before a restart); unknown ids are not recorded because
+        their source — needed for mute/snooze — is not known.
+        """
+        notification = self._delivered.get(str(notification_id or ""))
+        if notification is None:
+            return None
+        self.feedback.record(notification["id"], notification.get("source", ""), action)
+        return notification
 
     async def tick(self) -> list[dict]:
         """Execute one heartbeat check cycle.
@@ -91,14 +175,27 @@ class Heartbeat:
                 continue
             try:
                 # For now, generate a simple notification per enabled check
-                notification = {
-                    "type": item.get("name", "unknown"),
-                    "content": item.get("description", ""),
-                    "timestamp": datetime.datetime.now().isoformat(),
-                }
+                name = item.get("name", "unknown")
+                notification = make_notification(
+                    f"heartbeat:{name}", item.get("description", ""), type_=name,
+                    now=datetime.datetime.now(),
+                )
                 notifications.append(notification)
             except Exception as exc:
                 self._log_error(item.get("name", "unknown"), exc)
+
+        now = datetime.datetime.now()
+        for source in self.sources:
+            try:
+                collected = await source.collect(now)
+            except Exception as exc:
+                self._log_error(type(source).__name__, exc)
+                continue
+            for n in collected or []:
+                window = n.get("dedup_seconds")
+                if window and self.policy.was_sent(str(n.get("source") or ""), float(window)):
+                    continue
+                notifications.append(n)
 
         # Queue or return based on user activity
         if self.is_user_active():

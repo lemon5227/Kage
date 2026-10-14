@@ -90,6 +90,7 @@ def test_primitive_fallback_after_skill_stalls():
         tool_executor=_DummyExecutor(),
         prompt_builder=prompt,
         session_manager=_DummySession(),
+        auto_install_remote_skills=True,  # this scenario starts from an auto-installed skill (T12)
     )
     res = asyncio.run(loop.run("帮我找文件"))
     assert any(tc["name"] == "fs_search" for tc in res.tool_calls_executed)
