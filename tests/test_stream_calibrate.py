@@ -50,3 +50,18 @@ def test_band_judgement_and_negatives():
     assert s['csv_transform']['in_band'] is False         # 0% too hard
     assert s['subset_selection']['in_band'] is True       # 10% is inside the band
     assert s['read_preserve']['negative'] is True and 'in_band' not in s['read_preserve']
+
+
+def test_crashed_rows_are_retried_and_not_counted(tmp_path):
+    tasks = C.calibration_tasks(['interval_merge'], 2)
+    (tmp_path / 'results.jsonl').write_text(
+        json.dumps({'family': 'interval_merge', 'seed': 5000, 'score': 0.0, 'status': 'crashed', 'seconds': 0}) + '\n' +
+        json.dumps({'family': 'interval_merge', 'seed': 5001, 'score': 1.0, 'status': 'passed', 'seconds': 9}) + '\n')
+    ran = []
+
+    def fake(task):
+        ran.append(task['seed'])
+        return 1.0, 'passed'
+    summary = C.calibrate(tmp_path, tasks, fake)
+    assert ran == [5000]
+    assert summary['interval_merge']['passed'] == 2 and summary['interval_merge']['total'] == 2

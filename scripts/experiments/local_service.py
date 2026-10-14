@@ -12,8 +12,11 @@ import subprocess
 import time
 import urllib.request
 
-MODEL=Path.home()/'.kage/models/agents-a1-4b/Agents-A1-4B-Q4_K_M.gguf'
-SERVER=Path('/opt/homebrew/bin/llama-server')
+import os
+
+# Overridable for other hosts (e.g. Kaggle); the same GGUF file is verified by sha256 there.
+MODEL=Path(os.environ.get('KAGE_MODEL_PATH', Path.home()/'.kage/models/agents-a1-4b/Agents-A1-4B-Q4_K_M.gguf'))
+SERVER=Path(os.environ.get('KAGE_LLAMA_SERVER', '/opt/homebrew/bin/llama-server'))
 
 
 def write_json(path,value):

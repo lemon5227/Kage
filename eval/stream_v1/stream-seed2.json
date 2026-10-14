@@ -1,0 +1,8398 @@
+{
+ "created": "2026-10-14T22:38:30.059987+00:00",
+ "suite_id": "kage-stream-v1",
+ "sha256": "dccacae5c2c2ffefae7d905f416d88ff9eec312290eecc2a9e3e4e6ba11fc0f4",
+ "tasks": [
+  {
+   "task_id": "stream-v1-interval_merge-2001",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Implement merge_bookings(intervals) in ranges.py to merge overlapping intervals. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save ranges.py.",
+   "initial_files": {
+    "ranges.py": "def merge_bookings(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "merge_bookings",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         9,
+         12
+        ],
+        [
+         17,
+         22
+        ],
+        [
+         14,
+         14
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        9,
+        12
+       ],
+       [
+        14,
+        14
+       ],
+       [
+        17,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         4,
+         6
+        ],
+        [
+         7,
+         10
+        ],
+        [
+         7,
+         11
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         17,
+         18
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        6
+       ],
+       [
+        7,
+        11
+       ],
+       [
+        17,
+        18
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         15,
+         19
+        ],
+        [
+         18,
+         19
+        ],
+        [
+         1,
+         2
+        ],
+        [
+         7,
+         10
+        ],
+        [
+         14,
+         19
+        ],
+        [
+         12,
+         15
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        2
+       ],
+       [
+        7,
+        10
+       ],
+       [
+        12,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        6,
+        8
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         4,
+         9
+        ],
+        [
+         15,
+         20
+        ],
+        [
+         2,
+         3
+        ],
+        [
+         14,
+         19
+        ],
+        [
+         17,
+         22
+        ],
+        [
+         15,
+         18
+        ],
+        [
+         5,
+         10
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        3
+       ],
+       [
+        4,
+        10
+       ],
+       [
+        14,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         10,
+         7
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         12
+        ],
+        [
+         6,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        6,
+        12
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         8
+        ],
+        [
+         6,
+         15
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        6,
+        15
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-2102",
+   "family": "lookalike_readonly",
+   "split": "stream",
+   "instruction": "Read telemetry.py and describe the edge cases digest_lines handles. It is already correct. Do not modify it.",
+   "initial_files": {
+    "telemetry.py": "def digest_lines(lines):\n    key, only = 'level', []\n    out = {}\n    for line in lines:\n        if not isinstance(line, str):\n            continue\n        parts = line.split(' ', 3)\n        if len(parts) < 4 or not parts[2].endswith(':') or len(parts[2]) < 2:\n            continue\n        level, service = parts[1].upper(), parts[2][:-1]\n        if only and level not in only:\n            continue\n        name = level if key == 'level' else service\n        out[name] = out.get(name, 0) + 1\n    return out\n"
+   },
+   "expected_output_file": "telemetry.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "telemetry.py",
+    "sha256": "578f082f7b1546900d3bc200418be34fea43ade85fdbe9bcd808538401e44a65"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2010",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "In scheduler.py, write plan_batch(items, capacity) that picks which parcels to take. Each item is a dict with a unique string \"id\", a positive integer \"size\" and a non-negative integer \"score\". Return the sorted list of ids whose total score is as large as possible while total size stays <= capacity. If several selections tie on total score, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any size is <= 0. Do not modify the input. Save the file scheduler.py.",
+   "initial_files": {
+    "scheduler.py": "def plan_batch(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "scheduler.py",
+    "function": "plan_batch",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "size": 3,
+         "score": 7
+        },
+        {
+         "id": "alpha",
+         "size": 5,
+         "score": 2
+        }
+       ],
+       7
+      ],
+      "expected": [
+       "eta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 1,
+         "score": 8
+        },
+        {
+         "id": "eta",
+         "size": 6,
+         "score": 7
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "size": 6,
+         "score": 3
+        },
+        {
+         "id": "gamma",
+         "size": 4,
+         "score": 11
+        },
+        {
+         "id": "delta",
+         "size": 1,
+         "score": 12
+        },
+        {
+         "id": "iota",
+         "size": 4,
+         "score": 4
+        },
+        {
+         "id": "epsilon",
+         "size": 6,
+         "score": 5
+        },
+        {
+         "id": "alpha",
+         "size": 2,
+         "score": 0
+        },
+        {
+         "id": "theta",
+         "size": 5,
+         "score": 2
+        },
+        {
+         "id": "kappa",
+         "size": 2,
+         "score": 2
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "delta",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "size": 1,
+         "score": 1
+        },
+        {
+         "id": "theta",
+         "size": 3,
+         "score": 4
+        },
+        {
+         "id": "alpha",
+         "size": 4,
+         "score": 0
+        },
+        {
+         "id": "beta",
+         "size": 2,
+         "score": 4
+        },
+        {
+         "id": "zeta",
+         "size": 3,
+         "score": 4
+        },
+        {
+         "id": "eta",
+         "size": 6,
+         "score": 12
+        },
+        {
+         "id": "iota",
+         "size": 5,
+         "score": 10
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "beta",
+       "iota",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "size": 2,
+         "score": 11
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 4
+        },
+        {
+         "id": "delta",
+         "size": 5,
+         "score": 12
+        },
+        {
+         "id": "kappa",
+         "size": 5,
+         "score": 3
+        },
+        {
+         "id": "alpha",
+         "size": 1,
+         "score": 3
+        },
+        {
+         "id": "iota",
+         "size": 3,
+         "score": 3
+        },
+        {
+         "id": "epsilon",
+         "size": 2,
+         "score": 8
+        },
+        {
+         "id": "gamma",
+         "size": 3,
+         "score": 2
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "alpha",
+       "beta",
+       "delta",
+       "epsilon"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "size": 0,
+         "score": 3
+        },
+        {
+         "id": "beta",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 6,
+         "score": 5
+        },
+        {
+         "id": "alpha",
+         "size": 6,
+         "score": 5
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "alpha"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2010",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "In crm_clean.py, write clean_rows(text) to clean an exported table. The input is CSV text with a header row (columns: city, score, email, name, team). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"score\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"city\", keeping the first occurrence; sort rows by \"name\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def clean_rows(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "clean_rows",
+    "cases": [
+     {
+      "args": [
+       "city,score,email,name,team\nOslo ,,Ann@Example.com ,Cy Park,red\n\"Lima, PE\",41 ,ed@x.net ,Ed Kim ,red\nKyiv,90,ed@x.net, Ed Kim, ops\n\"Lima, PE \",70,bo@mail.org,Ann Lee, green\nOslo,15, di@Mail.org,Cy Park,red\n\" Lima, PE \",41 ,ed@x.net ,Ed Kim, red\nParis,79,ed@x.net,Ann Lee,red\n\"Lima, PE\",27 ,bo@mail.org,Fa Li ,red \n"
+      ],
+      "expected": "city,score,email,name,team\nParis,79,ed@x.net,Ann Lee,red\nOslo,15,di@mail.org,Cy Park,red\n\"Lima, PE\",41,ed@x.net,Ed Kim,red\nKyiv,90,ed@x.net,Ed Kim,ops\n"
+     },
+     {
+      "args": [
+       "city,score,email,name,team\nKyiv, ,ed@x.net ,Fa Li, green\nOslo ,82,Ann@Example.com, Ed Kim,blue\nParis,,ed@x.net,Bo Chen,ops\n\"Lima, PE\",4, CY@corp.io,Ed Kim,red\nParis,79 ,di@Mail.org , Di Wu ,green \nParis,21,ed@x.net,Ed Kim,blue\n  Paris  ,36,CY@corp.io,Fa Li,blue\nParis, 36, CY@corp.io, Fa Li,blue\n"
+      ],
+      "expected": "city,score,email,name,team\nParis,79,di@mail.org,Di Wu,green\nOslo,82,ann@example.com,Ed Kim,blue\n\"Lima, PE\",4,cy@corp.io,Ed Kim,red\n"
+     },
+     {
+      "args": [
+       "city,score,email,name,team\nParis,21,CY@corp.io, Cy Park,ops\nRome,75,di@Mail.org,Ed Kim ,green\n Paris ,21 ,CY@corp.io ,Cy Park, ops\nKyiv,,di@Mail.org,Di Wu,ops\n\"Lima, PE \",,bo@mail.org,Ann Lee,ops\nKyiv,96,Ann@Example.com, Ed Kim,red\n"
+      ],
+      "expected": "city,score,email,name,team\nParis,21,cy@corp.io,Cy Park,ops\nRome,75,di@mail.org,Ed Kim,green\nKyiv,96,ann@example.com,Ed Kim,red\n"
+     },
+     {
+      "args": [
+       "city,score,email,name,team\n\"Lima, PE\",83,di@Mail.org, Ann Lee,ops\nOslo,38,di@Mail.org,Ed Kim ,green\nParis ,58,ed@x.net, Di Wu, red\n\"Lima, PE\", ,ed@x.net, Ann Lee ,blue\n\" Lima, PE\",68, bo@mail.org,Ed Kim,red\nRome,78,di@Mail.org ,Di Wu , green \nOslo,20,CY@corp.io ,Bo Chen,red\nRome,99,bo@mail.org,Di Wu,ops\nRome,9,Ann@Example.com, Ann Lee, blue\n"
+      ],
+      "expected": "city,score,email,name,team\n\"Lima, PE\",83,di@mail.org,Ann Lee,ops\nParis,58,ed@x.net,Di Wu,red\nRome,78,di@mail.org,Di Wu,green\nOslo,38,di@mail.org,Ed Kim,green\n"
+     },
+     {
+      "args": [
+       "city,score,email,name,team\nParis, 83,ed@x.net,Ed Kim, blue \n\" Lima, PE \",46,Ann@Example.com ,Di Wu ,blue\nRome,, di@Mail.org ,Bo Chen,blue\nParis, 50,CY@corp.io,Cy Park, ops\nOslo,23,ed@x.net ,Di Wu,ops \n\"Lima, PE\",46,Ann@Example.com,Di Wu,blue\n\"Lima, PE\",26,CY@corp.io,Di Wu,ops\n\"Lima, PE\",,ed@x.net,Ann Lee,red \n"
+      ],
+      "expected": "city,score,email,name,team\n\"Lima, PE\",46,ann@example.com,Di Wu,blue\nOslo,23,ed@x.net,Di Wu,ops\nParis,83,ed@x.net,Ed Kim,blue\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "city,score,email,name,team\n"
+      ],
+      "expected": "city,score,email,name,team\n"
+     },
+     {
+      "args": [
+       "city,score,email,name,team\nKyiv,71,ed@x.net,\"Lima, PE\",blue\n"
+      ],
+      "expected": "city,score,email,name,team\nKyiv,71,ed@x.net,\"Lima, PE\",blue\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2003",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Implement select_tasks(items, capacity) in scheduler.py to choose projects. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Save scheduler.py.",
+   "initial_files": {
+    "scheduler.py": "def select_tasks(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "scheduler.py",
+    "function": "select_tasks",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "weight": 2,
+         "value": 9
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 4
+        },
+        {
+         "id": "eta",
+         "weight": 3,
+         "value": 7
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "weight": 2,
+         "value": 8
+        },
+        {
+         "id": "beta",
+         "weight": 3,
+         "value": 2
+        },
+        {
+         "id": "alpha",
+         "weight": 3,
+         "value": 0
+        }
+       ],
+       4
+      ],
+      "expected": [
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 7
+        },
+        {
+         "id": "zeta",
+         "weight": 5,
+         "value": 5
+        },
+        {
+         "id": "kappa",
+         "weight": 2,
+         "value": 0
+        },
+        {
+         "id": "beta",
+         "weight": 5,
+         "value": 6
+        },
+        {
+         "id": "theta",
+         "weight": 6,
+         "value": 1
+        },
+        {
+         "id": "iota",
+         "weight": 5,
+         "value": 2
+        },
+        {
+         "id": "epsilon",
+         "weight": 4,
+         "value": 8
+        },
+        {
+         "id": "delta",
+         "weight": 5,
+         "value": 6
+        }
+       ],
+       12
+      ],
+      "expected": [
+       "beta",
+       "epsilon",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 3
+        },
+        {
+         "id": "beta",
+         "weight": 1,
+         "value": 3
+        },
+        {
+         "id": "eta",
+         "weight": 3,
+         "value": 8
+        },
+        {
+         "id": "delta",
+         "weight": 5,
+         "value": 12
+        },
+        {
+         "id": "gamma",
+         "weight": 6,
+         "value": 11
+        },
+        {
+         "id": "theta",
+         "weight": 5,
+         "value": 4
+        },
+        {
+         "id": "zeta",
+         "weight": 3,
+         "value": 11
+        },
+        {
+         "id": "alpha",
+         "weight": 2,
+         "value": 8
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "alpha",
+       "beta",
+       "delta",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "weight": 2,
+         "value": 12
+        },
+        {
+         "id": "eta",
+         "weight": 2,
+         "value": 7
+        },
+        {
+         "id": "kappa",
+         "weight": 3,
+         "value": 10
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "kappa",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 6,
+         "value": 2
+        },
+        {
+         "id": "iota",
+         "weight": 6,
+         "value": 2
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "iota"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2009",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "In calendar_ops.py, write merge_bookings(intervals) that combines overlapping time ranges. Each interval is a dict {\"from\": s, \"to\": e} with integer values. Return merged intervals as dicts with the same \"from\"/\"to\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should not be merged; only real overlaps merge. Raise ValueError if any interval has start > end. Do not modify the input. Save the file calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def merge_bookings(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "merge_bookings",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "from": 6,
+         "to": 9
+        },
+        {
+         "from": 19,
+         "to": 25
+        },
+        {
+         "from": 9,
+         "to": 13
+        },
+        {
+         "from": 3,
+         "to": 9
+        },
+        {
+         "from": 9,
+         "to": 15
+        },
+        {
+         "from": 17,
+         "to": 23
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 3,
+        "to": 9
+       },
+       {
+        "from": 9,
+        "to": 15
+       },
+       {
+        "from": 17,
+        "to": 25
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 0,
+         "to": 3
+        },
+        {
+         "from": 2,
+         "to": 2
+        },
+        {
+         "from": 2,
+         "to": 3
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 0,
+        "to": 3
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 1,
+         "to": 4
+        },
+        {
+         "from": 16,
+         "to": 16
+        },
+        {
+         "from": 0,
+         "to": 5
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 0,
+        "to": 5
+       },
+       {
+        "from": 16,
+        "to": 16
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 12,
+         "to": 18
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 12,
+        "to": 18
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 2,
+         "to": 4
+        },
+        {
+         "from": 20,
+         "to": 24
+        },
+        {
+         "from": 6,
+         "to": 8
+        },
+        {
+         "from": 7,
+         "to": 11
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 2,
+        "to": 4
+       },
+       {
+        "from": 6,
+        "to": 11
+       },
+       {
+        "from": 20,
+        "to": 24
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 5,
+         "to": 2
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 4,
+         "to": 7
+        },
+        {
+         "from": 1,
+         "to": 4
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 1,
+        "to": 4
+       },
+       {
+        "from": 4,
+        "to": 7
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 2,
+         "to": 3
+        },
+        {
+         "from": 1,
+         "to": 10
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 1,
+        "to": 10
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2003",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Implement coalesce(intervals) in ranges.py to merge overlapping intervals. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should not be merged; only real overlaps merge. Raise ValueError if any interval has start > end. Do not modify the input. Save ranges.py.",
+   "initial_files": {
+    "ranges.py": "def coalesce(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "coalesce",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         0,
+         4
+        ],
+        [
+         12,
+         16
+        ],
+        [
+         18,
+         23
+        ],
+        [
+         18,
+         23
+        ],
+        [
+         18,
+         19
+        ],
+        [
+         16,
+         16
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        4
+       ],
+       [
+        12,
+        16
+       ],
+       [
+        16,
+        16
+       ],
+       [
+        18,
+        23
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14,
+         15
+        ],
+        [
+         4,
+         6
+        ],
+        [
+         1,
+         4
+        ],
+        [
+         3,
+         5
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        6
+       ],
+       [
+        14,
+        15
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14,
+         19
+        ],
+        [
+         15,
+         20
+        ],
+        [
+         5,
+         8
+        ],
+        [
+         14,
+         19
+        ],
+        [
+         15,
+         16
+        ],
+        [
+         5,
+         11
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        5,
+        11
+       ],
+       [
+        14,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         4,
+         5
+        ],
+        [
+         11,
+         17
+        ],
+        [
+         6,
+         8
+        ],
+        [
+         5,
+         9
+        ],
+        [
+         7,
+         7
+        ],
+        [
+         9,
+         10
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        5
+       ],
+       [
+        5,
+        9
+       ],
+       [
+        9,
+        10
+       ],
+       [
+        11,
+        17
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         16,
+         22
+        ],
+        [
+         1,
+         4
+        ],
+        [
+         5,
+         9
+        ],
+        [
+         6,
+         8
+        ],
+        [
+         15,
+         21
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        4
+       ],
+       [
+        5,
+        9
+       ],
+       [
+        15,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         5
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         10
+        ],
+        [
+         4,
+         7
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        7
+       ],
+       [
+        7,
+        10
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ],
+        [
+         4,
+         13
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        13
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2007",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "In export_clean.py, write normalize_table(text) to clean an exported table. The input is CSV text with a header row (columns: score, team, id, name, city). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"team\" cell is empty; remove duplicate rows by \"score\", keeping the first occurrence; sort rows by \"id\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file export_clean.py.",
+   "initial_files": {
+    "export_clean.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "export_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "export_clean.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "score,team,id,name,city\n84,red,020,Cy Park,Kyiv \n1,,032,Ed Kim,\"Lima, PE\"\n 30 , red,037,Cy Park,Rome\n49 ,blue,035, Ann Lee,\"Lima, PE\"\n  1 ,,001,Ann Lee,\"Lima, PE\"\n1,,001, Ann Lee,\"Lima, PE\"\n 97,ops,007,Bo Chen,Kyiv\n11, ,015 , Di Wu,Rome\n"
+      ],
+      "expected": "score,team,id,name,city\n97,ops,007,Bo Chen,Kyiv\n84,red,020,Cy Park,Kyiv\n49,blue,035,Ann Lee,\"Lima, PE\"\n30,red,037,Cy Park,Rome\n"
+     },
+     {
+      "args": [
+       "score,team,id,name,city\n56,blue,028,Di Wu,Paris \n  88 ,red,037,Ed Kim, Rome\n16,blue, 003 , Ann Lee,Rome\n71,red,022,Cy Park,\"Lima, PE \"\n66 , ,039,Bo Chen ,Kyiv\n28,,019,Fa Li ,Paris\n17,green ,038, Di Wu,Rome\n88,red,037,Ed Kim,Rome\n"
+      ],
+      "expected": "score,team,id,name,city\n16,blue,003,Ann Lee,Rome\n71,red,022,Cy Park,\"Lima, PE\"\n56,blue,028,Di Wu,Paris\n88,red,037,Ed Kim,Rome\n17,green,038,Di Wu,Rome\n"
+     },
+     {
+      "args": [
+       "score,team,id,name,city\n87 , green ,009,Fa Li,\" Lima, PE\"\n 87 ,green,009,Fa Li,\"Lima, PE\"\n 0, red,033,Di Wu,Paris\n13,green,025, Di Wu, Kyiv\n77, ,017, Fa Li,Paris\n"
+      ],
+      "expected": "score,team,id,name,city\n87,green,009,Fa Li,\"Lima, PE\"\n13,green,025,Di Wu,Kyiv\n0,red,033,Di Wu,Paris\n"
+     },
+     {
+      "args": [
+       "score,team,id,name,city\n41,green,019,Bo Chen,Kyiv \n17,ops,001,Di Wu,\"Lima, PE\"\n70 ,red, 023,Ann Lee ,Rome\n23,ops,029 ,Fa Li,Kyiv\n60,red, 011,Fa Li,Paris\n8 ,green, 002,Ed Kim,\"Lima, PE\"\n43 ,red ,007 ,Di Wu,\"Lima, PE\"\n 23 ,ops,029,Fa Li ,Kyiv\n"
+      ],
+      "expected": "score,team,id,name,city\n17,ops,001,Di Wu,\"Lima, PE\"\n8,green,002,Ed Kim,\"Lima, PE\"\n43,red,007,Di Wu,\"Lima, PE\"\n60,red,011,Fa Li,Paris\n41,green,019,Bo Chen,Kyiv\n70,red,023,Ann Lee,Rome\n23,ops,029,Fa Li,Kyiv\n"
+     },
+     {
+      "args": [
+       "score,team,id,name,city\n 27 ,blue ,040,Di Wu,Kyiv\n55 ,blue,034,Ed Kim,Rome\n 90 ,, 030, Ann Lee,Oslo\n 27,blue,040,Di Wu,Kyiv \n"
+      ],
+      "expected": "score,team,id,name,city\n55,blue,034,Ed Kim,Rome\n27,blue,040,Di Wu,Kyiv\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "score,team,id,name,city\n"
+      ],
+      "expected": "score,team,id,name,city\n"
+     },
+     {
+      "args": [
+       "score,team,id,name,city\n79,red,\"Lima, PE\",Cy Park,Oslo\n"
+      ],
+      "expected": "score,team,id,name,city\n79,red,\"Lima, PE\",Cy Park,Oslo\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2008",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Implement digest_lines(lines) in logstats.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each level to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save logstats.py.",
+   "initial_files": {
+    "logstats.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "logstats.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "logstats.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-09T23:27:00 ERROR gateway: slow ok connected",
+        "2026-10-06T19:05:00 DEBUG worker: ok",
+        "2026-10-11T09:34:00 debug billing: slow connected closed",
+        "2026-10-09T06:28:00 DEBUG gateway: failed timeout closed",
+        "2026-10-06T09:36:00 DEBUG cache: ok ok",
+        "2026-10-19T19:36:00 info worker: slow connected",
+        ""
+       ]
+      ],
+      "expected": {
+       "ERROR": 1,
+       "DEBUG": 4,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-07T21:22:00 error ui: connected slow slow",
+        "2026-10-06T21:54:00 error cache: connected ok",
+        "2026-10-25T21:01:00 ERROR cache: ok started slow",
+        "2026-10-12T10:21:00 info auth: connected slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "",
+        "2026-10-07T06:16:00 ERROR auth: retry closed ok",
+        "2026-10-01T23:28:00 ERROR worker: retry closed slow",
+        "2026-10-10T01:44:00 info ui: connected timeout",
+        "2026-10-14T09:26:00 ERROR cache: failed",
+        "2026-10-14T17:20:00 warn worker: timeout"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "INFO": 1,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-23T02:34:00 ERROR billing: failed started",
+        "2026-10-15T22:56:00 INFO mailer: timeout",
+        "2026-10-26T15:12:00 ERROR search: started",
+        "2026-10-14T10:58:00 info billing: retry failed",
+        "2026-10-20T22:36:00 DEBUG worker: started ok",
+        "2026-10-19T06:37:00 error auth: failed retry"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "INFO": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-14T14:08:00 warn auth: closed",
+        "2026-10-15T09:01:00 DEBUG billing: ok ok",
+        "2026-10-28T03:49:00 ERROR gateway: failed",
+        "2026-10-13T23:46:00 INFO billing: timeout timeout",
+        "2026-10-03T14:27:00 ERROR mailer: slow timeout",
+        "2026-10-16T00:08:00 ERROR worker: retry failed",
+        "2026-10-16T16:29:00 WARN mailer: ok",
+        "2026-10-17T12:28:00 info mailer: timeout slow",
+        "2026-10-16T12:13:00 INFO mailer: failed started"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "DEBUG": 1,
+       "ERROR": 3,
+       "INFO": 3
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2005",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Fix export_clean.py: normalize_table(text) should tidy a CSV export. The input is CSV text with a header row (columns: score, email, city, team). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"email\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"email\", keeping the first occurrence; sort rows by \"score\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Write the result to export_clean.py.",
+   "initial_files": {
+    "export_clean.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "export_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "export_clean.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "score,email,city,team\n36,ed@x.net,Oslo, ops\n33,CY@corp.io,Oslo, green \n33, CY@corp.io  ,Oslo, green\n 99,CY@corp.io,Oslo,red \n79,bo@mail.org , Rome,blue\n7, CY@corp.io ,Kyiv ,green\n"
+      ],
+      "expected": "score,email,city,team\n33,cy@corp.io,Oslo,green\n36,ed@x.net,Oslo,ops\n79,bo@mail.org,Rome,blue\n"
+     },
+     {
+      "args": [
+       "score,email,city,team\n65 ,ed@x.net,Paris,red \n 37,bo@mail.org,Kyiv,red\n95, Ann@Example.com,Paris,green\n28,ed@x.net,Rome,ops\n26, bo@mail.org,Oslo ,green\n82 ,Ann@Example.com ,Rome,red\n80, Ann@Example.com,Paris,red\n23, CY@corp.io,Kyiv,ops \n82, Ann@Example.com  ,Rome,red \n52, Ann@Example.com,Oslo,red\n"
+      ],
+      "expected": "score,email,city,team\n23,cy@corp.io,Kyiv,ops\n37,bo@mail.org,Kyiv,red\n65,ed@x.net,Paris,red\n95,ann@example.com,Paris,green\n"
+     },
+     {
+      "args": [
+       "score,email,city,team\n22, CY@corp.io,Paris,green\n75 ,ed@x.net ,Kyiv,red\n 13,  ed@x.net  ,Rome,ops\n 13,ed@x.net,Rome,ops\n84, Ann@Example.com,Kyiv,blue\n95,Ann@Example.com,\" Lima, PE\",blue \n87, , Kyiv,blue\n"
+      ],
+      "expected": "score,email,city,team\n22,cy@corp.io,Paris,green\n75,ed@x.net,Kyiv,red\n84,ann@example.com,Kyiv,blue\n"
+     },
+     {
+      "args": [
+       "score,email,city,team\n47,bo@mail.org,Kyiv,green \n5,,Kyiv,red \n59 ,bo@mail.org,\"Lima, PE\",red\n 51,ed@x.net,Oslo ,green\n38,ed@x.net, Paris,blue\n71,Ann@Example.com, Kyiv,red\n34 , CY@corp.io ,Oslo,ops\n"
+      ],
+      "expected": "score,email,city,team\n34,cy@corp.io,Oslo,ops\n47,bo@mail.org,Kyiv,green\n51,ed@x.net,Oslo,green\n71,ann@example.com,Kyiv,red\n"
+     },
+     {
+      "args": [
+       "score,email,city,team\n45,ed@x.net,Rome,blue\n79,di@Mail.org,Rome,green\n12,bo@mail.org,Kyiv, ops\n21 , CY@corp.io,Paris,ops\n56,ed@x.net,\"Lima, PE\",green\n45, ed@x.net ,Rome, blue\n 59,Ann@Example.com ,Oslo,green\n76,bo@mail.org, Paris,red\n47,ed@x.net,Rome,green \n94,Ann@Example.com,Rome, blue\n"
+      ],
+      "expected": "score,email,city,team\n12,bo@mail.org,Kyiv,ops\n21,cy@corp.io,Paris,ops\n45,ed@x.net,Rome,blue\n59,ann@example.com,Oslo,green\n79,di@mail.org,Rome,green\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "score,email,city,team\n"
+      ],
+      "expected": "score,email,city,team\n"
+     },
+     {
+      "args": [
+       "score,email,city,team\n\"Lima, PE\",Ann@Example.com,Rome,blue\n"
+      ],
+      "expected": "score,email,city,team\n\"Lima, PE\",ann@example.com,Rome,blue\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-read_preserve-2103",
+   "family": "read_preserve",
+   "split": "stream",
+   "instruction": "Please look at helpers.py and summarize it. It is already correct; leave it exactly as it is.",
+   "initial_files": {
+    "helpers.py": "def slug(text):\n    return \"-\".join(text.lower().split())\n"
+   },
+   "expected_output_file": "helpers.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "helpers.py",
+    "sha256": "1a40cbc5c56a65bd821eca8f27069f98a4f185b6f747b164edd16a891ab19b13"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2001",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "In ops_summary.py, tally_events(lines) should count log lines per level. Line format: \"<timestamp> <LEVEL> <service>: <message>\"; level case may vary and must be upper-cased; ignore lines that do not match. Return a plain dict of counts and save ops_summary.py.",
+   "initial_files": {
+    "ops_summary.py": "def tally_events(lines):\n    return {}\n"
+   },
+   "expected_output_file": "ops_summary.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ops_summary.py",
+    "function": "tally_events",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-04T10:33:00 error cache: closed",
+        "2026-10-20T17:07:00 WARN worker: retry ok",
+        "2026-10-05T12:52:00 INFO search: closed",
+        "2026-10-20T15:43:00 INFO ui: started timeout retry",
+        "2026-10-03T12:51:00 warn billing: failed retry ok",
+        "2026-10-01 INFO"
+       ]
+      ],
+      "expected": {
+       "ERROR": 1,
+       "WARN": 2,
+       "INFO": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-06T03:33:00 DEBUG gateway: started slow retry",
+        "2026-10-01T09:18:00 INFO auth: connected retry",
+        "2026-10-14T20:47:00 INFO mailer: closed",
+        "2026-10-11T00:21:00 WARN auth: retry",
+        "2026-10-26T17:33:00 warn search: started slow",
+        "2026-10-24T12:22:00 ERROR ui: failed failed",
+        "2026-10-24T16:57:00 warn search: slow"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 1,
+       "INFO": 2,
+       "WARN": 3,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-24T11:33:00 ERROR cache: closed",
+        "2026-10-25T04:33:00 info search: slow failed connected",
+        "2026-10-01T06:23:00 WARN billing: timeout",
+        "2026-10-01 INFO",
+        "2026-10-11T00:59:00 ERROR cache: slow closed",
+        "2026-10-18T18:25:00 INFO worker: retry",
+        "2026-10-20T10:44:00 WARN auth: connected ok slow",
+        "2026-10-20T10:30:00 ERROR cache: timeout connected"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "INFO": 2,
+       "WARN": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-11T23:43:00 error auth: connected connected",
+        "2026-10-03T15:39:00 ERROR cache: timeout slow",
+        "2026-10-20T18:27:00 warn auth: failed failed",
+        "2026-10-08T17:37:00 ERROR cache: timeout",
+        "2026-10-26T04:28:00 INFO ui: ok failed",
+        "2026-10-15T04:30:00 WARN gateway: retry",
+        "garbage",
+        "2026-10-08T18:50:00 debug billing: slow connected connected",
+        "2026-10-19T05:32:00 INFO mailer: closed",
+        "2026-10-19T13:48:00 INFO auth: started slow slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "WARN": 2,
+       "INFO": 3,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-23T19:31:00 ERROR billing: started",
+        "2026-10-21T12:34:00 INFO mailer: slow ok slow",
+        "2026-10-10T21:48:00 WARN auth: ok connected slow",
+        "2026-10-18T21:00:00 info ui: connected connected",
+        "2026-10-09T06:35:00 WARN gateway: slow started started",
+        "2026-10-02T14:45:00 DEBUG ui: slow retry closed",
+        "2026-10-01T23:06:00 ERROR gateway: retry closed started",
+        "2026-10-19T02:33:00 INFO search: failed"
+       ]
+      ],
+      "expected": {
+       "ERROR": 2,
+       "INFO": 3,
+       "WARN": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2002",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Fix crm_clean.py: tidy_csv(text) should tidy a CSV export. The input is CSV text with a header row (columns: team, city, name, score, id). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"id\" cell is empty; remove duplicate rows by \"city\", keeping the first occurrence; sort rows by \"name\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Write the result to crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def tidy_csv(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "tidy_csv",
+    "cases": [
+     {
+      "args": [
+       "team,city,name,score,id\n red,Kyiv, Ed Kim,24,009\nblue,Rome, Di Wu,58 ,004\nops,Paris,Ann Lee,41,001\n green, Paris,Fa Li , 12,004\nblue,\"Lima, PE\", Fa Li,31,020\nblue ,Paris,Ed Kim ,18 ,005\ngreen,Oslo ,Ann Lee,93,039 \ngreen,\"Lima, PE\",Cy Park,41,037\nops,Kyiv , Fa Li ,58 ,\n"
+      ],
+      "expected": "team,city,name,score,id\nops,Paris,Ann Lee,41,001\ngreen,Oslo,Ann Lee,93,039\nblue,Rome,Di Wu,58,004\nred,Kyiv,Ed Kim,24,009\nblue,\"Lima, PE\",Fa Li,31,020\n"
+     },
+     {
+      "args": [
+       "team,city,name,score,id\nblue,Oslo ,Fa Li, 55,025\ngreen,Rome,Bo Chen,45,009 \ngreen ,  Rome ,Ann Lee,94 ,020\ngreen,Rome,Ann Lee,94 ,020\n ops,Oslo , Fa Li,17,040 \n"
+      ],
+      "expected": "team,city,name,score,id\ngreen,Rome,Bo Chen,45,009\nblue,Oslo,Fa Li,55,025\n"
+     },
+     {
+      "args": [
+       "team,city,name,score,id\n ops,Rome,Ed Kim,19 ,038\nops,Paris,Ann Lee,37,038 \n blue, Oslo,Bo Chen,45, 022\nops,Oslo,Cy Park,77,026\nblue,\"Lima, PE\",Bo Chen,20, 037\n"
+      ],
+      "expected": "team,city,name,score,id\nops,Paris,Ann Lee,37,038\nblue,Oslo,Bo Chen,45,022\nblue,\"Lima, PE\",Bo Chen,20,037\nops,Rome,Ed Kim,19,038\n"
+     },
+     {
+      "args": [
+       "team,city,name,score,id\nred ,\" Lima, PE\",Ed Kim , 80,003 \n blue, Oslo,Ann Lee ,42,032\nblue, Oslo ,Bo Chen ,21,\nred,Paris, Bo Chen , 7,007\nblue,Kyiv,Ann Lee, 67 ,001\n blue,Paris ,Cy Park ,82, 009\nblue,Oslo , Bo Chen,21 ,\nops,\"Lima, PE\", Fa Li ,2,\n"
+      ],
+      "expected": "team,city,name,score,id\nblue,Oslo,Ann Lee,42,032\nblue,Kyiv,Ann Lee,67,001\nred,Paris,Bo Chen,7,007\nred,\"Lima, PE\",Ed Kim,80,003\n"
+     },
+     {
+      "args": [
+       "team,city,name,score,id\nops,Rome,Di Wu,64,029 \ngreen,Oslo ,Cy Park,11,\nblue,Oslo ,Ed Kim, 25,005\nred, Oslo ,Ed Kim, 89, \nblue,Rome ,Di Wu,99,011\nred,Oslo, Ed Kim,89, \n"
+      ],
+      "expected": "team,city,name,score,id\nops,Rome,Di Wu,64,029\nblue,Oslo,Ed Kim,25,005\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "team,city,name,score,id\n"
+      ],
+      "expected": "team,city,name,score,id\n"
+     },
+     {
+      "args": [
+       "team,city,name,score,id\nred,\"Lima, PE\",\"Lima, PE\",72,019\n"
+      ],
+      "expected": "team,city,name,score,id\nred,\"Lima, PE\",\"Lima, PE\",72,019\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2009",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Fix table_ops.py: dedupe_export(text) should tidy a CSV export. The input is CSV text with a header row (columns: team, name, score, email). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"team\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"team\", keeping the first occurrence; sort rows by \"email\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Write the result to table_ops.py.",
+   "initial_files": {
+    "table_ops.py": "def dedupe_export(text):\n    return None\n"
+   },
+   "expected_output_file": "table_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "table_ops.py",
+    "function": "dedupe_export",
+    "cases": [
+     {
+      "args": [
+       "team,name,score,email\n red,Ann Lee,9,ed@x.net\ngreen, Bo Chen, 76,di@Mail.org\n red, Ed Kim,38, ed@x.net\n  ,Cy Park,60,ed@x.net\nred,Cy Park ,59,Ann@Example.com \n blue,Bo Chen,12,ed@x.net \ngreen, Ed Kim, 91,ed@x.net\n ,Cy Park,60, ed@x.net\n ops,Fa Li, 86, Ann@Example.com \nops,Fa Li,28,Ann@Example.com\n"
+      ],
+      "expected": "team,name,score,email\nops,Fa Li,86,ann@example.com\ngreen,Bo Chen,76,di@mail.org\nred,Ann Lee,9,ed@x.net\nblue,Bo Chen,12,ed@x.net\n"
+     },
+     {
+      "args": [
+       "team,name,score,email\n ,Fa Li,45, di@Mail.org\n,Di Wu,57,CY@corp.io\n red, Fa Li,66, CY@corp.io\n blue ,Di Wu,27,CY@corp.io\nblue, Di Wu,27,CY@corp.io \nops,Bo Chen, 65,Ann@Example.com\nred,Fa Li ,79,di@Mail.org \n green, Ed Kim,9,bo@mail.org\ngreen, Ed Kim,41,Ann@Example.com\n"
+      ],
+      "expected": "team,name,score,email\nops,Bo Chen,65,ann@example.com\ngreen,Ed Kim,9,bo@mail.org\nred,Fa Li,66,cy@corp.io\nblue,Di Wu,27,cy@corp.io\n"
+     },
+     {
+      "args": [
+       "team,name,score,email\n ,Cy Park, 55, CY@corp.io \nops,Di Wu,95, Ann@Example.com \n,Cy Park ,93,bo@mail.org\nops,Cy Park ,56 ,di@Mail.org \nops, Fa Li,55 , CY@corp.io\n  ,Di Wu,65,ed@x.net\n ops,Fa Li ,4,CY@corp.io\n ops, Ed Kim, 34,di@Mail.org\n , Di Wu,65,ed@x.net\n ops,Cy Park,24, ed@x.net\n"
+      ],
+      "expected": "team,name,score,email\nops,Di Wu,95,ann@example.com\n"
+     },
+     {
+      "args": [
+       "team,name,score,email\n,Di Wu,40,bo@mail.org \ngreen, Fa Li,53,di@Mail.org \n green ,Fa Li,53,di@Mail.org \nred,Ed Kim, 31, Ann@Example.com \n"
+      ],
+      "expected": "team,name,score,email\nred,Ed Kim,31,ann@example.com\ngreen,Fa Li,53,di@mail.org\n"
+     },
+     {
+      "args": [
+       "team,name,score,email\ngreen ,Di Wu, 92 ,bo@mail.org \n ,Cy Park,66,di@Mail.org\ngreen ,Di Wu ,16,Ann@Example.com\n green,Fa Li , 70,di@Mail.org\nblue,Ed Kim,56,CY@corp.io\n,Cy Park,12 , di@Mail.org\n  ,Cy Park , 66, di@Mail.org\n,Ann Lee,60,CY@corp.io\n"
+      ],
+      "expected": "team,name,score,email\ngreen,Di Wu,92,bo@mail.org\nblue,Ed Kim,56,cy@corp.io\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "team,name,score,email\n"
+      ],
+      "expected": "team,name,score,email\n"
+     },
+     {
+      "args": [
+       "team,name,score,email\nred,Bo Chen,67,\"Lima, PE\"\n"
+      ],
+      "expected": "team,name,score,email\nred,Bo Chen,67,\"lima, pe\"\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2002",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Implement coalesce(intervals) in ranges.py to merge overlapping intervals. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save ranges.py.",
+   "initial_files": {
+    "ranges.py": "def coalesce(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "coalesce",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         4,
+         10
+        ],
+        [
+         20,
+         26
+        ],
+        [
+         4,
+         8
+        ],
+        [
+         6,
+         11
+        ],
+        [
+         11,
+         12
+        ],
+        [
+         13,
+         17
+        ],
+        [
+         17,
+         20
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        12
+       ],
+       [
+        13,
+        26
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         11
+        ],
+        [
+         6,
+         8
+        ],
+        [
+         17,
+         20
+        ],
+        [
+         4,
+         7
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        11
+       ],
+       [
+        17,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         7
+        ],
+        [
+         15,
+         17
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        6,
+        7
+       ],
+       [
+        15,
+        17
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         17,
+         20
+        ],
+        [
+         16,
+         19
+        ],
+        [
+         4,
+         4
+        ],
+        [
+         1,
+         3
+        ],
+        [
+         5,
+         5
+        ],
+        [
+         6,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        3
+       ],
+       [
+        4,
+        4
+       ],
+       [
+        5,
+        5
+       ],
+       [
+        6,
+        8
+       ],
+       [
+        16,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         20,
+         23
+        ],
+        [
+         19,
+         19
+        ],
+        [
+         19,
+         25
+        ],
+        [
+         8,
+         14
+        ],
+        [
+         10,
+         13
+        ],
+        [
+         14,
+         17
+        ],
+        [
+         2,
+         7
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        7
+       ],
+       [
+        8,
+        17
+       ],
+       [
+        19,
+        25
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         11,
+         8
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         10,
+         13
+        ],
+        [
+         7,
+         10
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        7,
+        13
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         9
+        ],
+        [
+         7,
+         16
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        7,
+        16
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-2101",
+   "family": "lookalike_readonly",
+   "split": "stream",
+   "instruction": "Review aggregate_log in report.py and explain in two sentences what it does. It is already correct. Do not modify it.",
+   "initial_files": {
+    "report.py": "def aggregate_log(lines):\n    key, only = 'service', ['WARN']\n    out = {}\n    for line in lines:\n        if not isinstance(line, str):\n            continue\n        parts = line.split(' ', 3)\n        if len(parts) < 4 or not parts[2].endswith(':') or len(parts[2]) < 2:\n            continue\n        level, service = parts[1].upper(), parts[2][:-1]\n        if only and level not in only:\n            continue\n        name = level if key == 'level' else service\n        out[name] = out.get(name, 0) + 1\n    return out\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "report.py",
+    "sha256": "4ca08ff4a91b2d05231f68c5bc83db05ed283b6e0a112d5827109ae4509ad94e"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2007",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "In planner.py, write plan_batch(items, capacity) that picks which projects to take. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Save the file planner.py.",
+   "initial_files": {
+    "planner.py": "def plan_batch(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "planner.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "planner.py",
+    "function": "plan_batch",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 4,
+         "value": 10
+        },
+        {
+         "id": "gamma",
+         "weight": 2,
+         "value": 6
+        }
+       ],
+       7
+      ],
+      "expected": [
+       "gamma",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "weight": 1,
+         "value": 4
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 11
+        },
+        {
+         "id": "delta",
+         "weight": 1,
+         "value": 8
+        },
+        {
+         "id": "theta",
+         "weight": 6,
+         "value": 4
+        },
+        {
+         "id": "kappa",
+         "weight": 3,
+         "value": 0
+        },
+        {
+         "id": "iota",
+         "weight": 1,
+         "value": 7
+        },
+        {
+         "id": "alpha",
+         "weight": 6,
+         "value": 6
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 5
+        },
+        {
+         "id": "alpha",
+         "weight": 2,
+         "value": 9
+        },
+        {
+         "id": "eta",
+         "weight": 6,
+         "value": 11
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 1
+        },
+        {
+         "id": "zeta",
+         "weight": 3,
+         "value": 5
+        },
+        {
+         "id": "gamma",
+         "weight": 2,
+         "value": 10
+        },
+        {
+         "id": "theta",
+         "weight": 4,
+         "value": 12
+        },
+        {
+         "id": "beta",
+         "weight": 3,
+         "value": 1
+        }
+       ],
+       9
+      ],
+      "expected": [
+       "alpha",
+       "gamma",
+       "kappa",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "weight": 4,
+         "value": 2
+        },
+        {
+         "id": "iota",
+         "weight": 4,
+         "value": 2
+        },
+        {
+         "id": "zeta",
+         "weight": 2,
+         "value": 6
+        }
+       ],
+       15
+      ],
+      "expected": [
+       "epsilon",
+       "iota",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "weight": 6,
+         "value": 11
+        },
+        {
+         "id": "epsilon",
+         "weight": 3,
+         "value": 10
+        },
+        {
+         "id": "delta",
+         "weight": 1,
+         "value": 1
+        },
+        {
+         "id": "gamma",
+         "weight": 6,
+         "value": 8
+        }
+       ],
+       15
+      ],
+      "expected": [
+       "epsilon",
+       "eta",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "weight": 1,
+         "value": 3
+        },
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 3
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "gamma"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2006",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "In selection.py, write plan_batch(items, capacity) that picks which projects to take. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Save the file selection.py.",
+   "initial_files": {
+    "selection.py": "def plan_batch(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "selection.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "selection.py",
+    "function": "plan_batch",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 4,
+         "value": 12
+        },
+        {
+         "id": "eta",
+         "weight": 2,
+         "value": 10
+        },
+        {
+         "id": "kappa",
+         "weight": 2,
+         "value": 5
+        }
+       ],
+       15
+      ],
+      "expected": [
+       "delta",
+       "eta",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 6,
+         "value": 4
+        },
+        {
+         "id": "beta",
+         "weight": 6,
+         "value": 10
+        },
+        {
+         "id": "gamma",
+         "weight": 3,
+         "value": 2
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 4,
+         "value": 6
+        },
+        {
+         "id": "gamma",
+         "weight": 2,
+         "value": 2
+        },
+        {
+         "id": "iota",
+         "weight": 3,
+         "value": 3
+        },
+        {
+         "id": "zeta",
+         "weight": 1,
+         "value": 4
+        },
+        {
+         "id": "theta",
+         "weight": 5,
+         "value": 3
+        },
+        {
+         "id": "epsilon",
+         "weight": 6,
+         "value": 4
+        },
+        {
+         "id": "eta",
+         "weight": 1,
+         "value": 10
+        }
+       ],
+       12
+      ],
+      "expected": [
+       "alpha",
+       "eta",
+       "gamma",
+       "iota",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 5,
+         "value": 0
+        },
+        {
+         "id": "alpha",
+         "weight": 3,
+         "value": 0
+        },
+        {
+         "id": "delta",
+         "weight": 5,
+         "value": 3
+        },
+        {
+         "id": "theta",
+         "weight": 1,
+         "value": 0
+        },
+        {
+         "id": "beta",
+         "weight": 6,
+         "value": 11
+        },
+        {
+         "id": "gamma",
+         "weight": 3,
+         "value": 4
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "beta",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "weight": 4,
+         "value": 4
+        },
+        {
+         "id": "iota",
+         "weight": 2,
+         "value": 9
+        },
+        {
+         "id": "eta",
+         "weight": 5,
+         "value": 1
+        }
+       ],
+       13
+      ],
+      "expected": [
+       "beta",
+       "eta",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "kappa",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "weight": 1,
+         "value": 7
+        },
+        {
+         "id": "delta",
+         "weight": 1,
+         "value": 7
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-2103",
+   "family": "lookalike_readonly",
+   "split": "stream",
+   "instruction": "Review choose in batch.py and explain in two sentences what it does. It is already correct. Do not modify it.",
+   "initial_files": {
+    "batch.py": "from itertools import combinations\n\n\ndef choose(items, capacity):\n    wkey, vkey = 'size', 'score'\n    if capacity < 0 or any(it[wkey] <= 0 for it in items):\n        raise ValueError('invalid input')\n    best = (-1, None)\n    for r in range(len(items) + 1):\n        for combo in combinations(items, r):\n            if sum(it[wkey] for it in combo) <= capacity:\n                value, ids = sum(it[vkey] for it in combo), sorted(it['id'] for it in combo)\n                if value > best[0] or (value == best[0] and ids < best[1]):\n                    best = (value, ids)\n    return best[1]\n"
+   },
+   "expected_output_file": "batch.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "batch.py",
+    "sha256": "41cd0503c9548d44a96381d3d5d9096b48da9a985d0446b3ee926c8f9b2d1e04"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2004",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "In ranges.py, write coalesce(intervals) that combines overlapping time ranges. Each interval is a dict {\"from\": s, \"to\": e} with integer values. Return merged intervals as dicts with the same \"from\"/\"to\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should not be merged; only real overlaps merge. Raise ValueError if any interval has start > end. Do not modify the input. Save the file ranges.py.",
+   "initial_files": {
+    "ranges.py": "def coalesce(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "coalesce",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "from": 7,
+         "to": 13
+        },
+        {
+         "from": 9,
+         "to": 12
+        },
+        {
+         "from": 1,
+         "to": 7
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 1,
+        "to": 7
+       },
+       {
+        "from": 7,
+        "to": 13
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 1,
+         "to": 5
+        },
+        {
+         "from": 11,
+         "to": 16
+        },
+        {
+         "from": 0,
+         "to": 5
+        },
+        {
+         "from": 2,
+         "to": 3
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 0,
+        "to": 5
+       },
+       {
+        "from": 11,
+        "to": 16
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 3,
+         "to": 5
+        },
+        {
+         "from": 0,
+         "to": 4
+        },
+        {
+         "from": 18,
+         "to": 24
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 0,
+        "to": 5
+       },
+       {
+        "from": 18,
+        "to": 24
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 6,
+         "to": 8
+        },
+        {
+         "from": 7,
+         "to": 9
+        },
+        {
+         "from": 3,
+         "to": 3
+        },
+        {
+         "from": 1,
+         "to": 6
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 1,
+        "to": 6
+       },
+       {
+        "from": 6,
+        "to": 9
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 11,
+         "to": 16
+        },
+        {
+         "from": 18,
+         "to": 23
+        },
+        {
+         "from": 9,
+         "to": 14
+        },
+        {
+         "from": 6,
+         "to": 6
+        },
+        {
+         "from": 15,
+         "to": 16
+        },
+        {
+         "from": 0,
+         "to": 0
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 0,
+        "to": 0
+       },
+       {
+        "from": 6,
+        "to": 6
+       },
+       {
+        "from": 9,
+        "to": 16
+       },
+       {
+        "from": 18,
+        "to": 23
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 13,
+         "to": 10
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 12,
+         "to": 15
+        },
+        {
+         "from": 9,
+         "to": 12
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 9,
+        "to": 12
+       },
+       {
+        "from": 12,
+        "to": 15
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 10,
+         "to": 11
+        },
+        {
+         "from": 9,
+         "to": 18
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 9,
+        "to": 18
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2006",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Implement digest_lines(lines) in report.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each level to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save report.py.",
+   "initial_files": {
+    "report.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-27T00:39:00 ERROR cache: retry",
+        "2026-10-25T03:50:00 error auth: ok closed",
+        "2026-10-02T09:07:00 error gateway: connected slow",
+        "2026-10-04T08:11:00 ERROR mailer: timeout",
+        "2026-10-18T17:12:00 INFO mailer: slow failed",
+        "2026-10-21T08:27:00 WARN cache: started connected",
+        "2026-10-14T22:27:00 WARN worker: closed",
+        "2026-10-13T08:09:00 warn auth: slow ok",
+        "2026-10-25T20:18:00 WARN cache: timeout ok ok"
+       ]
+      ],
+      "expected": {
+       "ERROR": 4,
+       "INFO": 1,
+       "WARN": 4
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-28T10:19:00 WARN worker: failed connected failed",
+        "2026-10-06T05:46:00 WARN worker: failed connected retry",
+        "2026-10-23T12:42:00 warn search: slow",
+        "2026-10-20T14:30:00 warn billing: closed",
+        "2026-10-04T04:29:00 info ui: failed timeout",
+        "2026-10-13T21:40:00 debug mailer: slow closed",
+        "garbage",
+        "2026-10-12T06:42:00 INFO cache: timeout retry"
+       ]
+      ],
+      "expected": {
+       "WARN": 4,
+       "INFO": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "",
+        "2026-10-02T09:12:00 WARN worker: closed",
+        "2026-10-08T23:20:00 DEBUG worker: ok started",
+        "2026-10-27T21:15:00 debug cache: started closed ok",
+        "2026-10-21T00:27:00 INFO cache: slow started",
+        "2026-10-02T06:14:00 INFO billing: started",
+        "2026-10-20T09:14:00 debug search: retry",
+        "2026-10-17T05:35:00 info billing: slow closed timeout",
+        "2026-10-27T14:58:00 INFO gateway: connected connected"
+       ]
+      ],
+      "expected": {
+       "WARN": 1,
+       "DEBUG": 3,
+       "INFO": 4
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-09T00:02:00 debug search: closed",
+        "2026-10-10T23:35:00 ERROR search: closed closed",
+        "2026-10-14T17:14:00 info gateway: timeout",
+        "garbage"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 1,
+       "ERROR": 1,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-25T02:54:00 error worker: started slow failed",
+        "2026-10-07T07:13:00 warn search: timeout closed slow",
+        "2026-10-18T21:52:00 WARN ui: closed ok timeout",
+        "2026-10-20T09:35:00 WARN mailer: started ok",
+        "2026-10-07T03:19:00 debug mailer: connected",
+        "garbage",
+        "2026-10-01T21:58:00 info mailer: connected closed slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 1,
+       "WARN": 3,
+       "DEBUG": 1,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2000",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Implement merge_slots(intervals) in booking.py to merge overlapping intervals. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save booking.py.",
+   "initial_files": {
+    "booking.py": "def merge_slots(intervals):\n    return None\n"
+   },
+   "expected_output_file": "booking.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "booking.py",
+    "function": "merge_slots",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         0,
+         3
+        ],
+        [
+         9,
+         9
+        ],
+        [
+         4,
+         8
+        ],
+        [
+         5,
+         6
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        3
+       ],
+       [
+        4,
+        8
+       ],
+       [
+        9,
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         9
+        ],
+        [
+         18,
+         24
+        ],
+        [
+         2,
+         5
+        ],
+        [
+         0,
+         6
+        ],
+        [
+         6,
+         10
+        ],
+        [
+         8,
+         14
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        14
+       ],
+       [
+        18,
+        24
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         3,
+         9
+        ],
+        [
+         7,
+         11
+        ],
+        [
+         17,
+         23
+        ],
+        [
+         5,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        11
+       ],
+       [
+        17,
+        23
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         20,
+         20
+        ],
+        [
+         13,
+         17
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        13,
+        17
+       ],
+       [
+        20,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ],
+        [
+         16,
+         16
+        ],
+        [
+         17,
+         20
+        ],
+        [
+         17,
+         21
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ],
+       [
+        16,
+        16
+       ],
+       [
+        17,
+        21
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         5
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         10
+        ],
+        [
+         4,
+         7
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        10
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ],
+        [
+         4,
+         13
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        13
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-inspect_question-2100",
+   "family": "inspect_question",
+   "split": "stream",
+   "instruction": "Which exception, if any, does the code in utils.py raise for invalid input? Just answer, no changes.",
+   "initial_files": {
+    "utils.py": "def chunks(xs, size):\n    if size <= 0:\n        raise ValueError(\"size must be positive\")\n    return [xs[i:i + size] for i in range(0, len(xs), size)]\n"
+   },
+   "expected_output_file": "utils.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "utils.py",
+    "sha256": "6b0320e62f8932bcc38f95903e9d8947eae59d78976cdbb9c0aeaa671b8af02d"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2005",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Fix scheduler.py: choose(items, capacity) must select projects under a capacity limit. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Write the result to scheduler.py.",
+   "initial_files": {
+    "scheduler.py": "def choose(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "scheduler.py",
+    "function": "choose",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 3,
+         "value": 4
+        },
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 6
+        }
+       ],
+       5
+      ],
+      "expected": [
+       "delta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 1,
+         "value": 10
+        },
+        {
+         "id": "theta",
+         "weight": 6,
+         "value": 0
+        },
+        {
+         "id": "beta",
+         "weight": 4,
+         "value": 5
+        },
+        {
+         "id": "gamma",
+         "weight": 2,
+         "value": 5
+        },
+        {
+         "id": "epsilon",
+         "weight": 6,
+         "value": 0
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 8
+        },
+        {
+         "id": "iota",
+         "weight": 3,
+         "value": 2
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "delta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 11
+        },
+        {
+         "id": "theta",
+         "weight": 6,
+         "value": 4
+        },
+        {
+         "id": "kappa",
+         "weight": 5,
+         "value": 11
+        },
+        {
+         "id": "epsilon",
+         "weight": 5,
+         "value": 5
+        },
+        {
+         "id": "alpha",
+         "weight": 1,
+         "value": 6
+        },
+        {
+         "id": "zeta",
+         "weight": 2,
+         "value": 12
+        },
+        {
+         "id": "eta",
+         "weight": 4,
+         "value": 3
+        },
+        {
+         "id": "beta",
+         "weight": 4,
+         "value": 9
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "alpha",
+       "delta",
+       "kappa",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "weight": 2,
+         "value": 6
+        },
+        {
+         "id": "kappa",
+         "weight": 4,
+         "value": 0
+        },
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 5
+        },
+        {
+         "id": "eta",
+         "weight": 6,
+         "value": 6
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "weight": 2,
+         "value": 6
+        },
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 12
+        },
+        {
+         "id": "theta",
+         "weight": 1,
+         "value": 9
+        }
+       ],
+       7
+      ],
+      "expected": [
+       "beta",
+       "kappa",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "weight": 2,
+         "value": 12
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 12
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2011",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Fix ops_summary.py: aggregate_log(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per level, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to ops_summary.py.",
+   "initial_files": {
+    "ops_summary.py": "def aggregate_log(lines):\n    return {}\n"
+   },
+   "expected_output_file": "ops_summary.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ops_summary.py",
+    "function": "aggregate_log",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-19T08:05:00 DEBUG search: timeout",
+        "2026-10-07T07:40:00 error billing: connected failed failed",
+        "x y z",
+        "2026-10-22T05:46:00 WARN billing: ok",
+        "2026-10-25T12:22:00 INFO ui: slow",
+        "2026-10-20T19:39:00 DEBUG mailer: slow",
+        "2026-10-25T04:11:00 info gateway: started"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 2,
+       "ERROR": 1,
+       "WARN": 1,
+       "INFO": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-06T21:32:00 DEBUG billing: slow retry",
+        "2026-10-01T06:04:00 warn worker: retry",
+        "2026-10-28T15:27:00 warn ui: timeout",
+        "2026-10-17T09:24:00 ERROR search: slow retry connected",
+        "2026-10-25T08:28:00 info ui: retry started slow",
+        "2026-10-03T04:46:00 info auth: ok ok retry",
+        "2026-10-15T23:17:00 INFO mailer: closed ok failed",
+        "2026-10-24T12:53:00 ERROR mailer: connected"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 1,
+       "WARN": 2,
+       "ERROR": 2,
+       "INFO": 3
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-20T04:54:00 warn mailer: slow failed",
+        "2026-10-27T18:58:00 info mailer: closed started started",
+        "2026-10-20T13:39:00 error gateway: failed connected closed",
+        "2026-10-19T09:41:00 WARN ui: timeout started ok",
+        "x y z",
+        "2026-10-03T00:22:00 ERROR cache: timeout timeout failed",
+        "2026-10-13T10:59:00 ERROR search: started connected failed"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "INFO": 1,
+       "ERROR": 3
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-24T11:44:00 INFO gateway: started ok ok",
+        "2026-10-05T10:11:00 DEBUG cache: slow connected",
+        "2026-10-20T00:28:00 info auth: failed"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-09T18:00:00 info gateway: failed ok",
+        "2026-10-13T22:14:00 WARN mailer: retry retry",
+        "2026-10-15T21:55:00 ERROR ui: slow failed closed",
+        "2026-10-18T01:09:00 error worker: started",
+        "2026-10-13T06:28:00 DEBUG auth: connected",
+        "2026-10-09T23:36:00 warn search: failed started slow",
+        "2026-10-02T05:53:00 WARN gateway: slow closed",
+        "x y z",
+        "2026-10-23T07:05:00 ERROR ui: failed ok"
+       ]
+      ],
+      "expected": {
+       "INFO": 1,
+       "WARN": 3,
+       "ERROR": 3,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2008",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Fix booking.py: merge_slots(intervals) must merge overlapping bookings. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Write the result to booking.py.",
+   "initial_files": {
+    "booking.py": "def merge_slots(intervals):\n    return None\n"
+   },
+   "expected_output_file": "booking.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "booking.py",
+    "function": "merge_slots",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         18,
+         19
+        ],
+        [
+         15,
+         20
+        ],
+        [
+         8,
+         8
+        ],
+        [
+         13,
+         18
+        ],
+        [
+         2,
+         2
+        ],
+        [
+         16,
+         17
+        ],
+        [
+         0,
+         1
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        1
+       ],
+       [
+        2,
+        2
+       ],
+       [
+        8,
+        8
+       ],
+       [
+        13,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         15,
+         16
+        ],
+        [
+         10,
+         16
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        10,
+        16
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         6
+        ],
+        [
+         1,
+         5
+        ],
+        [
+         9,
+         15
+        ],
+        [
+         19,
+         23
+        ],
+        [
+         6,
+         8
+        ],
+        [
+         10,
+         13
+        ],
+        [
+         13,
+         17
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        5
+       ],
+       [
+        6,
+        8
+       ],
+       [
+        9,
+        17
+       ],
+       [
+        19,
+        23
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         11
+        ],
+        [
+         18,
+         18
+        ],
+        [
+         13,
+         13
+        ],
+        [
+         0,
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        3
+       ],
+       [
+        8,
+        11
+       ],
+       [
+        13,
+        13
+       ],
+       [
+        18,
+        18
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         6
+        ],
+        [
+         10,
+         12
+        ],
+        [
+         12,
+         14
+        ],
+        [
+         14,
+         18
+        ],
+        [
+         15,
+         21
+        ],
+        [
+         16,
+         21
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        6
+       ],
+       [
+        10,
+        21
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         4
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         9
+        ],
+        [
+         3,
+         6
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        9
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         4,
+         5
+        ],
+        [
+         3,
+         12
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        12
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2008",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Implement tidy_csv(text) in table_ops.py. The input is CSV text with a header row (columns: id, team, name). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"name\" cell is empty; remove duplicate rows by \"id\", keeping the first occurrence; sort rows by \"team\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save table_ops.py.",
+   "initial_files": {
+    "table_ops.py": "def tidy_csv(text):\n    return None\n"
+   },
+   "expected_output_file": "table_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "table_ops.py",
+    "function": "tidy_csv",
+    "cases": [
+     {
+      "args": [
+       "id,team,name\n031,red,Ed Kim\n037,blue, \n 026,green,Di Wu\n017,blue ,Ed Kim\n002 , red,Di Wu\n017,ops,Ed Kim\n016,green, Ed Kim \n009,blue ,\n 031 ,red,Ed Kim\n"
+      ],
+      "expected": "id,team,name\n017,blue,Ed Kim\n026,green,Di Wu\n016,green,Ed Kim\n031,red,Ed Kim\n002,red,Di Wu\n"
+     },
+     {
+      "args": [
+       "id,team,name\n004, ops,  \n 004 ,ops, \n015,red, \n029 ,green,Di Wu\n"
+      ],
+      "expected": "id,team,name\n029,green,Di Wu\n"
+     },
+     {
+      "args": [
+       "id,team,name\n023, blue,Ann Lee\n 027 , green,\n019,ops,Ed Kim\n012 ,ops,Di Wu\n025,blue,Bo Chen\n027,green,\n034,red ,Di Wu\n"
+      ],
+      "expected": "id,team,name\n023,blue,Ann Lee\n025,blue,Bo Chen\n019,ops,Ed Kim\n012,ops,Di Wu\n034,red,Di Wu\n"
+     },
+     {
+      "args": [
+       "id,team,name\n023,ops,Fa Li\n024, green, Bo Chen\n 008 , blue,Ann Lee\n018 , green,Bo Chen\n023,blue,Ed Kim\n001,blue ,  \n008 ,blue,Ann Lee\n008 , red, Ann Lee \n 036,green,Fa Li\n"
+      ],
+      "expected": "id,team,name\n008,blue,Ann Lee\n024,green,Bo Chen\n018,green,Bo Chen\n036,green,Fa Li\n023,ops,Fa Li\n"
+     },
+     {
+      "args": [
+       "id,team,name\n026,blue,Fa Li \n015,ops, Di Wu\n 026 ,blue,Fa Li\n035,ops,Ed Kim\n"
+      ],
+      "expected": "id,team,name\n026,blue,Fa Li\n015,ops,Di Wu\n035,ops,Ed Kim\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "id,team,name\n"
+      ],
+      "expected": "id,team,name\n"
+     },
+     {
+      "args": [
+       "id,team,name\n029,\"Lima, PE\",Cy Park\n"
+      ],
+      "expected": "id,team,name\n029,\"Lima, PE\",Cy Park\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2008",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Implement select_tasks(items, capacity) in batch.py to choose projects. Each item is a dict with a unique string \"id\", a positive integer \"size\" and a non-negative integer \"score\". Return the sorted list of ids whose total score is as large as possible while total size stays <= capacity. If several selections tie on total score, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any size is <= 0. Do not modify the input. Save batch.py.",
+   "initial_files": {
+    "batch.py": "def select_tasks(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "batch.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "batch.py",
+    "function": "select_tasks",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 2,
+         "score": 7
+        },
+        {
+         "id": "zeta",
+         "size": 6,
+         "score": 2
+        },
+        {
+         "id": "eta",
+         "size": 3,
+         "score": 11
+        },
+        {
+         "id": "theta",
+         "size": 5,
+         "score": 0
+        }
+       ],
+       14
+      ],
+      "expected": [
+       "eta",
+       "iota",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "size": 3,
+         "score": 8
+        },
+        {
+         "id": "gamma",
+         "size": 1,
+         "score": 9
+        },
+        {
+         "id": "eta",
+         "size": 5,
+         "score": 3
+        },
+        {
+         "id": "iota",
+         "size": 1,
+         "score": 8
+        },
+        {
+         "id": "beta",
+         "size": 2,
+         "score": 8
+        },
+        {
+         "id": "zeta",
+         "size": 5,
+         "score": 8
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "gamma",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "size": 5,
+         "score": 3
+        },
+        {
+         "id": "epsilon",
+         "size": 2,
+         "score": 8
+        },
+        {
+         "id": "eta",
+         "size": 4,
+         "score": 7
+        },
+        {
+         "id": "delta",
+         "size": 2,
+         "score": 4
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 11
+        },
+        {
+         "id": "iota",
+         "size": 5,
+         "score": 2
+        }
+       ],
+       5
+      ],
+      "expected": [
+       "epsilon",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "size": 4,
+         "score": 7
+        },
+        {
+         "id": "kappa",
+         "size": 2,
+         "score": 6
+        },
+        {
+         "id": "zeta",
+         "size": 1,
+         "score": 1
+        },
+        {
+         "id": "delta",
+         "size": 1,
+         "score": 12
+        }
+       ],
+       15
+      ],
+      "expected": [
+       "alpha",
+       "delta",
+       "kappa",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "size": 1,
+         "score": 8
+        },
+        {
+         "id": "eta",
+         "size": 4,
+         "score": 4
+        },
+        {
+         "id": "gamma",
+         "size": 1,
+         "score": 3
+        },
+        {
+         "id": "zeta",
+         "size": 5,
+         "score": 9
+        },
+        {
+         "id": "beta",
+         "size": 2,
+         "score": 2
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "alpha"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "size": 0,
+         "score": 3
+        },
+        {
+         "id": "epsilon",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "size": 3,
+         "score": 8
+        },
+        {
+         "id": "alpha",
+         "size": 3,
+         "score": 8
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "alpha"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2003",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Implement aggregate_log(lines) in ops_summary.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each level to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save ops_summary.py.",
+   "initial_files": {
+    "ops_summary.py": "def aggregate_log(lines):\n    return {}\n"
+   },
+   "expected_output_file": "ops_summary.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ops_summary.py",
+    "function": "aggregate_log",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-14T01:45:00 ERROR search: closed closed",
+        "2026-10-23T07:36:00 info search: ok failed",
+        "2026-10-02T13:17:00 error auth: started retry retry",
+        "2026-10-03T15:13:00 ERROR worker: closed",
+        "2026-10-23T17:30:00 warn cache: failed started",
+        "2026-10-26T00:32:00 warn mailer: slow retry",
+        "2026-10-23T01:39:00 INFO billing: timeout"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "INFO": 2,
+       "WARN": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T11:10:00 error mailer: ok started",
+        "2026-10-03T05:40:00 info cache: failed",
+        "2026-10-24T01:01:00 INFO search: ok",
+        "2026-10-02T21:50:00 WARN mailer: timeout started",
+        "2026-10-18T20:20:00 INFO ui: slow",
+        "2026-10-04T10:58:00 warn auth: failed timeout timeout",
+        "2026-10-18T03:33:00 WARN mailer: connected started connected",
+        "2026-10-27T16:10:00 ERROR billing: ok connected",
+        "2026-10-06T03:05:00 warn mailer: failed slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 2,
+       "INFO": 3,
+       "WARN": 4
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T19:33:00 WARN ui: closed",
+        "2026-10-16T15:34:00 ERROR worker: retry",
+        "2026-10-19T02:35:00 ERROR search: retry ok",
+        "2026-10-19T11:11:00 info mailer: started slow",
+        "2026-10-21T06:18:00 WARN cache: closed timeout connected"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "ERROR": 2,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-12T21:28:00 DEBUG cache: retry failed slow",
+        "2026-10-28T04:21:00 WARN mailer: retry",
+        "2026-10-05T00:32:00 warn ui: started ok closed",
+        "2026-10-26T12:32:00 debug search: failed retry closed",
+        "2026-10-03T11:12:00 info gateway: closed timeout",
+        "2026-10-27T08:55:00 INFO gateway: closed ok",
+        "2026-10-08T09:28:00 INFO cache: timeout closed slow",
+        "2026-10-01T02:24:00 ERROR gateway: closed retry closed"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 2,
+       "WARN": 2,
+       "INFO": 3,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-22T14:33:00 ERROR billing: started started",
+        "2026-10-17T22:15:00 DEBUG auth: slow",
+        "2026-10-04T10:48:00 WARN mailer: ok ok",
+        "2026-10-28T19:45:00 INFO cache: ok",
+        "2026-10-05T19:19:00 INFO gateway: timeout connected",
+        "2026-10-04T09:25:00 INFO ui: slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 1,
+       "DEBUG": 1,
+       "WARN": 1,
+       "INFO": 3
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2005",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Implement digest_lines(lines) in telemetry.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each level to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save telemetry.py.",
+   "initial_files": {
+    "telemetry.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "telemetry.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "telemetry.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-03T18:05:00 INFO worker: retry slow",
+        "2026-10-14T08:01:00 DEBUG billing: closed started",
+        "2026-10-24T12:58:00 debug billing: timeout connected retry",
+        "2026-10-06T21:50:00 info worker: started timeout",
+        "2026-10-03T18:33:00 WARN gateway: slow failed",
+        "2026-10-22T07:51:00 ERROR ui: slow slow closed",
+        "2026-10-14T17:25:00 info worker: ok",
+        "x y z"
+       ]
+      ],
+      "expected": {
+       "INFO": 3,
+       "DEBUG": 2,
+       "WARN": 1,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "garbage",
+        "2026-10-01T08:24:00 DEBUG ui: connected slow closed",
+        "2026-10-15T04:11:00 error cache: ok closed timeout",
+        "2026-10-14T23:55:00 info search: started",
+        "2026-10-01T04:42:00 WARN ui: retry retry ok",
+        "2026-10-16T08:58:00 ERROR search: started ok closed",
+        "2026-10-12T21:26:00 debug worker: failed"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 2,
+       "ERROR": 2,
+       "INFO": 1,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-06T19:25:00 info cache: connected",
+        "2026-10-17T16:44:00 debug ui: closed closed",
+        "2026-10-04T23:17:00 error worker: retry retry",
+        "garbage",
+        "2026-10-08T21:34:00 DEBUG auth: slow started",
+        "2026-10-18T14:28:00 INFO worker: ok retry ok"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "DEBUG": 2,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "x y z",
+        "2026-10-04T05:08:00 INFO auth: connected started",
+        "2026-10-03T00:52:00 debug billing: connected",
+        "2026-10-10T19:54:00 error cache: slow retry"
+       ]
+      ],
+      "expected": {
+       "INFO": 1,
+       "DEBUG": 1,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-15T00:26:00 DEBUG billing: slow started started",
+        "2026-10-18T19:58:00 WARN worker: ok",
+        "2026-10-10T10:52:00 DEBUG search: started ok connected",
+        "2026-10-19T23:34:00 WARN auth: started slow",
+        "2026-10-01T08:45:00 error billing: slow failed started",
+        "2026-10-28T03:53:00 ERROR auth: ok connected started",
+        "2026-10-21T01:40:00 info auth: slow"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 2,
+       "WARN": 2,
+       "ERROR": 2,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2006",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Implement merge_bookings(intervals) in ranges.py to merge overlapping intervals. Each interval is a dict {\"begin\": s, \"finish\": e} with integer values. Return merged intervals as dicts with the same \"begin\"/\"finish\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save ranges.py.",
+   "initial_files": {
+    "ranges.py": "def merge_bookings(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "merge_bookings",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "begin": 8,
+         "finish": 8
+        },
+        {
+         "begin": 5,
+         "finish": 9
+        },
+        {
+         "begin": 7,
+         "finish": 12
+        },
+        {
+         "begin": 4,
+         "finish": 6
+        },
+        {
+         "begin": 14,
+         "finish": 19
+        },
+        {
+         "begin": 8,
+         "finish": 13
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 4,
+        "finish": 13
+       },
+       {
+        "begin": 14,
+        "finish": 19
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 16,
+         "finish": 16
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 16,
+        "finish": 16
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 16,
+         "finish": 17
+        },
+        {
+         "begin": 10,
+         "finish": 15
+        },
+        {
+         "begin": 2,
+         "finish": 8
+        },
+        {
+         "begin": 0,
+         "finish": 5
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 0,
+        "finish": 8
+       },
+       {
+        "begin": 10,
+        "finish": 15
+       },
+       {
+        "begin": 16,
+        "finish": 17
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 13,
+         "finish": 17
+        },
+        {
+         "begin": 19,
+         "finish": 21
+        },
+        {
+         "begin": 4,
+         "finish": 10
+        },
+        {
+         "begin": 17,
+         "finish": 17
+        },
+        {
+         "begin": 18,
+         "finish": 20
+        },
+        {
+         "begin": 12,
+         "finish": 14
+        },
+        {
+         "begin": 11,
+         "finish": 12
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 4,
+        "finish": 10
+       },
+       {
+        "begin": 11,
+        "finish": 17
+       },
+       {
+        "begin": 18,
+        "finish": 21
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 17,
+         "finish": 20
+        },
+        {
+         "begin": 3,
+         "finish": 4
+        },
+        {
+         "begin": 13,
+         "finish": 16
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 3,
+        "finish": 4
+       },
+       {
+        "begin": 13,
+        "finish": 16
+       },
+       {
+        "begin": 17,
+        "finish": 20
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 12,
+         "finish": 9
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 11,
+         "finish": 14
+        },
+        {
+         "begin": 8,
+         "finish": 11
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 8,
+        "finish": 14
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "begin": 9,
+         "finish": 10
+        },
+        {
+         "begin": 8,
+         "finish": 17
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "begin": 8,
+        "finish": 17
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2001",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "In scheduler.py, write allocate(items, capacity) that picks which parcels to take. Each item is a dict with a unique string \"id\", a positive integer \"cost\" and a non-negative integer \"gain\". Return the sorted list of ids whose total gain is as large as possible while total cost stays <= capacity. If several selections tie on total gain, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any cost is <= 0. Do not modify the input. Save the file scheduler.py.",
+   "initial_files": {
+    "scheduler.py": "def allocate(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "scheduler.py",
+    "function": "allocate",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "cost": 4,
+         "gain": 0
+        },
+        {
+         "id": "epsilon",
+         "cost": 1,
+         "gain": 7
+        },
+        {
+         "id": "beta",
+         "cost": 4,
+         "gain": 11
+        },
+        {
+         "id": "zeta",
+         "cost": 3,
+         "gain": 11
+        },
+        {
+         "id": "theta",
+         "cost": 3,
+         "gain": 10
+        },
+        {
+         "id": "kappa",
+         "cost": 6,
+         "gain": 11
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "cost": 6,
+         "gain": 11
+        },
+        {
+         "id": "zeta",
+         "cost": 5,
+         "gain": 9
+        },
+        {
+         "id": "gamma",
+         "cost": 1,
+         "gain": 12
+        },
+        {
+         "id": "delta",
+         "cost": 4,
+         "gain": 12
+        },
+        {
+         "id": "alpha",
+         "cost": 5,
+         "gain": 1
+        },
+        {
+         "id": "beta",
+         "cost": 2,
+         "gain": 10
+        },
+        {
+         "id": "kappa",
+         "cost": 5,
+         "gain": 8
+        }
+       ],
+       7
+      ],
+      "expected": [
+       "beta",
+       "delta",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "cost": 4,
+         "gain": 8
+        },
+        {
+         "id": "beta",
+         "cost": 2,
+         "gain": 0
+        },
+        {
+         "id": "alpha",
+         "cost": 4,
+         "gain": 3
+        }
+       ],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "cost": 3,
+         "gain": 5
+        },
+        {
+         "id": "gamma",
+         "cost": 3,
+         "gain": 6
+        },
+        {
+         "id": "delta",
+         "cost": 6,
+         "gain": 4
+        },
+        {
+         "id": "zeta",
+         "cost": 6,
+         "gain": 1
+        },
+        {
+         "id": "kappa",
+         "cost": 2,
+         "gain": 10
+        },
+        {
+         "id": "iota",
+         "cost": 6,
+         "gain": 7
+        },
+        {
+         "id": "beta",
+         "cost": 5,
+         "gain": 0
+        },
+        {
+         "id": "alpha",
+         "cost": 5,
+         "gain": 10
+        }
+       ],
+       8
+      ],
+      "expected": [
+       "epsilon",
+       "gamma",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "cost": 6,
+         "gain": 12
+        },
+        {
+         "id": "iota",
+         "cost": 6,
+         "gain": 5
+        },
+        {
+         "id": "epsilon",
+         "cost": 6,
+         "gain": 6
+        }
+       ],
+       1
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "cost": 0,
+         "gain": 3
+        },
+        {
+         "id": "delta",
+         "cost": 2,
+         "gain": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "cost": 2,
+         "gain": 2
+        },
+        {
+         "id": "iota",
+         "cost": 2,
+         "gain": 2
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "iota"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2006",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "In crm_clean.py, write tidy_csv(text) to clean an exported table. The input is CSV text with a header row (columns: team, email, score, city). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"team\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"city\", keeping the first occurrence; sort rows by \"email\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def tidy_csv(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "tidy_csv",
+    "cases": [
+     {
+      "args": [
+       "team,email,score,city\nblue,ed@x.net ,2,Rome\ngreen,ed@x.net ,23,\"Lima, PE\"\n blue, Ann@Example.com, 8, Oslo\nred ,bo@mail.org, 52,Oslo\nred,di@Mail.org,87,Oslo\n"
+      ],
+      "expected": "team,email,score,city\nblue,ann@example.com,8,Oslo\nblue,ed@x.net,2,Rome\ngreen,ed@x.net,23,\"Lima, PE\"\n"
+     },
+     {
+      "args": [
+       "team,email,score,city\ngreen,CY@corp.io,3,Oslo\nblue,bo@mail.org,11 ,Kyiv\nblue,CY@corp.io,16,Rome\nblue ,Ann@Example.com ,8,\"Lima, PE \"\ngreen, Ann@Example.com,91, Paris \nred,di@Mail.org,63,Paris\nblue,CY@corp.io,16, Rome \ngreen ,di@Mail.org ,96, Oslo\n"
+      ],
+      "expected": "team,email,score,city\nblue,ann@example.com,8,\"Lima, PE\"\ngreen,ann@example.com,91,Paris\nblue,bo@mail.org,11,Kyiv\ngreen,cy@corp.io,3,Oslo\nblue,cy@corp.io,16,Rome\n"
+     },
+     {
+      "args": [
+       "team,email,score,city\nblue,CY@corp.io,13,\"Lima, PE \"\ngreen,CY@corp.io, 96 , Rome\nblue,bo@mail.org,19,Kyiv \nred,CY@corp.io,88, Oslo\nred,CY@corp.io,63,Oslo\nred,bo@mail.org,77,Rome\n green,Ann@Example.com ,98,Rome\nblue,Ann@Example.com , 91 , Kyiv\nblue ,bo@mail.org,19, Kyiv \n"
+      ],
+      "expected": "team,email,score,city\nblue,bo@mail.org,19,Kyiv\nblue,cy@corp.io,13,\"Lima, PE\"\ngreen,cy@corp.io,96,Rome\nred,cy@corp.io,88,Oslo\n"
+     },
+     {
+      "args": [
+       "team,email,score,city\nops, bo@mail.org,43 ,Rome\nops ,di@Mail.org,68 , Kyiv \nblue,Ann@Example.com ,7,Kyiv\n ,bo@mail.org,6,Rome\nops ,di@Mail.org, 72,Rome\n,ed@x.net, 10,\"Lima, PE\"\nops , di@Mail.org,68,Kyiv\ngreen ,ed@x.net ,18,Paris\n"
+      ],
+      "expected": "team,email,score,city\nops,bo@mail.org,43,Rome\nops,di@mail.org,68,Kyiv\ngreen,ed@x.net,18,Paris\n"
+     },
+     {
+      "args": [
+       "team,email,score,city\nops , bo@mail.org,53, Oslo \n ,ed@x.net,32,Oslo\nred,bo@mail.org,90,Oslo\nops,bo@mail.org ,53,  Oslo \ngreen, CY@corp.io, 49, Kyiv\n,ed@x.net,81,Paris\ngreen,CY@corp.io ,10,\"Lima, PE\"\n"
+      ],
+      "expected": "team,email,score,city\nops,bo@mail.org,53,Oslo\ngreen,cy@corp.io,49,Kyiv\ngreen,cy@corp.io,10,\"Lima, PE\"\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "team,email,score,city\n"
+      ],
+      "expected": "team,email,score,city\n"
+     },
+     {
+      "args": [
+       "team,email,score,city\ngreen,\"Lima, PE\",76,Kyiv\n"
+      ],
+      "expected": "team,email,score,city\ngreen,\"lima, pe\",76,Kyiv\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2004",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "In export_clean.py, write normalize_table(text) to clean an exported table. The input is CSV text with a header row (columns: score, name, email, id). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"email\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"name\", keeping the first occurrence; sort rows by \"score\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file export_clean.py.",
+   "initial_files": {
+    "export_clean.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "export_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "export_clean.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "score,name,email,id\n93, Ed Kim,di@Mail.org, 035\n4,Ed Kim, CY@corp.io, 031\n 60, Fa Li,,004\n6,Ed Kim,, 019\n70, Ed Kim, , 002\n18, Bo Chen,CY@corp.io,010\n6, Ed Kim  ,, 019\n46 ,Ed Kim, , 003\n 47,Ann Lee ,bo@mail.org,034\n92,Ann Lee,,024\n"
+      ],
+      "expected": "score,name,email,id\n18,Bo Chen,cy@corp.io,010\n47,Ann Lee,bo@mail.org,034\n93,Ed Kim,di@mail.org,035\n"
+     },
+     {
+      "args": [
+       "score,name,email,id\n95,Ed Kim ,, 024\n49,Ann Lee, di@Mail.org,001\n6,Di Wu,Ann@Example.com,040\n31, Ann Lee,ed@x.net,039 \n65,Ed Kim,ed@x.net , 013\n28, Di Wu,di@Mail.org, 029\n51,Ed Kim ,bo@mail.org ,029\n36 , Cy Park,bo@mail.org ,006 \n 6 , Di Wu  ,Ann@Example.com,040\n"
+      ],
+      "expected": "score,name,email,id\n36,Cy Park,bo@mail.org,006\n49,Ann Lee,di@mail.org,001\n6,Di Wu,ann@example.com,040\n65,Ed Kim,ed@x.net,013\n"
+     },
+     {
+      "args": [
+       "score,name,email,id\n74,Fa Li,di@Mail.org,003\n37, Ed Kim , bo@mail.org,013\n74, Fa Li ,di@Mail.org,003\n 29,Ed Kim,di@Mail.org,015\n"
+      ],
+      "expected": "score,name,email,id\n37,Ed Kim,bo@mail.org,013\n74,Fa Li,di@mail.org,003\n"
+     },
+     {
+      "args": [
+       "score,name,email,id\n7,Fa Li, bo@mail.org, 002 \n 74,Bo Chen, di@Mail.org,026\n63 ,Ann Lee,CY@corp.io,020\n86 ,Bo Chen,, 006\n82,  Cy Park ,CY@corp.io,007\n82,Cy Park,CY@corp.io,007 \n"
+      ],
+      "expected": "score,name,email,id\n63,Ann Lee,cy@corp.io,020\n7,Fa Li,bo@mail.org,002\n74,Bo Chen,di@mail.org,026\n82,Cy Park,cy@corp.io,007\n"
+     },
+     {
+      "args": [
+       "score,name,email,id\n51 , Di Wu,di@Mail.org,037\n22,Fa Li,ed@x.net, 009\n51, Di Wu ,di@Mail.org,037\n77,Cy Park, Ann@Example.com,037\n"
+      ],
+      "expected": "score,name,email,id\n22,Fa Li,ed@x.net,009\n51,Di Wu,di@mail.org,037\n77,Cy Park,ann@example.com,037\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "score,name,email,id\n"
+      ],
+      "expected": "score,name,email,id\n"
+     },
+     {
+      "args": [
+       "score,name,email,id\n\"Lima, PE\",Ed Kim,bo@mail.org,006\n"
+      ],
+      "expected": "score,name,email,id\n\"Lima, PE\",Ed Kim,bo@mail.org,006\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2007",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "In booking.py, write merge_bookings(intervals) that combines overlapping time ranges. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save the file booking.py.",
+   "initial_files": {
+    "booking.py": "def merge_bookings(intervals):\n    return None\n"
+   },
+   "expected_output_file": "booking.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "booking.py",
+    "function": "merge_bookings",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         5,
+         8
+        ],
+        [
+         11,
+         13
+        ],
+        [
+         7,
+         7
+        ],
+        [
+         8,
+         8
+        ],
+        [
+         1,
+         3
+        ],
+        [
+         8,
+         14
+        ],
+        [
+         16,
+         18
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        3
+       ],
+       [
+        5,
+        14
+       ],
+       [
+        16,
+        18
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         11,
+         12
+        ],
+        [
+         19,
+         19
+        ],
+        [
+         2,
+         7
+        ],
+        [
+         18,
+         22
+        ],
+        [
+         10,
+         10
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        7
+       ],
+       [
+        10,
+        10
+       ],
+       [
+        11,
+        12
+       ],
+       [
+        18,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14,
+         14
+        ],
+        [
+         3,
+         6
+        ],
+        [
+         7,
+         12
+        ],
+        [
+         10,
+         10
+        ],
+        [
+         19,
+         20
+        ],
+        [
+         2,
+         2
+        ],
+        [
+         16,
+         20
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        2
+       ],
+       [
+        3,
+        6
+       ],
+       [
+        7,
+        12
+       ],
+       [
+        14,
+        14
+       ],
+       [
+        16,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         16,
+         22
+        ],
+        [
+         1,
+         2
+        ],
+        [
+         15,
+         21
+        ],
+        [
+         11,
+         16
+        ],
+        [
+         17,
+         20
+        ],
+        [
+         4,
+         5
+        ],
+        [
+         1,
+         5
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        5
+       ],
+       [
+        11,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         17,
+         22
+        ],
+        [
+         0,
+         6
+        ],
+        [
+         19,
+         19
+        ],
+        [
+         4,
+         9
+        ],
+        [
+         14,
+         14
+        ],
+        [
+         14,
+         15
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        9
+       ],
+       [
+        14,
+        15
+       ],
+       [
+        17,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         8
+        ],
+        [
+         2,
+         5
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        8
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         3,
+         4
+        ],
+        [
+         2,
+         11
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        11
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2009",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Fix report.py: count_entries(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per service for levels ERROR, WARN only, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to report.py.",
+   "initial_files": {
+    "report.py": "def count_entries(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "count_entries",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-22T10:28:00 ERROR billing: slow",
+        "2026-10-12T17:13:00 ERROR mailer: retry",
+        "2026-10-23T08:37:00 ERROR cache: ok ok",
+        "2026-10-01 INFO",
+        "2026-10-17T06:36:00 WARN auth: retry"
+       ]
+      ],
+      "expected": {
+       "billing": 1,
+       "mailer": 1,
+       "cache": 1,
+       "auth": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T04:08:00 ERROR auth: timeout",
+        "2026-10-24T07:40:00 error cache: started",
+        "2026-10-10T13:12:00 DEBUG gateway: connected failed failed",
+        "2026-10-06T10:48:00 INFO ui: closed failed",
+        "2026-10-13T01:44:00 DEBUG cache: started",
+        "2026-10-15T00:56:00 warn ui: ok",
+        "2026-10-08T18:40:00 debug search: ok",
+        "2026-10-13T09:35:00 info mailer: retry",
+        "2026-10-11T14:41:00 ERROR gateway: timeout timeout failed"
+       ]
+      ],
+      "expected": {
+       "auth": 1,
+       "cache": 1,
+       "ui": 1,
+       "gateway": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T03:36:00 ERROR ui: closed",
+        "2026-10-07T08:28:00 INFO worker: retry",
+        "2026-10-19T19:55:00 debug mailer: ok ok connected",
+        "2026-10-28T09:41:00 ERROR billing: started retry closed",
+        "2026-10-22T08:26:00 info search: ok slow",
+        "2026-10-11T13:36:00 debug gateway: started failed started",
+        "2026-10-23T14:07:00 warn auth: ok connected",
+        "2026-10-20T07:31:00 WARN gateway: closed",
+        "2026-10-01 INFO",
+        "2026-10-26T22:03:00 INFO auth: ok timeout ok"
+       ]
+      ],
+      "expected": {
+       "ui": 1,
+       "billing": 1,
+       "auth": 1,
+       "gateway": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-21T00:07:00 ERROR gateway: retry closed",
+        "2026-10-01 INFO",
+        "2026-10-08T21:26:00 INFO auth: connected closed",
+        "2026-10-24T02:03:00 DEBUG search: started slow ok",
+        "2026-10-05T15:54:00 DEBUG search: ok connected ok",
+        "2026-10-28T01:36:00 INFO auth: slow closed retry",
+        "2026-10-22T02:46:00 ERROR ui: retry timeout ok",
+        "2026-10-07T02:01:00 ERROR worker: started failed timeout"
+       ]
+      ],
+      "expected": {
+       "gateway": 1,
+       "ui": 1,
+       "worker": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-05T21:07:00 ERROR auth: ok slow",
+        "2026-10-27T01:10:00 warn mailer: failed connected ok",
+        "2026-10-11T14:14:00 WARN billing: retry",
+        "2026-10-11T14:03:00 ERROR cache: failed",
+        "2026-10-22T05:56:00 DEBUG cache: started",
+        "2026-10-01 INFO",
+        "2026-10-26T10:59:00 debug auth: timeout closed timeout",
+        "2026-10-23T03:16:00 warn auth: slow",
+        "2026-10-23T20:37:00 error cache: retry",
+        "2026-10-28T08:14:00 warn mailer: failed closed"
+       ]
+      ],
+      "expected": {
+       "auth": 2,
+       "mailer": 2,
+       "billing": 1,
+       "cache": 2
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-2100",
+   "family": "lookalike_readonly",
+   "split": "stream",
+   "instruction": "Review digest_lines in telemetry.py and explain in two sentences what it does. It is already correct. Do not modify it.",
+   "initial_files": {
+    "telemetry.py": "def digest_lines(lines):\n    key, only = 'level', []\n    out = {}\n    for line in lines:\n        if not isinstance(line, str):\n            continue\n        parts = line.split(' ', 3)\n        if len(parts) < 4 or not parts[2].endswith(':') or len(parts[2]) < 2:\n            continue\n        level, service = parts[1].upper(), parts[2][:-1]\n        if only and level not in only:\n            continue\n        name = level if key == 'level' else service\n        out[name] = out.get(name, 0) + 1\n    return out\n"
+   },
+   "expected_output_file": "telemetry.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "telemetry.py",
+    "sha256": "578f082f7b1546900d3bc200418be34fea43ade85fdbe9bcd808538401e44a65"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2000",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Implement pick_jobs(items, capacity) in selection.py to choose parcels. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Save selection.py.",
+   "initial_files": {
+    "selection.py": "def pick_jobs(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "selection.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "selection.py",
+    "function": "pick_jobs",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 6
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 1
+        },
+        {
+         "id": "gamma",
+         "weight": 3,
+         "value": 1
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "delta",
+       "gamma",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "weight": 4,
+         "value": 7
+        },
+        {
+         "id": "delta",
+         "weight": 5,
+         "value": 3
+        },
+        {
+         "id": "eta",
+         "weight": 6,
+         "value": 0
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 4
+        }
+       ],
+       15
+      ],
+      "expected": [
+       "delta",
+       "iota",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 1
+        },
+        {
+         "id": "theta",
+         "weight": 5,
+         "value": 9
+        },
+        {
+         "id": "zeta",
+         "weight": 6,
+         "value": 0
+        },
+        {
+         "id": "kappa",
+         "weight": 5,
+         "value": 4
+        },
+        {
+         "id": "epsilon",
+         "weight": 3,
+         "value": 7
+        },
+        {
+         "id": "eta",
+         "weight": 3,
+         "value": 0
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 0
+        },
+        {
+         "id": "alpha",
+         "weight": 2,
+         "value": 5
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "alpha"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 3
+        },
+        {
+         "id": "eta",
+         "weight": 5,
+         "value": 6
+        },
+        {
+         "id": "beta",
+         "weight": 6,
+         "value": 11
+        },
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 4
+        },
+        {
+         "id": "zeta",
+         "weight": 5,
+         "value": 4
+        },
+        {
+         "id": "epsilon",
+         "weight": 1,
+         "value": 10
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "delta",
+       "epsilon",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "weight": 3,
+         "value": 2
+        },
+        {
+         "id": "eta",
+         "weight": 3,
+         "value": 1
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "eta",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "zeta",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 9
+        },
+        {
+         "id": "delta",
+         "weight": 1,
+         "value": 9
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2007",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Fix telemetry.py: summarize(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per level, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to telemetry.py.",
+   "initial_files": {
+    "telemetry.py": "def summarize(lines):\n    return {}\n"
+   },
+   "expected_output_file": "telemetry.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "telemetry.py",
+    "function": "summarize",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-08T08:07:00 info mailer: closed ok closed",
+        "2026-10-01 INFO",
+        "2026-10-21T09:52:00 info ui: ok closed",
+        "2026-10-28T16:58:00 info ui: retry",
+        "2026-10-11T19:29:00 INFO worker: closed",
+        "2026-10-08T00:30:00 warn gateway: ok"
+       ]
+      ],
+      "expected": {
+       "INFO": 4,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-01 INFO",
+        "2026-10-22T02:06:00 INFO cache: closed retry",
+        "2026-10-16T20:12:00 DEBUG ui: retry connected retry",
+        "2026-10-09T23:00:00 ERROR billing: slow",
+        "2026-10-11T03:55:00 info mailer: retry retry connected",
+        "2026-10-06T17:42:00 INFO ui: closed",
+        "2026-10-24T00:16:00 ERROR gateway: slow ok",
+        "2026-10-07T22:53:00 warn gateway: failed slow timeout",
+        "2026-10-11T06:51:00 warn auth: timeout slow",
+        "2026-10-10T20:38:00 warn auth: retry"
+       ]
+      ],
+      "expected": {
+       "INFO": 3,
+       "DEBUG": 1,
+       "ERROR": 2,
+       "WARN": 3
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-26T18:07:00 ERROR ui: connected ok failed",
+        "2026-10-12T04:07:00 INFO auth: slow failed started",
+        "2026-10-18T07:47:00 warn gateway: ok started",
+        "garbage",
+        "2026-10-01T19:19:00 ERROR auth: retry",
+        "2026-10-02T06:41:00 error gateway: closed timeout ok",
+        "2026-10-18T05:17:00 INFO worker: closed closed slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 3,
+       "INFO": 2,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-26T01:47:00 DEBUG cache: connected",
+        "2026-10-13T15:22:00 WARN search: slow timeout started",
+        "2026-10-08T13:34:00 ERROR search: retry ok failed",
+        "2026-10-18T13:22:00 DEBUG worker: failed slow"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 2,
+       "WARN": 1,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-27T22:22:00 warn cache: started connected slow",
+        "2026-10-10T05:46:00 warn mailer: closed slow failed",
+        "2026-10-01 INFO",
+        "2026-10-08T10:01:00 DEBUG mailer: retry",
+        "2026-10-08T04:40:00 error ui: retry retry started",
+        "2026-10-28T13:41:00 INFO ui: failed",
+        "2026-10-09T05:28:00 INFO auth: closed slow",
+        "2026-10-17T08:33:00 WARN ui: retry started slow"
+       ]
+      ],
+      "expected": {
+       "WARN": 3,
+       "DEBUG": 1,
+       "ERROR": 1,
+       "INFO": 2
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-read_preserve-2102",
+   "family": "read_preserve",
+   "split": "stream",
+   "instruction": "Read CHANGELOG.md and tell me in one sentence what it contains. Do not change any file.",
+   "initial_files": {
+    "CHANGELOG.md": "release notes\n- fixed login\n- faster search\n"
+   },
+   "expected_output_file": "CHANGELOG.md",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "CHANGELOG.md",
+    "sha256": "d0e65275b85de2c308c357cc2d2dababe1eb63861766dad5540dde8cdc32cef9"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2000",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Implement clean_rows(text) in export_clean.py. The input is CSV text with a header row (columns: id, team, name, score, city). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"city\" cell is empty; remove duplicate rows by \"score\", keeping the first occurrence; sort rows by \"team\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save export_clean.py.",
+   "initial_files": {
+    "export_clean.py": "def clean_rows(text):\n    return None\n"
+   },
+   "expected_output_file": "export_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "export_clean.py",
+    "function": "clean_rows",
+    "cases": [
+     {
+      "args": [
+       "id,team,name,score,city\n036, ops,Fa Li, 70 ,Kyiv\n038,red, Fa Li, 2,\n035, blue,Di Wu,43 ,Paris\n014,ops,Fa Li,33,\n036,ops,Fa Li , 70,Kyiv\n"
+      ],
+      "expected": "id,team,name,score,city\n035,blue,Di Wu,43,Paris\n036,ops,Fa Li,70,Kyiv\n"
+     },
+     {
+      "args": [
+       "id,team,name,score,city\n033, green , Fa Li,59,Rome\n003, red, Cy Park, 98 , Rome\n021 , red,Bo Chen,71,Oslo\n026,green, Ed Kim,27,\" Lima, PE\"\n002,green,Bo Chen,44,Oslo \n 032 ,red,Ann Lee ,49 ,Kyiv\n003 ,ops,Bo Chen,37 ,Oslo\n037 , blue,Di Wu,1 ,Rome\n 035,red,Ann Lee,64,Oslo\n"
+      ],
+      "expected": "id,team,name,score,city\n037,blue,Di Wu,1,Rome\n033,green,Fa Li,59,Rome\n026,green,Ed Kim,27,\"Lima, PE\"\n002,green,Bo Chen,44,Oslo\n003,ops,Bo Chen,37,Oslo\n003,red,Cy Park,98,Rome\n021,red,Bo Chen,71,Oslo\n032,red,Ann Lee,49,Kyiv\n035,red,Ann Lee,64,Oslo\n"
+     },
+     {
+      "args": [
+       "id,team,name,score,city\n037, blue,Bo Chen,  11 ,Rome\n026,ops ,Ed Kim,85, Paris\n020,red,Di Wu,27,Oslo \n037,blue,Bo Chen ,11, Rome\n"
+      ],
+      "expected": "id,team,name,score,city\n037,blue,Bo Chen,11,Rome\n026,ops,Ed Kim,85,Paris\n020,red,Di Wu,27,Oslo\n"
+     },
+     {
+      "args": [
+       "id,team,name,score,city\n 037, red,Bo Chen,57,Paris\n019,blue, Bo Chen , 19,Paris\n019, blue,Bo Chen,  19 , Paris\n029,green,Cy Park,39,Oslo\n033 ,green , Fa Li,43 ,\"Lima, PE\"\n"
+      ],
+      "expected": "id,team,name,score,city\n019,blue,Bo Chen,19,Paris\n029,green,Cy Park,39,Oslo\n033,green,Fa Li,43,\"Lima, PE\"\n037,red,Bo Chen,57,Paris\n"
+     },
+     {
+      "args": [
+       "id,team,name,score,city\n031, blue ,Di Wu, 0  ,Paris\n031,blue,Di Wu, 0, Paris \n031,red, Cy Park , 17 ,Oslo \n029 ,ops,Di Wu,6,Paris \n"
+      ],
+      "expected": "id,team,name,score,city\n031,blue,Di Wu,0,Paris\n029,ops,Di Wu,6,Paris\n031,red,Cy Park,17,Oslo\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "id,team,name,score,city\n"
+      ],
+      "expected": "id,team,name,score,city\n"
+     },
+     {
+      "args": [
+       "id,team,name,score,city\n029,\"Lima, PE\",Cy Park,7,Oslo\n"
+      ],
+      "expected": "id,team,name,score,city\n029,\"Lima, PE\",Cy Park,7,Oslo\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2011",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Implement choose(items, capacity) in planner.py to choose parcels. Each item is a dict with a unique string \"id\", a positive integer \"cost\" and a non-negative integer \"gain\". Return the sorted list of ids whose total gain is as large as possible while total cost stays <= capacity. If several selections tie on total gain, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any cost is <= 0. Do not modify the input. Save planner.py.",
+   "initial_files": {
+    "planner.py": "def choose(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "planner.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "planner.py",
+    "function": "choose",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "cost": 1,
+         "gain": 12
+        },
+        {
+         "id": "delta",
+         "cost": 4,
+         "gain": 11
+        },
+        {
+         "id": "zeta",
+         "cost": 2,
+         "gain": 11
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "delta",
+       "epsilon"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "cost": 2,
+         "gain": 2
+        },
+        {
+         "id": "gamma",
+         "cost": 6,
+         "gain": 10
+        },
+        {
+         "id": "iota",
+         "cost": 6,
+         "gain": 7
+        },
+        {
+         "id": "eta",
+         "cost": 5,
+         "gain": 3
+        }
+       ],
+       1
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "cost": 5,
+         "gain": 3
+        },
+        {
+         "id": "delta",
+         "cost": 5,
+         "gain": 11
+        },
+        {
+         "id": "epsilon",
+         "cost": 4,
+         "gain": 12
+        },
+        {
+         "id": "theta",
+         "cost": 4,
+         "gain": 4
+        },
+        {
+         "id": "alpha",
+         "cost": 5,
+         "gain": 6
+        },
+        {
+         "id": "gamma",
+         "cost": 2,
+         "gain": 8
+        },
+        {
+         "id": "kappa",
+         "cost": 5,
+         "gain": 7
+        },
+        {
+         "id": "zeta",
+         "cost": 6,
+         "gain": 3
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "epsilon",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "cost": 5,
+         "gain": 0
+        },
+        {
+         "id": "delta",
+         "cost": 1,
+         "gain": 5
+        },
+        {
+         "id": "iota",
+         "cost": 6,
+         "gain": 1
+        },
+        {
+         "id": "eta",
+         "cost": 5,
+         "gain": 3
+        }
+       ],
+       14
+      ],
+      "expected": [
+       "delta",
+       "eta",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "cost": 6,
+         "gain": 7
+        },
+        {
+         "id": "zeta",
+         "cost": 6,
+         "gain": 2
+        },
+        {
+         "id": "delta",
+         "cost": 5,
+         "gain": 5
+        },
+        {
+         "id": "eta",
+         "cost": 2,
+         "gain": 1
+        },
+        {
+         "id": "epsilon",
+         "cost": 6,
+         "gain": 2
+        },
+        {
+         "id": "gamma",
+         "cost": 1,
+         "gain": 10
+        },
+        {
+         "id": "alpha",
+         "cost": 6,
+         "gain": 2
+        }
+       ],
+       8
+      ],
+      "expected": [
+       "beta",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "cost": 0,
+         "gain": 3
+        },
+        {
+         "id": "delta",
+         "cost": 2,
+         "gain": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "cost": 4,
+         "gain": 7
+        },
+        {
+         "id": "alpha",
+         "cost": 4,
+         "gain": 7
+        }
+       ],
+       4
+      ],
+      "expected": [
+       "alpha"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2005",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Implement merge_bookings(intervals) in calendar_ops.py to merge overlapping intervals. Each interval is a dict {\"start\": s, \"end\": e} with integer values. Return merged intervals as dicts with the same \"start\"/\"end\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should not be merged; only real overlaps merge. Raise ValueError if any interval has start > end. Do not modify the input. Save calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def merge_bookings(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "merge_bookings",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "start": 13,
+         "end": 18
+        },
+        {
+         "start": 16,
+         "end": 17
+        },
+        {
+         "start": 3,
+         "end": 8
+        },
+        {
+         "start": 0,
+         "end": 4
+        },
+        {
+         "start": 16,
+         "end": 17
+        },
+        {
+         "start": 12,
+         "end": 12
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 0,
+        "end": 8
+       },
+       {
+        "start": 12,
+        "end": 12
+       },
+       {
+        "start": 13,
+        "end": 18
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 16,
+         "end": 20
+        },
+        {
+         "start": 17,
+         "end": 18
+        },
+        {
+         "start": 0,
+         "end": 0
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 0,
+        "end": 0
+       },
+       {
+        "start": 16,
+        "end": 20
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 20,
+         "end": 23
+        },
+        {
+         "start": 17,
+         "end": 22
+        },
+        {
+         "start": 19,
+         "end": 24
+        },
+        {
+         "start": 15,
+         "end": 19
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 15,
+        "end": 24
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 19,
+         "end": 25
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 19,
+        "end": 25
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 17,
+         "end": 23
+        },
+        {
+         "start": 18,
+         "end": 24
+        },
+        {
+         "start": 17,
+         "end": 18
+        },
+        {
+         "start": 2,
+         "end": 4
+        },
+        {
+         "start": 1,
+         "end": 3
+        },
+        {
+         "start": 19,
+         "end": 25
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 1,
+        "end": 4
+       },
+       {
+        "start": 17,
+        "end": 25
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 8,
+         "end": 5
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 7,
+         "end": 10
+        },
+        {
+         "start": 4,
+         "end": 7
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 4,
+        "end": 7
+       },
+       {
+        "start": 7,
+        "end": 10
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 5,
+         "end": 6
+        },
+        {
+         "start": 4,
+         "end": 13
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 4,
+        "end": 13
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2003",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Implement normalize_table(text) in table_ops.py. The input is CSV text with a header row (columns: team, city, name, id, email). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"id\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"email\", keeping the first occurrence; sort rows by \"city\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save table_ops.py.",
+   "initial_files": {
+    "table_ops.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "table_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "table_ops.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "team,city,name,id,email\nblue,Kyiv,Ed Kim,026,CY@corp.io\ngreen ,Kyiv, Fa Li , 018,ed@x.net \nblue,Kyiv, Ed Kim,026, CY@corp.io \nops, Oslo,Ed Kim,005,di@Mail.org\ngreen ,Kyiv , Di Wu,033,CY@corp.io\n ops ,Kyiv,Fa Li,020,di@Mail.org\nops,Paris,Bo Chen,031,Ann@Example.com\nred ,Paris, Cy Park,037,ed@x.net \nops,\"Lima, PE\",Ann Lee ,002,CY@corp.io\n ops,Rome, Ed Kim,015, bo@mail.org\n"
+      ],
+      "expected": "team,city,name,id,email\nblue,Kyiv,Ed Kim,026,cy@corp.io\ngreen,Kyiv,Fa Li,018,ed@x.net\nops,Oslo,Ed Kim,005,di@mail.org\nops,Paris,Bo Chen,031,ann@example.com\nops,Rome,Ed Kim,015,bo@mail.org\n"
+     },
+     {
+      "args": [
+       "team,city,name,id,email\nred ,Oslo,Bo Chen,, Ann@Example.com \nred,Kyiv,Ann Lee,017,CY@corp.io\nops,Paris,Di Wu,009, bo@mail.org\n red,\"Lima, PE \",Cy Park,  ,Ann@Example.com\nblue, Kyiv,Fa Li,008, bo@mail.org \nblue,Paris,Fa Li,039,di@Mail.org\nblue,Kyiv,Fa Li ,008,bo@mail.org\n red,Rome ,Ann Lee ,039, Ann@Example.com\n blue,Kyiv,Bo Chen, 016,Ann@Example.com\n"
+      ],
+      "expected": "team,city,name,id,email\nred,Kyiv,Ann Lee,017,cy@corp.io\nops,Paris,Di Wu,009,bo@mail.org\nblue,Paris,Fa Li,039,di@mail.org\nred,Rome,Ann Lee,039,ann@example.com\n"
+     },
+     {
+      "args": [
+       "team,city,name,id,email\nblue,Kyiv,Di Wu, ,Ann@Example.com\ngreen,Oslo,Di Wu,,Ann@Example.com\nblue,Oslo,Cy Park,020, ed@x.net \nops, Oslo,Bo Chen,002,bo@mail.org \nblue ,Paris,Ann Lee,020,di@Mail.org \n blue,\"Lima, PE\", Ed Kim,038 ,CY@corp.io \nblue,Oslo ,Cy Park,020, ed@x.net \n"
+      ],
+      "expected": "team,city,name,id,email\nblue,\"Lima, PE\",Ed Kim,038,cy@corp.io\nblue,Oslo,Cy Park,020,ed@x.net\nops,Oslo,Bo Chen,002,bo@mail.org\nblue,Paris,Ann Lee,020,di@mail.org\n"
+     },
+     {
+      "args": [
+       "team,city,name,id,email\nops,\"Lima, PE \", Bo Chen,014,bo@mail.org \nops,\"Lima, PE\",Bo Chen, 014 ,  bo@mail.org  \nops,\" Lima, PE\",Bo Chen,031 , Ann@Example.com\nred ,Oslo,Cy Park,027,CY@corp.io\nred,Oslo,Ed Kim,006 ,bo@mail.org\nblue ,Rome,Cy Park,039,bo@mail.org\n"
+      ],
+      "expected": "team,city,name,id,email\nops,\"Lima, PE\",Bo Chen,014,bo@mail.org\nops,\"Lima, PE\",Bo Chen,031,ann@example.com\nred,Oslo,Cy Park,027,cy@corp.io\n"
+     },
+     {
+      "args": [
+       "team,city,name,id,email\nblue,Rome,Fa Li,025 ,ed@x.net\nblue,\"Lima, PE\",Bo Chen, 038 ,di@Mail.org\nops ,Rome, Fa Li ,001,Ann@Example.com \nblue,Kyiv,Bo Chen,,bo@mail.org\n ops, Rome,Di Wu,003, ed@x.net\n red , Oslo ,Bo Chen, 017, ed@x.net \nops ,\"Lima, PE\",Fa Li,001,bo@mail.org\n ops,Rome , Di Wu,003,  ed@x.net \n"
+      ],
+      "expected": "team,city,name,id,email\nblue,\"Lima, PE\",Bo Chen,038,di@mail.org\nops,\"Lima, PE\",Fa Li,001,bo@mail.org\nblue,Rome,Fa Li,025,ed@x.net\nops,Rome,Fa Li,001,ann@example.com\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "team,city,name,id,email\n"
+      ],
+      "expected": "team,city,name,id,email\n"
+     },
+     {
+      "args": [
+       "team,city,name,id,email\nred,\"Lima, PE\",Cy Park,023,ed@x.net\n"
+      ],
+      "expected": "team,city,name,id,email\nred,\"Lima, PE\",Cy Park,023,ed@x.net\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-read_preserve-2100",
+   "family": "read_preserve",
+   "split": "stream",
+   "instruction": "Read utils.py and tell me in one sentence what it contains. Do not change any file.",
+   "initial_files": {
+    "utils.py": "def mean(xs):\n    if not xs:\n        raise ValueError(\"empty\")\n    return sum(xs) / len(xs)\n"
+   },
+   "expected_output_file": "utils.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "utils.py",
+    "sha256": "963ef64191875717a228b176ad17419f2df3bb099c01f2554fab1a17527b7f34"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-inspect_question-2101",
+   "family": "inspect_question",
+   "split": "stream",
+   "instruction": "Look at helpers.py and tell me the name of each function it defines. Do not modify anything.",
+   "initial_files": {
+    "helpers.py": "def parse_port(text):\n    port = int(text)\n    if not 0 < port < 65536:\n        raise ValueError(\"port out of range\")\n    return port\n"
+   },
+   "expected_output_file": "helpers.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "helpers.py",
+    "sha256": "7537859bafbffbcbe374965e46a9df0a5d6b2253b6fa456053df60f901217fb5"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2011",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Fix calendar_ops.py: merge_bookings(intervals) must merge overlapping bookings. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Write the result to calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def merge_bookings(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "merge_bookings",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         9,
+         12
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        9,
+        12
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         20,
+         20
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        20,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         9
+        ],
+        [
+         18,
+         21
+        ],
+        [
+         17,
+         22
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        9,
+        9
+       ],
+       [
+        17,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         19,
+         22
+        ],
+        [
+         8,
+         12
+        ],
+        [
+         9,
+         12
+        ],
+        [
+         12,
+         12
+        ],
+        [
+         1,
+         6
+        ],
+        [
+         9,
+         14
+        ],
+        [
+         15,
+         15
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        6
+       ],
+       [
+        8,
+        14
+       ],
+       [
+        15,
+        15
+       ],
+       [
+        19,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         13
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        8,
+        13
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         4
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         9
+        ],
+        [
+         3,
+         6
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        9
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         4,
+         5
+        ],
+        [
+         3,
+         12
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        12
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-inspect_question-2103",
+   "family": "inspect_question",
+   "split": "stream",
+   "instruction": "Look at textops.py and tell me the name of each function it defines. Do not modify anything.",
+   "initial_files": {
+    "textops.py": "def chunks(xs, size):\n    if size <= 0:\n        raise ValueError(\"size must be positive\")\n    return [xs[i:i + size] for i in range(0, len(xs), size)]\n"
+   },
+   "expected_output_file": "textops.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "textops.py",
+    "sha256": "6b0320e62f8932bcc38f95903e9d8947eae59d78976cdbb9c0aeaa671b8af02d"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2001",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "In table_ops.py, write tidy_csv(text) to clean an exported table. The input is CSV text with a header row (columns: score, id, name). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"score\" cell is empty; remove duplicate rows by \"score\", keeping the first occurrence; sort rows by \"name\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file table_ops.py.",
+   "initial_files": {
+    "table_ops.py": "def tidy_csv(text):\n    return None\n"
+   },
+   "expected_output_file": "table_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "table_ops.py",
+    "function": "tidy_csv",
+    "cases": [
+     {
+      "args": [
+       "score,id,name\n ,026,Ann Lee \n45, 008,Ed Kim\n ,002,Fa Li\n, 012 ,Ann Lee \n  ,026 ,Ann Lee\n"
+      ],
+      "expected": "score,id,name\n45,008,Ed Kim\n"
+     },
+     {
+      "args": [
+       "score,id,name\n ,032,Bo Chen\n13,013 ,Cy Park\n27,013 ,Ed Kim\n"
+      ],
+      "expected": "score,id,name\n13,013,Cy Park\n27,013,Ed Kim\n"
+     },
+     {
+      "args": [
+       "score,id,name\n67, 009, Ann Lee\n63 , 026,Ed Kim \n3, 020,Ed Kim\n67 ,005,Bo Chen \n32, 004,Ed Kim\n92,039 ,Cy Park\n96,040,Bo Chen \n40,022 ,Ann Lee\n95,001,Fa Li\n 96 ,040 ,Bo Chen\n"
+      ],
+      "expected": "score,id,name\n67,009,Ann Lee\n40,022,Ann Lee\n96,040,Bo Chen\n92,039,Cy Park\n63,026,Ed Kim\n3,020,Ed Kim\n32,004,Ed Kim\n95,001,Fa Li\n"
+     },
+     {
+      "args": [
+       "score,id,name\n 1 , 009,Di Wu\n, 006,Fa Li\n 19  ,035,Di Wu\n45,023,Ed Kim\n6,028 ,Ed Kim\n19 ,035,Di Wu\n96,034,Ed Kim\n"
+      ],
+      "expected": "score,id,name\n1,009,Di Wu\n19,035,Di Wu\n45,023,Ed Kim\n6,028,Ed Kim\n96,034,Ed Kim\n"
+     },
+     {
+      "args": [
+       "score,id,name\n46,005,Ed Kim\n96,016,Ann Lee\n20 ,019,Di Wu\n 17 ,029,Ed Kim\n17,029, Ed Kim\n62,030,Fa Li \n70 ,030,Ed Kim\n60 ,035,Cy Park\n ,036,Cy Park \n45,026, Ed Kim\n"
+      ],
+      "expected": "score,id,name\n96,016,Ann Lee\n60,035,Cy Park\n20,019,Di Wu\n46,005,Ed Kim\n17,029,Ed Kim\n70,030,Ed Kim\n45,026,Ed Kim\n62,030,Fa Li\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "score,id,name\n"
+      ],
+      "expected": "score,id,name\n"
+     },
+     {
+      "args": [
+       "score,id,name\n15,027,\"Lima, PE\"\n"
+      ],
+      "expected": "score,id,name\n15,027,\"Lima, PE\"\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2002",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "In ops_summary.py, digest_lines(lines) should count log lines per level. Line format: \"<timestamp> <LEVEL> <service>: <message>\"; level case may vary and must be upper-cased; ignore lines that do not match. Return a plain dict of counts and save ops_summary.py.",
+   "initial_files": {
+    "ops_summary.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "ops_summary.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ops_summary.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-19T23:15:00 WARN search: failed",
+        "2026-10-10T13:11:00 error cache: timeout started",
+        "2026-10-25T05:48:00 warn worker: ok retry",
+        "2026-10-03T11:32:00 error gateway: ok ok",
+        "2026-10-01 INFO",
+        "2026-10-18T10:25:00 ERROR billing: retry ok started",
+        "2026-10-13T17:38:00 DEBUG mailer: slow",
+        "2026-10-05T22:46:00 INFO cache: timeout retry failed",
+        "2026-10-06T12:23:00 warn search: retry failed slow"
+       ]
+      ],
+      "expected": {
+       "WARN": 3,
+       "ERROR": 3,
+       "DEBUG": 1,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-24T22:49:00 WARN search: ok connected timeout",
+        "",
+        "2026-10-25T10:51:00 warn worker: closed started",
+        "2026-10-06T15:31:00 ERROR cache: timeout ok",
+        "2026-10-13T03:56:00 ERROR cache: started timeout"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "ERROR": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-14T09:06:00 debug auth: failed slow",
+        "2026-10-06T20:27:00 DEBUG ui: ok",
+        "2026-10-11T00:07:00 INFO mailer: slow started",
+        "2026-10-13T11:45:00 debug billing: ok",
+        "2026-10-13T06:25:00 INFO search: slow retry slow",
+        "garbage",
+        "2026-10-26T23:38:00 error worker: closed"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 3,
+       "INFO": 2,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-13T09:09:00 warn gateway: started closed",
+        "2026-10-07T04:15:00 WARN worker: slow connected connected",
+        "2026-10-24T06:41:00 DEBUG cache: failed failed",
+        "2026-10-24T16:22:00 DEBUG gateway: started",
+        "2026-10-14T14:30:00 info worker: connected timeout",
+        "",
+        "2026-10-24T03:24:00 info mailer: timeout failed failed",
+        "2026-10-19T11:49:00 DEBUG billing: failed closed failed",
+        "2026-10-08T07:18:00 ERROR search: closed",
+        "2026-10-02T19:11:00 debug worker: ok slow closed"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "DEBUG": 4,
+       "INFO": 2,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-25T22:10:00 WARN mailer: connected timeout slow",
+        "2026-10-06T00:03:00 DEBUG search: slow",
+        "2026-10-24T14:57:00 WARN billing: retry failed",
+        ""
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-2011",
+   "family": "csv_transform",
+   "split": "stream",
+   "instruction": "Implement tidy_csv(text) in crm_clean.py. The input is CSV text with a header row (columns: email, id, score, team, name). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"id\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"score\", keeping the first occurrence; sort rows by \"name\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def tidy_csv(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "tidy_csv",
+    "cases": [
+     {
+      "args": [
+       "email,id,score,team,name\ned@x.net, 006,76,green,Cy Park\ndi@Mail.org ,036,10,blue,Ann Lee\n CY@corp.io,035,56,red,Bo Chen \ned@x.net,018 ,  57 ,ops,Di Wu\ned@x.net , 018 , 57, ops,Di Wu\n Ann@Example.com,023, 70 ,blue, Ed Kim\ned@x.net,039,52,ops,Ann Lee \n"
+      ],
+      "expected": "email,id,score,team,name\ndi@mail.org,036,10,blue,Ann Lee\ned@x.net,039,52,ops,Ann Lee\ncy@corp.io,035,56,red,Bo Chen\ned@x.net,006,76,green,Cy Park\ned@x.net,018,57,ops,Di Wu\nann@example.com,023,70,blue,Ed Kim\n"
+     },
+     {
+      "args": [
+       "email,id,score,team,name\ndi@Mail.org,026,63 , blue,Cy Park\nbo@mail.org, ,10, green,Bo Chen\ndi@Mail.org,011, 6 ,ops, Fa Li\ndi@Mail.org ,012, 94 ,ops,Di Wu\nbo@mail.org,031, 9 ,green,Ed Kim\ndi@Mail.org,011, 6,ops,Fa Li\nCY@corp.io,003,33 ,green ,Ed Kim\nbo@mail.org,, 51,red,Di Wu \n"
+      ],
+      "expected": "email,id,score,team,name\ndi@mail.org,026,63,blue,Cy Park\ndi@mail.org,012,94,ops,Di Wu\nbo@mail.org,031,9,green,Ed Kim\ncy@corp.io,003,33,green,Ed Kim\ndi@mail.org,011,6,ops,Fa Li\n"
+     },
+     {
+      "args": [
+       "email,id,score,team,name\nAnn@Example.com,009,  36 ,green, Fa Li\n CY@corp.io,015, 49,red , Ed Kim\nAnn@Example.com,009,36 ,green ,Fa Li\nCY@corp.io,037,7,green , Bo Chen\n"
+      ],
+      "expected": "email,id,score,team,name\ncy@corp.io,037,7,green,Bo Chen\ncy@corp.io,015,49,red,Ed Kim\nann@example.com,009,36,green,Fa Li\n"
+     },
+     {
+      "args": [
+       "email,id,score,team,name\nbo@mail.org,004,97 ,ops,Fa Li\nCY@corp.io ,037 ,39 , blue ,Cy Park\nAnn@Example.com,021,35 , ops ,Di Wu\nAnn@Example.com ,033,53 , blue,Ann Lee\nCY@corp.io, ,31,ops,Ed Kim\nCY@corp.io,020,73, blue,Ann Lee\nbo@mail.org,004, 97 ,ops,Fa Li\n"
+      ],
+      "expected": "email,id,score,team,name\nann@example.com,033,53,blue,Ann Lee\ncy@corp.io,020,73,blue,Ann Lee\ncy@corp.io,037,39,blue,Cy Park\nann@example.com,021,35,ops,Di Wu\nbo@mail.org,004,97,ops,Fa Li\n"
+     },
+     {
+      "args": [
+       "email,id,score,team,name\ned@x.net,020,18, red,Fa Li \nCY@corp.io , 021,70, blue,Di Wu\nAnn@Example.com,038, 13, ops, Cy Park\nbo@mail.org,002,44,red,Di Wu\nAnn@Example.com,040 ,87 , ops,Di Wu \nAnn@Example.com, 023, 9,green,Bo Chen\nbo@mail.org ,010, 92,ops ,Ann Lee\ndi@Mail.org, ,24,red,Ed Kim \nbo@mail.org ,,8,blue, Bo Chen\n"
+      ],
+      "expected": "email,id,score,team,name\nbo@mail.org,010,92,ops,Ann Lee\nann@example.com,023,9,green,Bo Chen\nann@example.com,038,13,ops,Cy Park\ncy@corp.io,021,70,blue,Di Wu\nbo@mail.org,002,44,red,Di Wu\nann@example.com,040,87,ops,Di Wu\ned@x.net,020,18,red,Fa Li\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "email,id,score,team,name\n"
+      ],
+      "expected": "email,id,score,team,name\n"
+     },
+     {
+      "args": [
+       "email,id,score,team,name\ndi@Mail.org,024,96,red,\"Lima, PE\"\n"
+      ],
+      "expected": "email,id,score,team,name\ndi@mail.org,024,96,red,\"Lima, PE\"\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2000",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Fix ops_summary.py: aggregate_log(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per service for levels ERROR, WARN only, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to ops_summary.py.",
+   "initial_files": {
+    "ops_summary.py": "def aggregate_log(lines):\n    return {}\n"
+   },
+   "expected_output_file": "ops_summary.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ops_summary.py",
+    "function": "aggregate_log",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-17T13:37:00 info billing: connected",
+        "2026-10-07T03:28:00 DEBUG worker: slow started timeout",
+        "2026-10-23T06:46:00 warn search: closed slow"
+       ]
+      ],
+      "expected": {
+       "search": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-13T11:16:00 WARN worker: failed ok started",
+        "2026-10-25T17:59:00 debug billing: started retry ok",
+        "2026-10-11T00:48:00 INFO mailer: timeout failed",
+        "2026-10-03T20:35:00 WARN search: slow failed",
+        "2026-10-10T20:11:00 WARN billing: connected started",
+        "garbage",
+        "2026-10-26T19:10:00 INFO ui: retry",
+        "2026-10-15T07:44:00 error gateway: timeout failed",
+        "2026-10-25T21:14:00 DEBUG ui: started connected"
+       ]
+      ],
+      "expected": {
+       "worker": 1,
+       "search": 1,
+       "billing": 1,
+       "gateway": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-06T01:40:00 ERROR cache: retry",
+        "x y z",
+        "2026-10-16T06:30:00 INFO worker: failed failed",
+        "2026-10-14T09:07:00 warn ui: failed ok",
+        "2026-10-07T16:32:00 INFO search: started started",
+        "2026-10-20T19:46:00 DEBUG gateway: closed slow"
+       ]
+      ],
+      "expected": {
+       "cache": 1,
+       "ui": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-15T03:37:00 ERROR search: slow",
+        "",
+        "2026-10-20T17:46:00 error search: timeout",
+        "2026-10-07T03:35:00 info gateway: ok",
+        "2026-10-27T12:15:00 WARN cache: connected slow",
+        "2026-10-20T07:44:00 INFO mailer: retry"
+       ]
+      ],
+      "expected": {
+       "search": 2,
+       "cache": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-03T15:50:00 DEBUG ui: connected failed ok",
+        "2026-10-07T09:59:00 INFO ui: failed retry",
+        "2026-10-14T23:56:00 debug billing: ok started",
+        "2026-10-18T11:28:00 DEBUG search: connected retry ok",
+        "2026-10-24T12:07:00 DEBUG cache: retry slow"
+       ]
+      ],
+      "expected": {}
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-read_preserve-2101",
+   "family": "read_preserve",
+   "split": "stream",
+   "instruction": "Read utils.py and tell me in one sentence what it contains. Do not change any file.",
+   "initial_files": {
+    "utils.py": "def slug(text):\n    return \"-\".join(text.lower().split())\n"
+   },
+   "expected_output_file": "utils.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "utils.py",
+    "sha256": "1a40cbc5c56a65bd821eca8f27069f98a4f185b6f747b164edd16a891ab19b13"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2002",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "In scheduler.py, write allocate(items, capacity) that picks which jobs to take. Each item is a dict with a unique string \"id\", a positive integer \"size\" and a non-negative integer \"score\". Return the sorted list of ids whose total score is as large as possible while total size stays <= capacity. If several selections tie on total score, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any size is <= 0. Do not modify the input. Save the file scheduler.py.",
+   "initial_files": {
+    "scheduler.py": "def allocate(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "scheduler.py",
+    "function": "allocate",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "size": 2,
+         "score": 12
+        },
+        {
+         "id": "beta",
+         "size": 3,
+         "score": 1
+        },
+        {
+         "id": "iota",
+         "size": 4,
+         "score": 12
+        },
+        {
+         "id": "zeta",
+         "size": 6,
+         "score": 2
+        },
+        {
+         "id": "alpha",
+         "size": 1,
+         "score": 6
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "alpha",
+       "beta",
+       "eta",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 1,
+         "score": 12
+        },
+        {
+         "id": "theta",
+         "size": 1,
+         "score": 2
+        },
+        {
+         "id": "gamma",
+         "size": 2,
+         "score": 5
+        },
+        {
+         "id": "alpha",
+         "size": 4,
+         "score": 6
+        },
+        {
+         "id": "eta",
+         "size": 5,
+         "score": 4
+        },
+        {
+         "id": "beta",
+         "size": 1,
+         "score": 1
+        },
+        {
+         "id": "kappa",
+         "size": 5,
+         "score": 3
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "alpha",
+       "beta",
+       "gamma",
+       "iota",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "size": 3,
+         "score": 9
+        },
+        {
+         "id": "theta",
+         "size": 4,
+         "score": 0
+        }
+       ],
+       8
+      ],
+      "expected": [
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "size": 3,
+         "score": 5
+        },
+        {
+         "id": "kappa",
+         "size": 4,
+         "score": 4
+        }
+       ],
+       12
+      ],
+      "expected": [
+       "gamma",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "size": 6,
+         "score": 1
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 10
+        },
+        {
+         "id": "zeta",
+         "size": 6,
+         "score": 1
+        },
+        {
+         "id": "beta",
+         "size": 1,
+         "score": 12
+        },
+        {
+         "id": "kappa",
+         "size": 3,
+         "score": 1
+        },
+        {
+         "id": "delta",
+         "size": 1,
+         "score": 1
+        },
+        {
+         "id": "eta",
+         "size": 4,
+         "score": 0
+        },
+        {
+         "id": "alpha",
+         "size": 3,
+         "score": 12
+        }
+       ],
+       7
+      ],
+      "expected": [
+       "alpha",
+       "beta",
+       "delta",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "size": 0,
+         "score": 3
+        },
+        {
+         "id": "kappa",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "size": 1,
+         "score": 11
+        },
+        {
+         "id": "delta",
+         "size": 1,
+         "score": 11
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2004",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "Implement digest_lines(lines) in report.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each service for levels ERROR only to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save report.py.",
+   "initial_files": {
+    "report.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-09T23:00:00 ERROR auth: closed timeout timeout",
+        "2026-10-22T07:36:00 INFO worker: slow retry closed",
+        "2026-10-07T18:55:00 warn cache: timeout",
+        "2026-10-14T21:56:00 warn billing: ok failed retry",
+        "2026-10-23T07:51:00 ERROR ui: retry failed",
+        "garbage",
+        "2026-10-20T04:12:00 error worker: slow closed",
+        "2026-10-19T04:50:00 WARN worker: timeout",
+        "2026-10-24T09:04:00 info gateway: timeout"
+       ]
+      ],
+      "expected": {
+       "auth": 1,
+       "ui": 1,
+       "worker": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-04T00:23:00 DEBUG worker: closed slow failed",
+        "2026-10-22T01:14:00 INFO billing: retry",
+        "2026-10-20T07:13:00 DEBUG mailer: ok",
+        "2026-10-02T11:15:00 error cache: timeout timeout",
+        "2026-10-20T21:23:00 DEBUG gateway: failed connected closed",
+        "2026-10-26T23:27:00 info ui: closed",
+        "2026-10-19T08:08:00 DEBUG billing: ok ok failed",
+        "x y z",
+        "2026-10-06T02:42:00 WARN search: timeout",
+        "2026-10-28T09:07:00 debug cache: slow slow slow"
+       ]
+      ],
+      "expected": {
+       "cache": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-28T21:41:00 INFO auth: started ok failed",
+        "2026-10-01 INFO",
+        "2026-10-06T13:13:00 DEBUG gateway: timeout",
+        "2026-10-06T11:42:00 DEBUG gateway: slow ok",
+        "2026-10-19T18:19:00 error search: ok ok failed",
+        "2026-10-13T10:59:00 INFO auth: timeout started closed",
+        "2026-10-18T14:39:00 WARN gateway: timeout retry",
+        "2026-10-10T14:59:00 error auth: slow"
+       ]
+      ],
+      "expected": {
+       "search": 1,
+       "auth": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T11:29:00 info auth: retry",
+        "2026-10-15T19:06:00 INFO search: timeout started",
+        "2026-10-06T05:42:00 INFO gateway: ok failed",
+        "2026-10-12T07:26:00 INFO worker: failed slow",
+        "2026-10-24T00:37:00 error gateway: failed closed ok",
+        "2026-10-19T01:17:00 ERROR auth: slow ok retry",
+        "2026-10-28T10:09:00 DEBUG gateway: slow retry closed",
+        ""
+       ]
+      ],
+      "expected": {
+       "gateway": 1,
+       "auth": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "x y z",
+        "2026-10-22T19:43:00 INFO auth: failed retry failed",
+        "2026-10-08T15:08:00 debug gateway: ok closed closed",
+        "2026-10-27T11:57:00 ERROR search: closed"
+       ]
+      ],
+      "expected": {
+       "search": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-2010",
+   "family": "interval_merge",
+   "split": "stream",
+   "instruction": "Fix ranges.py: combine_ranges(intervals) must merge overlapping bookings. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Write the result to ranges.py.",
+   "initial_files": {
+    "ranges.py": "def combine_ranges(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "combine_ranges",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         12,
+         16
+        ],
+        [
+         13,
+         17
+        ],
+        [
+         14,
+         18
+        ],
+        [
+         8,
+         8
+        ],
+        [
+         10,
+         10
+        ],
+        [
+         5,
+         11
+        ],
+        [
+         18,
+         19
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        5,
+        11
+       ],
+       [
+        12,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         15,
+         20
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        15,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         16,
+         19
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        16,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         2
+        ],
+        [
+         10,
+         14
+        ],
+        [
+         3,
+         9
+        ],
+        [
+         19,
+         25
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        2
+       ],
+       [
+        3,
+        9
+       ],
+       [
+        10,
+        14
+       ],
+       [
+        19,
+        25
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         19,
+         20
+        ],
+        [
+         15,
+         16
+        ],
+        [
+         19,
+         22
+        ],
+        [
+         19,
+         23
+        ],
+        [
+         19,
+         21
+        ],
+        [
+         11,
+         15
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        11,
+        16
+       ],
+       [
+        19,
+        23
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         13,
+         10
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         12,
+         15
+        ],
+        [
+         9,
+         12
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        9,
+        15
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         10,
+         11
+        ],
+        [
+         9,
+         18
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        9,
+        18
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2009",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Fix batch.py: pick_jobs(items, capacity) must select jobs under a capacity limit. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Write the result to batch.py.",
+   "initial_files": {
+    "batch.py": "def pick_jobs(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "batch.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "batch.py",
+    "function": "pick_jobs",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "weight": 2,
+         "value": 6
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 12
+        },
+        {
+         "id": "alpha",
+         "weight": 4,
+         "value": 2
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 4
+        },
+        {
+         "id": "theta",
+         "weight": 4,
+         "value": 7
+        },
+        {
+         "id": "gamma",
+         "weight": 6,
+         "value": 12
+        },
+        {
+         "id": "beta",
+         "weight": 3,
+         "value": 6
+        },
+        {
+         "id": "eta",
+         "weight": 6,
+         "value": 6
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "delta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 6,
+         "value": 2
+        },
+        {
+         "id": "zeta",
+         "weight": 3,
+         "value": 0
+        }
+       ],
+       9
+      ],
+      "expected": [
+       "alpha"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 1,
+         "value": 7
+        },
+        {
+         "id": "gamma",
+         "weight": 6,
+         "value": 6
+        },
+        {
+         "id": "theta",
+         "weight": 5,
+         "value": 4
+        }
+       ],
+       5
+      ],
+      "expected": [
+       "alpha"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "weight": 1,
+         "value": 2
+        },
+        {
+         "id": "beta",
+         "weight": 2,
+         "value": 10
+        },
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 6
+        },
+        {
+         "id": "theta",
+         "weight": 1,
+         "value": 4
+        },
+        {
+         "id": "delta",
+         "weight": 4,
+         "value": 11
+        },
+        {
+         "id": "eta",
+         "weight": 5,
+         "value": 2
+        },
+        {
+         "id": "iota",
+         "weight": 4,
+         "value": 8
+        },
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 12
+        }
+       ],
+       15
+      ],
+      "expected": [
+       "alpha",
+       "beta",
+       "delta",
+       "gamma",
+       "iota",
+       "kappa",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 5,
+         "value": 8
+        },
+        {
+         "id": "theta",
+         "weight": 2,
+         "value": 11
+        },
+        {
+         "id": "alpha",
+         "weight": 3,
+         "value": 1
+        }
+       ],
+       9
+      ],
+      "expected": [
+       "kappa",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "zeta",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "weight": 5,
+         "value": 3
+        },
+        {
+         "id": "beta",
+         "weight": 5,
+         "value": 3
+        }
+       ],
+       5
+      ],
+      "expected": [
+       "beta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-inspect_question-2102",
+   "family": "inspect_question",
+   "split": "stream",
+   "instruction": "How many functions are defined in checks.py? Answer in one line; do not edit any file.",
+   "initial_files": {
+    "checks.py": "def is_even(n):\n    return n % 2 == 0\n\n\ndef is_odd(n):\n    return not is_even(n)\n"
+   },
+   "expected_output_file": "checks.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "checks.py",
+    "sha256": "f6faa958ca6dd523395842cf24360d3583d890a9631a590d550ca22f3260e47a"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-2010",
+   "family": "log_aggregation",
+   "split": "stream",
+   "instruction": "In ops_summary.py, tally_events(lines) should count log lines per level. Line format: \"<timestamp> <LEVEL> <service>: <message>\"; level case may vary and must be upper-cased; ignore lines that do not match. Return a plain dict of counts and save ops_summary.py.",
+   "initial_files": {
+    "ops_summary.py": "def tally_events(lines):\n    return {}\n"
+   },
+   "expected_output_file": "ops_summary.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ops_summary.py",
+    "function": "tally_events",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-01T09:05:00 WARN mailer: slow failed slow",
+        "2026-10-24T23:30:00 WARN auth: started connected connected",
+        "2026-10-03T17:06:00 debug worker: retry",
+        "2026-10-26T16:23:00 WARN search: timeout closed retry",
+        "2026-10-24T09:57:00 INFO billing: ok",
+        "2026-10-21T04:11:00 DEBUG search: connected timeout failed",
+        "2026-10-16T18:52:00 WARN auth: failed retry timeout",
+        "2026-10-23T14:25:00 error cache: slow",
+        "2026-10-15T22:17:00 ERROR search: slow timeout"
+       ]
+      ],
+      "expected": {
+       "WARN": 4,
+       "DEBUG": 2,
+       "INFO": 1,
+       "ERROR": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-11T15:40:00 WARN search: closed",
+        "2026-10-24T07:04:00 WARN ui: failed",
+        "2026-10-24T10:02:00 WARN worker: started",
+        "2026-10-02T03:06:00 WARN search: closed slow timeout",
+        "2026-10-22T10:12:00 debug auth: started slow",
+        "2026-10-10T02:10:00 DEBUG billing: failed ok",
+        "2026-10-25T17:10:00 DEBUG worker: started ok retry",
+        "2026-10-08T17:30:00 error mailer: ok",
+        "2026-10-22T19:34:00 WARN search: connected slow",
+        "2026-10-01 INFO"
+       ]
+      ],
+      "expected": {
+       "WARN": 5,
+       "DEBUG": 3,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-21T17:00:00 ERROR gateway: started",
+        "2026-10-01T02:43:00 debug search: closed",
+        "2026-10-26T12:16:00 warn mailer: timeout started",
+        "",
+        "2026-10-16T00:03:00 error worker: closed failed slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 2,
+       "DEBUG": 1,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-26T04:48:00 debug billing: failed closed connected",
+        "2026-10-20T20:03:00 WARN billing: closed",
+        "2026-10-20T21:25:00 DEBUG worker: retry timeout slow",
+        "2026-10-23T14:51:00 INFO mailer: timeout timeout ok",
+        "2026-10-03T14:24:00 DEBUG ui: ok",
+        "",
+        "2026-10-01T07:41:00 error ui: failed ok ok"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 3,
+       "WARN": 1,
+       "INFO": 1,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-11T11:03:00 INFO gateway: started connected",
+        "2026-10-08T00:01:00 debug auth: slow",
+        "2026-10-19T17:49:00 INFO search: retry failed"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-2004",
+   "family": "subset_selection",
+   "split": "stream",
+   "instruction": "Fix selection.py: allocate(items, capacity) must select parcels under a capacity limit. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Write the result to selection.py.",
+   "initial_files": {
+    "selection.py": "def allocate(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "selection.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "selection.py",
+    "function": "allocate",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "weight": 5,
+         "value": 1
+        },
+        {
+         "id": "theta",
+         "weight": 3,
+         "value": 7
+        },
+        {
+         "id": "alpha",
+         "weight": 5,
+         "value": 9
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "alpha"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 4,
+         "value": 1
+        },
+        {
+         "id": "beta",
+         "weight": 4,
+         "value": 11
+        }
+       ],
+       7
+      ],
+      "expected": [
+       "beta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "weight": 6,
+         "value": 6
+        },
+        {
+         "id": "iota",
+         "weight": 6,
+         "value": 2
+        },
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 11
+        },
+        {
+         "id": "alpha",
+         "weight": 3,
+         "value": 7
+        },
+        {
+         "id": "zeta",
+         "weight": 5,
+         "value": 3
+        },
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 5
+        },
+        {
+         "id": "eta",
+         "weight": 4,
+         "value": 5
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "alpha",
+       "delta",
+       "eta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 9
+        },
+        {
+         "id": "theta",
+         "weight": 4,
+         "value": 8
+        },
+        {
+         "id": "iota",
+         "weight": 2,
+         "value": 12
+        },
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 7
+        },
+        {
+         "id": "delta",
+         "weight": 5,
+         "value": 7
+        },
+        {
+         "id": "alpha",
+         "weight": 3,
+         "value": 10
+        },
+        {
+         "id": "eta",
+         "weight": 3,
+         "value": 2
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "alpha",
+       "eta",
+       "gamma",
+       "iota",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "weight": 5,
+         "value": 1
+        },
+        {
+         "id": "zeta",
+         "weight": 3,
+         "value": 11
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "beta",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "weight": 3,
+         "value": 4
+        },
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 4
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  }
+ ],
+ "role": "stream",
+ "order_seed": 2
+}

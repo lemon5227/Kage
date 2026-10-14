@@ -1,0 +1,5616 @@
+{
+ "created": "2026-10-14T22:38:30.059987+00:00",
+ "suite_id": "kage-stream-v1",
+ "sha256": "37e303fe8d58dd2896e5d2f593a4c2de8f8390a911c9b2167678420ef4480aab",
+ "tasks": [
+  {
+   "task_id": "stream-v1-subset_selection-10000",
+   "family": "subset_selection",
+   "split": "eval",
+   "instruction": "Fix selection.py: select_tasks(items, capacity) must select parcels under a capacity limit. Each item is a dict with a unique string \"id\", a positive integer \"cost\" and a non-negative integer \"gain\". Return the sorted list of ids whose total gain is as large as possible while total cost stays <= capacity. If several selections tie on total gain, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any cost is <= 0. Do not modify the input. Write the result to selection.py.",
+   "initial_files": {
+    "selection.py": "def select_tasks(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "selection.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "selection.py",
+    "function": "select_tasks",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "cost": 1,
+         "gain": 12
+        },
+        {
+         "id": "zeta",
+         "cost": 4,
+         "gain": 2
+        },
+        {
+         "id": "eta",
+         "cost": 6,
+         "gain": 3
+        },
+        {
+         "id": "alpha",
+         "cost": 2,
+         "gain": 1
+        },
+        {
+         "id": "gamma",
+         "cost": 2,
+         "gain": 9
+        }
+       ],
+       14
+      ],
+      "expected": [
+       "delta",
+       "eta",
+       "gamma",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "cost": 4,
+         "gain": 7
+        },
+        {
+         "id": "eta",
+         "cost": 6,
+         "gain": 2
+        },
+        {
+         "id": "alpha",
+         "cost": 5,
+         "gain": 5
+        },
+        {
+         "id": "gamma",
+         "cost": 6,
+         "gain": 11
+        },
+        {
+         "id": "kappa",
+         "cost": 6,
+         "gain": 2
+        },
+        {
+         "id": "beta",
+         "cost": 5,
+         "gain": 8
+        },
+        {
+         "id": "theta",
+         "cost": 5,
+         "gain": 4
+        },
+        {
+         "id": "delta",
+         "cost": 5,
+         "gain": 5
+        }
+       ],
+       8
+      ],
+      "expected": [
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "cost": 4,
+         "gain": 9
+        },
+        {
+         "id": "epsilon",
+         "cost": 5,
+         "gain": 8
+        },
+        {
+         "id": "alpha",
+         "cost": 4,
+         "gain": 9
+        },
+        {
+         "id": "eta",
+         "cost": 4,
+         "gain": 0
+        },
+        {
+         "id": "beta",
+         "cost": 2,
+         "gain": 4
+        },
+        {
+         "id": "theta",
+         "cost": 5,
+         "gain": 12
+        },
+        {
+         "id": "zeta",
+         "cost": 5,
+         "gain": 6
+        }
+       ],
+       13
+      ],
+      "expected": [
+       "alpha",
+       "kappa",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "alpha",
+         "cost": 5,
+         "gain": 8
+        },
+        {
+         "id": "kappa",
+         "cost": 2,
+         "gain": 12
+        },
+        {
+         "id": "eta",
+         "cost": 6,
+         "gain": 3
+        },
+        {
+         "id": "epsilon",
+         "cost": 2,
+         "gain": 10
+        },
+        {
+         "id": "delta",
+         "cost": 4,
+         "gain": 3
+        },
+        {
+         "id": "iota",
+         "cost": 1,
+         "gain": 2
+        }
+       ],
+       5
+      ],
+      "expected": [
+       "epsilon",
+       "iota",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "cost": 4,
+         "gain": 7
+        },
+        {
+         "id": "eta",
+         "cost": 3,
+         "gain": 5
+        },
+        {
+         "id": "beta",
+         "cost": 6,
+         "gain": 10
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "beta",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "cost": 0,
+         "gain": 3
+        },
+        {
+         "id": "gamma",
+         "cost": 2,
+         "gain": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "cost": 3,
+         "gain": 8
+        },
+        {
+         "id": "beta",
+         "cost": 3,
+         "gain": 8
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "beta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-10001",
+   "family": "subset_selection",
+   "split": "eval",
+   "instruction": "Fix batch.py: allocate(items, capacity) must select jobs under a capacity limit. Each item is a dict with a unique string \"id\", a positive integer \"cost\" and a non-negative integer \"gain\". Return the sorted list of ids whose total gain is as large as possible while total cost stays <= capacity. If several selections tie on total gain, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any cost is <= 0. Do not modify the input. Write the result to batch.py.",
+   "initial_files": {
+    "batch.py": "def allocate(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "batch.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "batch.py",
+    "function": "allocate",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "cost": 5,
+         "gain": 7
+        },
+        {
+         "id": "zeta",
+         "cost": 2,
+         "gain": 9
+        },
+        {
+         "id": "alpha",
+         "cost": 1,
+         "gain": 7
+        },
+        {
+         "id": "beta",
+         "cost": 6,
+         "gain": 11
+        },
+        {
+         "id": "eta",
+         "cost": 4,
+         "gain": 8
+        },
+        {
+         "id": "kappa",
+         "cost": 1,
+         "gain": 9
+        }
+       ],
+       4
+      ],
+      "expected": [
+       "alpha",
+       "kappa",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "cost": 2,
+         "gain": 7
+        },
+        {
+         "id": "iota",
+         "cost": 3,
+         "gain": 2
+        },
+        {
+         "id": "alpha",
+         "cost": 3,
+         "gain": 12
+        },
+        {
+         "id": "kappa",
+         "cost": 5,
+         "gain": 5
+        },
+        {
+         "id": "theta",
+         "cost": 5,
+         "gain": 11
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "beta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "cost": 4,
+         "gain": 6
+        },
+        {
+         "id": "kappa",
+         "cost": 3,
+         "gain": 1
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "kappa",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "cost": 1,
+         "gain": 7
+        },
+        {
+         "id": "kappa",
+         "cost": 5,
+         "gain": 6
+        },
+        {
+         "id": "iota",
+         "cost": 6,
+         "gain": 10
+        },
+        {
+         "id": "zeta",
+         "cost": 6,
+         "gain": 1
+        },
+        {
+         "id": "delta",
+         "cost": 1,
+         "gain": 7
+        },
+        {
+         "id": "eta",
+         "cost": 6,
+         "gain": 0
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "delta",
+       "gamma",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "cost": 4,
+         "gain": 5
+        },
+        {
+         "id": "eta",
+         "cost": 1,
+         "gain": 4
+        },
+        {
+         "id": "delta",
+         "cost": 2,
+         "gain": 8
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "delta",
+       "eta",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "cost": 0,
+         "gain": 3
+        },
+        {
+         "id": "theta",
+         "cost": 2,
+         "gain": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "cost": 6,
+         "gain": 8
+        },
+        {
+         "id": "epsilon",
+         "cost": 6,
+         "gain": 8
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "epsilon"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-10002",
+   "family": "subset_selection",
+   "split": "eval",
+   "instruction": "In selection.py, write select_tasks(items, capacity) that picks which jobs to take. Each item is a dict with a unique string \"id\", a positive integer \"size\" and a non-negative integer \"score\". Return the sorted list of ids whose total score is as large as possible while total size stays <= capacity. If several selections tie on total score, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any size is <= 0. Do not modify the input. Save the file selection.py.",
+   "initial_files": {
+    "selection.py": "def select_tasks(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "selection.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "selection.py",
+    "function": "select_tasks",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "size": 5,
+         "score": 9
+        },
+        {
+         "id": "kappa",
+         "size": 2,
+         "score": 9
+        },
+        {
+         "id": "epsilon",
+         "size": 4,
+         "score": 8
+        },
+        {
+         "id": "beta",
+         "size": 6,
+         "score": 8
+        },
+        {
+         "id": "alpha",
+         "size": 4,
+         "score": 11
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "alpha",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "size": 6,
+         "score": 6
+        },
+        {
+         "id": "eta",
+         "size": 1,
+         "score": 1
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "eta",
+       "theta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "size": 3,
+         "score": 12
+        },
+        {
+         "id": "beta",
+         "size": 3,
+         "score": 0
+        },
+        {
+         "id": "iota",
+         "size": 3,
+         "score": 8
+        },
+        {
+         "id": "theta",
+         "size": 6,
+         "score": 0
+        },
+        {
+         "id": "zeta",
+         "size": 3,
+         "score": 5
+        },
+        {
+         "id": "eta",
+         "size": 5,
+         "score": 8
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "size": 4,
+         "score": 11
+        },
+        {
+         "id": "delta",
+         "size": 6,
+         "score": 12
+        },
+        {
+         "id": "alpha",
+         "size": 3,
+         "score": 10
+        },
+        {
+         "id": "zeta",
+         "size": 6,
+         "score": 3
+        },
+        {
+         "id": "epsilon",
+         "size": 2,
+         "score": 1
+        },
+        {
+         "id": "eta",
+         "size": 6,
+         "score": 11
+        },
+        {
+         "id": "gamma",
+         "size": 1,
+         "score": 5
+        },
+        {
+         "id": "theta",
+         "size": 3,
+         "score": 2
+        }
+       ],
+       6
+      ],
+      "expected": [
+       "alpha",
+       "epsilon",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "size": 4,
+         "score": 8
+        },
+        {
+         "id": "epsilon",
+         "size": 1,
+         "score": 5
+        },
+        {
+         "id": "gamma",
+         "size": 6,
+         "score": 12
+        },
+        {
+         "id": "theta",
+         "size": 1,
+         "score": 3
+        },
+        {
+         "id": "eta",
+         "size": 2,
+         "score": 3
+        },
+        {
+         "id": "zeta",
+         "size": 4,
+         "score": 9
+        },
+        {
+         "id": "alpha",
+         "size": 3,
+         "score": 1
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "delta",
+       "epsilon",
+       "theta",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "size": 0,
+         "score": 3
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 2,
+         "score": 8
+        },
+        {
+         "id": "gamma",
+         "size": 2,
+         "score": 8
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "gamma"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-10003",
+   "family": "subset_selection",
+   "split": "eval",
+   "instruction": "Implement pick_jobs(items, capacity) in batch.py to choose parcels. Each item is a dict with a unique string \"id\", a positive integer \"size\" and a non-negative integer \"score\". Return the sorted list of ids whose total score is as large as possible while total size stays <= capacity. If several selections tie on total score, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any size is <= 0. Do not modify the input. Save batch.py.",
+   "initial_files": {
+    "batch.py": "def pick_jobs(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "batch.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "batch.py",
+    "function": "pick_jobs",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "size": 2,
+         "score": 3
+        },
+        {
+         "id": "epsilon",
+         "size": 6,
+         "score": 12
+        },
+        {
+         "id": "zeta",
+         "size": 2,
+         "score": 11
+        },
+        {
+         "id": "gamma",
+         "size": 5,
+         "score": 10
+        },
+        {
+         "id": "eta",
+         "size": 2,
+         "score": 4
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 8
+        },
+        {
+         "id": "alpha",
+         "size": 1,
+         "score": 12
+        },
+        {
+         "id": "beta",
+         "size": 6,
+         "score": 3
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 6,
+         "score": 6
+        },
+        {
+         "id": "epsilon",
+         "size": 2,
+         "score": 2
+        },
+        {
+         "id": "eta",
+         "size": 3,
+         "score": 3
+        },
+        {
+         "id": "theta",
+         "size": 5,
+         "score": 10
+        },
+        {
+         "id": "beta",
+         "size": 5,
+         "score": 10
+        },
+        {
+         "id": "alpha",
+         "size": 4,
+         "score": 1
+        }
+       ],
+       1
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "size": 1,
+         "score": 5
+        },
+        {
+         "id": "kappa",
+         "size": 5,
+         "score": 2
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "size": 5,
+         "score": 2
+        },
+        {
+         "id": "delta",
+         "size": 5,
+         "score": 11
+        },
+        {
+         "id": "epsilon",
+         "size": 6,
+         "score": 3
+        },
+        {
+         "id": "kappa",
+         "size": 5,
+         "score": 8
+        },
+        {
+         "id": "zeta",
+         "size": 5,
+         "score": 1
+        },
+        {
+         "id": "alpha",
+         "size": 5,
+         "score": 0
+        }
+       ],
+       13
+      ],
+      "expected": [
+       "delta",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "size": 6,
+         "score": 3
+        },
+        {
+         "id": "alpha",
+         "size": 3,
+         "score": 9
+        }
+       ],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "size": 0,
+         "score": 3
+        },
+        {
+         "id": "gamma",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "size": 4,
+         "score": 8
+        },
+        {
+         "id": "delta",
+         "size": 4,
+         "score": 8
+        }
+       ],
+       4
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-10004",
+   "family": "subset_selection",
+   "split": "eval",
+   "instruction": "Fix scheduler.py: choose(items, capacity) must select jobs under a capacity limit. Each item is a dict with a unique string \"id\", a positive integer \"weight\" and a non-negative integer \"value\". Return the sorted list of ids whose total value is as large as possible while total weight stays <= capacity. If several selections tie on total value, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any weight is <= 0. Do not modify the input. Write the result to scheduler.py.",
+   "initial_files": {
+    "scheduler.py": "def choose(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "scheduler.py",
+    "function": "choose",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "weight": 3,
+         "value": 6
+        },
+        {
+         "id": "zeta",
+         "weight": 6,
+         "value": 3
+        }
+       ],
+       1
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "weight": 3,
+         "value": 10
+        },
+        {
+         "id": "beta",
+         "weight": 5,
+         "value": 3
+        },
+        {
+         "id": "delta",
+         "weight": 3,
+         "value": 2
+        }
+       ],
+       13
+      ],
+      "expected": [
+       "beta",
+       "delta",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "weight": 5,
+         "value": 10
+        },
+        {
+         "id": "alpha",
+         "weight": 5,
+         "value": 12
+        },
+        {
+         "id": "iota",
+         "weight": 1,
+         "value": 2
+        },
+        {
+         "id": "eta",
+         "weight": 6,
+         "value": 9
+        },
+        {
+         "id": "theta",
+         "weight": 4,
+         "value": 0
+        },
+        {
+         "id": "gamma",
+         "weight": 5,
+         "value": 10
+        },
+        {
+         "id": "epsilon",
+         "weight": 6,
+         "value": 4
+        }
+       ],
+       10
+      ],
+      "expected": [
+       "alpha",
+       "gamma"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "zeta",
+         "weight": 5,
+         "value": 10
+        },
+        {
+         "id": "delta",
+         "weight": 6,
+         "value": 10
+        },
+        {
+         "id": "theta",
+         "weight": 6,
+         "value": 5
+        },
+        {
+         "id": "eta",
+         "weight": 5,
+         "value": 8
+        },
+        {
+         "id": "epsilon",
+         "weight": 5,
+         "value": 5
+        }
+       ],
+       14
+      ],
+      "expected": [
+       "delta",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "weight": 3,
+         "value": 1
+        },
+        {
+         "id": "kappa",
+         "weight": 1,
+         "value": 10
+        },
+        {
+         "id": "zeta",
+         "weight": 4,
+         "value": 8
+        },
+        {
+         "id": "alpha",
+         "weight": 6,
+         "value": 11
+        },
+        {
+         "id": "theta",
+         "weight": 4,
+         "value": 8
+        },
+        {
+         "id": "eta",
+         "weight": 2,
+         "value": 9
+        },
+        {
+         "id": "gamma",
+         "weight": 1,
+         "value": 9
+        },
+        {
+         "id": "iota",
+         "weight": 3,
+         "value": 4
+        }
+       ],
+       5
+      ],
+      "expected": [
+       "eta",
+       "gamma",
+       "kappa"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "weight": 0,
+         "value": 3
+        },
+        {
+         "id": "eta",
+         "weight": 2,
+         "value": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "eta",
+         "weight": 2,
+         "value": 3
+        },
+        {
+         "id": "delta",
+         "weight": 2,
+         "value": 3
+        }
+       ],
+       2
+      ],
+      "expected": [
+       "delta"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-subset_selection-10005",
+   "family": "subset_selection",
+   "split": "eval",
+   "instruction": "In selection.py, write allocate(items, capacity) that picks which parcels to take. Each item is a dict with a unique string \"id\", a positive integer \"size\" and a non-negative integer \"score\". Return the sorted list of ids whose total score is as large as possible while total size stays <= capacity. If several selections tie on total score, return the lexicographically smallest sorted id list. An empty selection is allowed. Raise ValueError if capacity is negative or any size is <= 0. Do not modify the input. Save the file selection.py.",
+   "initial_files": {
+    "selection.py": "def allocate(items, capacity):\n    return None\n"
+   },
+   "expected_output_file": "selection.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "selection.py",
+    "function": "allocate",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "id": "epsilon",
+         "size": 3,
+         "score": 0
+        },
+        {
+         "id": "gamma",
+         "size": 5,
+         "score": 5
+        },
+        {
+         "id": "delta",
+         "size": 3,
+         "score": 10
+        },
+        {
+         "id": "alpha",
+         "size": 6,
+         "score": 8
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 2
+        },
+        {
+         "id": "iota",
+         "size": 4,
+         "score": 7
+        },
+        {
+         "id": "eta",
+         "size": 2,
+         "score": 1
+        },
+        {
+         "id": "kappa",
+         "size": 4,
+         "score": 1
+        }
+       ],
+       14
+      ],
+      "expected": [
+       "alpha",
+       "delta",
+       "iota"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "iota",
+         "size": 1,
+         "score": 11
+        },
+        {
+         "id": "alpha",
+         "size": 2,
+         "score": 7
+        },
+        {
+         "id": "kappa",
+         "size": 5,
+         "score": 5
+        },
+        {
+         "id": "zeta",
+         "size": 6,
+         "score": 12
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "alpha",
+       "iota",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "delta",
+         "size": 5,
+         "score": 4
+        },
+        {
+         "id": "beta",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       8
+      ],
+      "expected": [
+       "beta",
+       "delta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "gamma",
+         "size": 3,
+         "score": 10
+        },
+        {
+         "id": "iota",
+         "size": 4,
+         "score": 1
+        },
+        {
+         "id": "kappa",
+         "size": 3,
+         "score": 2
+        },
+        {
+         "id": "zeta",
+         "size": 1,
+         "score": 11
+        }
+       ],
+       11
+      ],
+      "expected": [
+       "gamma",
+       "iota",
+       "kappa",
+       "zeta"
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "beta",
+         "size": 4,
+         "score": 11
+        },
+        {
+         "id": "theta",
+         "size": 4,
+         "score": 7
+        },
+        {
+         "id": "zeta",
+         "size": 5,
+         "score": 11
+        },
+        {
+         "id": "epsilon",
+         "size": 2,
+         "score": 9
+        },
+        {
+         "id": "kappa",
+         "size": 3,
+         "score": 2
+        },
+        {
+         "id": "alpha",
+         "size": 5,
+         "score": 3
+        },
+        {
+         "id": "eta",
+         "size": 2,
+         "score": 11
+        },
+        {
+         "id": "iota",
+         "size": 5,
+         "score": 8
+        }
+       ],
+       3
+      ],
+      "expected": [
+       "eta"
+      ]
+     },
+     {
+      "args": [
+       [],
+       0
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [],
+       -1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "kappa",
+         "size": 0,
+         "score": 3
+        },
+        {
+         "id": "theta",
+         "size": 2,
+         "score": 1
+        }
+       ],
+       5
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "id": "theta",
+         "size": 1,
+         "score": 4
+        },
+        {
+         "id": "alpha",
+         "size": 1,
+         "score": 4
+        }
+       ],
+       1
+      ],
+      "expected": [
+       "alpha"
+      ],
+      "tie": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-10000",
+   "family": "interval_merge",
+   "split": "eval",
+   "instruction": "In calendar_ops.py, write coalesce(intervals) that combines overlapping time ranges. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save the file calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def coalesce(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "coalesce",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         15,
+         20
+        ],
+        [
+         20,
+         21
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        15,
+        21
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         19,
+         22
+        ],
+        [
+         19,
+         22
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        19,
+        22
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         9
+        ],
+        [
+         18,
+         20
+        ],
+        [
+         4,
+         10
+        ],
+        [
+         1,
+         6
+        ],
+        [
+         17,
+         19
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        1,
+        10
+       ],
+       [
+        17,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         7
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        7
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         0,
+         6
+        ],
+        [
+         7,
+         7
+        ],
+        [
+         14,
+         19
+        ],
+        [
+         6,
+         11
+        ],
+        [
+         2,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        11
+       ],
+       [
+        14,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         10,
+         7
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         12
+        ],
+        [
+         6,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        6,
+        12
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         8
+        ],
+        [
+         6,
+         15
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        6,
+        15
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-10001",
+   "family": "interval_merge",
+   "split": "eval",
+   "instruction": "Implement merge_slots(intervals) in ranges.py to merge overlapping intervals. Each interval is a dict {\"from\": s, \"to\": e} with integer values. Return merged intervals as dicts with the same \"from\"/\"to\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save ranges.py.",
+   "initial_files": {
+    "ranges.py": "def merge_slots(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "merge_slots",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "from": 12,
+         "to": 15
+        },
+        {
+         "from": 14,
+         "to": 19
+        },
+        {
+         "from": 1,
+         "to": 1
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 1,
+        "to": 1
+       },
+       {
+        "from": 12,
+        "to": 19
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 13,
+         "to": 17
+        },
+        {
+         "from": 12,
+         "to": 16
+        },
+        {
+         "from": 5,
+         "to": 10
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 5,
+        "to": 10
+       },
+       {
+        "from": 12,
+        "to": 17
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 6,
+         "to": 7
+        },
+        {
+         "from": 13,
+         "to": 16
+        },
+        {
+         "from": 8,
+         "to": 14
+        },
+        {
+         "from": 4,
+         "to": 9
+        },
+        {
+         "from": 13,
+         "to": 19
+        },
+        {
+         "from": 14,
+         "to": 16
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 4,
+        "to": 19
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 16,
+         "to": 20
+        },
+        {
+         "from": 0,
+         "to": 4
+        },
+        {
+         "from": 4,
+         "to": 9
+        },
+        {
+         "from": 18,
+         "to": 21
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 0,
+        "to": 9
+       },
+       {
+        "from": 16,
+        "to": 21
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 16,
+         "to": 16
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 16,
+        "to": 16
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 13,
+         "to": 10
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 12,
+         "to": 15
+        },
+        {
+         "from": 9,
+         "to": 12
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 9,
+        "to": 15
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "from": 10,
+         "to": 11
+        },
+        {
+         "from": 9,
+         "to": 18
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "from": 9,
+        "to": 18
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-10002",
+   "family": "interval_merge",
+   "split": "eval",
+   "instruction": "Implement coalesce(intervals) in calendar_ops.py to merge overlapping intervals. Each interval is a dict {\"start\": s, \"end\": e} with integer values. Return merged intervals as dicts with the same \"start\"/\"end\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def coalesce(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "coalesce",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "start": 1,
+         "end": 7
+        },
+        {
+         "start": 5,
+         "end": 11
+        },
+        {
+         "start": 12,
+         "end": 17
+        },
+        {
+         "start": 17,
+         "end": 17
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 1,
+        "end": 11
+       },
+       {
+        "start": 12,
+        "end": 17
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 18,
+         "end": 21
+        },
+        {
+         "start": 5,
+         "end": 7
+        },
+        {
+         "start": 0,
+         "end": 4
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 0,
+        "end": 4
+       },
+       {
+        "start": 5,
+        "end": 7
+       },
+       {
+        "start": 18,
+        "end": 21
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 14,
+         "end": 14
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 14,
+        "end": 14
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 5,
+         "end": 11
+        },
+        {
+         "start": 1,
+         "end": 7
+        },
+        {
+         "start": 15,
+         "end": 18
+        },
+        {
+         "start": 10,
+         "end": 10
+        },
+        {
+         "start": 12,
+         "end": 13
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 1,
+        "end": 11
+       },
+       {
+        "start": 12,
+        "end": 13
+       },
+       {
+        "start": 15,
+        "end": 18
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 14,
+         "end": 19
+        },
+        {
+         "start": 9,
+         "end": 15
+        },
+        {
+         "start": 14,
+         "end": 14
+        },
+        {
+         "start": 4,
+         "end": 6
+        },
+        {
+         "start": 14,
+         "end": 18
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 4,
+        "end": 6
+       },
+       {
+        "start": 9,
+        "end": 19
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 8,
+         "end": 5
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 7,
+         "end": 10
+        },
+        {
+         "start": 4,
+         "end": 7
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 4,
+        "end": 10
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 5,
+         "end": 6
+        },
+        {
+         "start": 4,
+         "end": 13
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 4,
+        "end": 13
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-10003",
+   "family": "interval_merge",
+   "split": "eval",
+   "instruction": "In calendar_ops.py, write merge_slots(intervals) that combines overlapping time ranges. Each interval is a dict {\"start\": s, \"end\": e} with integer values. Return merged intervals as dicts with the same \"start\"/\"end\" keys, sorted by start ascending. Touching intervals like [1,3] and [3,5] should be merged. Raise ValueError if any interval has start > end. Do not modify the input. Save the file calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def merge_slots(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "merge_slots",
+    "cases": [
+     {
+      "args": [
+       [
+        {
+         "start": 5,
+         "end": 6
+        },
+        {
+         "start": 8,
+         "end": 14
+        },
+        {
+         "start": 16,
+         "end": 17
+        },
+        {
+         "start": 13,
+         "end": 17
+        },
+        {
+         "start": 18,
+         "end": 24
+        },
+        {
+         "start": 5,
+         "end": 6
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 5,
+        "end": 6
+       },
+       {
+        "start": 8,
+        "end": 17
+       },
+       {
+        "start": 18,
+        "end": 24
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 15,
+         "end": 17
+        },
+        {
+         "start": 8,
+         "end": 9
+        },
+        {
+         "start": 14,
+         "end": 15
+        },
+        {
+         "start": 3,
+         "end": 7
+        },
+        {
+         "start": 17,
+         "end": 23
+        },
+        {
+         "start": 12,
+         "end": 15
+        },
+        {
+         "start": 9,
+         "end": 11
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 3,
+        "end": 7
+       },
+       {
+        "start": 8,
+        "end": 11
+       },
+       {
+        "start": 12,
+        "end": 23
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 17,
+         "end": 19
+        },
+        {
+         "start": 15,
+         "end": 18
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 15,
+        "end": 19
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 17,
+         "end": 22
+        },
+        {
+         "start": 2,
+         "end": 5
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 2,
+        "end": 5
+       },
+       {
+        "start": 17,
+        "end": 22
+       }
+      ]
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 16,
+         "end": 17
+        },
+        {
+         "start": 0,
+         "end": 2
+        },
+        {
+         "start": 0,
+         "end": 0
+        },
+        {
+         "start": 13,
+         "end": 13
+        },
+        {
+         "start": 20,
+         "end": 24
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 0,
+        "end": 2
+       },
+       {
+        "start": 13,
+        "end": 13
+       },
+       {
+        "start": 16,
+        "end": 17
+       },
+       {
+        "start": 20,
+        "end": 24
+       }
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 9,
+         "end": 6
+        }
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 8,
+         "end": 11
+        },
+        {
+         "start": 5,
+         "end": 8
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 5,
+        "end": 11
+       }
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        {
+         "start": 6,
+         "end": 7
+        },
+        {
+         "start": 5,
+         "end": 14
+        }
+       ]
+      ],
+      "expected": [
+       {
+        "start": 5,
+        "end": 14
+       }
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-10004",
+   "family": "interval_merge",
+   "split": "eval",
+   "instruction": "Implement merge_slots(intervals) in calendar_ops.py to merge overlapping intervals. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should not be merged; only real overlaps merge. Raise ValueError if any interval has start > end. Do not modify the input. Save calendar_ops.py.",
+   "initial_files": {
+    "calendar_ops.py": "def merge_slots(intervals):\n    return None\n"
+   },
+   "expected_output_file": "calendar_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "calendar_ops.py",
+    "function": "merge_slots",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         8,
+         10
+        ],
+        [
+         0,
+         1
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        1
+       ],
+       [
+        8,
+        10
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         15,
+         15
+        ],
+        [
+         0,
+         2
+        ],
+        [
+         19,
+         23
+        ],
+        [
+         5,
+         6
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        0,
+        2
+       ],
+       [
+        5,
+        6
+       ],
+       [
+        15,
+        15
+       ],
+       [
+        19,
+        23
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         17,
+         19
+        ],
+        [
+         12,
+         14
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        12,
+        14
+       ],
+       [
+        17,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         12,
+         17
+        ],
+        [
+         3,
+         5
+        ],
+        [
+         4,
+         7
+        ],
+        [
+         10,
+         13
+        ],
+        [
+         14,
+         20
+        ],
+        [
+         5,
+         11
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        20
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         12,
+         18
+        ],
+        [
+         18,
+         24
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        12,
+        18
+       ],
+       [
+        18,
+        24
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         5
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         10
+        ],
+        [
+         4,
+         7
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        7
+       ],
+       [
+        7,
+        10
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ],
+        [
+         4,
+         13
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        13
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-interval_merge-10005",
+   "family": "interval_merge",
+   "split": "eval",
+   "instruction": "In ranges.py, write merge_slots(intervals) that combines overlapping time ranges. Each interval is a two-element list [start, end] of integers. Return merged intervals in the same [start, end] list form, sorted by start ascending. Touching intervals like [1,3] and [3,5] should not be merged; only real overlaps merge. Raise ValueError if any interval has start > end. Do not modify the input. Save the file ranges.py.",
+   "initial_files": {
+    "ranges.py": "def merge_slots(intervals):\n    return None\n"
+   },
+   "expected_output_file": "ranges.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "ranges.py",
+    "function": "merge_slots",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         2,
+         7
+        ],
+        [
+         18,
+         18
+        ],
+        [
+         5,
+         8
+        ],
+        [
+         12,
+         17
+        ],
+        [
+         12,
+         15
+        ],
+        [
+         10,
+         13
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        2,
+        8
+       ],
+       [
+        10,
+        17
+       ],
+       [
+        18,
+        18
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         12
+        ],
+        [
+         4,
+         7
+        ],
+        [
+         9,
+         15
+        ],
+        [
+         9,
+         12
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        15
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14,
+         18
+        ],
+        [
+         7,
+         10
+        ],
+        [
+         8,
+         14
+        ],
+        [
+         16,
+         17
+        ],
+        [
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        4
+       ],
+       [
+        7,
+        14
+       ],
+       [
+        14,
+        18
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         11
+        ],
+        [
+         17,
+         19
+        ],
+        [
+         3,
+         7
+        ],
+        [
+         4,
+         7
+        ],
+        [
+         19,
+         19
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        3,
+        7
+       ],
+       [
+        7,
+        11
+       ],
+       [
+        17,
+        19
+       ],
+       [
+        19,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         13,
+         13
+        ],
+        [
+         4,
+         4
+        ],
+        [
+         9,
+         10
+        ],
+        [
+         9,
+         12
+        ],
+        [
+         15,
+         15
+        ],
+        [
+         14,
+         18
+        ],
+        [
+         18,
+         19
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        4,
+        4
+       ],
+       [
+        9,
+        12
+       ],
+       [
+        13,
+        13
+       ],
+       [
+        14,
+        18
+       ],
+       [
+        18,
+        19
+       ]
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         12,
+         9
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         11,
+         14
+        ],
+        [
+         8,
+         11
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        8,
+        11
+       ],
+       [
+        11,
+        14
+       ]
+      ],
+      "touching_case": true
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         10
+        ],
+        [
+         8,
+         17
+        ]
+       ]
+      ],
+      "expected": [
+       [
+        8,
+        17
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-10000",
+   "family": "log_aggregation",
+   "split": "eval",
+   "instruction": "Implement count_entries(lines) in report.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each level to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save report.py.",
+   "initial_files": {
+    "report.py": "def count_entries(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "count_entries",
+    "cases": [
+     {
+      "args": [
+       [
+        "garbage",
+        "2026-10-07T18:45:00 INFO search: ok timeout",
+        "2026-10-24T04:17:00 info worker: closed",
+        "2026-10-26T08:30:00 ERROR ui: retry",
+        "2026-10-23T02:30:00 DEBUG billing: started retry",
+        "2026-10-06T07:17:00 ERROR cache: retry",
+        "2026-10-04T03:45:00 ERROR mailer: ok ok",
+        "2026-10-23T19:16:00 error billing: connected ok",
+        "2026-10-09T16:01:00 ERROR billing: retry failed connected",
+        "2026-10-02T23:41:00 DEBUG cache: retry"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "ERROR": 5,
+       "DEBUG": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-05T13:16:00 INFO ui: slow failed",
+        "2026-10-09T11:04:00 warn mailer: failed",
+        "2026-10-23T01:47:00 INFO mailer: failed started",
+        "x y z",
+        "2026-10-15T08:23:00 debug gateway: slow started",
+        "2026-10-20T22:42:00 DEBUG auth: slow",
+        "2026-10-05T03:16:00 DEBUG auth: failed slow slow",
+        "2026-10-08T19:36:00 WARN search: slow started retry",
+        "2026-10-18T12:21:00 info ui: failed"
+       ]
+      ],
+      "expected": {
+       "INFO": 3,
+       "WARN": 2,
+       "DEBUG": 3
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-07T09:35:00 info worker: started timeout started",
+        "2026-10-24T02:19:00 WARN worker: failed started started",
+        "2026-10-10T05:02:00 INFO search: failed slow retry",
+        "2026-10-20T11:50:00 error billing: timeout retry started",
+        "garbage"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "WARN": 1,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "garbage",
+        "2026-10-26T00:28:00 WARN worker: slow",
+        "2026-10-17T03:15:00 INFO auth: started closed slow",
+        "2026-10-26T19:51:00 error worker: connected failed closed",
+        "2026-10-21T00:11:00 WARN billing: connected started connected",
+        "2026-10-11T08:41:00 ERROR worker: started started ok",
+        "2026-10-05T13:24:00 info billing: ok",
+        "2026-10-25T23:15:00 ERROR cache: timeout failed timeout",
+        "2026-10-03T13:51:00 INFO auth: retry"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "INFO": 3,
+       "ERROR": 3
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-02T23:53:00 WARN cache: started",
+        "2026-10-27T18:53:00 ERROR worker: connected retry ok",
+        "garbage",
+        "2026-10-06T04:42:00 INFO cache: retry",
+        "2026-10-28T14:45:00 DEBUG worker: failed failed started",
+        "2026-10-12T15:59:00 WARN cache: timeout connected ok",
+        "2026-10-01T21:37:00 WARN billing: ok",
+        "2026-10-11T17:20:00 info billing: slow failed slow",
+        "2026-10-16T19:29:00 error worker: started"
+       ]
+      ],
+      "expected": {
+       "WARN": 3,
+       "ERROR": 2,
+       "INFO": 2,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-10001",
+   "family": "log_aggregation",
+   "split": "eval",
+   "instruction": "Fix report.py: tally_events(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per service for levels ERROR, WARN only, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to report.py.",
+   "initial_files": {
+    "report.py": "def tally_events(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "tally_events",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-03T11:18:00 error gateway: started timeout failed",
+        "2026-10-17T17:29:00 info search: started",
+        "2026-10-23T15:52:00 INFO mailer: timeout started",
+        "2026-10-07T09:35:00 INFO auth: started closed",
+        "2026-10-02T15:28:00 debug auth: started started timeout",
+        "2026-10-15T05:09:00 ERROR mailer: closed",
+        "2026-10-25T17:17:00 WARN cache: failed",
+        "2026-10-01 INFO"
+       ]
+      ],
+      "expected": {
+       "gateway": 1,
+       "mailer": 1,
+       "cache": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T00:22:00 warn cache: closed failed retry",
+        "2026-10-16T19:06:00 warn billing: connected",
+        "2026-10-25T01:37:00 info auth: retry timeout",
+        "2026-10-09T17:49:00 ERROR ui: slow retry ok",
+        "2026-10-28T15:29:00 ERROR auth: started",
+        "2026-10-22T11:26:00 DEBUG worker: connected retry ok",
+        "2026-10-12T18:26:00 INFO ui: ok started"
+       ]
+      ],
+      "expected": {
+       "cache": 1,
+       "billing": 1,
+       "ui": 1,
+       "auth": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-11T08:54:00 INFO billing: slow",
+        "2026-10-03T13:07:00 error cache: failed retry",
+        "2026-10-22T16:30:00 ERROR worker: started connected retry"
+       ]
+      ],
+      "expected": {
+       "cache": 1,
+       "worker": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-12T05:08:00 INFO worker: started",
+        "2026-10-11T00:05:00 WARN mailer: started closed slow",
+        "2026-10-12T13:27:00 ERROR search: closed",
+        "2026-10-20T01:53:00 DEBUG search: started closed"
+       ]
+      ],
+      "expected": {
+       "mailer": 1,
+       "search": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-11T00:11:00 WARN mailer: timeout ok",
+        "2026-10-06T16:51:00 error ui: closed timeout started",
+        "2026-10-09T09:58:00 DEBUG search: closed closed slow"
+       ]
+      ],
+      "expected": {
+       "mailer": 1,
+       "ui": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-10002",
+   "family": "log_aggregation",
+   "split": "eval",
+   "instruction": "Fix report.py: digest_lines(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per level, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to report.py.",
+   "initial_files": {
+    "report.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-22T16:06:00 INFO gateway: ok",
+        "2026-10-04T05:45:00 info gateway: ok retry",
+        "2026-10-27T12:48:00 INFO gateway: closed",
+        "2026-10-24T22:27:00 DEBUG gateway: ok ok"
+       ]
+      ],
+      "expected": {
+       "INFO": 3,
+       "DEBUG": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-14T04:57:00 warn auth: closed started",
+        "2026-10-15T06:02:00 ERROR auth: started failed",
+        "2026-10-21T23:08:00 ERROR mailer: timeout",
+        "2026-10-20T10:31:00 DEBUG auth: connected",
+        "2026-10-05T08:21:00 INFO mailer: retry",
+        "garbage",
+        "2026-10-17T21:09:00 WARN search: retry retry ok"
+       ]
+      ],
+      "expected": {
+       "WARN": 2,
+       "ERROR": 2,
+       "DEBUG": 1,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-03T12:19:00 INFO mailer: retry",
+        "2026-10-04T09:51:00 DEBUG mailer: retry connected retry",
+        "2026-10-20T14:53:00 ERROR search: timeout",
+        "2026-10-11T12:52:00 info gateway: failed slow ok"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "DEBUG": 1,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-18T17:02:00 error gateway: connected connected",
+        "2026-10-16T21:46:00 error mailer: ok ok",
+        "2026-10-04T14:22:00 WARN mailer: connected closed slow",
+        "garbage",
+        "2026-10-03T07:37:00 WARN auth: timeout timeout",
+        "2026-10-27T14:28:00 DEBUG ui: connected closed",
+        "2026-10-13T14:40:00 INFO gateway: slow"
+       ]
+      ],
+      "expected": {
+       "ERROR": 2,
+       "WARN": 2,
+       "DEBUG": 1,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-28T08:06:00 DEBUG worker: timeout",
+        "2026-10-03T19:02:00 INFO cache: slow",
+        "2026-10-01T04:50:00 INFO mailer: failed ok",
+        "2026-10-24T20:44:00 ERROR cache: closed",
+        "2026-10-20T00:57:00 WARN cache: failed ok closed",
+        "2026-10-04T11:50:00 ERROR worker: failed failed",
+        "2026-10-07T19:12:00 DEBUG ui: closed retry"
+       ]
+      ],
+      "expected": {
+       "DEBUG": 2,
+       "INFO": 2,
+       "ERROR": 2,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-10003",
+   "family": "log_aggregation",
+   "split": "eval",
+   "instruction": "Fix report.py: aggregate_log(lines) receives log strings formatted as \"<timestamp> <LEVEL> <service>: <message>\". Produce {name: count} per service for levels ERROR, WARN only, treating level names case-insensitively (upper-case keys), dropping malformed input lines. Write the result to report.py.",
+   "initial_files": {
+    "report.py": "def aggregate_log(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "aggregate_log",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-17T12:22:00 WARN auth: slow failed ok",
+        "2026-10-04T04:17:00 ERROR billing: ok retry",
+        "2026-10-08T19:43:00 WARN worker: failed",
+        "2026-10-12T16:46:00 WARN auth: connected"
+       ]
+      ],
+      "expected": {
+       "auth": 2,
+       "billing": 1,
+       "worker": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-08T05:03:00 INFO cache: timeout slow closed",
+        "2026-10-28T01:19:00 INFO ui: slow connected",
+        "2026-10-01T07:47:00 ERROR worker: retry"
+       ]
+      ],
+      "expected": {
+       "worker": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-16T17:57:00 DEBUG cache: ok started",
+        "2026-10-15T19:28:00 ERROR ui: connected timeout",
+        "2026-10-23T13:12:00 ERROR search: retry started connected",
+        "2026-10-18T22:23:00 DEBUG auth: retry timeout failed",
+        "2026-10-16T20:47:00 ERROR search: slow",
+        "garbage",
+        "2026-10-06T07:02:00 error auth: started timeout failed",
+        "2026-10-06T22:24:00 debug ui: started retry"
+       ]
+      ],
+      "expected": {
+       "ui": 1,
+       "search": 2,
+       "auth": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "",
+        "2026-10-12T09:50:00 INFO search: timeout slow",
+        "2026-10-06T13:11:00 debug gateway: connected",
+        "2026-10-04T07:36:00 INFO search: started slow started",
+        "2026-10-11T18:53:00 INFO cache: slow started retry"
+       ]
+      ],
+      "expected": {}
+     },
+     {
+      "args": [
+       [
+        "2026-10-06T17:36:00 warn mailer: timeout retry",
+        "2026-10-14T17:36:00 ERROR billing: timeout started",
+        "garbage",
+        "2026-10-01T06:45:00 warn cache: started started slow",
+        "2026-10-20T17:11:00 ERROR ui: ok retry failed",
+        "2026-10-25T12:40:00 warn billing: connected closed closed",
+        "2026-10-26T06:10:00 DEBUG search: started slow",
+        "2026-10-07T07:31:00 INFO cache: closed retry ok"
+       ]
+      ],
+      "expected": {
+       "mailer": 1,
+       "billing": 2,
+       "cache": 1,
+       "ui": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-10004",
+   "family": "log_aggregation",
+   "split": "eval",
+   "instruction": "In report.py, digest_lines(lines) should count log lines per level. Line format: \"<timestamp> <LEVEL> <service>: <message>\"; level case may vary and must be upper-cased; ignore lines that do not match. Return a plain dict of counts and save report.py.",
+   "initial_files": {
+    "report.py": "def digest_lines(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "digest_lines",
+    "cases": [
+     {
+      "args": [
+       [
+        "x y z",
+        "2026-10-05T22:09:00 WARN ui: closed",
+        "2026-10-17T06:37:00 INFO search: slow connected retry",
+        "2026-10-03T20:41:00 ERROR worker: started slow slow",
+        "2026-10-14T04:39:00 DEBUG mailer: connected",
+        "2026-10-01T03:40:00 ERROR worker: connected failed retry",
+        "2026-10-25T17:16:00 INFO billing: retry",
+        "2026-10-25T04:03:00 DEBUG worker: started failed started",
+        "2026-10-01T11:28:00 ERROR ui: timeout retry"
+       ]
+      ],
+      "expected": {
+       "WARN": 1,
+       "INFO": 2,
+       "ERROR": 3,
+       "DEBUG": 2
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-07T10:30:00 WARN worker: timeout",
+        "2026-10-01T17:51:00 debug billing: closed",
+        "2026-10-03T22:10:00 ERROR mailer: timeout",
+        "garbage",
+        "2026-10-09T19:55:00 INFO cache: started retry",
+        "2026-10-05T10:54:00 DEBUG cache: slow started",
+        "2026-10-24T05:19:00 DEBUG search: timeout failed"
+       ]
+      ],
+      "expected": {
+       "WARN": 1,
+       "DEBUG": 3,
+       "ERROR": 1,
+       "INFO": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-06T21:36:00 info cache: retry slow",
+        "2026-10-09T09:39:00 WARN mailer: slow",
+        "2026-10-13T19:33:00 DEBUG ui: retry retry",
+        "2026-10-16T14:57:00 debug ui: slow timeout closed",
+        "2026-10-04T17:16:00 DEBUG worker: failed started",
+        "2026-10-06T07:06:00 ERROR search: timeout ok",
+        "2026-10-20T12:30:00 INFO gateway: closed"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "WARN": 1,
+       "DEBUG": 3,
+       "ERROR": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "garbage",
+        "2026-10-25T03:33:00 info ui: slow",
+        "2026-10-24T22:41:00 warn auth: closed slow timeout",
+        "2026-10-18T23:40:00 INFO mailer: retry"
+       ]
+      ],
+      "expected": {
+       "INFO": 2,
+       "WARN": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-03T03:16:00 INFO auth: retry timeout started",
+        "2026-10-12T23:14:00 DEBUG mailer: closed failed failed",
+        "2026-10-20T21:58:00 ERROR auth: timeout connected",
+        "2026-10-28T07:56:00 error mailer: started ok",
+        "x y z"
+       ]
+      ],
+      "expected": {
+       "INFO": 1,
+       "DEBUG": 1,
+       "ERROR": 2
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-log_aggregation-10005",
+   "family": "log_aggregation",
+   "split": "eval",
+   "instruction": "Implement summarize(lines) in report.py. Each line looks like \"<timestamp> <LEVEL> <service>: <message>\". Return a dict mapping each service for levels WARN only to how many lines it has. Levels are case-insensitive (report them upper-case). Skip malformed lines. Omit keys with zero count. Save report.py.",
+   "initial_files": {
+    "report.py": "def summarize(lines):\n    return {}\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "report.py",
+    "function": "summarize",
+    "cases": [
+     {
+      "args": [
+       [
+        "2026-10-24T12:29:00 error worker: closed",
+        "2026-10-17T06:17:00 warn auth: failed",
+        "2026-10-13T23:41:00 DEBUG auth: slow retry",
+        "2026-10-25T10:31:00 warn billing: connected timeout",
+        "2026-10-10T02:24:00 DEBUG cache: timeout failed"
+       ]
+      ],
+      "expected": {
+       "auth": 1,
+       "billing": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-26T14:23:00 info mailer: closed retry started",
+        "2026-10-17T17:47:00 INFO auth: timeout",
+        "2026-10-28T21:45:00 WARN mailer: ok connected",
+        "2026-10-17T12:48:00 ERROR worker: timeout",
+        "2026-10-16T07:26:00 INFO ui: started slow",
+        "2026-10-01T09:48:00 INFO gateway: failed",
+        "2026-10-26T08:32:00 INFO billing: connected",
+        "2026-10-18T20:20:00 ERROR gateway: retry connected started",
+        "2026-10-17T02:52:00 info cache: closed slow slow"
+       ]
+      ],
+      "expected": {
+       "mailer": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-15T17:59:00 INFO auth: connected retry connected",
+        "2026-10-05T06:16:00 WARN worker: retry failed",
+        "2026-10-27T15:56:00 WARN cache: connected ok connected",
+        "2026-10-15T17:33:00 WARN gateway: failed ok retry",
+        "garbage",
+        "2026-10-21T15:57:00 DEBUG cache: connected ok started",
+        "2026-10-28T11:32:00 info billing: retry",
+        "2026-10-17T16:49:00 INFO cache: connected retry retry",
+        "2026-10-02T14:45:00 WARN worker: failed started",
+        "2026-10-19T10:20:00 DEBUG cache: retry failed retry"
+       ]
+      ],
+      "expected": {
+       "worker": 2,
+       "cache": 1,
+       "gateway": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "x y z",
+        "2026-10-16T07:51:00 DEBUG search: failed retry started",
+        "2026-10-24T16:51:00 INFO billing: ok slow slow",
+        "2026-10-13T13:14:00 warn ui: ok ok retry",
+        "2026-10-18T18:36:00 DEBUG search: ok timeout"
+       ]
+      ],
+      "expected": {
+       "ui": 1
+      }
+     },
+     {
+      "args": [
+       [
+        "2026-10-26T00:22:00 info gateway: failed ok",
+        "2026-10-07T19:25:00 warn billing: slow connected slow",
+        "2026-10-02T15:43:00 INFO billing: timeout",
+        "",
+        "2026-10-07T03:04:00 debug cache: started retry closed",
+        "2026-10-02T00:57:00 INFO cache: started"
+       ]
+      ],
+      "expected": {
+       "billing": 1
+      }
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": {}
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-10000",
+   "family": "csv_transform",
+   "split": "eval",
+   "instruction": "Implement normalize_table(text) in crm_clean.py. The input is CSV text with a header row (columns: score, id, email, name). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"name\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"name\", keeping the first occurrence; sort rows by \"email\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "score,id,email,name\n6, 002 ,ed@x.net,Fa Li\n58,030,Ann@Example.com , Di Wu\n7,017, bo@mail.org,Di Wu\n38,028,ed@x.net,Cy Park\n58 , 030,Ann@Example.com , Di Wu \n"
+      ],
+      "expected": "score,id,email,name\n58,030,ann@example.com,Di Wu\n6,002,ed@x.net,Fa Li\n38,028,ed@x.net,Cy Park\n"
+     },
+     {
+      "args": [
+       "score,id,email,name\n 76,020,ed@x.net,\n73,011, ed@x.net,\n82,010 ,bo@mail.org, Cy Park\n 39,035, Ann@Example.com,\n5,040 ,ed@x.net,Cy Park\n40,016, CY@corp.io,Bo Chen\n 41,012,CY@corp.io ,Bo Chen\n"
+      ],
+      "expected": "score,id,email,name\n82,010,bo@mail.org,Cy Park\n40,016,cy@corp.io,Bo Chen\n"
+     },
+     {
+      "args": [
+       "score,id,email,name\n32,003 ,di@Mail.org, Di Wu \n32,003,di@Mail.org,Di Wu\n43,007, ed@x.net,Ed Kim\n71,035 ,ed@x.net,Bo Chen\n42,025 ,ed@x.net,Ann Lee\n"
+      ],
+      "expected": "score,id,email,name\n32,003,di@mail.org,Di Wu\n43,007,ed@x.net,Ed Kim\n71,035,ed@x.net,Bo Chen\n42,025,ed@x.net,Ann Lee\n"
+     },
+     {
+      "args": [
+       "score,id,email,name\n63 ,038,di@Mail.org,  Fa Li  \n0 ,003,di@Mail.org ,Di Wu\n63,038,di@Mail.org ,Fa Li\n6 ,035,bo@mail.org, Fa Li \n75, 001,Ann@Example.com,Cy Park\n"
+      ],
+      "expected": "score,id,email,name\n75,001,ann@example.com,Cy Park\n63,038,di@mail.org,Fa Li\n0,003,di@mail.org,Di Wu\n"
+     },
+     {
+      "args": [
+       "score,id,email,name\n36 ,026,CY@corp.io,Ed Kim\n91,040,di@Mail.org, Cy Park\n81 ,034, Ann@Example.com,Cy Park\n44,012,Ann@Example.com,Bo Chen\n81, 015,CY@corp.io,Fa Li \n 77, 018,CY@corp.io, Fa Li\n96,021,Ann@Example.com,\n34 ,008,CY@corp.io,\n"
+      ],
+      "expected": "score,id,email,name\n44,012,ann@example.com,Bo Chen\n36,026,cy@corp.io,Ed Kim\n81,015,cy@corp.io,Fa Li\n91,040,di@mail.org,Cy Park\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "score,id,email,name\n"
+      ],
+      "expected": "score,id,email,name\n"
+     },
+     {
+      "args": [
+       "score,id,email,name\n38,012,\"Lima, PE\",Bo Chen\n"
+      ],
+      "expected": "score,id,email,name\n38,012,\"lima, pe\",Bo Chen\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-10001",
+   "family": "csv_transform",
+   "split": "eval",
+   "instruction": "Implement clean_rows(text) in crm_clean.py. The input is CSV text with a header row (columns: team, name, city, id, score). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"score\" cell is empty; remove duplicate rows by \"score\", keeping the first occurrence; sort rows by \"name\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def clean_rows(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "clean_rows",
+    "cases": [
+     {
+      "args": [
+       "team,name,city,id,score\ngreen,Cy Park, Oslo,023,76\n blue, Bo Chen,\"Lima, PE\",002,10\ngreen,Bo Chen,Kyiv,039,14\nred,Cy Park,Rome,039,66 \nblue,Cy Park ,Kyiv ,025,35\ngreen, Ann Lee,Paris,027,25 \nblue, Cy Park,Paris,001 ,\n blue , Cy Park,Kyiv,007, 97 \nops,Ann Lee , Paris,027,\n"
+      ],
+      "expected": "team,name,city,id,score\ngreen,Ann Lee,Paris,027,25\nblue,Bo Chen,\"Lima, PE\",002,10\ngreen,Bo Chen,Kyiv,039,14\ngreen,Cy Park,Oslo,023,76\nred,Cy Park,Rome,039,66\nblue,Cy Park,Kyiv,025,35\nblue,Cy Park,Kyiv,007,97\n"
+     },
+     {
+      "args": [
+       "team,name,city,id,score\nops ,Ed Kim,Paris,005,\nred,Ann Lee,Oslo,010,70\nops,Ed Kim,Paris,005,   \n blue , Di Wu, Oslo,022 ,87\nblue,Fa Li,\" Lima, PE\",025,17 \nred,Di Wu, Oslo,020,61 \ngreen,Ann Lee,\" Lima, PE\", 039, 47 \ngreen ,Cy Park ,\"Lima, PE\",024 ,8 \nred,Fa Li ,Paris,011 ,21\ngreen, Di Wu,Kyiv,029, 72\n"
+      ],
+      "expected": "team,name,city,id,score\nred,Ann Lee,Oslo,010,70\ngreen,Ann Lee,\"Lima, PE\",039,47\ngreen,Cy Park,\"Lima, PE\",024,8\nblue,Di Wu,Oslo,022,87\nred,Di Wu,Oslo,020,61\ngreen,Di Wu,Kyiv,029,72\nblue,Fa Li,\"Lima, PE\",025,17\nred,Fa Li,Paris,011,21\n"
+     },
+     {
+      "args": [
+       "team,name,city,id,score\ngreen,Di Wu , Paris,038,0\nred,Cy Park,Oslo,023,\n blue ,Bo Chen,\" Lima, PE\",007,67\nops,Ann Lee,Paris ,028,53 \nblue,Ann Lee,Paris,018,88\nops,Ed Kim,Oslo,029,32\ngreen, Di Wu, Rome ,018, 52\n blue ,Fa Li,Rome, 005 ,55\ngreen,Bo Chen ,Kyiv,013,61\nred,Cy Park , Oslo,023,  \n"
+      ],
+      "expected": "team,name,city,id,score\nops,Ann Lee,Paris,028,53\nblue,Ann Lee,Paris,018,88\nblue,Bo Chen,\"Lima, PE\",007,67\ngreen,Bo Chen,Kyiv,013,61\ngreen,Di Wu,Paris,038,0\ngreen,Di Wu,Rome,018,52\nops,Ed Kim,Oslo,029,32\nblue,Fa Li,Rome,005,55\n"
+     },
+     {
+      "args": [
+       "team,name,city,id,score\ngreen,Bo Chen,Rome ,015, 12 \ngreen,Di Wu,Oslo,016, 47\nblue,Di Wu,Rome,022,54\ngreen,Bo Chen, Rome,015,12\n"
+      ],
+      "expected": "team,name,city,id,score\ngreen,Bo Chen,Rome,015,12\ngreen,Di Wu,Oslo,016,47\nblue,Di Wu,Rome,022,54\n"
+     },
+     {
+      "args": [
+       "team,name,city,id,score\n ops,Ann Lee , Paris,024, \nblue,Bo Chen,Rome,027,\nops , Cy Park , Paris ,001 , 80 \nblue,Bo Chen,Rome,024,\ngreen,Fa Li,\"Lima, PE\",013,87 \n ops,Di Wu,Oslo, 011,26\n ops ,Cy Park,Paris,001, 80\nblue, Ed Kim ,Oslo,020,72\ngreen ,Ed Kim,Oslo,002 ,0\n"
+      ],
+      "expected": "team,name,city,id,score\nops,Cy Park,Paris,001,80\nops,Di Wu,Oslo,011,26\nblue,Ed Kim,Oslo,020,72\ngreen,Ed Kim,Oslo,002,0\ngreen,Fa Li,\"Lima, PE\",013,87\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "team,name,city,id,score\n"
+      ],
+      "expected": "team,name,city,id,score\n"
+     },
+     {
+      "args": [
+       "team,name,city,id,score\nops,\"Lima, PE\",Kyiv,004,9\n"
+      ],
+      "expected": "team,name,city,id,score\nops,\"Lima, PE\",Kyiv,004,9\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-10002",
+   "family": "csv_transform",
+   "split": "eval",
+   "instruction": "In export_clean.py, write normalize_table(text) to clean an exported table. The input is CSV text with a header row (columns: name, team, city, id, score). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"name\" cell is empty; remove duplicate rows by \"score\", keeping the first occurrence; sort rows by \"id\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file export_clean.py.",
+   "initial_files": {
+    "export_clean.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "export_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "export_clean.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "name,team,city,id,score\n,red,\" Lima, PE\",008,26\nEd Kim,green, Kyiv,033,58 \n ,blue, Rome,032, 61 \n,ops, Paris,038,83\nFa Li,red,Kyiv,005,7\n ,blue,Rome,032,61\n"
+      ],
+      "expected": "name,team,city,id,score\nFa Li,red,Kyiv,005,7\nEd Kim,green,Kyiv,033,58\n"
+     },
+     {
+      "args": [
+       "name,team,city,id,score\nFa Li, blue,Paris,013,72 \n Ed Kim,blue ,Rome,032,53\n Fa Li,ops,Paris,038, 91\n Di Wu ,ops ,Kyiv,031 , 45 \n ,green,Oslo,035,94 \nDi Wu,ops ,Kyiv,031,45\n Bo Chen,ops,\" Lima, PE\",017 ,78 \nBo Chen, green,Kyiv,018,69\nFa Li,blue,Kyiv,028,91\n"
+      ],
+      "expected": "name,team,city,id,score\nFa Li,blue,Paris,013,72\nBo Chen,ops,\"Lima, PE\",017,78\nBo Chen,green,Kyiv,018,69\nDi Wu,ops,Kyiv,031,45\nEd Kim,blue,Rome,032,53\nFa Li,ops,Paris,038,91\n"
+     },
+     {
+      "args": [
+       "name,team,city,id,score\nCy Park,ops,Oslo,010, 44\n,blue, Kyiv,004,83\n Ann Lee,ops,Oslo,010, 2\nCy Park,blue,Oslo,025,69 \nDi Wu,ops, Oslo,024,62\nAnn Lee,red ,Rome , 038,30\n ,ops,Kyiv,010,81\nCy Park, ops, Oslo ,010, 44 \n"
+      ],
+      "expected": "name,team,city,id,score\nCy Park,ops,Oslo,010,44\nAnn Lee,ops,Oslo,010,2\nDi Wu,ops,Oslo,024,62\nCy Park,blue,Oslo,025,69\nAnn Lee,red,Rome,038,30\n"
+     },
+     {
+      "args": [
+       "name,team,city,id,score\nFa Li,ops,Rome,004, 43\nFa Li,blue, Paris ,030,16\nFa Li,red,Kyiv,017,36\nFa Li, ops,Rome,004 , 43 \nBo Chen,green,\"Lima, PE\",024, 76\n"
+      ],
+      "expected": "name,team,city,id,score\nFa Li,ops,Rome,004,43\nFa Li,red,Kyiv,017,36\nBo Chen,green,\"Lima, PE\",024,76\nFa Li,blue,Paris,030,16\n"
+     },
+     {
+      "args": [
+       "name,team,city,id,score\n Ann Lee,blue,Paris,013,0 \nEd Kim,green,Oslo , 011,10\nAnn Lee,ops,Oslo,001,5\nAnn Lee, blue,Paris,002, 74  \n Ed Kim,ops , Rome,009,27\n , red, Oslo,035 ,80\nAnn Lee,blue,Paris,002,74\n"
+      ],
+      "expected": "name,team,city,id,score\nAnn Lee,ops,Oslo,001,5\nAnn Lee,blue,Paris,002,74\nEd Kim,ops,Rome,009,27\nEd Kim,green,Oslo,011,10\nAnn Lee,blue,Paris,013,0\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "name,team,city,id,score\n"
+      ],
+      "expected": "name,team,city,id,score\n"
+     },
+     {
+      "args": [
+       "name,team,city,id,score\nDi Wu,red,Oslo,\"Lima, PE\",93\n"
+      ],
+      "expected": "name,team,city,id,score\nDi Wu,red,Oslo,\"Lima, PE\",93\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-10003",
+   "family": "csv_transform",
+   "split": "eval",
+   "instruction": "In crm_clean.py, write tidy_csv(text) to clean an exported table. The input is CSV text with a header row (columns: name, city, score, team). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"name\" cell is empty; remove duplicate rows by \"name\", keeping the first occurrence; sort rows by \"city\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file crm_clean.py.",
+   "initial_files": {
+    "crm_clean.py": "def tidy_csv(text):\n    return None\n"
+   },
+   "expected_output_file": "crm_clean.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "crm_clean.py",
+    "function": "tidy_csv",
+    "cases": [
+     {
+      "args": [
+       "name,city,score,team\n  Ed Kim  ,Oslo,60 , green\nBo Chen,Paris, 71,ops\nBo Chen ,Paris,67, red\nDi Wu ,Rome, 36 ,blue\n Ed Kim,Oslo,60,green\nCy Park,\"Lima, PE\",14 ,red \n Bo Chen,Paris, 2 ,blue\nCy Park ,\"Lima, PE\",71,blue\nBo Chen ,Kyiv,95,ops\n"
+      ],
+      "expected": "name,city,score,team\nCy Park,\"Lima, PE\",14,red\nEd Kim,Oslo,60,green\nBo Chen,Paris,71,ops\nDi Wu,Rome,36,blue\n"
+     },
+     {
+      "args": [
+       "name,city,score,team\nBo Chen,Kyiv,90,blue \nDi Wu,Oslo, 73,green\nFa Li,Paris, 59 , green \n  Ann Lee ,Paris,23,ops\nAnn Lee, Paris,23,ops \nEd Kim,Kyiv ,1 ,red\n Cy Park ,Paris,59,ops\nDi Wu,Kyiv ,18, green\nCy Park, Oslo,9,green\nAnn Lee,Kyiv,88,ops\n"
+      ],
+      "expected": "name,city,score,team\nBo Chen,Kyiv,90,blue\nEd Kim,Kyiv,1,red\nDi Wu,Oslo,73,green\nFa Li,Paris,59,green\nAnn Lee,Paris,23,ops\nCy Park,Paris,59,ops\n"
+     },
+     {
+      "args": [
+       "name,city,score,team\nBo Chen,\"Lima, PE\", 33,ops\n,Rome,81 ,red\n Ann Lee  ,Kyiv,0,green\nAnn Lee , Kyiv,0,green\nBo Chen,\" Lima, PE\", 12,green\nCy Park ,\" Lima, PE\", 0, red\nDi Wu,Rome,6,blue \nFa Li,Kyiv,54, red\nEd Kim,Paris ,4 ,ops\n"
+      ],
+      "expected": "name,city,score,team\nAnn Lee,Kyiv,0,green\nFa Li,Kyiv,54,red\nBo Chen,\"Lima, PE\",33,ops\nCy Park,\"Lima, PE\",0,red\nEd Kim,Paris,4,ops\nDi Wu,Rome,6,blue\n"
+     },
+     {
+      "args": [
+       "name,city,score,team\nCy Park,Paris, 60,red\nBo Chen ,\"Lima, PE \", 30,red \n ,\"Lima, PE\",53,green\nBo Chen,Paris,96 ,green\n  ,\"Lima, PE\",53,green\n"
+      ],
+      "expected": "name,city,score,team\nBo Chen,\"Lima, PE\",30,red\nCy Park,Paris,60,red\n"
+     },
+     {
+      "args": [
+       "name,city,score,team\n Di Wu ,Paris,52,green \nBo Chen,Paris,86, green\nFa Li,Paris ,15 ,blue\n Di Wu, Paris, 52 , green\n Di Wu, Rome, 6,red\nAnn Lee, Kyiv,21,red\n"
+      ],
+      "expected": "name,city,score,team\nAnn Lee,Kyiv,21,red\nDi Wu,Paris,52,green\nBo Chen,Paris,86,green\nFa Li,Paris,15,blue\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "name,city,score,team\n"
+      ],
+      "expected": "name,city,score,team\n"
+     },
+     {
+      "args": [
+       "name,city,score,team\nFa Li,\"Lima, PE\",84,ops\n"
+      ],
+      "expected": "name,city,score,team\nFa Li,\"Lima, PE\",84,ops\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-10004",
+   "family": "csv_transform",
+   "split": "eval",
+   "instruction": "In table_ops.py, write clean_rows(text) to clean an exported table. The input is CSV text with a header row (columns: id, team, score). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"score\" cell is empty; remove duplicate rows by \"team\", keeping the first occurrence; sort rows by \"score\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file table_ops.py.",
+   "initial_files": {
+    "table_ops.py": "def clean_rows(text):\n    return None\n"
+   },
+   "expected_output_file": "table_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "table_ops.py",
+    "function": "clean_rows",
+    "cases": [
+     {
+      "args": [
+       "id,team,score\n003 ,green,44\n029,blue,36\n 025,ops,15\n034,red ,51\n 019, red ,62 \n019,red, 62\n"
+      ],
+      "expected": "id,team,score\n025,ops,15\n029,blue,36\n003,green,44\n034,red,51\n"
+     },
+     {
+      "args": [
+       "id,team,score\n021,green, 86\n 002 ,ops,94\n 002, ops, \n036, green,81\n 029,blue , \n026, blue, 22 \n002, ops ,94\n030,red,\n010,ops ,52 \n010,ops,12\n"
+      ],
+      "expected": "id,team,score\n026,blue,22\n021,green,86\n002,ops,94\n"
+     },
+     {
+      "args": [
+       "id,team,score\n031, ops, 47\n020, blue,50 \n036,  ops , 46\n 009 ,red, 66 \n006,red,\n005,blue,63\n005,ops ,12\n036,ops ,46 \n 034,red, 95 \n"
+      ],
+      "expected": "id,team,score\n031,ops,47\n020,blue,50\n009,red,66\n"
+     },
+     {
+      "args": [
+       "id,team,score\n003, green,0\n027,green , 46\n038 , ops ,3\n007,red, \n038, ops, 3\n"
+      ],
+      "expected": "id,team,score\n003,green,0\n038,ops,3\n"
+     },
+     {
+      "args": [
+       "id,team,score\n022,red,34\n002, red , 58\n 005,red,55\n031,red,86\n 002,red,58\n"
+      ],
+      "expected": "id,team,score\n022,red,34\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "id,team,score\n"
+      ],
+      "expected": "id,team,score\n"
+     },
+     {
+      "args": [
+       "id,team,score\n019,blue,\"Lima, PE\"\n"
+      ],
+      "expected": "id,team,score\n019,blue,\"Lima, PE\"\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-csv_transform-10005",
+   "family": "csv_transform",
+   "split": "eval",
+   "instruction": "In table_ops.py, write normalize_table(text) to clean an exported table. The input is CSV text with a header row (columns: id, email, city, name). Return cleaned CSV text with the same header. In order: strip leading/trailing whitespace from every cell; drop rows whose \"id\" cell is empty; lower-case the \"email\" column; remove duplicate rows by \"email\", keeping the first occurrence; sort rows by \"email\" ascending as strings (stable). Write the output with the csv module using '\\n' line endings. An empty string returns ''; a header-only input returns just the header line. Save the file table_ops.py.",
+   "initial_files": {
+    "table_ops.py": "def normalize_table(text):\n    return None\n"
+   },
+   "expected_output_file": "table_ops.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "table_ops.py",
+    "function": "normalize_table",
+    "cases": [
+     {
+      "args": [
+       "id,email,city,name\n040 ,ed@x.net,Rome, Ed Kim\n 002, ed@x.net,Paris,Bo Chen\n 040, ed@x.net ,Rome,Ed Kim\n004,CY@corp.io,Kyiv,Bo Chen\n"
+      ],
+      "expected": "id,email,city,name\n004,cy@corp.io,Kyiv,Bo Chen\n040,ed@x.net,Rome,Ed Kim\n"
+     },
+     {
+      "args": [
+       "id,email,city,name\n036, CY@corp.io ,Rome,Ann Lee\n013,ed@x.net ,Kyiv,Ann Lee\n031,CY@corp.io,Paris,Fa Li\n 008,CY@corp.io,Kyiv,Cy Park\n 028,bo@mail.org ,Paris, Bo Chen\n ,CY@corp.io ,Kyiv,Fa Li\n 031 ,Ann@Example.com ,Oslo, Di Wu\n036,CY@corp.io ,Rome ,Ann Lee\n"
+      ],
+      "expected": "id,email,city,name\n031,ann@example.com,Oslo,Di Wu\n028,bo@mail.org,Paris,Bo Chen\n036,cy@corp.io,Rome,Ann Lee\n013,ed@x.net,Kyiv,Ann Lee\n"
+     },
+     {
+      "args": [
+       "id,email,city,name\n 005 ,Ann@Example.com ,Kyiv,Cy Park \n 021,CY@corp.io, Paris,Di Wu\n007, di@Mail.org,Rome,Ann Lee \n039,CY@corp.io ,Paris, Ed Kim\n032,bo@mail.org,Rome, Di Wu\n,di@Mail.org ,Oslo ,Di Wu\n 039, CY@corp.io ,Paris ,Ed Kim \n"
+      ],
+      "expected": "id,email,city,name\n005,ann@example.com,Kyiv,Cy Park\n032,bo@mail.org,Rome,Di Wu\n021,cy@corp.io,Paris,Di Wu\n007,di@mail.org,Rome,Ann Lee\n"
+     },
+     {
+      "args": [
+       "id,email,city,name\n004, di@Mail.org ,\"Lima, PE\",Bo Chen\n040 ,ed@x.net , Rome, Fa Li\n030 ,bo@mail.org,Kyiv,Ann Lee \n004,di@Mail.org,\"Lima, PE\",Bo Chen\n"
+      ],
+      "expected": "id,email,city,name\n030,bo@mail.org,Kyiv,Ann Lee\n004,di@mail.org,\"Lima, PE\",Bo Chen\n040,ed@x.net,Rome,Fa Li\n"
+     },
+     {
+      "args": [
+       "id,email,city,name\n, di@Mail.org ,\" Lima, PE\",Ed Kim\n 019 , Ann@Example.com,Kyiv,Ed Kim\n, bo@mail.org,Kyiv ,Ann Lee\n,di@Mail.org,\"Lima, PE\",Ed Kim\n,CY@corp.io,Oslo,Ed Kim\n"
+      ],
+      "expected": "id,email,city,name\n019,ann@example.com,Kyiv,Ed Kim\n"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "id,email,city,name\n"
+      ],
+      "expected": "id,email,city,name\n"
+     },
+     {
+      "args": [
+       "id,email,city,name\n038,\"Lima, PE\",Rome,Bo Chen\n"
+      ],
+      "expected": "id,email,city,name\n038,\"lima, pe\",Rome,Bo Chen\n"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-text_normalize-10000",
+   "family": "text_normalize",
+   "split": "eval",
+   "instruction": "In labels.py, write make_handle(text) that turns a title into a handle. Apply unicodedata NFKD normalization and drop non-ASCII characters; lower-case; replace every run of characters outside [a-z0-9] with a single \"-\"; strip leading and trailing \"-\". If the result is longer than 23 characters, cut it to 23 and then strip a trailing \"-\". Raise TypeError for non-string input. Save the file labels.py.",
+   "initial_files": {
+    "labels.py": "def make_handle(text):\n    return None\n"
+   },
+   "expected_output_file": "labels.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "labels.py",
+    "function": "make_handle",
+    "cases": [
+     {
+      "args": [
+       "Über-Cool_Project"
+      ],
+      "expected": "uber-cool-project"
+     },
+     {
+      "args": [
+       "MiXeD CaSe 42"
+      ],
+      "expected": "mixed-case-42"
+     },
+     {
+      "args": [
+       "  Spaces   everywhere "
+      ],
+      "expected": "spaces-everywhere"
+     },
+     {
+      "args": [
+       "Hello, World!"
+      ],
+      "expected": "hello-world"
+     },
+     {
+      "args": [
+       "Q3 Report (final) v2"
+      ],
+      "expected": "q3-report-final-v2"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "---"
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       null
+      ],
+      "raises": "TypeError"
+     },
+     {
+      "args": [
+       "aaaaaaaaaaaaaaaaaaaaaaa tail"
+      ],
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaa"
+     },
+     {
+      "args": [
+       "bbbbbbbbbbbbbbbbbbbbbb tail"
+      ],
+      "expected": "bbbbbbbbbbbbbbbbbbbbbb",
+      "cut_on_separator": true
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-text_normalize-10001",
+   "family": "text_normalize",
+   "split": "eval",
+   "instruction": "In naming.py, write slugify(text) that turns a title into a handle. Apply unicodedata NFKD normalization and drop non-ASCII characters; lower-case; replace every run of characters outside [a-z0-9] with a single \"_\"; strip leading and trailing \"_\". Raise TypeError for non-string input. Save the file naming.py.",
+   "initial_files": {
+    "naming.py": "def slugify(text):\n    return None\n"
+   },
+   "expected_output_file": "naming.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "naming.py",
+    "function": "slugify",
+    "cases": [
+     {
+      "args": [
+       "end---dash"
+      ],
+      "expected": "end_dash"
+     },
+     {
+      "args": [
+       "Über-Cool_Project"
+      ],
+      "expected": "uber_cool_project"
+     },
+     {
+      "args": [
+       "Ünïcödé Tëxt"
+      ],
+      "expected": "unicode_text"
+     },
+     {
+      "args": [
+       "Hello, World!"
+      ],
+      "expected": "hello_world"
+     },
+     {
+      "args": [
+       "a/b\\c:d"
+      ],
+      "expected": "a_b_c_d"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "---"
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       null
+      ],
+      "raises": "TypeError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-text_normalize-10002",
+   "family": "text_normalize",
+   "split": "eval",
+   "instruction": "Implement slugify(text) in slugs.py to build a URL slug. Apply unicodedata NFKD normalization and drop non-ASCII characters; lower-case; replace every run of characters outside [a-z0-9] with a single \"-\"; strip leading and trailing \"-\". Raise TypeError for non-string input. Save slugs.py.",
+   "initial_files": {
+    "slugs.py": "def slugify(text):\n    return None\n"
+   },
+   "expected_output_file": "slugs.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "slugs.py",
+    "function": "slugify",
+    "cases": [
+     {
+      "args": [
+       "Ünïcödé Tëxt"
+      ],
+      "expected": "unicode-text"
+     },
+     {
+      "args": [
+       "MiXeD CaSe 42"
+      ],
+      "expected": "mixed-case-42"
+     },
+     {
+      "args": [
+       "Über-Cool_Project"
+      ],
+      "expected": "uber-cool-project"
+     },
+     {
+      "args": [
+       "  Spaces   everywhere "
+      ],
+      "expected": "spaces-everywhere"
+     },
+     {
+      "args": [
+       "a/b\\c:d"
+      ],
+      "expected": "a-b-c-d"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "---"
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       null
+      ],
+      "raises": "TypeError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-text_normalize-10003",
+   "family": "text_normalize",
+   "split": "eval",
+   "instruction": "Implement make_handle(text) in labels.py to build a URL slug. Apply unicodedata NFKD normalization and drop non-ASCII characters; lower-case; replace every run of characters outside [a-z0-9] with a single \"-\"; strip leading and trailing \"-\". Raise TypeError for non-string input. Save labels.py.",
+   "initial_files": {
+    "labels.py": "def make_handle(text):\n    return None\n"
+   },
+   "expected_output_file": "labels.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "labels.py",
+    "function": "make_handle",
+    "cases": [
+     {
+      "args": [
+       "Über-Cool_Project"
+      ],
+      "expected": "uber-cool-project"
+     },
+     {
+      "args": [
+       "end---dash"
+      ],
+      "expected": "end-dash"
+     },
+     {
+      "args": [
+       "naïve résumé"
+      ],
+      "expected": "naive-resume"
+     },
+     {
+      "args": [
+       "Café Déjà Vu"
+      ],
+      "expected": "cafe-deja-vu"
+     },
+     {
+      "args": [
+       "MiXeD CaSe 42"
+      ],
+      "expected": "mixed-case-42"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "---"
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       null
+      ],
+      "raises": "TypeError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-text_normalize-10004",
+   "family": "text_normalize",
+   "split": "eval",
+   "instruction": "Implement label_id(text) in labels.py to build a URL slug. Apply unicodedata NFKD normalization and drop non-ASCII characters; lower-case; replace every run of characters outside [a-z0-9] with a single \"-\"; strip leading and trailing \"-\". Raise TypeError for non-string input. Save labels.py.",
+   "initial_files": {
+    "labels.py": "def label_id(text):\n    return None\n"
+   },
+   "expected_output_file": "labels.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "labels.py",
+    "function": "label_id",
+    "cases": [
+     {
+      "args": [
+       "Q3 Report (final) v2"
+      ],
+      "expected": "q3-report-final-v2"
+     },
+     {
+      "args": [
+       "a/b\\c:d"
+      ],
+      "expected": "a-b-c-d"
+     },
+     {
+      "args": [
+       "Über-Cool_Project"
+      ],
+      "expected": "uber-cool-project"
+     },
+     {
+      "args": [
+       "MiXeD CaSe 42"
+      ],
+      "expected": "mixed-case-42"
+     },
+     {
+      "args": [
+       "Ünïcödé Tëxt"
+      ],
+      "expected": "unicode-text"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "---"
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       null
+      ],
+      "raises": "TypeError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-text_normalize-10005",
+   "family": "text_normalize",
+   "split": "eval",
+   "instruction": "Fix labels.py: to_key(text) must normalize labels into identifiers. Apply unicodedata NFKD normalization and drop non-ASCII characters; lower-case; replace every run of characters outside [a-z0-9] with a single \"_\"; strip leading and trailing \"_\". Raise TypeError for non-string input. Write the result to labels.py.",
+   "initial_files": {
+    "labels.py": "def to_key(text):\n    return None\n"
+   },
+   "expected_output_file": "labels.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "labels.py",
+    "function": "to_key",
+    "cases": [
+     {
+      "args": [
+       "a/b\\c:d"
+      ],
+      "expected": "a_b_c_d"
+     },
+     {
+      "args": [
+       "Hello, World!"
+      ],
+      "expected": "hello_world"
+     },
+     {
+      "args": [
+       "end---dash"
+      ],
+      "expected": "end_dash"
+     },
+     {
+      "args": [
+       "Ünïcödé Tëxt"
+      ],
+      "expected": "unicode_text"
+     },
+     {
+      "args": [
+       "  Spaces   everywhere "
+      ],
+      "expected": "spaces_everywhere"
+     },
+     {
+      "args": [
+       ""
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       "---"
+      ],
+      "expected": ""
+     },
+     {
+      "args": [
+       null
+      ],
+      "raises": "TypeError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-config_migrate-10000",
+   "family": "config_migrate",
+   "split": "eval",
+   "instruction": "Fix settings_migration.py: upgrade_config(cfg) must convert old configuration dicts to the v2 layout. Return a new dict and do not modify the input. Raise ValueError unless cfg.get(\"version\") == 1. The output has \"version\": 2. Rename top-level keys \"max_conn\" -> \"max_connections\", \"dir\" -> \"directory\", \"host\" -> \"hostname\". Move \"cache_size\" and \"region\" into a sub-dict \"limits\" (always present, possibly empty). If \"timeout_ms\" exists, output \"timeout_s\" = timeout_ms / 1000 (a float) instead. Keep other keys unchanged and drop keys whose value is None. Write the result to settings_migration.py.",
+   "initial_files": {
+    "settings_migration.py": "def upgrade_config(cfg):\n    return None\n"
+   },
+   "expected_output_file": "settings_migration.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "settings_migration.py",
+    "function": "upgrade_config",
+    "cases": [
+     {
+      "args": [
+       {
+        "version": 1,
+        "pwd_file": "/run/pw",
+        "port": 5432,
+        "dir": "/var/data",
+        "workers": 4,
+        "timeout_ms": 30000,
+        "label": 7,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "pwd_file": "/run/pw",
+       "port": 5432,
+       "directory": "/var/data",
+       "workers": 4,
+       "timeout_s": 30.0,
+       "label": 7,
+       "limits": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "max_conn": 32,
+        "user": "kage",
+        "cache_size": 256,
+        "debug": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "max_connections": 32,
+       "user": "kage",
+       "debug": "svc",
+       "limits": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "cache_size": 256,
+        "retries": 3,
+        "user": "kage",
+        "workers": 4,
+        "port": 5432,
+        "host": "db.local",
+        "label": 7,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "retries": 3,
+       "user": "kage",
+       "workers": 4,
+       "port": 5432,
+       "hostname": "db.local",
+       "label": 7,
+       "limits": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "user": "kage",
+        "host": "db.local",
+        "max_conn": 32,
+        "label": 7,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "user": "kage",
+       "hostname": "db.local",
+       "max_connections": 32,
+       "label": 7,
+       "limits": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "port": 5432,
+        "cache_size": 256,
+        "user": "kage",
+        "max_conn": 32,
+        "owner": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "port": 5432,
+       "user": "kage",
+       "max_connections": 32,
+       "owner": "svc",
+       "limits": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 2
+       }
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {}
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {
+        "version": 1
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "limits": {}
+      }
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-config_migrate-10001",
+   "family": "config_migrate",
+   "split": "eval",
+   "instruction": "Fix upgrade.py: convert_settings(cfg) must convert old configuration dicts to the v2 layout. Return a new dict and do not modify the input. Raise ValueError unless cfg.get(\"version\") == 1. The output has \"version\": 2. Rename top-level keys \"host\" -> \"hostname\", \"max_conn\" -> \"max_connections\", \"pwd_file\" -> \"password_file\". Move \"port\" and \"retries\" into a sub-dict \"storage\" (always present, possibly empty). If \"timeout_ms\" exists, output \"timeout_s\" = timeout_ms / 1000 (a float) instead. Keep other keys unchanged and drop keys whose value is None. Write the result to upgrade.py.",
+   "initial_files": {
+    "upgrade.py": "def convert_settings(cfg):\n    return None\n"
+   },
+   "expected_output_file": "upgrade.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "upgrade.py",
+    "function": "convert_settings",
+    "cases": [
+     {
+      "args": [
+       {
+        "version": 1,
+        "cache_size": 256,
+        "max_conn": 32,
+        "workers": 4,
+        "owner": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "cache_size": 256,
+       "max_connections": 32,
+       "workers": 4,
+       "owner": "svc",
+       "storage": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "port": 5432,
+        "pwd_file": "/run/pw",
+        "region": "eu-west",
+        "host": "db.local",
+        "max_conn": 32,
+        "cache_size": 256,
+        "debug": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "password_file": "/run/pw",
+       "region": "eu-west",
+       "hostname": "db.local",
+       "max_connections": 32,
+       "cache_size": 256,
+       "debug": "svc",
+       "storage": {
+        "port": 5432
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "pwd_file": "/run/pw",
+        "host": "db.local",
+        "dir": "/var/data",
+        "workers": 4,
+        "region": "eu-west",
+        "cache_size": 256,
+        "timeout_ms": 250,
+        "label": 7,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "password_file": "/run/pw",
+       "hostname": "db.local",
+       "dir": "/var/data",
+       "workers": 4,
+       "region": "eu-west",
+       "cache_size": 256,
+       "timeout_s": 0.25,
+       "label": 7,
+       "storage": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "retries": 3,
+        "user": "kage",
+        "cache_size": 256,
+        "max_conn": 32,
+        "host": "db.local",
+        "timeout_ms": 30000,
+        "owner": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "user": "kage",
+       "cache_size": 256,
+       "max_connections": 32,
+       "hostname": "db.local",
+       "timeout_s": 30.0,
+       "owner": "svc",
+       "storage": {
+        "retries": 3
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "dir": "/var/data",
+        "host": "db.local",
+        "port": 5432,
+        "timeout_ms": 30000,
+        "debug": true,
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "dir": "/var/data",
+       "hostname": "db.local",
+       "timeout_s": 30.0,
+       "debug": true,
+       "storage": {
+        "port": 5432
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 2
+       }
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {}
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {
+        "version": 1
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "storage": {}
+      }
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-config_migrate-10002",
+   "family": "config_migrate",
+   "split": "eval",
+   "instruction": "Fix upgrade.py: upgrade_config(cfg) must convert old configuration dicts to the v2 layout. Return a new dict and do not modify the input. Raise ValueError unless cfg.get(\"version\") == 1. The output has \"version\": 2. Rename top-level keys \"dir\" -> \"directory\", \"pwd_file\" -> \"password_file\", \"max_conn\" -> \"max_connections\". Move \"region\" and \"retries\" into a sub-dict \"network\" (always present, possibly empty). If \"timeout_ms\" exists, output \"timeout_s\" = timeout_ms / 1000 (a float) instead. Keep other keys unchanged and drop keys whose value is None. Write the result to upgrade.py.",
+   "initial_files": {
+    "upgrade.py": "def upgrade_config(cfg):\n    return None\n"
+   },
+   "expected_output_file": "upgrade.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "upgrade.py",
+    "function": "upgrade_config",
+    "cases": [
+     {
+      "args": [
+       {
+        "version": 1,
+        "port": 5432,
+        "cache_size": 256,
+        "dir": "/var/data",
+        "host": "db.local",
+        "user": "kage",
+        "timeout_ms": 250,
+        "label": true,
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "port": 5432,
+       "cache_size": 256,
+       "directory": "/var/data",
+       "host": "db.local",
+       "user": "kage",
+       "timeout_s": 0.25,
+       "label": true,
+       "network": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "workers": 4,
+        "region": "eu-west",
+        "max_conn": 32,
+        "host": "db.local",
+        "user": "kage",
+        "dir": "/var/data",
+        "timeout_ms": 1500,
+        "label": 7,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "workers": 4,
+       "max_connections": 32,
+       "host": "db.local",
+       "user": "kage",
+       "directory": "/var/data",
+       "timeout_s": 1.5,
+       "label": 7,
+       "network": {
+        "region": "eu-west"
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "workers": 4,
+        "dir": "/var/data",
+        "host": "db.local",
+        "timeout_ms": 1500,
+        "debug": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "workers": 4,
+       "directory": "/var/data",
+       "host": "db.local",
+       "timeout_s": 1.5,
+       "debug": "svc",
+       "network": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "retries": 3,
+        "pwd_file": "/run/pw",
+        "region": "eu-west",
+        "cache_size": 256,
+        "timeout_ms": 1500,
+        "owner": 7,
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "password_file": "/run/pw",
+       "cache_size": 256,
+       "timeout_s": 1.5,
+       "owner": 7,
+       "network": {
+        "retries": 3,
+        "region": "eu-west"
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "retries": 3,
+        "workers": 4,
+        "port": 5432,
+        "user": "kage",
+        "max_conn": 32,
+        "pwd_file": "/run/pw",
+        "timeout_ms": 1500,
+        "owner": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "workers": 4,
+       "port": 5432,
+       "user": "kage",
+       "max_connections": 32,
+       "password_file": "/run/pw",
+       "timeout_s": 1.5,
+       "owner": "svc",
+       "network": {
+        "retries": 3
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 2
+       }
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {}
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {
+        "version": 1
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "network": {}
+      }
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-config_migrate-10003",
+   "family": "config_migrate",
+   "split": "eval",
+   "instruction": "Fix config_v2.py: convert_settings(cfg) must convert old configuration dicts to the v2 layout. Return a new dict and do not modify the input. Raise ValueError unless cfg.get(\"version\") == 1. The output has \"version\": 2. Rename top-level keys \"dir\" -> \"directory\", \"host\" -> \"hostname\". Move \"port\" and \"workers\" into a sub-dict \"storage\" (always present, possibly empty). If \"timeout_ms\" exists, output \"timeout_s\" = timeout_ms / 1000 (a float) instead. Keep other keys unchanged and drop keys whose value is None. Write the result to config_v2.py.",
+   "initial_files": {
+    "config_v2.py": "def convert_settings(cfg):\n    return None\n"
+   },
+   "expected_output_file": "config_v2.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "config_v2.py",
+    "function": "convert_settings",
+    "cases": [
+     {
+      "args": [
+       {
+        "version": 1,
+        "cache_size": 256,
+        "dir": "/var/data",
+        "region": "eu-west",
+        "label": true,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "cache_size": 256,
+       "directory": "/var/data",
+       "region": "eu-west",
+       "label": true,
+       "storage": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "pwd_file": "/run/pw",
+        "port": 5432,
+        "host": "db.local",
+        "retries": 3,
+        "cache_size": 256,
+        "region": "eu-west",
+        "owner": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "pwd_file": "/run/pw",
+       "hostname": "db.local",
+       "retries": 3,
+       "cache_size": 256,
+       "region": "eu-west",
+       "owner": "svc",
+       "storage": {
+        "port": 5432
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "max_conn": 32,
+        "user": "kage",
+        "workers": 4,
+        "dir": "/var/data",
+        "timeout_ms": 250,
+        "label": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "max_conn": 32,
+       "user": "kage",
+       "directory": "/var/data",
+       "timeout_s": 0.25,
+       "label": "svc",
+       "storage": {
+        "workers": 4
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "port": 5432,
+        "cache_size": 256,
+        "pwd_file": "/run/pw",
+        "region": "eu-west",
+        "user": "kage",
+        "host": "db.local",
+        "timeout_ms": 30000,
+        "debug": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "cache_size": 256,
+       "pwd_file": "/run/pw",
+       "region": "eu-west",
+       "user": "kage",
+       "hostname": "db.local",
+       "timeout_s": 30.0,
+       "debug": "svc",
+       "storage": {
+        "port": 5432
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "workers": 4,
+        "retries": 3,
+        "cache_size": 256,
+        "port": 5432,
+        "label": true,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "retries": 3,
+       "cache_size": 256,
+       "label": true,
+       "storage": {
+        "workers": 4,
+        "port": 5432
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 2
+       }
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {}
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {
+        "version": 1
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "storage": {}
+      }
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-config_migrate-10004",
+   "family": "config_migrate",
+   "split": "eval",
+   "instruction": "Implement migrate(cfg) in upgrade.py to migrate a v1 config dict to v2. Return a new dict and do not modify the input. Raise ValueError unless cfg.get(\"version\") == 1. The output has \"version\": 2. Rename top-level keys \"pwd_file\" -> \"password_file\", \"user\" -> \"username\". Move \"cache_size\" and \"workers\" into a sub-dict \"network\" (always present, possibly empty). If \"timeout_ms\" exists, output \"timeout_s\" = timeout_ms / 1000 (a float) instead. Keep other keys unchanged and drop keys whose value is None. Save upgrade.py.",
+   "initial_files": {
+    "upgrade.py": "def migrate(cfg):\n    return None\n"
+   },
+   "expected_output_file": "upgrade.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "upgrade.py",
+    "function": "migrate",
+    "cases": [
+     {
+      "args": [
+       {
+        "version": 1,
+        "host": "db.local",
+        "dir": "/var/data",
+        "region": "eu-west",
+        "max_conn": 32,
+        "pwd_file": "/run/pw",
+        "workers": 4,
+        "label": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "host": "db.local",
+       "dir": "/var/data",
+       "region": "eu-west",
+       "max_conn": 32,
+       "password_file": "/run/pw",
+       "label": "svc",
+       "network": {
+        "workers": 4
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "cache_size": 256,
+        "dir": "/var/data",
+        "user": "kage",
+        "pwd_file": "/run/pw",
+        "region": "eu-west",
+        "host": "db.local",
+        "timeout_ms": 250,
+        "label": true,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "dir": "/var/data",
+       "username": "kage",
+       "password_file": "/run/pw",
+       "region": "eu-west",
+       "host": "db.local",
+       "timeout_s": 0.25,
+       "label": true,
+       "network": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "max_conn": 32,
+        "dir": "/var/data",
+        "user": "kage",
+        "cache_size": 256,
+        "host": "db.local",
+        "timeout_ms": 30000,
+        "owner": 7,
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "max_conn": 32,
+       "dir": "/var/data",
+       "username": "kage",
+       "host": "db.local",
+       "timeout_s": 30.0,
+       "owner": 7,
+       "network": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "max_conn": 32,
+        "dir": "/var/data",
+        "region": "eu-west",
+        "retries": 3,
+        "port": 5432,
+        "label": 7,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "max_conn": 32,
+       "dir": "/var/data",
+       "region": "eu-west",
+       "retries": 3,
+       "port": 5432,
+       "label": 7,
+       "network": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "cache_size": 256,
+        "retries": 3,
+        "port": 5432,
+        "pwd_file": "/run/pw",
+        "label": true,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "retries": 3,
+       "port": 5432,
+       "password_file": "/run/pw",
+       "label": true,
+       "network": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 2
+       }
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {}
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {
+        "version": 1
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "network": {}
+      }
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-config_migrate-10005",
+   "family": "config_migrate",
+   "split": "eval",
+   "instruction": "Fix config_v2.py: convert_settings(cfg) must convert old configuration dicts to the v2 layout. Return a new dict and do not modify the input. Raise ValueError unless cfg.get(\"version\") == 1. The output has \"version\": 2. Rename top-level keys \"user\" -> \"username\", \"dir\" -> \"directory\". Move \"cache_size\" and \"retries\" into a sub-dict \"limits\" (always present, possibly empty). If \"timeout_ms\" exists, output \"timeout_s\" = timeout_ms / 1000 (a float) instead. Keep other keys unchanged and drop keys whose value is None. Write the result to config_v2.py.",
+   "initial_files": {
+    "config_v2.py": "def convert_settings(cfg):\n    return None\n"
+   },
+   "expected_output_file": "config_v2.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "config_v2.py",
+    "function": "convert_settings",
+    "cases": [
+     {
+      "args": [
+       {
+        "version": 1,
+        "workers": 4,
+        "cache_size": 256,
+        "dir": "/var/data",
+        "pwd_file": "/run/pw",
+        "host": "db.local",
+        "max_conn": 32,
+        "timeout_ms": 250,
+        "debug": "svc",
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "workers": 4,
+       "directory": "/var/data",
+       "pwd_file": "/run/pw",
+       "host": "db.local",
+       "max_conn": 32,
+       "timeout_s": 0.25,
+       "debug": "svc",
+       "limits": {
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "dir": "/var/data",
+        "host": "db.local",
+        "workers": 4,
+        "label": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "directory": "/var/data",
+       "host": "db.local",
+       "workers": 4,
+       "label": "svc",
+       "limits": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "retries": 3,
+        "port": 5432,
+        "pwd_file": "/run/pw",
+        "cache_size": 256,
+        "user": "kage",
+        "workers": 4,
+        "timeout_ms": 1500,
+        "owner": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "port": 5432,
+       "pwd_file": "/run/pw",
+       "username": "kage",
+       "workers": 4,
+       "timeout_s": 1.5,
+       "owner": "svc",
+       "limits": {
+        "retries": 3,
+        "cache_size": 256
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "pwd_file": "/run/pw",
+        "port": 5432,
+        "max_conn": 32,
+        "debug": true,
+        "notes": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "pwd_file": "/run/pw",
+       "port": 5432,
+       "max_conn": 32,
+       "debug": true,
+       "limits": {}
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 1,
+        "retries": 3,
+        "region": "eu-west",
+        "max_conn": 32,
+        "dir": "/var/data",
+        "label": "svc",
+        "proxy": null
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "region": "eu-west",
+       "max_conn": 32,
+       "directory": "/var/data",
+       "label": "svc",
+       "limits": {
+        "retries": 3
+       }
+      }
+     },
+     {
+      "args": [
+       {
+        "version": 2
+       }
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {}
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       {
+        "version": 1
+       }
+      ],
+      "expected": {
+       "version": 2,
+       "limits": {}
+      }
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-read_preserve-10500",
+   "family": "read_preserve",
+   "split": "eval",
+   "instruction": "Please look at helpers.py and summarize it. It is already correct; leave it exactly as it is.",
+   "initial_files": {
+    "helpers.py": "def slug(text):\n    return \"-\".join(text.lower().split())\n"
+   },
+   "expected_output_file": "helpers.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "helpers.py",
+    "sha256": "1a40cbc5c56a65bd821eca8f27069f98a4f185b6f747b164edd16a891ab19b13"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-read_preserve-10501",
+   "family": "read_preserve",
+   "split": "eval",
+   "instruction": "Read utils.py and tell me in one sentence what it contains. Do not change any file.",
+   "initial_files": {
+    "utils.py": "def slug(text):\n    return \"-\".join(text.lower().split())\n"
+   },
+   "expected_output_file": "utils.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "utils.py",
+    "sha256": "1a40cbc5c56a65bd821eca8f27069f98a4f185b6f747b164edd16a891ab19b13"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-read_preserve-10502",
+   "family": "read_preserve",
+   "split": "eval",
+   "instruction": "Please look at mathx.py and summarize it. It is already correct; leave it exactly as it is.",
+   "initial_files": {
+    "mathx.py": "def mean(xs):\n    if not xs:\n        raise ValueError(\"empty\")\n    return sum(xs) / len(xs)\n"
+   },
+   "expected_output_file": "mathx.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "mathx.py",
+    "sha256": "963ef64191875717a228b176ad17419f2df3bb099c01f2554fab1a17527b7f34"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-read_preserve-10503",
+   "family": "read_preserve",
+   "split": "eval",
+   "instruction": "Read textops.py and tell me in one sentence what it contains. Do not change any file.",
+   "initial_files": {
+    "textops.py": "def mean(xs):\n    if not xs:\n        raise ValueError(\"empty\")\n    return sum(xs) / len(xs)\n"
+   },
+   "expected_output_file": "textops.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "textops.py",
+    "sha256": "963ef64191875717a228b176ad17419f2df3bb099c01f2554fab1a17527b7f34"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-inspect_question-10500",
+   "family": "inspect_question",
+   "split": "eval",
+   "instruction": "How many functions are defined in textops.py? Answer in one line; do not edit any file.",
+   "initial_files": {
+    "textops.py": "def mean(xs):\n    if not xs:\n        raise ValueError(\"empty\")\n    return sum(xs) / len(xs)\n"
+   },
+   "expected_output_file": "textops.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "textops.py",
+    "sha256": "963ef64191875717a228b176ad17419f2df3bb099c01f2554fab1a17527b7f34"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-inspect_question-10501",
+   "family": "inspect_question",
+   "split": "eval",
+   "instruction": "How many functions are defined in mathx.py? Answer in one line; do not edit any file.",
+   "initial_files": {
+    "mathx.py": "def clamp(value, low, high):\n    if low > high:\n        raise ValueError(\"low > high\")\n    return max(low, min(high, value))\n"
+   },
+   "expected_output_file": "mathx.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "mathx.py",
+    "sha256": "eade66f56eaf77d78abda55bb7b92a057f9c3a15b743a9fe119c00bbca003e7e"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-inspect_question-10502",
+   "family": "inspect_question",
+   "split": "eval",
+   "instruction": "How many functions are defined in helpers.py? Answer in one line; do not edit any file.",
+   "initial_files": {
+    "helpers.py": "def clamp(value, low, high):\n    if low > high:\n        raise ValueError(\"low > high\")\n    return max(low, min(high, value))\n"
+   },
+   "expected_output_file": "helpers.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "helpers.py",
+    "sha256": "eade66f56eaf77d78abda55bb7b92a057f9c3a15b743a9fe119c00bbca003e7e"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-inspect_question-10503",
+   "family": "inspect_question",
+   "split": "eval",
+   "instruction": "Which exception, if any, does the code in checks.py raise for invalid input? Just answer, no changes.",
+   "initial_files": {
+    "checks.py": "def is_even(n):\n    return n % 2 == 0\n\n\ndef is_odd(n):\n    return not is_even(n)\n"
+   },
+   "expected_output_file": "checks.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "checks.py",
+    "sha256": "f6faa958ca6dd523395842cf24360d3583d890a9631a590d550ca22f3260e47a"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-10500",
+   "family": "lookalike_readonly",
+   "split": "eval",
+   "instruction": "Review pick_jobs in scheduler.py and explain in two sentences what it does. It is already correct. Do not modify it.",
+   "initial_files": {
+    "scheduler.py": "from itertools import combinations\n\n\ndef pick_jobs(items, capacity):\n    wkey, vkey = 'cost', 'gain'\n    if capacity < 0 or any(it[wkey] <= 0 for it in items):\n        raise ValueError('invalid input')\n    best = (-1, None)\n    for r in range(len(items) + 1):\n        for combo in combinations(items, r):\n            if sum(it[wkey] for it in combo) <= capacity:\n                value, ids = sum(it[vkey] for it in combo), sorted(it['id'] for it in combo)\n                if value > best[0] or (value == best[0] and ids < best[1]):\n                    best = (value, ids)\n    return best[1]\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "scheduler.py",
+    "sha256": "94435e0c3634d1ad767e5783caf6fcd515b8b5ef83c73479c182cc66435c7128"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-10501",
+   "family": "lookalike_readonly",
+   "split": "eval",
+   "instruction": "Review plan_batch in scheduler.py and explain in two sentences what it does. It is already correct. Do not modify it.",
+   "initial_files": {
+    "scheduler.py": "from itertools import combinations\n\n\ndef plan_batch(items, capacity):\n    wkey, vkey = 'weight', 'value'\n    if capacity < 0 or any(it[wkey] <= 0 for it in items):\n        raise ValueError('invalid input')\n    best = (-1, None)\n    for r in range(len(items) + 1):\n        for combo in combinations(items, r):\n            if sum(it[wkey] for it in combo) <= capacity:\n                value, ids = sum(it[vkey] for it in combo), sorted(it['id'] for it in combo)\n                if value > best[0] or (value == best[0] and ids < best[1]):\n                    best = (value, ids)\n    return best[1]\n"
+   },
+   "expected_output_file": "scheduler.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "scheduler.py",
+    "sha256": "b4c493ee05938242538a660811a04dea192b1c9a8233c47028cf58eb9ac5c8a0"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-10502",
+   "family": "lookalike_readonly",
+   "split": "eval",
+   "instruction": "Read telemetry.py and describe the edge cases tally_events handles. It is already correct. Do not modify it.",
+   "initial_files": {
+    "telemetry.py": "def tally_events(lines):\n    key, only = 'level', []\n    out = {}\n    for line in lines:\n        if not isinstance(line, str):\n            continue\n        parts = line.split(' ', 3)\n        if len(parts) < 4 or not parts[2].endswith(':') or len(parts[2]) < 2:\n            continue\n        level, service = parts[1].upper(), parts[2][:-1]\n        if only and level not in only:\n            continue\n        name = level if key == 'level' else service\n        out[name] = out.get(name, 0) + 1\n    return out\n"
+   },
+   "expected_output_file": "telemetry.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "telemetry.py",
+    "sha256": "1f0fe336330ed972b449c07a3656c3985d041dedb727e6dec8957d9ca869cec4"
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-lookalike_readonly-10503",
+   "family": "lookalike_readonly",
+   "split": "eval",
+   "instruction": "Can you explain how report.py implements tally_events? It is already correct. Do not modify it.",
+   "initial_files": {
+    "report.py": "def tally_events(lines):\n    key, only = 'service', ['ERROR', 'WARN']\n    out = {}\n    for line in lines:\n        if not isinstance(line, str):\n            continue\n        parts = line.split(' ', 3)\n        if len(parts) < 4 or not parts[2].endswith(':') or len(parts[2]) < 2:\n            continue\n        level, service = parts[1].upper(), parts[2][:-1]\n        if only and level not in only:\n            continue\n        name = level if key == 'level' else service\n        out[name] = out.get(name, 0) + 1\n    return out\n"
+   },
+   "expected_output_file": "report.py",
+   "scoring_criteria": {
+    "type": "read_preserve",
+    "file": "report.py",
+    "sha256": "2ca100941cda117b467a7ab5b6d6e6d894ceb5b1be8720e07c415cd4d231120c"
+   },
+   "negative": true
+  }
+ ],
+ "role": "eval"
+}

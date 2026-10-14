@@ -39,7 +39,9 @@ def calibrate(root: Path, tasks: list[dict], run_one: Callable[[dict], tuple[flo
     results = root / 'results.jsonl'
     done = set()
     if results.exists():
-        done = {(r['family'], r['seed']) for r in map(json.loads, results.read_text().splitlines()) if r}
+        # An infrastructure crash (e.g. the process was killed) is not a capability result: retry it.
+        done = {(r['family'], r['seed']) for r in map(json.loads, results.read_text().splitlines())
+                if r and r.get('status') != 'crashed'}
     for task in tasks:
         if (task['family'], task['seed']) in done:
             continue
@@ -50,8 +52,12 @@ def calibrate(root: Path, tasks: list[dict], run_one: Callable[[dict], tuple[flo
         with results.open('a') as out:
             out.write(json.dumps(row) + '\n')
         print(json.dumps(row), flush=True)
-    rows = [json.loads(line) for line in results.read_text().splitlines() if line.strip()]
-    return summarize(rows, root)
+    latest = {}
+    for line in results.read_text().splitlines():
+        if line.strip():
+            row = json.loads(line)
+            latest[(row['family'], row['seed'])] = row          # a retried crash is replaced by its rerun
+    return summarize([r for r in latest.values() if r.get('status') != 'crashed'], root)
 
 
 def summarize(rows: list[dict], root: Path | None = None) -> dict:
@@ -76,6 +82,8 @@ def main():
     p.add_argument('--per-family', type=int, default=10)
     p.add_argument('--families', default=','.join(FAMILIES))
     p.add_argument('--port', type=int, default=18082)
+    p.add_argument('--skill-runner', choices=['docker', 'process'], default='docker',
+                   help='process: run skills in a subprocess (hosts without Docker, e.g. a disposable Kaggle VM)')
     p.add_argument('--no-manage-server', action='store_true')
     args = p.parse_args()
     families = [f for f in args.families.split(',') if f]
@@ -92,17 +100,17 @@ def main():
         from local_service import LocalService
         service = LocalService(args.port, args.root)
     with service:
-        run_one = live_runner(args.root, args.port)
+        run_one = live_runner(args.root, args.port, args.skill_runner)
         print(json.dumps(calibrate(args.root, tasks, run_one), indent=2))
 
 
-def live_runner(root: Path, port: int) -> Callable[[dict], tuple[float, str]]:
+def live_runner(root: Path, port: int, skill_runner: str = 'docker') -> Callable[[dict], tuple[float, str]]:
     """Same student wiring as stream_run.py A0: empty skill library, local model only."""
     from core.evolution.budget import BudgetConfig, BudgetTracker
     from core.evolution.contracts import Candidate
     from core.evolution.journal import Journal
     from core.evolution.mutator import bundle_digest
-    from core.evolution.sandbox import DockerSkillRunner
+    from core.evolution.sandbox import DockerSkillRunner, ProcessSkillRunner
     from core.evolution.stream import chain_runner
     from stream_run import STUDENT_OUTPUT_TOKENS
     from task_suite import RecordedLocalProvider
@@ -118,7 +126,8 @@ def live_runner(root: Path, port: int) -> Callable[[dict], tuple[float, str]]:
     def student_model(run_id):
         return RecordedLocalProvider(root / 'model-traces' / f'{run_id}.jsonl', api_key='local',
             model_name='agents-a1-4b', base_url=f'http://127.0.0.1:{port}/v1', timeout_sec=120)
-    run = chain_runner(journal, budget, root / 'workspaces', student_model, skill_runner=DockerSkillRunner(timeout_s=10),
+    run = chain_runner(journal, budget, root / 'workspaces', student_model, skill_runner=DockerSkillRunner(timeout_s=10) if skill_runner == 'docker'
+                       else ProcessSkillRunner(timeout_s=10),
                        tool_max_tokens=STUDENT_OUTPUT_TOKENS)
 
     def run_one(task):

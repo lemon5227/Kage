@@ -109,6 +109,8 @@ def main():
     p.add_argument('--eval-manifest', type=Path, help='frozen eval manifest (eval/stream_v1/eval.json)')
     p.add_argument('--checkpoints', help='comma-separated stream indexes for evaluation (default 0/middle/end)')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
+    p.add_argument('--skill-runner', choices=['docker', 'process'], default='docker',
+                   help='process: run skills in a subprocess (hosts without Docker, e.g. a disposable Kaggle VM)')
     p.add_argument('--no-manage-server', action='store_true', help='use an already running llama-server instead of the owned one')
     args = p.parse_args()
 
@@ -137,6 +139,8 @@ def main():
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0, 'teacher_input_bytes': TEACHER_INPUT_BYTES}
     if ARMS[args.arm]['help'] != 'never':
         config['experiment_cap_usd'] = args.experiment_cap_usd
+    if args.skill_runner != 'docker':
+        config['skill_runner'] = args.skill_runner
     if args.stream_manifest:
         config['stream_manifest'], config['eval_manifest'] = str(args.stream_manifest), str(args.eval_manifest)
     if args.playbook:
@@ -167,9 +171,9 @@ def main():
 
 
 def run(args, config, stream_m, eval_m, checkpoints):
-    from core.evolution.sandbox import DockerSkillRunner
+    from core.evolution.sandbox import DockerSkillRunner, ProcessSkillRunner
     from task_suite import RecordedLocalProvider
-    docker = DockerSkillRunner(timeout_s=10)
+    docker = DockerSkillRunner(timeout_s=10) if args.skill_runner == 'docker' else ProcessSkillRunner(timeout_s=10)
     journal = Journal(args.root / 'journal.sqlite')
     local_budget = BudgetTracker(BudgetConfig(max_api_calls=100_000, max_input_tokens_total=10**9,
         max_output_tokens_total=10**8, input_cost_per_million=0, output_cost_per_million=0), args.root / 'local-budget.sqlite')
