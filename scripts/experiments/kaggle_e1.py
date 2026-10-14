@@ -60,6 +60,17 @@ def sh(cmd: list[str] | str, **kw) -> None:
     subprocess.run(cmd, check=True, shell=isinstance(cmd, str), **kw)
 
 
+def cuda_root() -> str:
+    """Print what this host offers, then pick the system CUDA toolkit that contains nvcc."""
+    probe = ('which -a nvcc; ls -d /usr/local/cuda* 2>&1; ls /usr/local/cuda/lib64/stubs 2>&1 | head -5; '
+             "find / -name 'libcuda.so*' -not -path '/proc/*' 2>/dev/null | head -5; cmake --version | head -1")
+    print(subprocess.run(probe, shell=True, capture_output=True, text=True).stdout, flush=True)
+    for root in ['/usr/local/cuda', *sorted(str(p) for p in Path('/usr/local').glob('cuda-*'))]:
+        if Path(root, 'bin', 'nvcc').exists():
+            return root
+    raise SystemExit('no CUDA toolkit with nvcc under /usr/local')
+
+
 def setup() -> dict:
     sh([PY, '-m', 'pip', 'install', '-q', *PIP])
     if not shutil.which('lsof'):
@@ -72,9 +83,12 @@ def setup() -> dict:
             sh(['git', 'clone', '-q', 'https://github.com/ggml-org/llama.cpp', str(src)])
         sh(['git', '-C', str(src), 'checkout', '-q', LLAMA_COMMIT])
         shutil.rmtree(src / 'build', ignore_errors=True)        # never reuse a failed configure cache
-        # Kaggle's toolkit ships libcuda only as a stub; CUDA::cuda_driver must be found there.
-        stubs = '/usr/local/cuda/lib64/stubs'
+        cuda = cuda_root()
+        stubs = f'{cuda}/lib64/stubs'
+        # Pin the system toolkit (a pip-installed nvcc may shadow it) and expose libcuda's stub,
+        # which is all a driverless build container has for CUDA::cuda_driver.
         sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DCMAKE_CUDA_ARCHITECTURES=75',
+            f'-DCUDAToolkit_ROOT={cuda}', f'-DCMAKE_CUDA_COMPILER={cuda}/bin/nvcc',
             f'-DCMAKE_LIBRARY_PATH={stubs}', f'-DCMAKE_EXE_LINKER_FLAGS=-L{stubs}', f'-DCMAKE_SHARED_LINKER_FLAGS=-L{stubs}',
             '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release'], stdout=subprocess.DEVNULL)
         sh(['cmake', '--build', str(src / 'build'), '--target', 'llama-server', '-j', str(os.cpu_count() or 4)],
