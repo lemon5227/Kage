@@ -20,7 +20,8 @@ import re
 from typing import Callable
 import unicodedata
 
-SPLITS = {'stream': range(1000, 5000), 'calibration': range(5000, 9000), 'eval': range(9000, 13000)}
+SPLITS = {'stream': range(1000, 5000), 'calibration': range(5000, 9000), 'eval': range(9000, 13000),
+          'practice': range(13000, 17000)}
 
 
 def split_of(seed: int) -> str:
