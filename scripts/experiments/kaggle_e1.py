@@ -71,7 +71,11 @@ def setup() -> dict:
         if not src.exists():
             sh(['git', 'clone', '-q', 'https://github.com/ggml-org/llama.cpp', str(src)])
         sh(['git', '-C', str(src), 'checkout', '-q', LLAMA_COMMIT])
-        sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DCMAKE_CUDA_ARCHITECTURES=60;75',
+        shutil.rmtree(src / 'build', ignore_errors=True)        # never reuse a failed configure cache
+        # Kaggle's toolkit ships libcuda only as a stub; CUDA::cuda_driver must be found there.
+        stubs = '/usr/local/cuda/lib64/stubs'
+        sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DCMAKE_CUDA_ARCHITECTURES=75',
+            f'-DCMAKE_LIBRARY_PATH={stubs}', f'-DCMAKE_EXE_LINKER_FLAGS=-L{stubs}', f'-DCMAKE_SHARED_LINKER_FLAGS=-L{stubs}',
             '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release'], stdout=subprocess.DEVNULL)
         sh(['cmake', '--build', str(src / 'build'), '--target', 'llama-server', '-j', str(os.cpu_count() or 4)],
            stdout=subprocess.DEVNULL)
