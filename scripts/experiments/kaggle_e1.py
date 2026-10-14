@@ -102,7 +102,15 @@ def write_teacher_config() -> None:
     key = os.environ.get('DEEPSEEK_API_KEY')
     if not key:
         from kaggle_secrets import UserSecretsClient          # available inside Kaggle notebooks
-        key = UserSecretsClient().get_secret('DEEPSEEK_API_KEY')
+        client = UserSecretsClient()
+        for label in ('DEEPSEEK_API_KEY', 'deepseek'):
+            try:
+                key = client.get_secret(label)
+                break
+            except Exception:
+                continue
+        if not key:
+            raise SystemExit('no Kaggle secret named DEEPSEEK_API_KEY or deepseek is attached')
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({'model': {'cloud_api': {**TEACHER, 'api_key': key}}}))
     path.chmod(0o600)
