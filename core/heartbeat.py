@@ -6,6 +6,7 @@ Heartbeat — 主动行为系统
 - 按间隔执行检查（钳位到 [5, 120] 分钟）
 - 用户活跃时暂存通知，空闲后发送
 - 检查失败记录到 heartbeat_error.log，下周期重试
+- 生成的通知交给 on_notifications 回调送达用户（WebSocket/语音）
 """
 
 import asyncio
@@ -13,7 +14,7 @@ import datetime
 import logging
 import os
 import time
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,10 @@ class Heartbeat:
 
     def __init__(self, tool_executor, session_manager,
                  workspace_dir: str = "~/.kage",
-                 interval_minutes: int = DEFAULT_INTERVAL_MIN):
+                 interval_minutes: int = DEFAULT_INTERVAL_MIN,
+                 on_notifications: Optional[Callable[[list[dict]], Awaitable[None]]] = None):
         self.tool_executor = tool_executor
+        self.on_notifications = on_notifications
         self.session = session_manager
 
         workspace = os.path.expanduser(workspace_dir)
@@ -72,11 +75,21 @@ class Heartbeat:
         while self._running:
             try:
                 await asyncio.sleep(self.interval_sec)
-                await self.tick()
+                await self._run_once()
             except asyncio.CancelledError:
                 break
             except Exception as exc:
                 logger.error("Heartbeat loop error: %s", exc)
+
+    async def _run_once(self) -> list[dict]:
+        """Run one check cycle and hand any due notifications to the delivery callback."""
+        notifications = await self.tick()
+        if notifications and self.on_notifications is not None:
+            try:
+                await self.on_notifications(notifications)
+            except Exception as exc:
+                self._log_error("deliver", exc)
+        return notifications
 
     async def tick(self) -> list[dict]:
         """Execute one heartbeat check cycle.

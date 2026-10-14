@@ -101,7 +101,7 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T00 | 治理 | 项目审查 + 总任务规划 + 日志体系 | — | 任意 | 完成 | [T00](../task-logs/T00-audit-and-plan.md) |
 | T01 | 基础 | 依赖声明与测试环境修复 | T00 | 任意 | 完成 | [T01](../task-logs/T01-dependencies-and-test-env.md) |
 | T02 | 安全 | 危险操作确认闸门与技能写入路径修复 | T00 | 任意 | 完成 | [T02](../task-logs/T02-confirmation-gate.md) |
-| T03 | 主动 | Heartbeat 主动通知真正送达用户 | T00 | 任意 | 待领取 | |
+| T03 | 主动 | Heartbeat 主动通知真正送达用户 | T00 | 任意 | 完成 | [T03](../task-logs/T03-heartbeat-delivery.md) |
 | T04 | 主动 | 前端显示主动消息 + 用户反馈回传 | T03 | 任意 | 待领取 | |
 | T05 | 主动 | 主动策略层：免打扰、频率上限、反馈学习 | T03 | 任意 | 待领取 | |
 | T06 | 主动 | 触发源①：重要日期与提醒 | T05 | 任意 | 待领取 | |

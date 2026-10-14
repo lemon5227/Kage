@@ -722,6 +722,7 @@ class KageServer:
             tool_executor=self.tool_executor,
             session_manager=self.session_manager,
             interval_minutes=heartbeat_interval,
+            on_notifications=self._deliver_proactive_notifications,
         )
         self._heartbeat_enabled = heartbeat_enabled
 
@@ -934,6 +935,24 @@ class KageServer:
             )
             await self.mouth_speak(notification, "neutral")
 
+    async def _deliver_proactive_notifications(self, notifications: list[dict[str, Any]]) -> None:
+        """Deliver heartbeat notifications: always as a UI event, spoken only when idle.
+
+        Speaking follows the background-completion rule: a connected UI in IDLE state,
+        so a proactive message never talks over the user or an ongoing reply.
+        """
+        for notification in notifications:
+            await self.send_message("proactive", {"event": "heartbeat", "notification": notification})
+            self._log_server_event("proactive.delivered", source=str(notification.get("type") or ""))
+            content = str(notification.get("content") or "").strip()
+            if (
+                content
+                and self.active_websocket is not None
+                and not self._text_only_mode
+                and str(self._ui_state or "IDLE") == "IDLE"
+            ):
+                await self.mouth_speak(content, "neutral")
+
     async def _notify_audio_event(self, event: str, **fields) -> None:
         await self.send_message("audio", self._audio_event_payload(event, **fields))
 
@@ -1054,7 +1073,7 @@ class KageServer:
                 await self.heartbeat.start()
                 logger.info("Heartbeat started")
             except Exception:
-                logger.warning("Heartbeat start failed: %s", exc_info=True)
+                logger.warning("Heartbeat start failed", exc_info=True)
 
         # Initial Greeting
         greeting = "Kage 在这。"

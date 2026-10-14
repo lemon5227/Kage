@@ -402,3 +402,47 @@ def test_monitor_voice_barge_in_interrupts_when_activity_detected():
     assert audio_events[0][0] == "speech_activity"
     assert audio_events[1][0] == "barge_in_captured"
     assert transcriptions[0][0] == "transcription"
+
+
+def _proactive_server(*, websocket=True, ui_state="IDLE", text_only=False):
+    server = object.__new__(KageServer)
+    server.active_websocket = object() if websocket else None
+    server._ui_state = ui_state
+    server._text_only_mode = text_only
+    sent, spoken = [], []
+
+    async def send_message(type_, data):
+        sent.append((type_, data))
+
+    async def mouth_speak(text, emotion="neutral"):
+        spoken.append(text)
+
+    server.send_message = send_message
+    server.mouth_speak = mouth_speak
+    server._log_server_event = lambda *a, **k: None
+    return server, sent, spoken
+
+
+def test_proactive_notifications_are_sent_and_spoken_when_idle():
+    server, sent, spoken = _proactive_server()
+    notes = [{"type": "天气检查", "content": "要带伞", "timestamp": "t"}]
+
+    asyncio.run(server._deliver_proactive_notifications(notes))
+
+    assert sent == [("proactive", {"event": "heartbeat", "notification": notes[0]})]
+    assert spoken == ["要带伞"]
+
+
+def test_proactive_notifications_do_not_interrupt_busy_or_text_only_ui():
+    for kwargs in ({"ui_state": "SPEAKING"}, {"text_only": True}, {"websocket": False}):
+        server, sent, spoken = _proactive_server(**kwargs)
+        asyncio.run(server._deliver_proactive_notifications([{"type": "x", "content": "hi"}]))
+        assert spoken == [], kwargs
+        assert len(sent) == 1
+
+
+def test_proactive_notification_without_content_is_not_spoken():
+    server, sent, spoken = _proactive_server()
+    asyncio.run(server._deliver_proactive_notifications([{"type": "x", "content": "  "}]))
+    assert spoken == []
+    assert len(sent) == 1
