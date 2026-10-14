@@ -14,7 +14,10 @@ import datetime
 import logging
 import os
 import time
+from collections import OrderedDict
 from typing import Awaitable, Callable, Optional
+
+from core.proactive import ProactiveFeedbackStore, make_notification
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,7 @@ MIN_INTERVAL_MIN = 5
 MAX_INTERVAL_MIN = 120
 DEFAULT_INTERVAL_MIN = 30
 ACTIVE_THRESHOLD_SEC = 120  # 2 minutes
+DELIVERED_MEMORY = 200  # delivered notifications remembered for feedback lookup
 
 
 def clamp_interval(minutes: int | float) -> int:
@@ -45,6 +49,8 @@ class Heartbeat:
 
         self.heartbeat_file = os.path.join(workspace, "HEARTBEAT.md")
         self.error_log_file = os.path.join(workspace, "heartbeat_error.log")
+        self.feedback = ProactiveFeedbackStore(os.path.join(workspace, "proactive_feedback.jsonl"))
+        self._delivered: "OrderedDict[str, dict]" = OrderedDict()
 
         self.interval_sec = clamp_interval(interval_minutes) * 60
         self._notification_queue: list[dict] = []
@@ -84,12 +90,34 @@ class Heartbeat:
     async def _run_once(self) -> list[dict]:
         """Run one check cycle and hand any due notifications to the delivery callback."""
         notifications = await self.tick()
-        if notifications and self.on_notifications is not None:
-            try:
-                await self.on_notifications(notifications)
-            except Exception as exc:
-                self._log_error("deliver", exc)
+        await self._deliver(notifications)
         return notifications
+
+    async def _deliver(self, notifications: list[dict]) -> None:
+        if not notifications or self.on_notifications is None:
+            return
+        for n in notifications:
+            if n.get("id"):
+                self._delivered[str(n["id"])] = n
+        while len(self._delivered) > DELIVERED_MEMORY:
+            self._delivered.popitem(last=False)
+        try:
+            await self.on_notifications(notifications)
+        except Exception as exc:
+            self._log_error("deliver", exc)
+
+    def record_feedback(self, notification_id: str, action: str) -> Optional[dict]:
+        """Record the user's reaction to a delivered notification.
+
+        Returns the notification it refers to, or None when the id is unknown
+        (e.g. delivered before a restart); unknown ids are not recorded because
+        their source — needed for mute/snooze — is not known.
+        """
+        notification = self._delivered.get(str(notification_id or ""))
+        if notification is None:
+            return None
+        self.feedback.record(notification["id"], notification.get("source", ""), action)
+        return notification
 
     async def tick(self) -> list[dict]:
         """Execute one heartbeat check cycle.
@@ -104,11 +132,11 @@ class Heartbeat:
                 continue
             try:
                 # For now, generate a simple notification per enabled check
-                notification = {
-                    "type": item.get("name", "unknown"),
-                    "content": item.get("description", ""),
-                    "timestamp": datetime.datetime.now().isoformat(),
-                }
+                name = item.get("name", "unknown")
+                notification = make_notification(
+                    f"heartbeat:{name}", item.get("description", ""), type_=name,
+                    now=datetime.datetime.now(),
+                )
                 notifications.append(notification)
             except Exception as exc:
                 self._log_error(item.get("name", "unknown"), exc)

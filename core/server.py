@@ -18,7 +18,7 @@ import urllib.request
 import urllib.error
 from uuid import uuid4
 from urllib.parse import quote
-from typing import Any
+from typing import Any, Awaitable, Callable, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketState
@@ -725,6 +725,8 @@ class KageServer:
             on_notifications=self._deliver_proactive_notifications,
         )
         self._heartbeat_enabled = heartbeat_enabled
+        # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
+        self._proactive_action_handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = {}
 
         # Short-lived interactive dialog state unified with SessionManager
         self.session = self.session_manager
@@ -952,6 +954,31 @@ class KageServer:
                 and str(self._ui_state or "IDLE") == "IDLE"
             ):
                 await self.mouth_speak(content, "neutral")
+
+    async def handle_proactive_feedback(self, message: dict[str, Any]) -> Optional[dict[str, Any]]:
+        """Apply a ``proactive_feedback`` message from the UI.
+
+        ``accept`` on a notification that carries an ``action`` runs the handler
+        registered for that action type (e.g. open teaching, adopt a skill); the
+        user's click is the consent, the model never triggers these handlers.
+        """
+        action = str(message.get("action") or "")
+        heartbeat = getattr(self, "heartbeat", None)
+        if heartbeat is None or action not in ("accept", "snooze", "mute"):
+            return None
+        notification = heartbeat.record_feedback(str(message.get("id") or ""), action)
+        if notification is None:
+            return None
+        self._log_server_event("proactive.feedback", source=str(notification.get("source") or ""), action=action)
+        follow = notification.get("action") if isinstance(notification.get("action"), dict) else None
+        if action == "accept" and follow:
+            handler = getattr(self, "_proactive_action_handlers", {}).get(str(follow.get("type") or ""))
+            if handler is not None:
+                try:
+                    await handler(follow)
+                except Exception:
+                    logger.warning("Proactive action %s failed", follow.get("type"), exc_info=True)
+        return notification
 
     async def _notify_audio_event(self, event: str, **fields) -> None:
         await self.send_message("audio", self._audio_event_payload(event, **fields))
@@ -1986,6 +2013,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         if not incoming_turn_id:
                             incoming_turn_id = f"ws-{uuid4().hex[:8]}"
                         await kage_server._text_input_queue.put((incoming_turn_id, msg["text"].strip()))
+                elif msg.get("type") == "proactive_feedback":
+                    await kage_server.handle_proactive_feedback(msg)
             except (json.JSONDecodeError, Exception):
                 pass
     except WebSocketDisconnect:

@@ -17,3 +17,4 @@
 | T01 | [T01-dependencies-and-test-env.md](T01-dependencies-and-test-env.md) | 完成 |
 | T02 | [T02-confirmation-gate.md](T02-confirmation-gate.md) | 完成 |
 | T03 | [T03-heartbeat-delivery.md](T03-heartbeat-delivery.md) | 完成 |
+| T04 | [T04-proactive-feedback.md](T04-proactive-feedback.md) | 完成（后端） |
