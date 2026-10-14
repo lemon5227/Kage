@@ -42,9 +42,14 @@ def _public_configuration(value):
     return value
 
 
-def run_search(config_path, provider_mode=None):
+def run_search(config_path, provider_mode=None, execution_mode=None):
     config = json.loads(Path(config_path).read_text())
     mode = provider_mode or config.get("provider", "live")
+    override = execution_mode and execution_mode != config.get("execution_mode", "docker")
+    if override:
+        # A different isolation backend is a different protocol: keep its artifacts apart.
+        config["execution_mode"] = execution_mode
+        config["experiment_id"] = f'{config.get("experiment_id", "pilot")}-{execution_mode}'
     if mode not in {"live", "fixture"}:
         raise ValueError("search provider must be live or fixture")
     dev = [task for task in config["tasks"] if task.get("split") == "dev"]
