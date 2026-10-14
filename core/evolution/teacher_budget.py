@@ -34,3 +34,15 @@ def global_teacher_budget(cap_usd: float = GLOBAL_TEACHER_CAP_USD) -> BudgetTrac
 def remaining_usd(tracker: BudgetTracker) -> float:
     tracker._load_totals()
     return max(0.0, (tracker.config.max_cost_usd or 0.0) - tracker.total_cost_usd)
+
+
+def charge_external(tracker: BudgetTracker, usd: float, *, run_id: str, call_type: str = 'external') -> None:
+    """Record spend that happened outside this ledger (e.g. a scheduler search subprocess).
+
+    The cost is booked as output tokens at the ledger's output price, so the US$ total stays exact.
+    """
+    if usd <= 0:
+        return
+    tokens = max(1, round(usd / OUTPUT_USD_PER_M * 1_000_000))
+    reservation = tracker.reserve(1, tokens, call_type=call_type, run_id=run_id)
+    tracker.settle(reservation, {'input_tokens': 0, 'output_tokens': tokens, 'api_calls': 1})

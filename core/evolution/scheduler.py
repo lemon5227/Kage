@@ -10,7 +10,9 @@ Conditions for a run (all must hold):
   * the user has been idle for ``idle_minutes``;
   * at least ``min_new_failures`` task failures were noted since the last run;
   * fewer than ``max_runs_per_day`` runs today and today's reported cost is below
-    ``daily_budget_usd`` (each run's own cost ceiling is capped at the remainder).
+    ``daily_budget_usd`` (each run's own cost ceiling is capped at the remainder);
+  * the global US$1 teacher ledger is not exhausted; a run's ceiling never exceeds what is
+    left there, and its reported cost is charged to that ledger afterwards.
 """
 
 from __future__ import annotations
@@ -135,7 +137,14 @@ class EvolutionScheduler:
             return False, "daily_run_limit"
         if self.spent_today() >= float(cfg["daily_budget_usd"]):
             return False, "daily_budget"
+        if self._global_remaining() <= 0.001:
+            return False, "global_teacher_budget"
         return True, ""
+
+    @staticmethod
+    def _global_remaining() -> float:
+        from core.evolution.teacher_budget import global_teacher_budget, remaining_usd
+        return remaining_usd(global_teacher_budget())
 
     # ---------------------------------------------------------------- running
     def _prepare_config(self, run_id: str) -> Path:
@@ -146,7 +155,9 @@ class EvolutionScheduler:
         run_dir = self.base / "runs" / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         config["output_dir"] = str(run_dir)
-        remaining = max(0.0, float(self.config["daily_budget_usd"]) - self.spent_today())
+        # Never more than what is left today AND in the global US$1 teacher ledger.
+        remaining = min(max(0.0, float(self.config["daily_budget_usd"]) - self.spent_today()),
+                        self._global_remaining())
         budget = config.setdefault("budget", {})
         ceiling = budget.get("max_cost_usd")
         budget["max_cost_usd"] = min(float(ceiling), remaining) if ceiling else remaining
@@ -180,6 +191,10 @@ class EvolutionScheduler:
             "active_candidate": report.get("active_candidate") if promoted else None,
             "report_path": str(reports[0]) if reports else None,
         }
+        if row["cost_usd"] > 0:
+            from core.evolution.teacher_budget import charge_external, global_teacher_budget
+            charge_external(global_teacher_budget(), row["cost_usd"], run_id="scheduler-" + run_id,
+                            call_type="scheduler_search")
         self._log(row)
         return row
 

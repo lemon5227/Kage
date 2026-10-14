@@ -39,6 +39,24 @@ def _visible_feedback(value):
     return value
 
 
+def parse_proposal(raw: str) -> tuple[dict, bool]:
+    """Parse a proposal; accept a reply whose only defect is a missing final '}'.
+
+    E-0 (2026-10-14): 23 of 25 malformed teacher replies were complete JSON objects lacking
+    just the closing brace; each cost one or two paid repairs. Returns (proposal, closed).
+    """
+    try:
+        return json.loads(raw), False
+    except json.JSONDecodeError as exc:
+        try:
+            value = json.loads(raw.rstrip() + "}")
+        except json.JSONDecodeError:
+            raise exc from None
+        if not isinstance(value, dict):
+            raise exc from None
+        return value, True
+
+
 class MutationFailed(ValueError):
     pass
 
@@ -125,7 +143,10 @@ class Mutator:
         bundles.mkdir(parents=True, exist_ok=True)
         atomic_json(request_path, {"fingerprint": fingerprint})
         def publish(raw, proposal_id, attempt, attempt_path):
-            proposal = json.loads(raw)
+            proposal, closed = parse_proposal(raw)
+            if closed:
+                record = json.loads(Path(attempt_path).read_text())
+                atomic_json(attempt_path, {**record, "json_closed": True})
             if self.request_lessons and isinstance(proposal, dict) and "lessons" in proposal:
                 atomic_json(self.root / "lessons.json", {"lessons": proposal["lessons"]})
             hypothesis = proposal["hypothesis"]

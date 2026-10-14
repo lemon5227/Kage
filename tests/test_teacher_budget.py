@@ -20,3 +20,12 @@ def test_cap_cannot_exceed_user_authorisation(tmp_path, monkeypatch):
     monkeypatch.setenv('KAGE_TEACHER_LEDGER', str(tmp_path / 'l.sqlite'))
     with pytest.raises(ValueError):
         global_teacher_budget(5.0)
+
+
+def test_charge_external_counts_against_the_global_cap(tmp_path, monkeypatch):
+    from core.evolution.teacher_budget import charge_external, global_teacher_budget, remaining_usd
+    monkeypatch.setenv('KAGE_TEACHER_LEDGER', str(tmp_path / 'ledger.sqlite'))
+    charge_external(global_teacher_budget(), 0.05, run_id='scheduler-run-1')
+    assert abs(remaining_usd(global_teacher_budget()) - 0.95) < 1e-4
+    charge_external(global_teacher_budget(), 0.0, run_id='free')
+    assert abs(remaining_usd(global_teacher_budget()) - 0.95) < 1e-4

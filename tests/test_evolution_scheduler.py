@@ -2,13 +2,21 @@
 
 import asyncio
 import json
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
 from core.evolution.scheduler import EvolutionScheduler, subprocess_launcher
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _private_ledger(tmp_path, monkeypatch):
+    # The scheduler now charges the global teacher ledger; never touch the real one in tests.
+    monkeypatch.setenv("KAGE_TEACHER_LEDGER", str(tmp_path / "teacher-ledger.sqlite"))
 
 
 def _session(last=None):
@@ -193,3 +201,13 @@ def test_collect_reports_through_heartbeat(tmp_path):
     hb = Heartbeat(MagicMock(), _session(), workspace_dir=str(tmp_path), on_notifications=deliver, sources=[s])
     asyncio.run(hb._run_once())
     assert [n["type"] for n in delivered] == ["evolution_report"]
+
+
+def test_runs_are_capped_by_and_charged_to_the_global_ledger(tmp_path):
+    from core.evolution.teacher_budget import global_teacher_budget, remaining_usd
+    calls, clock = [], [10_000.0]
+    sched = _scheduler(tmp_path, calls, clock, daily_budget_usd=5.0)
+    sched.note_failure({"task_id": "t", "run_id": "r1", "status": "unknown"})
+    assert _run_to_end(sched)
+    assert calls[0]["config"]["budget"]["max_cost_usd"] <= 1.0          # global remainder, not the daily 5.0
+    assert abs(remaining_usd(global_teacher_budget()) - 0.99) < 1e-4    # fake run cost 0.01 charged

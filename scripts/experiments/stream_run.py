@@ -35,6 +35,9 @@ TEACHER_CONFIG = Path('~/.config/kage/teachers/deepseek.json').expanduser()
 # AgenticLoop's companion default caps each tool turn at 300 tokens, which truncated every
 # student write_file before it was emitted (void A0 run 2026-10-14). Matches llama-server -n.
 STUDENT_OUTPUT_TOKENS = 1024
+# Teacher/optimizer request cap. 12000 bytes blocked format repairs, which resend the previous
+# reply (E-0, 2026-10-14); 24000 bytes is about 6k input tokens, ~US$0.002 at the ledger price.
+TEACHER_INPUT_BYTES = 24000
 SKILL_FEEDBACK = ('The local student failed this task; the teacher demonstration below passed the external check. '
                   'Extract ONE reusable skill for this whole task family, not for this instance: take the target file path '
                   'and function name as parameters, implement the general procedure, and do not hardcode example names, '
@@ -113,7 +116,7 @@ def main():
               'checkpoints': checkpoints, 'student': {'model': 'agents-a1-4b', 'port': args.port, 'max_model_calls': 6,
               'max_steps': 5, 'max_tool_actions': 12, 'timeout_s': 150, 'skill_context_mode': 'preview',
               'output_tokens': STUDENT_OUTPUT_TOKENS},
-              'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0}
+              'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0, 'teacher_input_bytes': TEACHER_INPUT_BYTES}
     if ARMS[args.arm]['help'] != 'never':
         config['experiment_cap_usd'] = args.experiment_cap_usd
     if args.playbook:
@@ -177,7 +180,8 @@ def run(args, config, stream_m, eval_m, checkpoints):
 
         def teacher_model(run_id):
             return RecordedLocalProvider(args.teacher_cache / f'{run_id}-model.jsonl', api_key=cloud['api_key'],
-                model_name=cloud['model_name'], base_url=cloud['base_url'], timeout_sec=60, thinking=False, output_limit=1024)
+                model_name=cloud['model_name'], base_url=cloud['base_url'], timeout_sec=60, thinking=False, output_limit=1024,
+                input_byte_cap=TEACHER_INPUT_BYTES)
         teacher_run = chain_runner(tjournal, global_teacher_budget(), args.teacher_cache / 'workspaces', teacher_model, cloud=True)
 
         def solve(task):
@@ -186,7 +190,8 @@ def run(args, config, stream_m, eval_m, checkpoints):
 
         def propose(parent, task, demo):
             optimizer = RecordedLocalProvider(args.root / 'optimizer-model.jsonl', api_key=cloud['api_key'],
-                model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=3000)
+                model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=3000,
+                input_byte_cap=TEACHER_INPUT_BYTES)
             trace = [json.loads(l) for l in Path(demo.trace_path).read_text().splitlines() if l.strip()]
             feedback = {'task_id': task['task_id'], 'instruction': task['instruction'],
                         'failure_reason': SKILL_FEEDBACK, 'trace': trace}
