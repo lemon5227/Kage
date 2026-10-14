@@ -196,7 +196,43 @@ class EvolutionScheduler:
         self._task = asyncio.create_task(self._run(run_id, failures))
         return run_id
 
+    def report_notifications(self) -> list[dict]:
+        """One summary of runs finished since the last announcement (failures included).
+
+        When a run promoted a candidate, the notification offers ``adopt_skill`` for the
+        most recent such run; accepting is the user's consent (see core/skill_adoption.py).
+        """
+        from core.proactive import make_notification
+
+        state = self._state()
+        since = float(state.get("announced_until") or 0)
+        fresh = [r for r in self.runs() if r.get("event") == "finished" and float(r.get("ts") or 0) > since]
+        if not fresh:
+            return []
+        promoted = [r for r in fresh if r.get("promoted")]
+        errors = [r for r in fresh if r.get("error") or (r.get("returncode") not in (0, None) and not r.get("promoted"))]
+        no_gain = len(fresh) - len(promoted) - len(errors)
+        parts = []
+        if promoted:
+            parts.append(f"{len(promoted)} 次找到了在对比测试中更好的做法")
+        if no_gain > 0:
+            parts.append(f"{no_gain} 次没有比原来更好")
+        if errors:
+            parts.append(f"{len(errors)} 次没跑完（环境或预算问题）")
+        content = f"你不在的时候我练习了 {len(fresh)} 次：" + "，".join(parts) + "。"
+        action = None
+        if promoted:
+            latest = promoted[-1]
+            content += "要启用新学到的技能吗？"
+            action = {"type": "adopt_skill", "run_id": latest.get("run_id")}
+        note = make_notification(f"evolution:report:{fresh[-1].get('run_id')}", content,
+                                 type_="evolution_report", action=action)
+        state["announced_until"] = max(float(r.get("ts") or 0) for r in fresh)
+        self._save_state(state)
+        return [note]
+
     async def collect(self, now: datetime.datetime) -> list[dict]:
-        """Heartbeat source hook: start a run when allowed; notifications come from T11."""
+        """Heartbeat source hook: report finished runs, then start a new run when allowed."""
+        notes = self.report_notifications()
         self.start()
-        return []
+        return notes

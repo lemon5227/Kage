@@ -146,3 +146,50 @@ def test_real_subprocess_launcher_runs_fixture_search(tmp_path):
     assert finished["returncode"] == 0, finished
     assert finished["promoted"] is True
     assert finished["report_path"].startswith(str(tmp_path))
+
+
+# ---------------------------------------------------------------------------
+# T11: report what was practiced, including runs without improvement
+# ---------------------------------------------------------------------------
+
+def _finished(s, clock, run_id, **fields):
+    clock[0] += 1
+    s._log({"event": "finished", "run_id": run_id, **fields})
+
+
+def test_report_summarises_new_runs_once_and_offers_adoption(tmp_path):
+    clock = [1_800_000_000.0]
+    s = EvolutionScheduler({"auto": True}, _session(), workspace_dir=str(tmp_path), now_fn=lambda: clock[0])
+    assert s.report_notifications() == []
+    _finished(s, clock, "r1", returncode=0, promoted=False)
+    _finished(s, clock, "r2", returncode=0, promoted=True)
+    _finished(s, clock, "r3", returncode=None, error="timeout", promoted=False)
+    [note] = s.report_notifications()
+    assert "练习了 3 次" in note["content"]
+    assert "1 次找到了" in note["content"] and "1 次没有比原来更好" in note["content"] and "1 次没跑完" in note["content"]
+    assert note["action"] == {"type": "adopt_skill", "run_id": "r2"}
+    assert s.report_notifications() == []  # announced once
+
+
+def test_report_without_promotion_has_no_action(tmp_path):
+    clock = [1_800_000_000.0]
+    s = EvolutionScheduler({"auto": True}, _session(), workspace_dir=str(tmp_path), now_fn=lambda: clock[0])
+    _finished(s, clock, "r1", returncode=0, promoted=False)
+    [note] = s.report_notifications()
+    assert "action" not in note and "没有比原来更好" in note["content"]
+
+
+def test_collect_reports_through_heartbeat(tmp_path):
+    from core.heartbeat import Heartbeat
+
+    clock = [1_800_000_000.0]
+    s = EvolutionScheduler({"auto": False}, _session(), workspace_dir=str(tmp_path), now_fn=lambda: clock[0])
+    _finished(s, clock, "r9", returncode=0, promoted=True)
+    delivered = []
+
+    async def deliver(notes):
+        delivered.extend(notes)
+
+    hb = Heartbeat(MagicMock(), _session(), workspace_dir=str(tmp_path), on_notifications=deliver, sources=[s])
+    asyncio.run(hb._run_once())
+    assert [n["type"] for n in delivered] == ["evolution_report"]
