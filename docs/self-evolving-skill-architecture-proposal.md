@@ -1,4 +1,6 @@
 # Kage 自演化技能系统架构设计提案
+
+> **状态（2026-10-14）：已被第 7 章评审否决，不得按本文实现。** 评审结论见 [ch7 peer review](self-evolving-skill-architecture-proposal-ch7-peer-review.md)：主进程导入自生成代码、AST 黑名单不是隔离、部分文献归因错误。可执行的替代路线是 [总任务规划](plans/MASTER-TASK-PLAN.md) 的 T10/T12/T13（技能经晋级+用户同意后在隔离执行边界中采用）。本文仅作历史参考。
 ## 基于前沿论文（CoEvoSkills / ToolSmith / MUSE-Autoskill）的即插即用技能生态设计
 
 **文档版本**：v1.0  

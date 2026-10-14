@@ -1,5 +1,8 @@
 # Kage Project Roadmap
 
+> **2026-10-14 起，任务领取与执行状态以 [总任务规划 MASTER-TASK-PLAN](docs/plans/MASTER-TASK-PLAN.md) 为准。**本页为早期（Phase 1–6）路线，保留作历史参考。
+
+
 ## Phase 1: The Brain (Completed ✅)
 - [x] Integrate `Apple MLX` for local inference.
 - [x] Implement Basic Memory (JSONL).
@@ -33,4 +36,3 @@
 - [ ] **Python Freeze**: Use `PyInstaller` to bundle `kage-server` binary.
 - [ ] **Sidecar Setup**: Configure Tauri to manage the Python process.
 - [ ] **Installer**: Build signed `.dmg` for macOS distribution.
-**: 支持摄像头输入，甚至能“看”到 Master 的表情。

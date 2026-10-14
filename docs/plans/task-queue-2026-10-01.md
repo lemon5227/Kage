@@ -1,5 +1,7 @@
 # E/C统一任务队列
 
+> **2026-10-14：领取顺序以 [总任务规划 MASTER-TASK-PLAN](MASTER-TASK-PLAN.md) 为准**，本页保留为 E/C 研究线的详细状态与规格；对应关系：E2.1→T14、E3.1→T15、E5→T16、E4→T17、C1.2→T18、C4.5-DOM真人验收→T19、C4.5-AX→T20、C2.2→T21、E6→T23、E7→T24。
+
 更新：2026-10-07；保留原文件名供既有链接使用。E表示学习/演化，C表示电脑执行；编号是归属，不是执行顺序。**当前下一实现包：C1.2 macOS AX。** [C4.5-DOM报告](../experiments/2026-10-07-browser-demonstration.md)：教学工程/自动化示范2/2、直接新输入复用2/2、本地2/2但skill_call=0；992 passed、7请求零云。真人教学验收待实际操作，自动采用/学习收益未证明。 [C5.0入口报告](../experiments/2026-10-04-browser-task-entry.md)：工程与真实本地两次pilot完成，completed/unknown各一，7请求零云，全量946 passed。R3-a默认5保持、6显式可选；此前新留出v2 raw3/3、search2/3、preview3/3保留，候选不自动安装，旧失败不救回。
 
 领取说明见[2026-10-03执行交接](execution-handoff-2026-10-03.md)，审查证据见[规划复核](../experiments/2026-10-03-progress-plan-review.md)。只读领取包与所需报告，勿把全部历史注入模型上下文。旧详细路线的未勾选项是设计清单，状态以本页为准。
