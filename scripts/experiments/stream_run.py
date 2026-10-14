@@ -25,7 +25,7 @@ from core.evolution.budget import BudgetConfig, BudgetTracker
 from core.evolution.contracts import Candidate
 from core.evolution.journal import Journal
 from core.evolution.mutator import Mutator, bundle_digest
-from core.evolution.stream import ARMS, StreamLearner, TeacherCache, chain_runner
+from core.evolution.stream import ARMS, MemoryStore, StreamLearner, TeacherCache, chain_runner
 from core.evolution.stream_tasks import manifest
 from core.evolution.teacher_budget import global_teacher_budget, ledger_path, remaining_usd
 
@@ -133,8 +133,11 @@ def run(args, config, stream_m, eval_m, checkpoints):
     def student_model(run_id):
         return RecordedLocalProvider(args.root / 'model-traces' / f'{run_id}.jsonl', api_key='local',
             model_name='agents-a1-4b', base_url=f'http://127.0.0.1:{args.port}/v1', timeout_sec=120)
+    learn = ARMS[args.arm]['learn']
+    memory = MemoryStore(args.root / 'memory.jsonl') if learn == 'memory' else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
-                               tool_max_tokens=STUDENT_OUTPUT_TOKENS)
+                               tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory,
+                               mode='memory' if memory else 'retry' if args.arm == 'A1' else 'plain')
 
     teacher = proposer = None
     if ARMS[args.arm]['learn'] or ARMS[args.arm]['help'] != 'never':
@@ -160,10 +163,10 @@ def run(args, config, stream_m, eval_m, checkpoints):
                         'failure_reason': SKILL_FEEDBACK, 'trace': trace}
             return Mutator(optimizer, global_teacher_budget(), journal,
                            args.root / 'mutations' / task['task_id']).propose(parent, feedback)
-        proposer = propose
+        proposer = propose if learn is True else None
 
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
-                            teacher=teacher, propose_skill=proposer)
+                            teacher=teacher, propose_skill=proposer, memory=memory)
     eval_tasks = eval_m['tasks']
     done_cps = set()
     cp_file = args.root / 'checkpoints.jsonl'

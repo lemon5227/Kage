@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import json
 from pathlib import Path
+import re
 from typing import Callable
 
 from core.evolution.competence import CompetenceModel
@@ -23,6 +24,8 @@ from core.evolution.contracts import Candidate, RunResult
 
 ARMS = {
     'A0': {'learn': False, 'help': 'never'},       # raw student
+    'A1': {'learn': False, 'help': 'never'},       # same total budget spent on local retries
+    'A3': {'learn': 'memory', 'help': 'after_failure'},  # verified demonstrations as trajectory memory
     'A4': {'learn': True, 'help': 'after_failure'}, # skill library, passive help
     'A5': {'learn': True, 'help': 'proactive'},     # skill library + competence-driven help
 }
@@ -63,6 +66,60 @@ def help_requested(result: RunResult) -> bool:
     return any(chain.get('stop_reason') == 'help_requested' for chain in result.metadata.get('chain', []))
 
 
+_WORD = re.compile(r'[a-z0-9_]+')
+MEMORY_OBS_CHARS = 1500
+MEMORY_TOTAL_CHARS = 4000
+MEMORY_MIN_JACCARD = 0.2
+
+
+def _words(text: str) -> set[str]:
+    return set(_WORD.findall(str(text).casefold()))
+
+
+class MemoryStore:
+    """A3 memory: verified teacher demonstrations, retrieved by instruction overlap only.
+
+    Rows keep the visible action (name, arguments) and observation (success, truncated
+    content); never scoring data, and never the task family, which the agent does not know.
+    """
+    def __init__(self, path: Path):
+        self.path = Path(path)
+
+    def entries(self) -> list[dict]:
+        if not self.path.exists():
+            return []
+        return [json.loads(l) for l in self.path.read_text().splitlines() if l.strip()]
+
+    def add(self, task: dict, demo: RunResult) -> bool:
+        if not wrote_files(demo):
+            return False
+        rows = []
+        for row in _trace_rows(demo):
+            action = row.get('action') if isinstance(row.get('action'), dict) else {}
+            obs = row.get('observation') if isinstance(row.get('observation'), dict) else {}
+            rows.append({'action': {'name': action.get('name'), 'arguments': action.get('arguments', {})},
+                         'observation': {'success': bool(obs.get('success')),
+                                         'content': str(obs.get('content', ''))[:MEMORY_OBS_CHARS]}})
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open('a') as out:
+            out.write(json.dumps({'instruction': task['instruction'], 'rows': rows}, ensure_ascii=False) + '\n')
+        return True
+
+    def retrieve(self, instruction: str) -> list[dict]:
+        query, best = _words(instruction), (0.0, None)
+        for entry in self.entries():
+            words = _words(entry['instruction'])
+            score = len(query & words) / len(query | words) if query | words else 0.0
+            if score > best[0]:
+                best = (score, entry)
+        if best[1] is None or best[0] < MEMORY_MIN_JACCARD:
+            return []
+        rows = list(best[1]['rows'])
+        while rows and len(json.dumps(rows, ensure_ascii=False)) > MEMORY_TOTAL_CHARS:
+            rows.pop(0)                        # drop the oldest rows first; the write stays
+        return rows
+
+
 class TeacherCache:
     """Teacher solves each task once from its clean initial state; reused across arms/seeds."""
     def __init__(self, root: Path, solve: Callable[[dict], RunResult]):
@@ -85,11 +142,15 @@ class StreamLearner:
                  run_student: Callable[[Candidate, dict, str], RunResult],
                  teacher: TeacherCache | None,
                  propose_skill: Callable[[Candidate, dict, RunResult], Candidate] | None,
-                 help_cost: float = 0.25):
+                 help_cost: float = 0.25, memory: MemoryStore | None = None):
         if arm not in ARMS:
             raise ValueError(f'unknown arm {arm}')
-        if ARMS[arm]['learn'] and (teacher is None or propose_skill is None):
+        if ARMS[arm]['learn'] == 'memory':
+            if teacher is None or memory is None:
+                raise ValueError('the memory arm needs a teacher and a memory store')
+        elif ARMS[arm]['learn'] and (teacher is None or propose_skill is None):
             raise ValueError('learning arms need a teacher and a skill proposer')
+        self.memory = memory
         self.root, self.arm, self.cfg = Path(root), arm, ARMS[arm]
         self.root.mkdir(parents=True, exist_ok=True)
         self.run_student, self.teacher, self.propose_skill = run_student, teacher, propose_skill
@@ -116,6 +177,9 @@ class StreamLearner:
 
     def _learn(self, task: dict, demo: RunResult) -> dict:
         info = {'attempted': True, 'accepted': False}
+        if self.cfg['learn'] == 'memory':
+            info.update(kind='memory', accepted=self.memory.add(task, demo))
+            return info
         try:
             child = self.propose_skill(self.library, task, demo)
         except Exception as exc:                 # proposal failures are data, not crashes
@@ -193,7 +257,7 @@ class StreamLearner:
 # ---------------------------------------------------------------------- real wiring
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
-                 tool_max_tokens=1024):
+                 tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -202,16 +266,36 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
     from core.agentic_loop import AgenticLoop
     from core.evolution.agent_provider import KageChainProvider
     from core.evolution.contracts import RunSpec
+    from core.evolution.retries import LocalRetryProvider
     from core.evolution.runner import EvolutionRunner
     from core.evolution.skills import SkillCatalog
     loop_cls = type('StreamLoop', (AgenticLoop,), {'MAX_STEPS': max_steps, 'TOOL_MAX_TOKENS': tool_max_tokens})
 
+    if mode not in {'plain', 'retry', 'memory'} or (mode == 'memory') != (memory is not None):
+        raise ValueError('mode must be plain/retry/memory; memory mode needs a MemoryStore')
+
+    class MemoryChain(KageChainProvider):
+        def __init__(self, *args, demonstration, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.demonstration = demonstration
+
+        def generate_step(self, task_def, step, history, workspace_dir):
+            return super().generate_step(task_def, step, self.demonstration + history, workspace_dir)
+
     def run(candidate, task, run_id):
         catalog = None if cloud else SkillCatalog.from_bundle(Path(candidate.bundle_path), runner=skill_runner)
-        chain = KageChainProvider(model_factory(run_id), model_label='teacher' if cloud else 'student',
-                                  provider_mode='cloud' if cloud else 'live', max_model_calls=max_model_calls,
-                                  agentic_loop_cls=loop_cls, skill_catalog=catalog,
-                                  skill_context_mode='preview', max_tool_actions=max_tool_actions)
+
+        def make_chain(call_cap=max_model_calls, step_cap=max_steps):
+            cls = loop_cls if step_cap == max_steps else type('StreamLoop', (AgenticLoop,), {
+                'MAX_STEPS': step_cap, 'TOOL_MAX_TOKENS': tool_max_tokens})
+            kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
+                          max_model_calls=call_cap, agentic_loop_cls=cls, skill_catalog=catalog,
+                          skill_context_mode='preview', max_tool_actions=max_tool_actions)
+            if mode == 'memory':
+                return MemoryChain(model_factory(run_id), demonstration=memory.retrieve(task['instruction']), **kwargs)
+            return KageChainProvider(model_factory(run_id), **kwargs)
+
+        chain = LocalRetryProvider(make_chain, task, max_model_calls, max_steps) if mode == 'retry' else make_chain()
         if cloud:
             chain.RESERVATION_OUTPUT_CAP = 6144
         runner = EvolutionRunner(journal, budget, Path(workspaces), chain)
