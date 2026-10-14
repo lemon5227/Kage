@@ -737,6 +737,11 @@ class KageServer:
             memory_profile=memory_profile,
         )
 
+        # --- Idle-time self-evolution (opt-in via evolution.auto) ---
+        from core.evolution.scheduler import EvolutionScheduler
+        evolution_cfg = cfg.get("evolution", {}) if isinstance(cfg.get("evolution", {}), dict) else {}
+        self.evolution_scheduler = EvolutionScheduler(evolution_cfg, self.session_manager)
+
         # --- Heartbeat ---
         heartbeat_cfg = cfg.get("heartbeat", {})
         heartbeat_interval = heartbeat_cfg.get("interval_minutes", 30)
@@ -747,7 +752,7 @@ class KageServer:
             interval_minutes=heartbeat_interval,
             on_notifications=self._deliver_proactive_notifications,
             proactive_config=heartbeat_cfg,
-            sources=[ImportantDateSource(lambda: memory_profile)],
+            sources=[ImportantDateSource(lambda: memory_profile), self.evolution_scheduler],
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
@@ -954,6 +959,13 @@ class KageServer:
                 task_status=str(result.get('task_status') or job.get('status') or ''),
             )
             if event in ("completed", "failed"):
+                if job.get('task_type') == 'browser_experiment' and str(job.get('status') or '') in ('failed', 'unknown'):
+                    scheduler = getattr(self, "evolution_scheduler", None)
+                    if scheduler is not None:
+                        try:
+                            scheduler.note_failure(job)
+                        except Exception:
+                            logger.warning("Could not record failure for evolution", exc_info=True)
                 await self._maybe_request_teaching(job)
             return
         notification = self._background_completion_notification(event, job)
