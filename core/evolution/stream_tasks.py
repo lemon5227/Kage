@@ -9,7 +9,9 @@ Seed ranges keep data uses apart (see SPLITS); an instance is fully determined b
 """
 from __future__ import annotations
 
+import copy
 import hashlib
+from itertools import combinations
 import json
 import random
 from typing import Callable
@@ -95,6 +97,66 @@ def log_aggregation(seed: int) -> dict:
             'params': {'key': key, 'only_levels': only}}
 
 
+# ---------------------------------------------------------------- F1 subset selection
+_IDS = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa']
+_FIELDS = [('weight', 'value'), ('cost', 'gain'), ('size', 'score')]
+
+
+def _subset_reference(items, capacity, wkey, vkey):
+    if capacity < 0 or any(it[wkey] <= 0 for it in items):
+        raise ValueError
+    best = (-1, None)
+    for r in range(len(items) + 1):
+        for combo in combinations(items, r):
+            if sum(it[wkey] for it in combo) <= capacity:
+                value, ids = sum(it[vkey] for it in combo), sorted(it['id'] for it in combo)
+                if value > best[0] or (value == best[0] and ids < best[1]):
+                    best = (value, ids)
+    return best[1]
+
+
+def _subset_case(items, capacity, wkey, vkey, **extra):
+    args = copy.deepcopy([items, capacity])
+    try:
+        return {'args': args, 'expected': _subset_reference(items, capacity, wkey, vkey), **extra}
+    except ValueError:
+        return {'args': args, 'raises': 'ValueError', **extra}
+
+
+def subset_selection(seed: int) -> dict:
+    rng = random.Random(f'subset_selection:{seed}')
+    fn = _pick(rng, ['select_tasks', 'pick_jobs', 'choose', 'plan_batch', 'allocate'])
+    file = _pick(rng, ['scheduler.py', 'selection.py', 'planner.py', 'batch.py'])
+    wkey, vkey = _pick(rng, _FIELDS)
+    noun = _pick(rng, ['jobs', 'projects', 'parcels'])
+    rules = (f'Each item is a dict with a unique string "id", a positive integer "{wkey}" and a non-negative integer "{vkey}". '
+             f'Return the sorted list of ids whose total {vkey} is as large as possible while total {wkey} stays <= capacity. '
+             f'If several selections tie on total {vkey}, return the lexicographically smallest sorted id list. '
+             f'An empty selection is allowed. Raise ValueError if capacity is negative or any {wkey} is <= 0. '
+             'Do not modify the input.')
+    templates = [
+        f'Implement {fn}(items, capacity) in {file} to choose {noun}. {rules} Save {file}.',
+        f'In {file}, write {fn}(items, capacity) that picks which {noun} to take. {rules} Save the file {file}.',
+        f'Fix {file}: {fn}(items, capacity) must select {noun} under a capacity limit. {rules} Write the result to {file}.',
+    ]
+    instruction = _pick(rng, templates)
+    cases = []
+    for _ in range(5):
+        ids = rng.sample(_IDS, rng.randint(2, 8))
+        items = [{'id': i, wkey: rng.randint(1, 6), vkey: rng.randint(0, 12)} for i in ids]
+        cases.append(_subset_case(items, rng.randint(0, 15), wkey, vkey))
+    cases.append(_subset_case([], 0, wkey, vkey))
+    cases.append(_subset_case([], -1, wkey, vkey))
+    zero = rng.sample(_IDS, 2)
+    cases.append(_subset_case([{'id': zero[0], wkey: 0, vkey: 3}, {'id': zero[1], wkey: 2, vkey: 1}], 5, wkey, vkey))
+    pair, w, v = sorted(rng.sample(_IDS, 2), reverse=True), rng.randint(1, 6), rng.randint(1, 12)
+    cases.append(_subset_case([{'id': pair[0], wkey: w, vkey: v}, {'id': pair[1], wkey: w, vkey: v}], w, wkey, vkey,
+                              tie=True))
+    return {'family': 'subset_selection', 'instruction': instruction, 'file': file, 'function': fn,
+            'initial_source': f'def {fn}(items, capacity):\n    return None\n', 'cases': cases,
+            'params': {'wkey': wkey, 'vkey': vkey}}
+
+
 # ---------------------------------------------------------------- negatives (must not modify)
 _NEG_BODIES = [
     'def clamp(value, low, high):\n    if low > high:\n        raise ValueError("low > high")\n    return max(low, min(high, value))\n',
@@ -123,6 +185,7 @@ def read_preserve(seed: int) -> dict:
 
 FAMILIES: dict[str, Callable[[int], dict]] = {
     'log_aggregation': log_aggregation,
+    'subset_selection': subset_selection,
     'read_preserve': read_preserve,
 }
 NEGATIVE_FAMILIES = {'read_preserve'}
