@@ -50,6 +50,26 @@ class ToolRegistry:
         # Invalidate cache
         self._schemas_cache = None
 
+    CUSTOM_PREFIX = "custom_"
+
+    def register_custom(self, tool_def: ToolDefinition) -> None:
+        """Register a self-learned tool: fixed ``custom_`` namespace, never overrides.
+
+        Learned skills must not shadow built-in tools (or each other), otherwise a
+        generated skill could silently change what an existing tool name does.
+        """
+        if not tool_def.name.startswith(self.CUSTOM_PREFIX):
+            raise ValueError(f"自学技能工具名必须以 {self.CUSTOM_PREFIX} 开头: {tool_def.name}")
+        if tool_def.name in self._tools:
+            raise ValueError(f"工具已存在，拒绝覆盖: {tool_def.name}")
+        self.register(tool_def)
+
+    def unregister(self, tool_name: str) -> bool:
+        removed = self._tools.pop(tool_name, None) is not None
+        if removed:
+            self._schemas_cache = None
+        return removed
+
     def get_handler(self, tool_name: str) -> Optional[Callable]:
         """获取工具的 handler 函数，不存在返回 None。"""
         tool = self._tools.get(tool_name)

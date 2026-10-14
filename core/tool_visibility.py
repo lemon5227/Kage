@@ -81,6 +81,8 @@ BASE: frozenset[str] = CORE | LOCAL_SKILL_TOOLS | frozenset({
 # Tools the server registers after startup because they bind live state (not in
 # create_default_registry), so the phantom-name audit must not expect them there.
 SERVER_SLOTS: frozenset[str] = frozenset({"remember_date"})
+# Prefix of self-learned skill tools adopted with the user's consent (ToolRegistry.register_custom).
+ADOPTED_PREFIX = "custom_"
 
 # Capability groups, selected by intent keywords on top of the route baseline.
 GROUPS: dict[str, frozenset[str]] = {
@@ -197,7 +199,10 @@ def select(
 
     unclassified: tuple[str, ...] = ()
     if registered:
-        unknown = {str(n) for n in registered} - set(CLASSIFIED)
+        # Self-learned skills the user adopted (core/skill_adoption.py) are always offered.
+        adopted = {str(n) for n in registered if str(n).startswith(ADOPTED_PREFIX)}
+        names |= adopted
+        unknown = {str(n) for n in registered} - set(CLASSIFIED) - adopted
         if unknown:
             # Fail-open: never let a missing classification hide a capability.
             unclassified = tuple(sorted(unknown))

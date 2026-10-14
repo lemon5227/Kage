@@ -741,6 +741,15 @@ class KageServer:
         from core.evolution.scheduler import EvolutionScheduler
         evolution_cfg = cfg.get("evolution", {}) if isinstance(cfg.get("evolution", {}), dict) else {}
         self.evolution_scheduler = EvolutionScheduler(evolution_cfg, self.session_manager)
+        # Promoted skills enter the daily registry only after the user accepts (adopt_skill).
+        from core.skill_adoption import SkillAdoption
+        self.skill_adoption = SkillAdoption(self.tool_registry)
+        try:
+            restored = self.skill_adoption.restore()
+            if restored:
+                logger.info("Restored adopted skills: %s", ", ".join(restored))
+        except Exception:
+            logger.warning("Adopted skill restore failed", exc_info=True)
 
         # --- Heartbeat ---
         heartbeat_cfg = cfg.get("heartbeat", {})
@@ -758,6 +767,7 @@ class KageServer:
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
         self._proactive_action_handlers: dict[str, Callable[[dict[str, Any]], Awaitable[Any]]] = {
             "start_teaching": self._start_teaching,
+            "adopt_skill": self._adopt_skill,
         }
 
         # Short-lived interactive dialog state unified with SessionManager
@@ -1026,6 +1036,27 @@ class KageServer:
             {"task_id": str(action.get("task_id") or ""), "source_kind": "human_declared"}
         )
         await self.send_message("proactive", {"event": "teaching_started", "job": job})
+
+    async def _adopt_skill(self, action: dict[str, Any]) -> None:
+        """User accepted a learned skill: adopt the candidate the scheduler recorded as promoted.
+
+        The candidate is looked up again in the scheduler log by run id, so only a
+        Promoter-promoted candidate can ever be adopted.
+        """
+        run_id = str(action.get("run_id") or "")
+        rows = [r for r in self.evolution_scheduler.runs()
+                if r.get("event") == "finished" and r.get("run_id") == run_id and r.get("promoted")]
+        if not rows or not isinstance(rows[-1].get("active_candidate"), dict):
+            await self.send_message("proactive", {"event": "skill_adoption_failed", "run_id": run_id,
+                                                  "error": "no promoted candidate for this run"})
+            return
+        try:
+            row = await asyncio.to_thread(self.skill_adoption.adopt, rows[-1]["active_candidate"], source_run=run_id)
+        except Exception as exc:
+            await self.send_message("proactive", {"event": "skill_adoption_failed", "run_id": run_id,
+                                                  "error": f"{type(exc).__name__}: {exc}"})
+            return
+        await self.send_message("proactive", {"event": "skill_adopted", "run_id": run_id, "tools": row["tools"]})
 
     async def handle_proactive_feedback(self, message: dict[str, Any]) -> Optional[dict[str, Any]]:
         """Apply a ``proactive_feedback`` message from the UI.

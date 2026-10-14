@@ -109,7 +109,7 @@ python -m pytest -q --timeout=90 --ignore=tests/test_round14_audio.py
 | T07 | 主动 | 触发源②：任务失败后主动请求示范 | T05 | 任意 | 完成（后端） | [T07](../task-logs/T07-teaching-request.md) |
 | T08 | 演化 | 进化 smoke 不依赖 Docker 也能跑通 | T01 | 任意 | 完成 | [T08](../task-logs/T08-evolution-smoke-without-docker.md) |
 | T09 | 演化 | 空闲时自演化作业（EvolutionScheduler） | T05, T08 | 任意 | 完成（工程） | [T09](../task-logs/T09-evolution-scheduler.md) |
-| T10 | 演化 | 晋级技能 → 用户同意 → 日常主链采用 | T02, T09 | 任意 | 待领取 | |
+| T10 | 演化 | 晋级技能 → 用户同意 → 日常主链采用 | T02, T09 | 任意 | 完成（工程） | [T10](../task-logs/T10-skill-adoption.md) |
 | T11 | 主动 | 触发源③：主动汇报"我学会了什么" | T09, T10 | 任意 | 待领取 | |
 | T12 | 安全 | 远程技能自动安装加同意门 | T02 | 任意 | 待领取 | |
 | T13 | 安全 | `skills_save_local` 写入目录白名单 | T02 | 任意 | 待领取 | |
