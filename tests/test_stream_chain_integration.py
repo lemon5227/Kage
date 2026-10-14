@@ -122,3 +122,30 @@ def test_real_chain_learns_skill_from_teacher_and_reuses_it(tmp_path):
     assert learner.competence.skills['count_log_lines'].status == 'active'
     cp = learner.evaluate([make_task('log_aggregation', 9000), make_task('log_aggregation', 9001)], 'cp-end')
     assert cp['passed'] == 2
+
+
+class RecordingStudent(ModelProvider):
+    def __init__(self, log):
+        self.log = log
+
+    def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+        with open(self.log, 'a') as out:
+            out.write(f'{max_tokens}\n')
+        return ModelResponse(text='Finished.', usage={'input_tokens': 10, 'output_tokens': 5})
+
+
+def test_chain_runner_lifts_companion_tool_reply_cap(tmp_path):
+    # AgenticLoop's companion default (300 tokens per tool turn) truncated every real
+    # student write_file in the first E-0 attempt; experiment runs use their own cap.
+    from core.agentic_loop import AgenticLoop
+    assert AgenticLoop.TOOL_MAX_TOKENS == 300
+    boot = tmp_path / 'boot'
+    boot.mkdir()
+    (boot / 'manifest.json').write_text('{"version":1,"skills":[]}')
+    bootstrap = Candidate('no-skills', (), 'skill', str(boot), bundle_digest(boot))
+    log = tmp_path / 'max_tokens.txt'
+    run = chain_runner(Journal(tmp_path / 'j.sqlite'), BudgetTracker(BudgetConfig(max_api_calls=100), tmp_path / 'b.sqlite'),
+                       tmp_path / 'ws', lambda run_id: RecordingStudent(log), skill_runner=ProcessSkillRunner(timeout_s=10),
+                       tool_max_tokens=1024)
+    run(bootstrap, make_task('log_aggregation', 1000), 'cap')
+    assert set(log.read_text().split()) == {'1024'}

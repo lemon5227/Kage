@@ -176,6 +176,7 @@ class AgenticLoop:
     """多步工具调用循环"""
 
     MAX_STEPS = 5
+    TOOL_MAX_TOKENS = 300  # companion default; experiment loops override (stream.chain_runner)
 
     def __init__(self, model_provider, tool_executor, prompt_builder,
                  session_manager, memory_system=None, memory_profile=None, recovery_policy=None,
@@ -341,7 +342,7 @@ class AgenticLoop:
                 # 2) Call model
                 has_tools = bool(tool_defs)
                 # Phase A (planner): for info route, keep decision output short.
-                max_tokens = 128 if (has_tools and route == "info") else (300 if has_tools else 200)
+                max_tokens = 128 if (has_tools and route == "info") else (self.TOOL_MAX_TOKENS if has_tools else 200)
                 t1 = time.monotonic()
                 response = self.model.generate(
                     messages=messages,

@@ -30,6 +30,9 @@ from core.evolution.stream_tasks import manifest
 from core.evolution.teacher_budget import global_teacher_budget, ledger_path, remaining_usd
 
 TEACHER_CONFIG = Path('~/.config/kage/teachers/deepseek.json').expanduser()
+# AgenticLoop's companion default caps each tool turn at 300 tokens, which truncated every
+# student write_file before it was emitted (void A0 run 2026-10-14). Matches llama-server -n.
+STUDENT_OUTPUT_TOKENS = 1024
 SKILL_FEEDBACK = ('The local student failed this task; the teacher demonstration below passed the external check. '
                   'Extract ONE reusable skill for this whole task family, not for this instance: take the target file path '
                   'and function name as parameters, implement the general procedure, and do not hardcode example names, '
@@ -63,7 +66,8 @@ def main():
     config = {'arm': args.arm, 'arm_definition': ARMS[args.arm], 'stream_sha256': stream_m['sha256'],
               'eval_sha256': eval_m['sha256'], 'stream_tasks': len(stream), 'eval_tasks': len(evals),
               'checkpoints': checkpoints, 'student': {'model': 'agents-a1-4b', 'port': args.port, 'max_model_calls': 6,
-              'max_steps': 5, 'max_tool_actions': 12, 'timeout_s': 150, 'skill_context_mode': 'preview'},
+              'max_steps': 5, 'max_tool_actions': 12, 'timeout_s': 150, 'skill_context_mode': 'preview',
+              'output_tokens': STUDENT_OUTPUT_TOKENS},
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0}
     args.root.mkdir(parents=True, exist_ok=True)
     cfg_path = args.root / 'config.json'
@@ -100,7 +104,8 @@ def run(args, config, stream_m, eval_m, checkpoints):
     def student_model(run_id):
         return RecordedLocalProvider(args.root / 'model-traces' / f'{run_id}.jsonl', api_key='local',
             model_name='agents-a1-4b', base_url=f'http://127.0.0.1:{args.port}/v1', timeout_sec=120)
-    run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker)
+    run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
+                               tool_max_tokens=STUDENT_OUTPUT_TOKENS)
 
     teacher = proposer = None
     if ARMS[args.arm]['learn'] or ARMS[args.arm]['help'] != 'never':

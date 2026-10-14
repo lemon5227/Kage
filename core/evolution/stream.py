@@ -192,7 +192,8 @@ class StreamLearner:
 
 # ---------------------------------------------------------------------- real wiring
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
-                 max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150):
+                 max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
+                 tool_max_tokens=1024):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -203,7 +204,7 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
     from core.evolution.contracts import RunSpec
     from core.evolution.runner import EvolutionRunner
     from core.evolution.skills import SkillCatalog
-    loop_cls = type('StreamLoop', (AgenticLoop,), {'MAX_STEPS': max_steps})
+    loop_cls = type('StreamLoop', (AgenticLoop,), {'MAX_STEPS': max_steps, 'TOOL_MAX_TOKENS': tool_max_tokens})
 
     def run(candidate, task, run_id):
         catalog = None if cloud else SkillCatalog.from_bundle(Path(candidate.bundle_path), runner=skill_runner)
