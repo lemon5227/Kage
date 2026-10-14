@@ -206,13 +206,9 @@ def run(args, config, stream_m, eval_m, checkpoints):
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
                             teacher=teacher, propose_skill=proposer, memory=memory)
     eval_tasks = eval_m['tasks']
-    done_cps = set()
-    cp_file = args.root / 'checkpoints.jsonl'
-    if cp_file.exists():
-        done_cps = {json.loads(l)['checkpoint'] for l in cp_file.read_text().splitlines()}
     capped = False
     for index, task in enumerate(stream_m['tasks'] + [None]):
-        if index in checkpoints and f'cp{index}' not in done_cps:
+        if index in checkpoints:            # evaluate() skips tasks already logged for this checkpoint
             summary = learner.evaluate(eval_tasks, f'cp{index}')
             print(json.dumps(summary), flush=True)
         if task is None or task['task_id'] in learner.done:

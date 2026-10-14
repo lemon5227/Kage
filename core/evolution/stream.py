@@ -237,11 +237,24 @@ class StreamLearner:
         return row
 
     def evaluate(self, tasks: list[dict], label: str) -> dict:
-        """Frozen checkpoint: current library, no help, no learning, no competence update."""
+        """Frozen checkpoint: current library, no help, no learning, no competence update.
+
+        Resumable per task: rows already logged for this label are reused, not rerun.
+        """
+        log = self.root / 'checkpoints.jsonl'
+        done = {}
+        if log.exists():
+            for line in log.read_text().splitlines():
+                row = json.loads(line) if line.strip() else None
+                if row and row.get('checkpoint') == label:
+                    done[row['task_id']] = row
         rows = []
         for task in tasks:
             if task.get('split') != 'eval':
                 raise ValueError('checkpoint tasks must come from the eval split')
+            if task['task_id'] in done:
+                rows.append(done[task['task_id']])
+                continue
             result = self.run_student(self.library, task, f"{label}-{task['task_id']}")
             calls = skill_calls(result)
             rows.append({'checkpoint': label, 'task_id': task['task_id'], 'family': task['family'],

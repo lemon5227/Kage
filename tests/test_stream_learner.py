@@ -109,3 +109,24 @@ def test_read_only_demo_is_not_turned_into_a_skill(tmp_path):
     row = learner.step(make_task('read_preserve', 1010))
     assert 'learning' not in row and world.proposals == 0
     assert learner.competence.skills['x'].successes == 0                    # misuse counted against the skill
+
+
+def test_interrupted_checkpoint_resumes_per_task(tmp_path):
+    import json as _json
+    from core.evolution.contracts import Candidate, RunResult
+    from core.evolution.stream import StreamLearner
+    from core.evolution.stream_tasks import make_task
+    ran = []
+
+    def run(candidate, task, run_id):
+        ran.append(task['task_id'])
+        return RunResult(run_id, 'passed', 1.0, '', {}, '')
+    boot = Candidate('b', (), 'skill', str(tmp_path), 'd' * 64)
+    tasks = [make_task('log_aggregation', 9000 + i) for i in range(3)]
+    learner = StreamLearner(tmp_path / 'A0', 'A0', bootstrap=boot, run_student=run, teacher=None, propose_skill=None)
+    (tmp_path / 'A0' / 'checkpoints.jsonl').write_text(_json.dumps(
+        {'checkpoint': 'cp0', 'task_id': tasks[0]['task_id'], 'score': 0.0, 'misuse': False}) + '\n')
+    summary = learner.evaluate(tasks, 'cp0')
+    assert ran == [t['task_id'] for t in tasks[1:]]          # only the unfinished tasks run
+    assert (summary['passed'], summary['total']) == (2, 3)    # summary covers the whole checkpoint
+    assert learner.evaluate(tasks, 'cp0')['total'] == 3 and len(ran) == 2
