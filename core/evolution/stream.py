@@ -169,7 +169,7 @@ class StreamLearner:
                  run_student: Callable[[Candidate, dict, str], RunResult],
                  teacher: TeacherCache | None,
                  propose_skill: Callable[[Candidate, dict, RunResult], Candidate] | None,
-                 help_cost: float = 0.25, memory: MemoryStore | None = None):
+                 help_cost: float = 0.25, memory: MemoryStore | None = None, run_suffix: str = ''):
         if arm not in ARMS:
             raise ValueError(f'unknown arm {arm}')
         if ARMS[arm]['learn'] == 'memory':
@@ -178,6 +178,9 @@ class StreamLearner:
         elif ARMS[arm]['learn'] and (teacher is None or propose_skill is None):
             raise ValueError('learning arms need a teacher and a skill proposer')
         self.memory = memory
+        # A restarted job must not reuse run ids: the runner caches a crashed run under its id and
+        # would return that crash again without calling the model (Kaggle v6, A3).
+        self.run_suffix = run_suffix
         self.root, self.arm, self.cfg = Path(root), arm, ARMS[arm]
         self.root.mkdir(parents=True, exist_ok=True)
         self.run_student, self.teacher, self.propose_skill = run_student, teacher, propose_skill
@@ -213,7 +216,7 @@ class StreamLearner:
             info['error'] = f'{type(exc).__name__}: {exc}'
             return info
         info['child'] = child.candidate_id
-        check = _checked(self.run_student(child, task, f"{task['task_id']}-learn-check"), 'learn check')
+        check = _checked(self.run_student(child, task, f"{task['task_id']}-learn-check{self.run_suffix}"), 'learn check')
         info.update(check_score=check.score, check_skill_calls=skill_calls(check))
         if check.score >= 1.0 and any(c['success'] for c in info['check_skill_calls']):
             self.library = child
@@ -236,7 +239,7 @@ class StreamLearner:
             self.competence.record_help(family, True, when='before_attempt', reason=decision['why'])
             student = None
         else:
-            student = _checked(self.run_student(self.library, task, f"{task['task_id']}-student"), 'student')
+            student = _checked(self.run_student(self.library, task, f"{task['task_id']}-student{self.run_suffix}"), 'student')
             row.update(student_score=student.score, student_status=student.status,
                        skill_calls=skill_calls(student), help_requested=help_requested(student))
         solved = student is not None and student.score >= 1.0
@@ -282,7 +285,7 @@ class StreamLearner:
             if task['task_id'] in done:
                 rows.append(done[task['task_id']])
                 continue
-            result = _checked(self.run_student(self.library, task, f"{label}-{task['task_id']}"), 'checkpoint')
+            result = _checked(self.run_student(self.library, task, f"{label}-{task['task_id']}{self.run_suffix}"), 'checkpoint')
             calls = skill_calls(result)
             rows.append({'checkpoint': label, 'task_id': task['task_id'], 'family': task['family'],
                          'negative': task.get('negative', False), 'score': result.score,

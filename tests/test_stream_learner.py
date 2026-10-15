@@ -194,3 +194,18 @@ def test_budget_exhausted_teacher_stops_learning_and_is_not_cached(tmp_path):
         learner.step(make_task('log_aggregation', 1000))
     assert not list((tmp_path / 'cache').glob('*.json'))
     assert not (tmp_path / 'A4' / 'stream.jsonl').exists() and learner.done == set()
+
+
+def test_run_suffix_gives_restarts_fresh_run_ids(tmp_path):
+    from core.evolution.contracts import Candidate, RunResult
+    from core.evolution.stream import StreamLearner
+    from core.evolution.stream_tasks import make_task
+    seen = []
+
+    def run(candidate, task, run_id):
+        seen.append(run_id)
+        return RunResult(run_id, 'passed', 1.0, '', {}, '')
+    boot = Candidate('b', (), 'skill', str(tmp_path), 'd' * 64)
+    StreamLearner(tmp_path / 'A0', 'A0', bootstrap=boot, run_student=run, teacher=None, propose_skill=None,
+                  run_suffix='-a2').step(make_task('log_aggregation', 1000))
+    assert seen == ['stream-v1-log_aggregation-1000-student-a2']

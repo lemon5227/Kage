@@ -15,6 +15,7 @@ state and reused by every arm. All paid calls go through the global $1 ledger.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -239,7 +240,8 @@ def run(args, config, stream_m, eval_m, checkpoints):
         proposer = propose if learn is True else None
 
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
-                            teacher=teacher, propose_skill=proposer, memory=memory)
+                            teacher=teacher, propose_skill=proposer, memory=memory,
+                            run_suffix=os.environ.get('KAGE_RUN_SUFFIX', ''))
     eval_tasks = eval_m['tasks']
     if args.eval_only:
         print(json.dumps(learner.evaluate(eval_tasks, args.eval_only)), flush=True)

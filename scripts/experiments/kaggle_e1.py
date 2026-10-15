@@ -213,7 +213,8 @@ def run_jobs(info: dict, jobs: list[tuple[str, list[str]]], label: str) -> None:
             gpu = min(range(gpus), key=lambda g: used.count(g))
             slot_gpu[name] = gpu
             logf = (OUT / f'{name}.log').open('a')
-            proc = subprocess.Popen([PY, *argv], cwd=ROOT, env=job_env(info, gpu), stdout=logf, stderr=subprocess.STDOUT)
+            env = {**job_env(info, gpu), 'KAGE_RUN_SUFFIX': f'-a{attempt}' if attempt > 1 else ''}
+            proc = subprocess.Popen([PY, *argv], cwd=ROOT, env=env, stdout=logf, stderr=subprocess.STDOUT)
             running[name] = (proc, logf, argv, attempt)
             log(f'{name} launched', attempt=attempt, gpu=gpu)
             time.sleep(20)                 # stagger model loads
@@ -296,9 +297,10 @@ def seed_from_previous(prev: Path, roots: list[str]) -> None:
             log('skill proposals reused', root=root)
 
 
-def rerun_jobs() -> list[tuple[str, list[str]]]:
-    """v6: everything except A1 (no teacher, no crash in v5), with the v5 failure modes fixed."""
-    return [job for job in e1_jobs() if job[0] != 'A1']
+def rerun_jobs(only: list[str] | None = None) -> list[tuple[str, list[str]]]:
+    """Jobs to (re)run; default = everything except A1 (no teacher, clean in v5). v7: only A3-s1/A3-s2."""
+    jobs = [job for job in e1_jobs() if job[0] != 'A1']
+    return [job for job in jobs if job[0] in only] if only else jobs
 
 
 def package() -> None:
@@ -319,9 +321,10 @@ def main(argv=None):
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
     control = ROOT / 'scripts' / 'experiments' / 'kaggle_phase'
+    only = None
     if control.exists() and control.read_text().strip():
-        args.phase = control.read_text().strip()
-        log('phase from repository control file', phase=args.phase)
+        args.phase, *only = control.read_text().split()      # e.g. "rerun A3-s1 A3-s2"
+        log('phase from repository control file', phase=args.phase, only=only)
     info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
@@ -340,7 +343,7 @@ def main(argv=None):
         if prev is None:
             raise SystemExit('rerun needs the previous run output attached as input')
         seed_from_previous(prev, ['seed1/A4', 'seed2/A4'])
-        run_jobs(info, rerun_jobs(), 'rerun')
+        run_jobs(info, rerun_jobs(only), 'rerun')
     if args.phase in ('all', 'e1', 'rerun', 'package'):
         package()
 

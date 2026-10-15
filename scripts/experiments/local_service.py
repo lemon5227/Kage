@@ -69,7 +69,7 @@ class LocalService:
     def __enter__(self):
         argv=server_argv(self.port)
         if not occupied(self.port):
-            self.log=(self.output/'server.log').open('w')
+            self.log=(self.output/'server.log').open('a')   # keep earlier attempts' logs (crash evidence)
             self.process=subprocess.Popen(argv,stdout=self.log,stderr=subprocess.STDOUT)
         try:
             deadline=time.monotonic()+180
