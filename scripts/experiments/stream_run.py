@@ -198,7 +198,7 @@ def run(args, config, stream_m, eval_m, checkpoints):
         return RecordedLocalProvider(args.root / 'model-traces' / f'{run_id}.jsonl', api_key='local',
             model_name='agents-a1-4b', base_url=f'http://127.0.0.1:{args.port}/v1', timeout_sec=120)
     learn = ARMS[args.arm]['learn']
-    memory = MemoryStore(args.root / 'memory.jsonl') if learn == 'memory' else None
+    memory = MemoryStore(args.root / 'memory.jsonl') if learn in ('memory', 'both') else None
     playbook = Playbook(args.root / 'playbook.json') if args.playbook else None
     recovery_bundle = help_bundle(args.root / 'recovery-help') if args.in_task_help else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
@@ -223,14 +223,15 @@ def run(args, config, stream_m, eval_m, checkpoints):
             return teacher_run(bootstrap, task, f"teacher-{task['task_id']}")
         teacher = TeacherCache(args.teacher_cache / 'results', solve)
 
-        def propose(parent, task, demo):
+        def propose(parent, task, demo, hint=None):
             optimizer = RecordedLocalProvider(args.root / 'optimizer-model.jsonl', api_key=cloud['api_key'],
                 model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=3000,
                 input_byte_cap=TEACHER_INPUT_BYTES)
             trace = [json.loads(l) for l in Path(demo.trace_path).read_text().splitlines() if l.strip()]
             feedback = {'task_id': task['task_id'], 'instruction': task['instruction'],
-                        'failure_reason': SKILL_FEEDBACK, 'trace': trace}
-            root = args.root / 'mutations' / task['task_id']
+                        'failure_reason': SKILL_FEEDBACK + (('\n' + hint) if hint else ''), 'trace': trace}
+            # A generalization rewrite has different inputs: give it its own proposal slot.
+            root = args.root / 'mutations' / (task['task_id'] + ('-generalize' if hint else ''))
             try:
                 return Mutator(optimizer, global_teacher_budget(), journal, root,
                                request_lessons=playbook is not None).propose(parent, feedback)
@@ -241,7 +242,7 @@ def run(args, config, stream_m, eval_m, checkpoints):
                     playbook.add(lessons, source_task=task['task_id'], family=task['family'],
                                  trigger=task['instruction'])
                     playbook.save()
-        proposer = propose if learn is True else None
+        proposer = propose if learn in (True, 'both') else None
 
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
                             teacher=teacher, propose_skill=proposer, memory=memory,

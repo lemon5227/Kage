@@ -317,6 +317,22 @@ def e1b_jobs() -> list[tuple[str, list[str]]]:
     return jobs
 
 
+def e1c_jobs() -> list[tuple[str, list[str]]]:
+    """E-1c: capability round after E-1/E-1b. A4g = skills verified on earlier same-family tasks with one
+    generalization rewrite; A4m = A4g + trajectory memory. Both use relevance-ranked preview."""
+    jobs = []
+    for job_name, argv in e1_jobs():
+        if not job_name.startswith('A4-'):
+            continue
+        for arm in ('A4g', 'A4m'):
+            a = list(argv)
+            a[a.index('--arm') + 1] = arm
+            a[a.index('--root') + 1] = a[a.index('--root') + 1].replace('/A4', '/' + arm)
+            a[a.index('--port') + 1] = str(int(a[a.index('--port') + 1]) + (10 if arm == 'A4g' else 20))
+            jobs.append((job_name.replace('A4', arm), a + ['--skill-preview', 'preview_relevant']))
+    return jobs
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -330,7 +346,7 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -339,7 +355,7 @@ def main(argv=None):
     if control.exists() and control.read_text().strip():
         args.phase, *only = control.read_text().split()      # e.g. "rerun A3-s1 A3-s2"
         log('phase from repository control file', phase=args.phase, only=only)
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b') else json.loads((OUT / 'host.json').read_text())
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
@@ -358,13 +374,13 @@ def main(argv=None):
             raise SystemExit('rerun needs the previous run output attached as input')
         seed_from_previous(prev, ['seed1/A4', 'seed2/A4'])
         run_jobs(info, rerun_jobs(only), 'rerun')
-    if args.phase == 'e1b':
+    if args.phase in ('e1b', 'e1c'):
         prev = previous_output()
         if prev is None:
-            raise SystemExit('e1b needs the previous run output attached as input (teacher cache)')
+            raise SystemExit(f'{args.phase} needs the previous run output attached as input (teacher cache)')
         seed_from_previous(prev, [])
-        run_jobs(info, e1b_jobs(), 'e1b')
-    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'package'):
+        run_jobs(info, e1b_jobs() if args.phase == 'e1b' else e1c_jobs(), args.phase)
+    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'e1c', 'package'):
         package()
 
 

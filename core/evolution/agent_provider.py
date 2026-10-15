@@ -355,6 +355,10 @@ class KageChainProvider:
             preview = [{**item, "description": item["description"][:200]} for item in skills]
             soul += "\nLocal reusable skill preview (descriptors only, not source code): " + json.dumps(preview, ensure_ascii=False)
             soul += "\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual editing.\n"
+            if self.skill_context_mode == "preview_relevant" and query:
+                # E-1b: with a matching skill previewed, students still spent their 5 steps searching.
+                soul += ("The preview is ranked for this task: the first skill is the closest match. If it fits, call it "
+                         "right away with skill_call (no skill_search first), then read the file to check the result.\n")
         if self.extra_guidance:
             soul += "\n" + self.extra_guidance    # W2-6 playbook lessons; empty unless enabled
         return soul

@@ -28,6 +28,12 @@ ARMS = {
     'A3': {'learn': 'memory', 'help': 'after_failure'},  # verified demonstrations as trajectory memory
     'A4': {'learn': True, 'help': 'after_failure'}, # skill library, passive help
     'A5': {'learn': True, 'help': 'proactive'},     # skill library + competence-driven help
+    # E-1 diagnosis: skills were accepted after passing only their source task, so narrow skills got in.
+    # A4g also verifies on the last `verify_family` same-family stream tasks already seen and, if that
+    # fails, asks once (`generalize`) for a rewrite covering the failing instructions.
+    'A4g': {'learn': True, 'help': 'after_failure', 'verify_family': 2, 'generalize': 1},
+    # A4m = A4g + the A3 trajectory memory: skills and verified demonstrations together.
+    'A4m': {'learn': 'both', 'help': 'after_failure', 'verify_family': 2, 'generalize': 1},
 }
 
 
@@ -172,9 +178,11 @@ class StreamLearner:
                  help_cost: float = 0.25, memory: MemoryStore | None = None, run_suffix: str = ''):
         if arm not in ARMS:
             raise ValueError(f'unknown arm {arm}')
-        if ARMS[arm]['learn'] == 'memory':
+        if ARMS[arm]['learn'] in ('memory', 'both'):
             if teacher is None or memory is None:
-                raise ValueError('the memory arm needs a teacher and a memory store')
+                raise ValueError('memory arms need a teacher and a memory store')
+            if ARMS[arm]['learn'] == 'both' and propose_skill is None:
+                raise ValueError('the combined arm also needs a skill proposer')
         elif ARMS[arm]['learn'] and (teacher is None or propose_skill is None):
             raise ValueError('learning arms need a teacher and a skill proposer')
         self.memory = memory
@@ -205,20 +213,74 @@ class StreamLearner:
         self.competence.save(self.competence_path)
         (self.root / 'library.json').write_text(json.dumps(asdict(self.library), default=str))
 
+    def _family_history(self, task: dict) -> list[dict]:
+        """Up to `verify_family` earlier same-family stream tasks of this stream, most recent first."""
+        k = int(self.cfg.get('verify_family', 0))
+        log = self.root / 'stream.jsonl'
+        if not k or not log.exists():
+            return []
+        from core.evolution.stream_tasks import make_task
+        rows = [json.loads(l) for l in log.read_text().splitlines() if l.strip()]
+        same = [r['task_id'] for r in rows if r['family'] == task['family'] and r['task_id'] != task['task_id']
+                and not r.get('negative')]
+        return [make_task(task['family'], int(tid.rsplit('-', 1)[1])) for tid in reversed(same[-k:])]
+
+    def _verify(self, child: Candidate, task: dict, info: dict, tag: str) -> tuple[bool, list[dict]]:
+        """Source task must pass with a successful skill call; each earlier same-family task must pass too."""
+        check = _checked(self.run_student(child, task, f"{task['task_id']}-{tag}{self.run_suffix}"), 'learn check')
+        calls = skill_calls(check)
+        info.setdefault('checks', []).append({'tag': tag, 'source_score': check.score})
+        if not (check.score >= 1.0 and any(c['success'] for c in calls)):
+            return False, []
+        failing = []
+        for other in self._family_history(task):
+            res = _checked(self.run_student(child, other, f"{other['task_id']}-{tag}-for-{task['task_id']}{self.run_suffix}"),
+                           'family check')
+            ok = res.score >= 1.0 and any(c['success'] for c in skill_calls(res))
+            info['checks'][-1].setdefault('family', []).append({'task_id': other['task_id'], 'passed': ok})
+            if not ok:
+                failing.append(other)
+        return not failing, failing
+
     def _learn(self, task: dict, demo: RunResult) -> dict:
         info = {'attempted': True, 'accepted': False}
-        if self.cfg['learn'] == 'memory':
-            info.update(kind='memory', accepted=self.memory.add(task, demo))
-            return info
+        if self.cfg['learn'] in ('memory', 'both'):
+            stored = self.memory.add(task, demo)
+            if self.cfg['learn'] == 'memory':
+                info.update(kind='memory', accepted=stored)
+                return info
+            info['memory_stored'] = stored
+        if self.cfg.get('verify_family'):
+            info['verify_tasks'] = [t['task_id'] for t in self._family_history(task)]
         try:
             child = self.propose_skill(self.library, task, demo)
         except Exception as exc:                 # proposal failures are data, not crashes
             info['error'] = f'{type(exc).__name__}: {exc}'
             return info
         info['child'] = child.candidate_id
-        check = _checked(self.run_student(child, task, f"{task['task_id']}-learn-check{self.run_suffix}"), 'learn check')
-        info.update(check_score=check.score, check_skill_calls=skill_calls(check))
-        if check.score >= 1.0 and any(c['success'] for c in info['check_skill_calls']):
+        if not self.cfg.get('verify_family'):
+            check = _checked(self.run_student(child, task, f"{task['task_id']}-learn-check{self.run_suffix}"), 'learn check')
+            info.update(check_score=check.score, check_skill_calls=skill_calls(check))
+            if check.score >= 1.0 and any(c['success'] for c in info['check_skill_calls']):
+                self.library = child
+                info['accepted'] = True
+            return info
+        ok, failing = self._verify(child, task, info, 'learn-check')
+        for attempt in range(int(self.cfg.get('generalize', 0))):
+            if ok or not failing:
+                break
+            # Visible instructions only (never hidden cases): the skill must also cover these variants.
+            hint = ('The extracted skill passed the demonstrated task but failed these earlier tasks of the same '
+                    'family. Rewrite it so one skill covers all of them through parameters:\n'
+                    + '\n'.join('- ' + t['instruction'] for t in failing))
+            try:
+                child = self.propose_skill(self.library, task, demo, hint=hint)
+            except Exception as exc:
+                info['generalize_error'] = f'{type(exc).__name__}: {exc}'
+                break
+            info.update(child=child.candidate_id, generalized=True)
+            ok, failing = self._verify(child, task, info, f'generalize{attempt + 1}')
+        if ok:
             self.library = child
             info['accepted'] = True
         return info
