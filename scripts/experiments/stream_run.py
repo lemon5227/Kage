@@ -27,7 +27,7 @@ from core.evolution.contracts import Candidate
 from core.evolution.journal import Journal
 from core.evolution.mutator import Mutator, bundle_digest
 from core.evolution.playbook import Playbook, parse_lessons
-from core.evolution.stream import ARMS, MemoryStore, StreamLearner, TeacherCache, chain_runner
+from core.evolution.stream import ARMS, MemoryStore, StreamLearner, TeacherBudgetExhausted, TeacherCache, chain_runner
 from core.evolution.stream_tasks import manifest
 from core.evolution.teacher_budget import global_teacher_budget, ledger_path, remaining_usd
 
@@ -262,7 +262,13 @@ def run(args, config, stream_m, eval_m, checkpoints):
         start = time.monotonic()
         if teacher:
             _spend_row(args.root, 'before', task, remaining_usd(global_teacher_budget()))
-        row = learner.step(task)
+        try:
+            row = learner.step(task)
+        except TeacherBudgetExhausted as exc:
+            capped = True              # the ledger refused: stop learning, still run the checkpoints
+            print(json.dumps({'stopped': 'teacher_budget_exhausted', 'next_task': task['task_id'],
+                              'detail': str(exc)}), flush=True)
+            continue
         if teacher:
             _spend_row(args.root, 'after', task, remaining_usd(global_teacher_budget()))
         print(json.dumps({k: row.get(k) for k in ('index', 'task_id', 'solved_by_student', 'helped', 'student_score',

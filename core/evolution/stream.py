@@ -31,6 +31,25 @@ ARMS = {
 }
 
 
+class InfrastructureError(RuntimeError):
+    """The model server or sandbox failed (runner status 'crashed'): not a capability result.
+
+    Nothing is recorded for that task; the job stops and a restart resumes from it.
+    """
+
+
+class TeacherBudgetExhausted(RuntimeError):
+    """The teacher ledger refused the call: learning arms must stop the stream (checkpoints still run)."""
+
+
+def _checked(result: RunResult, what: str) -> RunResult:
+    if result.status == 'budget_exhausted':
+        raise TeacherBudgetExhausted(f'{what}: teacher budget exhausted at run {result.run_id}; not recorded')
+    if result.status == 'crashed':
+        raise InfrastructureError(f'{what}: run {result.run_id} crashed (infrastructure); not recorded')
+    return result
+
+
 def _trace_rows(result: RunResult) -> list[dict]:
     path = Path(result.trace_path) if result.trace_path else None
     if not path or not path.exists():
@@ -138,7 +157,7 @@ class TeacherCache:
             if path.exists():
                 return RunResult(**json.loads(path.read_text()))
             self.fresh_calls += 1
-            result = self.solve(task)
+            result = _checked(self.solve(task), 'teacher')      # a crashed demo is never cached
             tmp = path.with_suffix('.tmp')
             tmp.write_text(json.dumps(asdict(result), ensure_ascii=False, default=str))
             os.replace(tmp, path)
@@ -194,7 +213,7 @@ class StreamLearner:
             info['error'] = f'{type(exc).__name__}: {exc}'
             return info
         info['child'] = child.candidate_id
-        check = self.run_student(child, task, f"{task['task_id']}-learn-check")
+        check = _checked(self.run_student(child, task, f"{task['task_id']}-learn-check"), 'learn check')
         info.update(check_score=check.score, check_skill_calls=skill_calls(check))
         if check.score >= 1.0 and any(c['success'] for c in info['check_skill_calls']):
             self.library = child
@@ -217,7 +236,7 @@ class StreamLearner:
             self.competence.record_help(family, True, when='before_attempt', reason=decision['why'])
             student = None
         else:
-            student = self.run_student(self.library, task, f"{task['task_id']}-student")
+            student = _checked(self.run_student(self.library, task, f"{task['task_id']}-student"), 'student')
             row.update(student_score=student.score, student_status=student.status,
                        skill_calls=skill_calls(student), help_requested=help_requested(student))
         solved = student is not None and student.score >= 1.0
@@ -263,7 +282,7 @@ class StreamLearner:
             if task['task_id'] in done:
                 rows.append(done[task['task_id']])
                 continue
-            result = self.run_student(self.library, task, f"{label}-{task['task_id']}")
+            result = _checked(self.run_student(self.library, task, f"{label}-{task['task_id']}"), 'checkpoint')
             calls = skill_calls(result)
             rows.append({'checkpoint': label, 'task_id': task['task_id'], 'family': task['family'],
                          'negative': task.get('negative', False), 'score': result.score,

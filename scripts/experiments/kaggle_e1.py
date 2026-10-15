@@ -39,7 +39,8 @@ MODEL_SHA256 = 'd93c393a9bd5139a4b5cfe24d31ef553c5a497bfb8afec178a354ecbf508f062
 LLAMA_COMMIT = 'b29c606e2'              # = Homebrew llama.cpp 0.4.1 build 10964 used on the Mac
 TEACHER = {'provider_type': 'openai', 'base_url': 'https://api.deepseek.com', 'model_name': 'deepseek-flash',
            'timeout_sec': 120}
-E1_CAP_USD = 0.40                       # task book §4 allocation for E-1
+E1_CAP_USD = 0.80                       # E-1 allocation after the user raised the total to US$2 (2026-10-15)
+LEDGER_HEADROOM_USD = 0.10              # ledger cap above the experiment cap: reservations never starve the stop
 DEADLINE_S = 11 * 3600                  # Kaggle stops sessions at 12 h; leave time to package
 PY = sys.executable
 PIP = ['jsonschema', 'numpy', 'jieba', 'rank-bm25', 'defusedxml', 'lxml', 'openpyxl', 'pypdf', 'pillow',
@@ -174,29 +175,68 @@ def write_teacher_config() -> None:
 def job_env(info: dict, gpu: int) -> dict:
     return {**os.environ, 'KAGE_MODEL_PATH': info['model'], 'KAGE_LLAMA_SERVER': info['server'],
             'CUDA_VISIBLE_DEVICES': str(gpu), 'KAGE_TEACHER_LEDGER': str(OUT / 'teacher-ledger.sqlite'),
-            'KAGE_TEACHER_CAP_USD': str(E1_CAP_USD)}
+            'KAGE_TEACHER_CAP_USD': str(E1_CAP_USD + LEDGER_HEADROOM_USD)}
+
+
+MAX_PARALLEL = 4            # v5: six concurrent servers -> three were killed mid-run (likely memory)
+MAX_ATTEMPTS = 6            # a job that exits non-zero (infrastructure crash) resumes per task
+
+
+def memory_snapshot() -> dict:
+    out = {}
+    try:
+        mem = subprocess.run(['free', '-m'], capture_output=True, text=True).stdout.split('\n')[1].split()
+        out['ram_used_mb'], out['ram_total_mb'] = int(mem[2]), int(mem[1])
+    except Exception:
+        pass
+    try:
+        gpu = subprocess.run(['nvidia-smi', '--query-gpu=memory.used,memory.total', '--format=csv,noheader,nounits'],
+                             capture_output=True, text=True).stdout.strip().splitlines()
+        out['gpu_mb'] = [line.replace(' ', '') for line in gpu]
+    except Exception:
+        pass
+    return out
 
 
 def run_jobs(info: dict, jobs: list[tuple[str, list[str]]], label: str) -> None:
+    """Run jobs at most MAX_PARALLEL at a time; restart a job that exits non-zero (it resumes per task)."""
     gpus = max(1, len(info['gpus']))
-    procs = []
-    for i, (name, argv) in enumerate(jobs):
-        logf = (OUT / f'{name}.log').open('a')
-        procs.append((name, subprocess.Popen([PY, *argv], cwd=ROOT, env=job_env(info, i % gpus),
-                                             stdout=logf, stderr=subprocess.STDOUT), logf))
-        time.sleep(20)                     # stagger model loads
-    log(f'{label} started', jobs=[n for n, _, _ in procs])
-    while any(p.poll() is None for _, p, _ in procs):
+    pending = [(name, argv, 1) for name, argv in jobs]
+    running: dict[str, tuple] = {}
+    slot_gpu = {}
+    log(f'{label} started', jobs=[n for n, _ in jobs], max_parallel=MAX_PARALLEL)
+    last_mem = 0.0
+    while pending or running:
+        while pending and len(running) < MAX_PARALLEL:
+            name, argv, attempt = pending.pop(0)
+            used = [slot_gpu[n] for n in running]
+            gpu = min(range(gpus), key=lambda g: used.count(g))
+            slot_gpu[name] = gpu
+            logf = (OUT / f'{name}.log').open('a')
+            proc = subprocess.Popen([PY, *argv], cwd=ROOT, env=job_env(info, gpu), stdout=logf, stderr=subprocess.STDOUT)
+            running[name] = (proc, logf, argv, attempt)
+            log(f'{name} launched', attempt=attempt, gpu=gpu)
+            time.sleep(20)                 # stagger model loads
+        for name in list(running):
+            proc, logf, argv, attempt = running[name]
+            if proc.poll() is None:
+                continue
+            logf.close()
+            del running[name]
+            log(f'{name} exit', code=proc.returncode, attempt=attempt, **memory_snapshot())
+            if proc.returncode != 0 and attempt < MAX_ATTEMPTS:
+                pending.append((name, argv, attempt + 1))
+        if time.time() - last_mem > 300:
+            log('resources', running=sorted(running), **memory_snapshot())
+            last_mem = time.time()
         if time.time() - START > DEADLINE_S:
             log('deadline reached; stopping jobs (all runs resume per task next time)')
-            for _, p, _ in procs:
-                p.terminate()
-            break
-        time.sleep(60)
-    for name, p, f in procs:
-        p.wait()
-        f.close()
-        log(f'{name} exit', code=p.returncode)
+            for proc, logf, _, _ in running.values():
+                proc.terminate()
+                proc.wait()
+                logf.close()
+            return
+        time.sleep(15)
 
 
 def calibration_jobs() -> list[tuple[str, list[str]]]:
@@ -227,6 +267,40 @@ def e1_jobs() -> list[tuple[str, list[str]]]:
     return jobs
 
 
+def previous_output() -> Path | None:
+    """The e1/ directory of an earlier run attached as notebook input (if any)."""
+    for cache in Path('/kaggle/input').glob('**/e1/teacher-cache'):
+        return cache.parent
+    return None
+
+
+def seed_from_previous(prev: Path, roots: list[str]) -> None:
+    """Reuse what was already paid for: real teacher demos and cached skill proposals.
+
+    Only 'passed'/'failed' teacher results are reused; 'crashed' and 'budget_exhausted' were not
+    demonstrations (v5). Paths inside results point at /kaggle/working/e1, which this copy recreates.
+    """
+    src, dst = prev / 'teacher-cache', OUT / 'teacher-cache'
+    if not dst.exists():
+        shutil.copytree(src, dst)
+        dropped = 0
+        for f in (dst / 'results').glob('*.json'):
+            if json.loads(f.read_text()).get('status') not in ('passed', 'failed'):
+                f.unlink()
+                dropped += 1
+        log('teacher cache reused', kept=len(list((dst / 'results').glob('*.json'))), dropped=dropped)
+    for root in roots:
+        old = prev / root / 'mutations'
+        if old.exists() and not (OUT / root / 'mutations').exists():
+            shutil.copytree(old, OUT / root / 'mutations')
+            log('skill proposals reused', root=root)
+
+
+def rerun_jobs() -> list[tuple[str, list[str]]]:
+    """v6: everything except A1 (no teacher, no crash in v5), with the v5 failure modes fixed."""
+    return [job for job in e1_jobs() if job[0] != 'A1']
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -240,7 +314,7 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -248,7 +322,7 @@ def main(argv=None):
     if control.exists() and control.read_text().strip():
         args.phase = control.read_text().strip()
         log('phase from repository control file', phase=args.phase)
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1') else json.loads((OUT / 'host.json').read_text())
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
@@ -261,7 +335,13 @@ def main(argv=None):
         run_jobs(info, calibration_jobs(), 'calibration')
     if args.phase in ('all', 'e1'):
         run_jobs(info, e1_jobs(), 'e1')
-    if args.phase in ('all', 'e1', 'package'):
+    if args.phase == 'rerun':
+        prev = previous_output()
+        if prev is None:
+            raise SystemExit('rerun needs the previous run output attached as input')
+        seed_from_previous(prev, ['seed1/A4', 'seed2/A4'])
+        run_jobs(info, rerun_jobs(), 'rerun')
+    if args.phase in ('all', 'e1', 'rerun', 'package'):
         package()
 
 

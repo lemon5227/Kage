@@ -148,3 +148,49 @@ def test_teacher_cache_pays_once_under_parallel_arms(tmp_path):
     [t.start() for t in threads]
     [t.join() for t in threads]
     assert calls == ['t1']
+
+
+def test_crashed_runs_raise_and_are_not_recorded(tmp_path):
+    import pytest as _pytest
+    from core.evolution.contracts import Candidate, RunResult
+    from core.evolution.stream import InfrastructureError, StreamLearner, TeacherCache
+    from core.evolution.stream_tasks import make_task
+    boot = Candidate('b', (), 'skill', str(tmp_path), 'd' * 64)
+
+    def crashed(candidate, task, run_id):
+        return RunResult(run_id, 'crashed', 0.0, '', {}, '')
+    learner = StreamLearner(tmp_path / 'A0', 'A0', bootstrap=boot, run_student=crashed, teacher=None, propose_skill=None)
+    with _pytest.raises(InfrastructureError):
+        learner.step(make_task('log_aggregation', 1000))
+    with _pytest.raises(InfrastructureError):
+        learner.evaluate([make_task('log_aggregation', 9000)], 'cp0')
+    assert not (tmp_path / 'A0' / 'stream.jsonl').exists() and not (tmp_path / 'A0' / 'checkpoints.jsonl').exists()
+    assert learner.done == set()
+
+    calls = []
+
+    def teacher_solve(task):
+        calls.append(1)
+        return RunResult('t', 'crashed', 0.0, '', {}, '')
+    cache = TeacherCache(tmp_path / 'cache', teacher_solve)
+    with _pytest.raises(InfrastructureError):
+        cache.get({'task_id': 'x'})
+    assert not (tmp_path / 'cache' / 'x.json').exists()
+
+
+def test_budget_exhausted_teacher_stops_learning_and_is_not_cached(tmp_path):
+    import pytest as _pytest
+    from core.evolution.contracts import Candidate, RunResult
+    from core.evolution.stream import StreamLearner, TeacherBudgetExhausted, TeacherCache
+    from core.evolution.stream_tasks import make_task
+    boot = Candidate('b', (), 'skill', str(tmp_path), 'd' * 64)
+
+    def student(candidate, task, run_id):
+        return RunResult(run_id, 'failed', 0.0, '', {}, '')
+    cache = TeacherCache(tmp_path / 'cache', lambda task: RunResult('t', 'budget_exhausted', 0.0, '', {}, ''))
+    learner = StreamLearner(tmp_path / 'A4', 'A4', bootstrap=boot, run_student=student, teacher=cache,
+                            propose_skill=lambda *a: None)
+    with _pytest.raises(TeacherBudgetExhausted):
+        learner.step(make_task('log_aggregation', 1000))
+    assert not list((tmp_path / 'cache').glob('*.json'))
+    assert not (tmp_path / 'A4' / 'stream.jsonl').exists() and learner.done == set()

@@ -1,4 +1,4 @@
-"""One global teacher ledger shared by every experiment (user cap: US$1, 2026-10-14).
+"""One global teacher ledger shared by every experiment (user cap: US$1 on 2026-10-14, raised to US$2 on 2026-10-15).
 
 All cloud-teacher calls (demonstrations, skill extraction, architect proposals,
 challenger tasks) must reserve through ``global_teacher_budget()`` so that a new
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from core.evolution.budget import BudgetConfig, BudgetTracker
 
-GLOBAL_TEACHER_CAP_USD = 1.00
+GLOBAL_TEACHER_CAP_USD = 2.00
 INPUT_USD_PER_M = 0.30
 OUTPUT_USD_PER_M = 1.20
 DEFAULT_LEDGER = Path('~/.config/kage/teachers/ledger.sqlite')
