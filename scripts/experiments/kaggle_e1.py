@@ -104,7 +104,12 @@ def setup() -> dict:
         for f in prebuilt.iterdir():
             shutil.copy2(f, server.parent / f.name)
         server.chmod(0o755)
-        log('reused prebuilt llama-server', source=str(prebuilt))
+        probe = subprocess.run([str(server), '--version'], capture_output=True, text=True)
+        if probe.returncode == 0:
+            log('reused prebuilt llama-server', source=str(prebuilt))
+        else:                                   # e.g. the image changed its CUDA runtime: rebuild
+            log('prebuilt llama-server does not run here; rebuilding', error=probe.stderr[-300:])
+            shutil.rmtree(server.parent)
     if not server.exists():
         src = TOOLS / 'llama.cpp'
         if not src.exists():
