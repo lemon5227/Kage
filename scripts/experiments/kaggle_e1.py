@@ -108,6 +108,7 @@ def setup() -> dict:
         probe = subprocess.run([str(server), '--version'], capture_output=True, text=True)
         if probe.returncode == 0:
             log('reused prebuilt llama-server', source=str(prebuilt))
+            save_build(server.parent)    # pass it on: the next run's input is this run's output (v7 rebuilt)
         else:                                   # e.g. the image changed its CUDA runtime: rebuild
             log('prebuilt llama-server does not run here; rebuilding', error=probe.stderr[-300:])
             shutil.rmtree(server.parent)
