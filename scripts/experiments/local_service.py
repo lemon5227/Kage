@@ -33,7 +33,10 @@ def file_hash(path):
 def server_argv(port):
     return [str(SERVER),'-m',str(MODEL),'--alias','agents-a1-4b','--jinja','--host','127.0.0.1','--port',str(port),
             '-ngl','99','--flash-attn','auto','-c','8192','-np','1','-n','1024','--reasoning','off',
-            '--cache-type-k','q8_0','--cache-type-v','q8_0','--temp','0.85','--top-p','0.95','--top-k','20','--presence-penalty','1.1']
+            '--cache-type-k','q8_0','--cache-type-v','q8_0','--temp','0.85','--top-p','0.95','--top-k','20','--presence-penalty','1.1',
+            # llama.cpp's host-RAM prompt cache defaults to 8 GiB per server; four servers filled Kaggle's
+            # 32 GB and got killed (E-1 v5/v9), and it made the Mac sluggish. Outputs are unaffected.
+            '--cache-ram','0']
 
 
 def occupied(port):

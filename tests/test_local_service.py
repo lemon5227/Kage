@@ -14,7 +14,8 @@ def load(name):
 def test_extracted_service_keeps_the_frozen_runtime():
     from scripts.experiments import native_model_pilot as native
     local = load('local_service')
-    assert local.server_argv(18082) == native.server_argv(18082)
+    # Same frozen runtime as the native pilots, plus the host prompt cache disabled (memory only).
+    assert local.server_argv(18082) == native.server_argv(18082) + ['--cache-ram', '0']
     assert (local.MODEL, local.SERVER) == (native.MODEL, native.SERVER)
 
 
