@@ -139,6 +139,7 @@ def setup() -> dict:
     info = {'server': str(server), 'server_version': version, 'model': str(model), 'model_sha256': MODEL_SHA256,
             'gpus': gpus, 'llama_commit': LLAMA_COMMIT, 'repo_head': subprocess.run(
                 ['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()}
+    OUT.mkdir(parents=True, exist_ok=True)
     (OUT / 'host.json').write_text(json.dumps(info, indent=1))
     log('setup done', **{k: info[k] for k in ('gpus', 'repo_head')})
     return info
