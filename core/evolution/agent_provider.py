@@ -286,8 +286,11 @@ class KageChainProvider:
         self.agentic_loop_cls = agentic_loop_cls
         self.skill_catalog = skill_catalog
         self.recovery_policy = recovery_policy
-        if skill_context_mode not in {"search", "preview"}:
-            raise ValueError("skill_context_mode must be search or preview")
+        # preview_relevant: preview the skills ranked most relevant to this task's instruction.
+        # 'preview' (first three by id) is kept for reproducing earlier runs; E-1 showed it hid the
+        # matching skill once the library grew (all 8 A4 cp60 in-family failures).
+        if skill_context_mode not in {"search", "preview", "preview_relevant"}:
+            raise ValueError("skill_context_mode must be search, preview or preview_relevant")
         self.skill_context_mode = skill_context_mode
         self._model = MeteredProvider(model_provider, label=self.provider_label,
                                       max_calls=self.max_model_calls)
@@ -341,10 +344,14 @@ class KageChainProvider:
             "environment": environment_info(),
         }
 
-    def _experiment_soul(self):
+    def _experiment_soul(self, query: str = ""):
         soul = EXPERIMENT_SOUL + (SKILL_DISCOVERY_GUIDANCE if self.skill_catalog is not None else "")
-        if self.skill_catalog is not None and self.skill_context_mode == "preview":
-            skills = self.skill_catalog.search("", limit=3)["skills"]
+        if self.skill_catalog is not None and self.skill_context_mode in ("preview", "preview_relevant"):
+            skills = []
+            if self.skill_context_mode == "preview_relevant" and query:
+                skills = self.skill_catalog.search(query, limit=3)["skills"]
+            if not skills:
+                skills = self.skill_catalog.search("", limit=3)["skills"]
             preview = [{**item, "description": item["description"][:200]} for item in skills]
             soul += "\nLocal reusable skill preview (descriptors only, not source code): " + json.dumps(preview, ensure_ascii=False)
             soul += "\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual editing.\n"
@@ -366,7 +373,8 @@ class KageChainProvider:
         instruction = str(task_def.get("instruction") or "").strip()
         if not instruction:
             raise RuntimeError("task has no instruction for the agent chain")
-        if self.skill_catalog is not None and self.skill_context_mode == "preview":
+        preview_query = instruction
+        if self.skill_catalog is not None and self.skill_context_mode in ("preview", "preview_relevant"):
             instruction += "\nFirst use a matching skill_call from the provided local skill preview if available; otherwise use the file tools."
 
         registry = build_workspace_registry(workspace_dir)
@@ -384,7 +392,7 @@ class KageChainProvider:
                 return await execute(name, arguments, require_confirmation)
             executor.execute = bounded_execute
         prompt_builder = PromptBuilder(
-            identity_store=ExperimentIdentityStore(self._experiment_soul()),
+            identity_store=ExperimentIdentityStore(self._experiment_soul(preview_query)),
             memory_system=None,
             tool_registry=registry,
             # prune_tools MUST stay False here: the production pruning allowlist is

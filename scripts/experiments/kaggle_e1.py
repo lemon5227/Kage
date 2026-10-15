@@ -304,6 +304,19 @@ def rerun_jobs(only: list[str] | None = None) -> list[tuple[str, list[str]]]:
     return [job for job in jobs if job[0] in only] if only else jobs
 
 
+def e1b_jobs() -> list[tuple[str, list[str]]]:
+    """E-1b: A4 retrained with relevance-ranked skill preview (diagnosis: alphabetical preview hid the
+    matching skill in all 8 A4 cp60 in-family failures). Same stream/eval/budgets as E-1."""
+    jobs = []
+    for job_name, argv in e1_jobs():
+        if not job_name.startswith('A4-'):
+            continue
+        argv = list(argv)
+        argv[argv.index('--root') + 1] = argv[argv.index('--root') + 1].replace('/A4', '/A4r')
+        jobs.append((job_name.replace('A4', 'A4r'), argv + ['--skill-preview', 'preview_relevant']))
+    return jobs
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -317,7 +330,7 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -326,7 +339,7 @@ def main(argv=None):
     if control.exists() and control.read_text().strip():
         args.phase, *only = control.read_text().split()      # e.g. "rerun A3-s1 A3-s2"
         log('phase from repository control file', phase=args.phase, only=only)
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun') else json.loads((OUT / 'host.json').read_text())
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
@@ -345,7 +358,13 @@ def main(argv=None):
             raise SystemExit('rerun needs the previous run output attached as input')
         seed_from_previous(prev, ['seed1/A4', 'seed2/A4'])
         run_jobs(info, rerun_jobs(only), 'rerun')
-    if args.phase in ('all', 'e1', 'rerun', 'package'):
+    if args.phase == 'e1b':
+        prev = previous_output()
+        if prev is None:
+            raise SystemExit('e1b needs the previous run output attached as input (teacher cache)')
+        seed_from_previous(prev, [])
+        run_jobs(info, e1b_jobs(), 'e1b')
+    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'package'):
         package()
 
 

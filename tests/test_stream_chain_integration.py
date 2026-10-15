@@ -149,3 +149,36 @@ def test_chain_runner_lifts_companion_tool_reply_cap(tmp_path):
                        tool_max_tokens=1024)
     run(bootstrap, make_task('log_aggregation', 1000), 'cap')
     assert set(log.read_text().split()) == {'1024'}
+
+
+def test_relevant_preview_shows_the_matching_skill_when_the_library_grows(tmp_path):
+    import hashlib
+    code = 'def run(arguments, context):\n    return {"success": True}\n'
+    items = []
+    lib = tmp_path / 'lib'
+    lib.mkdir()
+    for i, (sid, desc) in enumerate([('csv_a', 'Use this when cleaning CSV exports.'),
+                                     ('csv_b', 'Use this when deduplicating CSV rows.'),
+                                     ('csv_c', 'Use this when sorting CSV tables.'),
+                                     ('log_line_counter', 'Use this when counting log lines per level or service.')]):
+        d = {'skill_id': sid, 'description': desc, 'parameters': {'type': 'object', 'properties': {}},
+             'entrypoint': f's{i}.py:run'}
+        d['digest'] = hashlib.sha256(json.dumps(d, sort_keys=True, separators=(',', ':')).encode() + b'\n' + code.encode()).hexdigest()
+        (lib / f's{i}.py').write_text(code)
+        items.append(d)
+    (lib / 'manifest.json').write_text(json.dumps({'version': 1, 'skills': items}))
+    library = Candidate('lib', (), 'skill', str(lib), bundle_digest(lib))
+    seen = {}
+    for mode in ('preview', 'preview_relevant'):
+        log = tmp_path / f'{mode}.txt'
+
+        class Recorder(ModelProvider):
+            def generate(self, messages, tools=None, max_tokens=200, temperature=0.7, _log=log):
+                _log.write_text(messages[0]['content'])
+                return ModelResponse(text='Done.', usage={'input_tokens': 1, 'output_tokens': 1})
+        run = chain_runner(Journal(tmp_path / f'{mode}.sqlite'), BudgetTracker(BudgetConfig(max_api_calls=100), tmp_path / f'{mode}-b.sqlite'),
+                           tmp_path / f'ws-{mode}', lambda run_id: Recorder(), skill_runner=ProcessSkillRunner(timeout_s=10),
+                           skill_preview=mode)
+        run(library, make_task('log_aggregation', 1000), f'run-{mode}')
+        seen[mode] = 'log_line_counter' in log.read_text().split('skill preview')[1]
+    assert seen == {'preview': False, 'preview_relevant': True}

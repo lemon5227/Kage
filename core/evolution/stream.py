@@ -301,7 +301,7 @@ class StreamLearner:
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
                  tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None,
-                 recovery_bundle: Path | None = None):
+                 recovery_bundle: Path | None = None, skill_preview: str = 'preview'):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -338,7 +338,7 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
                 'MAX_STEPS': step_cap, 'TOOL_MAX_TOKENS': tool_max_tokens})
             kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
                           max_model_calls=call_cap, agentic_loop_cls=cls, skill_catalog=catalog,
-                          skill_context_mode='preview', max_tool_actions=max_tool_actions,
+                          skill_context_mode=skill_preview, max_tool_actions=max_tool_actions,
                           extra_guidance=guidance,
                           recovery_policy=RecoveryPolicy.from_bundle(recovery_bundle, runner=skill_runner or ProcessSkillRunner())
                           if recovery_bundle is not None else None)

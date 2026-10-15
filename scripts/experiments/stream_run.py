@@ -111,6 +111,8 @@ def main():
     p.add_argument('--checkpoints', help='comma-separated stream indexes for evaluation (default 0/middle/end)')
     p.add_argument('--eval-only', metavar='LABEL',
                    help='skip the stream; evaluate the bootstrap state once under LABEL (non-learning arms, shared cp0)')
+    p.add_argument('--skill-preview', choices=['preview', 'preview_relevant'], default='preview',
+                   help='preview_relevant: preview the skills most relevant to each task (E-1 diagnosis)')
     p.add_argument('--plan-only', action='store_true', help='write config.json with frozen manifests and exit')
     p.add_argument('--skill-runner', choices=['docker', 'process'], default='docker',
                    help='process: run skills in a subprocess (hosts without Docker, e.g. a disposable Kaggle VM)')
@@ -148,6 +150,8 @@ def main():
         config['eval_only'] = args.eval_only
     if args.skill_runner != 'docker':
         config['skill_runner'] = args.skill_runner
+    if args.skill_preview != 'preview':
+        config['student']['skill_context_mode'] = args.skill_preview
     if args.stream_manifest:
         config['stream_manifest'], config['eval_manifest'] = str(args.stream_manifest), str(args.eval_manifest)
     if args.playbook:
@@ -199,7 +203,7 @@ def run(args, config, stream_m, eval_m, checkpoints):
     recovery_bundle = help_bundle(args.root / 'recovery-help') if args.in_task_help else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
                                tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory, playbook=playbook,
-                               recovery_bundle=recovery_bundle,
+                               recovery_bundle=recovery_bundle, skill_preview=args.skill_preview,
                                mode='memory' if memory else 'retry' if args.arm == 'A1' else 'plain')
 
     teacher = proposer = None
