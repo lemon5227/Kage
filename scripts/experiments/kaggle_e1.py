@@ -60,6 +60,25 @@ def sh(cmd: list[str] | str, **kw) -> None:
     subprocess.run(cmd, check=True, shell=isinstance(cmd, str), **kw)
 
 
+def find_prebuilt() -> Path | None:
+    """A dataset under /kaggle/input holding llama-server + libs and a BUILD_COMMIT file for LLAMA_COMMIT."""
+    for stamp in Path('/kaggle/input').glob('**/BUILD_COMMIT'):
+        if stamp.read_text().strip() == LLAMA_COMMIT and (stamp.parent / 'llama-server').exists():
+            return stamp.parent
+    return None
+
+
+def save_build(bin_dir: Path) -> None:
+    """Put the compiled server and its shared libraries in the output, to become a reusable dataset."""
+    out = WORK / 'llama-bin'
+    out.mkdir(parents=True, exist_ok=True)
+    for f in bin_dir.iterdir():
+        if f.name == 'llama-server' or '.so' in f.name:
+            shutil.copy2(f, out / f.name)
+    (out / 'BUILD_COMMIT').write_text(LLAMA_COMMIT + '\n')
+    log('saved llama-server build for reuse', files=sorted(p.name for p in out.iterdir()))
+
+
 def cuda_root() -> str:
     """Print what this host offers, then pick the system CUDA toolkit that contains nvcc."""
     probe = ('which -a nvcc; ls -d /usr/local/cuda* 2>&1; ls /usr/local/cuda/lib64/stubs 2>&1 | head -5; '
@@ -78,6 +97,14 @@ def setup() -> dict:
         sh('apt-get -qq update && apt-get -qq install -y lsof >/dev/null')
     TOOLS.mkdir(parents=True, exist_ok=True)
     server = TOOLS / 'llama.cpp' / 'build' / 'bin' / 'llama-server'
+    prebuilt = find_prebuilt()
+    if prebuilt is not None and not server.exists():
+        # Reuse a server compiled by an earlier run (attached as a private dataset), same commit only.
+        server.parent.mkdir(parents=True, exist_ok=True)
+        for f in prebuilt.iterdir():
+            shutil.copy2(f, server.parent / f.name)
+        server.chmod(0o755)
+        log('reused prebuilt llama-server', source=str(prebuilt))
     if not server.exists():
         src = TOOLS / 'llama.cpp'
         if not src.exists():
@@ -86,8 +113,7 @@ def setup() -> dict:
         shutil.rmtree(src / 'build', ignore_errors=True)        # never reuse a failed configure cache
         cuda = cuda_root()
         stubs = f'{cuda}/lib64/stubs'
-        # Pin the system toolkit (a pip-installed nvcc may shadow it) and expose libcuda's stub,
-        # which is all a driverless build container has for CUDA::cuda_driver.
+        # Pin the system toolkit (a pip-installed nvcc may shadow it).
         # The build image has no libcuda (not even a stub); GGML_CUDA_NO_VMM drops llama.cpp's direct
         # link to the driver (used only for the VMM memory pool). Kernels and numerics are unchanged.
         sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DGGML_CUDA_NO_VMM=ON',
@@ -97,6 +123,7 @@ def setup() -> dict:
             '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release'], stdout=subprocess.DEVNULL)
         sh(['cmake', '--build', str(src / 'build'), '--target', 'llama-server', '-j', str(os.cpu_count() or 4)],
            stdout=subprocess.DEVNULL)
+        save_build(server.parent)
     from huggingface_hub import hf_hub_download
     model = Path(hf_hub_download(MODEL_REPO, MODEL_FILE, revision=MODEL_REVISION, local_dir=str(TOOLS / 'model')))
     digest = hashlib.sha256()
