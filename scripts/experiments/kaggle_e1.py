@@ -237,6 +237,12 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'package'], default='all')
     args = p.parse_args(argv)
+    # The notebook command never changes; the phase to run is controlled from the repository so a
+    # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
+    control = ROOT / 'scripts' / 'experiments' / 'kaggle_phase'
+    if control.exists() and control.read_text().strip():
+        args.phase = control.read_text().strip()
+        log('phase from repository control file', phase=args.phase)
     info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
