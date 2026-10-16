@@ -37,12 +37,19 @@ SOURCES_PER_SKILL = 20
 _WORD = re.compile(r'[a-z0-9_]+')
 
 
+_CJK = re.compile(r'[\u3400-\u9fff]+')
+
+
 def tokens(text: str) -> list[str]:
     # Same normalisation as skill search: fold a plural "s", drop very short words.
     out = []
     for w in _WORD.findall(str(text).casefold()):
         if len(w) >= 3:
             out.append(w[:-1] if len(w) > 3 and w.endswith('s') else w)
+    # Chinese has no spaces: character bigrams (real user requests, A3b). The English benchmark
+    # instructions contain no CJK, so stream-v1 similarities are unchanged.
+    for run in _CJK.findall(str(text)):
+        out += [run[i:i + 2] for i in range(len(run) - 1)] or [run]
     return out
 
 

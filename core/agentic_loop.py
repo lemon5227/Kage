@@ -224,8 +224,12 @@ class AgenticLoop:
         )
 
     async def run(self, user_input: str,
-                  current_emotion: str = "neutral") -> LoopResult:
-        """Execute the agentic loop."""
+                  current_emotion: str = "neutral", experience: str = "") -> LoopResult:
+        """Execute the agentic loop.
+
+        ``experience``: an optional hint from an earlier similar real task (A3b); it is appended to
+        the task like a skill guidance and is empty unless the relevance gate admitted one.
+        """
 
         # Empty input → default reply
         if not user_input or not str(user_input).strip():
@@ -240,6 +244,8 @@ class AgenticLoop:
         outer = Span("loop", "run", user_len=len(base_user_input))
 
         task_input = base_user_input
+        if experience and str(experience).strip():
+            task_input = f"{base_user_input}\n\n[参考经验]\n{str(experience).strip()}"
         history = self.session.get_history() or []
         tool_calls_executed: list[dict] = []
         recovery_used = False

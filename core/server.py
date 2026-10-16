@@ -748,6 +748,8 @@ class KageServer:
         self.trajectories = TrajectoryRecorder(traj_cfg.get("root", TRAJ_ROOT),
                                                enabled=bool(traj_cfg.get("enabled", True)))
         self.agentic_loop.model = RecordingProvider(self.agentic_loop.model, self.trajectories)
+        from core.evolution.real_memory import RealExperience
+        self.real_experience = RealExperience(self.trajectories.root)
 
         # --- Idle-time self-evolution (opt-in via evolution.auto) ---
         from core.evolution.scheduler import EvolutionScheduler
@@ -1725,11 +1727,22 @@ class KageServer:
                 # Unified agentic loop (model -> tools -> observe -> model)
                 turn_key = str(self._active_turn_id or f"turn-{uuid4().hex[:8]}")
                 self.trajectories.begin(turn_key, str(user_input or ""))
+                experience = ""
+                try:
+                    from core.evolution.real_memory import render as render_experience
+                    hit, score = await asyncio.to_thread(self.real_experience.retrieve, str(user_input or ""))
+                    if hit is not None:
+                        experience = render_experience(hit)
+                        self.trajectories.annotate(experience_from=hit["id"], experience_similarity=score)
+                        self._log_server_event("experience.injected", source=hit["id"], similarity=score)
+                except Exception:
+                    logger.warning("Experience retrieval failed", exc_info=True)
                 loop_result = None
                 try:
                     loop_result = await self.agentic_loop.run(
                         user_input=user_input,
                         current_emotion=current_emotion_str,
+                        experience=experience,
                     )
                 finally:
                     record = None

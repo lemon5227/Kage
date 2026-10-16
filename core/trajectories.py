@@ -73,6 +73,12 @@ class TrajectoryRecorder:
             if parent:
                 self._open['parent'] = parent
 
+    def annotate(self, **fields) -> None:
+        """Attach metadata to the open turn (e.g. which earlier experience was injected)."""
+        with self._lock:
+            if self._open is not None:
+                self._open.update(fields)
+
     def step(self, messages, tools, response) -> None:
         with self._lock:
             if self._open is not None:
