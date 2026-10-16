@@ -1,7 +1,8 @@
 """Kage-Stream v1: procedurally generated task families for learning-curve experiments.
 
 Every instance is a plain task dict accepted by the existing EvolutionRunner/Evaluator:
-``python_function`` criteria for capability tasks, ``read_preserve`` for negatives.
+``python_function`` criteria for capability tasks, ``read_preserve`` for negatives; browser
+families (``browser_tasks``) use ``json_exact_match`` on the fixture's independent check.
 Hidden cases come from a reference implementation and never leave ``scoring_criteria``.
 
 Seed ranges keep data uses apart (see SPLITS); an instance is fully determined by
@@ -542,12 +543,22 @@ FAMILIES: dict[str, Callable[[int], dict]] = {
 }
 NEGATIVE_FAMILIES = {'read_preserve', 'inspect_question', 'lookalike_readonly'}
 
+from core.evolution.browser_tasks import BROWSER_FAMILIES, BROWSER_NEGATIVE  # noqa: E402
+FAMILIES.update(BROWSER_FAMILIES)
+NEGATIVE_FAMILIES |= BROWSER_NEGATIVE
+
 
 def make_task(family: str, seed: int) -> dict:
     """Task dict in the runner's format; split derived from the seed range."""
     spec = FAMILIES[family](seed)
     split = split_of(seed)
     task_id = f'stream-v1-{family}-{seed}'
+    if family in BROWSER_FAMILIES:
+        # Browser task (C): run by BrowserChainProvider; the checker reads the fixture's backend.
+        return {'task_id': task_id, 'family': family, 'split': split, 'instruction': spec['instruction'],
+                'fixture': spec['fixture'], 'initial_files': {},
+                'scoring_criteria': {'type': 'json_exact_match', 'file': 'browser-check.json', 'expected': spec['expected']},
+                'negative': family in NEGATIVE_FAMILIES}
     if family in NEGATIVE_FAMILIES:
         text = spec['initial_text']
         return {'task_id': task_id, 'family': family, 'split': split, 'instruction': spec['instruction'],

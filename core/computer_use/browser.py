@@ -159,7 +159,9 @@ class BrowserAdapter:
                             else:
                                 if operation=='fill': await element.fill(value,timeout=timeout_ms)
                                 else: await element.click(timeout=timeout_ms)
-                                result={'success':True,'observation':await self._observe()}
+                                # 'acted' names the element by label: refs are page-local, labels carry over.
+                                acted={'operation':operation,'label':target['label'],**({'value':value} if operation=='fill' else {})}
+                                result={'success':True,'acted':acted,'observation':await self._observe()}
                     elif operation=='scroll':
                         if not isinstance(amount,int) or isinstance(amount,bool) or not -2000 <= amount <= 2000:
                             result=await self._error('InvalidArgument','scroll amount must be -2000..2000')

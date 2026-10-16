@@ -17,7 +17,9 @@ def render_fixture(fixture):
         for field in fixture['fields']:
             checkbox=kind=='preferences'
             checked=' checked' if checkbox and field['initial'] else ''
-            fields.append(f'<label>{esc(field["label"])}<input name="{esc(field["name"])}" aria-label="{esc(field["label"])}" type="{"checkbox" if checkbox else "text"}"{checked}></label>')
+            # Text fields may start prefilled (stream web_form: fields the task says to leave alone).
+            value=f' value="{esc(field["initial"])}"' if not checkbox and isinstance(field.get('initial'),str) else ''
+            fields.append(f'<label>{esc(field["label"])}<input name="{esc(field["name"])}" aria-label="{esc(field["label"])}" type="{"checkbox" if checkbox else "text"}"{checked}{value}></label>')
         table=''
         if kind=='invoice':
             table='<table><tr><th>Item</th><th>Quantity</th><th>Unit price</th></tr>'+''.join(f'<tr><td>{esc(r["item"])}</td><td>{r["qty"]}</td><td>{r["price"]}</td></tr>' for r in fixture['rows'])+'</table>'

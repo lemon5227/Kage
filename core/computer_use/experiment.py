@@ -117,7 +117,7 @@ class BrowserChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,settle_saves=None,**kwargs):
         if observation_format not in {'compact-v1', 'compact-v2'}:
             raise ValueError('unsupported browser observation format')
         super().__init__(model_provider,**kwargs)
@@ -131,6 +131,9 @@ class BrowserChainProvider(KageChainProvider):
         self.observation_format=observation_format
         self.task_def=json.loads(json.dumps(task_def))
         self.external_completion=bool(external_completion)
+        # Wait (<=1 s) for a clicked save to reach the page before checking; stream runs use it
+        # without the completion gate, so a model that stops right after saving is not a timing coin flip.
+        self.settle_saves=self.external_completion if settle_saves is None else bool(settle_saves)
         self.browser_skill_catalog=BrowserSkillCatalog.from_bundle(browser_skill_bundle) if browser_skill_bundle is not None else None
 
     def _experiment_soul(self):
@@ -146,14 +149,14 @@ class BrowserChainProvider(KageChainProvider):
     def cache_identity(self):
         return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
                 'observation_format':self.observation_format,'primary_actor':self.primary_actor,
-                'max_loop_steps':self._primary_step_limit(),
+                'max_loop_steps':self._primary_step_limit(),'settle_saves':self.settle_saves,
                 'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
                 'browser_skill_interpreter_sha256':hashlib.sha256(Path(__file__).with_name('skills.py').read_bytes()).hexdigest(),
                 'adapter_sha256':hashlib.sha256(Path(__file__).with_name('browser.py').read_bytes()).hexdigest(),
                 'environment_sha256':hashlib.sha256(Path(__file__).with_name('task_environment.py').read_bytes()).hexdigest()}
 
     def metadata(self):
-        return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.external_completion else 0,
+        return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.settle_saves else 0,
                 'observation_format':self.observation_format,'primary_actor':self.primary_actor,
                 'max_loop_steps':self._primary_step_limit(),'agentic_loop_max_steps':self._primary_step_limit(),
                 'tool_registry':'ToolRegistry(page-scoped browser and workflow tools)' if self.browser_skill_catalog is not None else 'ToolRegistry(page-scoped browser tools only)',
@@ -176,7 +179,7 @@ class BrowserChainProvider(KageChainProvider):
     def _primary_step_limit(self):
         return self._student_step_limit() if self.primary_actor=='student' else self.max_loop_steps
 
-    async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice='',*,reset_quota=True,max_steps=None):
+    async def _run_actor(self,task,step,workspace,adapter,registry,executor,model,actor,soul,notice='',*,reset_quota=True,max_steps=None,history=None):
         executor.actor=actor
         if reset_quota and hasattr(executor,'browser_quota'):
             executor.browser_quota.used=0
@@ -184,7 +187,8 @@ class BrowserChainProvider(KageChainProvider):
                               prune_tools=False,memory_cfg={'recall_enabled':False})
         actor_model=self._actor_model(model,actor,workspace)
         gate=CompletionGate(actor_model,self.task_def,workspace) if self.external_completion else None
-        loop=self.agentic_loop_cls(gate or actor_model,executor,builder,HistorySession())
+        # history: earlier turns shown before the task (stream A3 memory: a remembered demonstration).
+        loop=self.agentic_loop_cls(gate or actor_model,executor,builder,HistorySession(self._history_messages(task,history or [])))
         loop.MAX_STEPS=max_steps if max_steps is not None else (self._primary_step_limit() if actor==self.primary_actor else 5)
         started=time.monotonic()
         observation=await adapter.observe()
@@ -228,6 +232,10 @@ class BrowserChainProvider(KageChainProvider):
 
     async def _run(self,task,step,history,workspace):
         from playwright.async_api import async_playwright
+        # Every run starts a fresh backend; drop checks left by an earlier run in this workspace
+        # (stream A1 retries reuse it), so they can never be scored as this run's result.
+        for name in ('backend.json','browser-check.json','browser-outcome.json'):
+            (workspace/name).unlink(missing_ok=True)
         with browser_task_server(self.task_def['fixture'],workspace) as (url,state):
             async with async_playwright() as p:
                 browser=await p.chromium.launch(headless=True)
@@ -238,11 +246,11 @@ class BrowserChainProvider(KageChainProvider):
                     adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True,compact_format=self.observation_format)
                     quota=BrowserPrimitiveQuota(16)
                     registry=ToolRegistry();adapter.register_tools(registry,quota=quota)
-                    executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.external_completion)
+                    executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.settle_saves)
                     executor.browser_quota=quota
                     if self.browser_skill_catalog is not None:
                         self.browser_skill_catalog.register_tools(registry,adapter,executor,workspace,quota)
-                    student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,self.primary_actor,self._experiment_soul())
+                    student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,self.primary_actor,self._experiment_soul(),history=history)
                     output=await self._after_student(task,step,workspace,adapter,registry,executor,student)
                     await checkpoint(page,url,workspace)
                     screenshot_error=None

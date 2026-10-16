@@ -105,6 +105,36 @@ def wrote_files(result: RunResult) -> bool:
     return False
 
 
+def changed_state(task: dict, result: RunResult) -> bool:
+    """Did the run do something worth learning a procedure from? Files written, or (browser task)
+    a verified save — a passing browser negative saves nothing, so it never counts."""
+    if task.get('fixture') is not None:
+        return result.score >= 1.0 and not task.get('negative')
+    return wrote_files(result)
+
+
+_ACTED = re.compile(r'"acted":\s*(\{[^{}]*\})')
+
+
+def _browser_rows(result: RunResult) -> list[dict]:
+    """A browser demonstration as label-level steps: element refs are page-local, labels carry over."""
+    rows = []
+    for row in _trace_rows(result):
+        action = row.get('action') if isinstance(row.get('action'), dict) else {}
+        obs = row.get('observation') if isinstance(row.get('observation'), dict) else {}
+        match = _ACTED.search(str(obs.get('content', '')))
+        if action.get('name') != 'browser_act' or not obs.get('success') or not match:
+            continue
+        acted = json.loads(match.group(1))
+        args = {'operation': acted.get('operation'), 'target': acted.get('label')}
+        if 'value' in acted:
+            args['value'] = acted['value']
+        rows.append({'action': {'name': 'browser_act', 'arguments': args},
+                     'observation': {'success': True,
+                                     'content': 'done (earlier page: pick the target_ref with this label from the current observation)'}})
+    return rows
+
+
 def help_requested(result: RunResult) -> bool:
     return any(chain.get('stop_reason') == 'help_requested' for chain in result.metadata.get('chain', []))
 
@@ -136,10 +166,10 @@ class MemoryStore:
         return [json.loads(l) for l in self.path.read_text().splitlines() if l.strip()]
 
     def add(self, task: dict, demo: RunResult) -> bool:
-        if not wrote_files(demo):
+        if not changed_state(task, demo):
             return False
-        rows = []
-        for row in _trace_rows(demo):
+        rows = _browser_rows(demo) if task.get('fixture') is not None else []
+        for row in [] if task.get('fixture') is not None else _trace_rows(demo):
             action = row.get('action') if isinstance(row.get('action'), dict) else {}
             obs = row.get('observation') if isinstance(row.get('observation'), dict) else {}
             rows.append({'action': {'name': action.get('name'), 'arguments': action.get('arguments', {})},
@@ -296,12 +326,19 @@ class StreamLearner:
 
     def _learn(self, task: dict, demo: RunResult) -> dict:
         info = {'attempted': True, 'accepted': False}
+        if task.get('fixture') is not None and self.cfg['learn'] not in ('memory', 'both'):
+            info['skill'] = 'not applicable to browser tasks'
+            return info
         if self.cfg['learn'] in ('memory', 'both'):
             stored = self.memory.add(task, demo)
             if self.cfg['learn'] == 'memory':
                 info.update(kind='memory', accepted=stored)
                 return info
             info['memory_stored'] = stored
+            if task.get('fixture') is not None:
+                # File skills cannot drive a page: browser tasks learn by memory only (C v1).
+                info.update(kind='memory', accepted=stored, skill='not applicable to browser tasks')
+                return info
         if self.cfg.get('verify_family'):
             info['verify_tasks'] = [t['task_id'] for t in self._family_history(task)]
         try:
@@ -415,7 +452,7 @@ class StreamLearner:
             row.update(teacher_score=demo.score, teacher_status=demo.status)
             # Runtime-legal gate: only a verified demonstration that actually changed files
             # carries a procedure worth extracting (a read-only answer does not).
-            if self.cfg['learn'] and demo.score >= 1.0 and wrote_files(demo):
+            if self.cfg['learn'] and demo.score >= 1.0 and changed_state(task, demo):
                 row['learning'] = self._learn(task, demo)
             learning = row.get('learning') or {}
             self.competence.record_help_outcome(key, bool(learning.get('accepted') or learning.get('memory_stored')))
@@ -487,7 +524,8 @@ class StreamLearner:
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
                  tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None,
-                 recovery_bundle: Path | None = None, skill_preview: str = 'preview', gate=None):
+                 recovery_bundle: Path | None = None, skill_preview: str = 'preview', gate=None,
+                 browser_timeout_s=240):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -495,6 +533,8 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
 
     ``gate`` (relevance.SkillSources): only skills verified near this instruction are visible;
     with none, the catalog is empty and the prompt equals the raw student's (A0).
+    Browser tasks (``fixture``) run on ``BrowserChainProvider`` / ``BrowserCloudProvider`` with the
+    same call/step caps; memory mode shows the remembered demonstration as earlier turns.
     """
     from core.agentic_loop import AgenticLoop
     from core.evolution.agent_provider import KageChainProvider
@@ -517,7 +557,28 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
         def generate_step(self, task_def, step, history, workspace_dir):
             return super().generate_step(task_def, step, self.demonstration + history, workspace_dir)
 
+    def browser_chain(task, run_id, call_cap=max_model_calls, step_cap=max_steps):
+        # C: a page-scoped browser chain on a fresh local fixture; file skills do not apply here.
+        from core.computer_use.experiment import BrowserChainProvider, BrowserCloudProvider
+        cls = BrowserCloudProvider if cloud else BrowserChainProvider
+        kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
+                      max_model_calls=call_cap, agentic_loop_cls=loop_cls, max_loop_steps=min(step_cap, call_cap),
+                      settle_saves=True)
+        demonstration = memory.retrieve(task['instruction']) if mode == 'memory' else []
+        chain = cls(model_factory(run_id), task, **kwargs)
+        if demonstration:
+            step = chain.generate_step
+            chain.generate_step = lambda task_def, n, history, ws: step(task_def, n, demonstration + history, ws)
+        return chain
+
     def run(candidate, task, run_id):
+        if task.get('fixture') is not None:
+            chain = (LocalRetryProvider(lambda calls=max_model_calls, steps=max_steps: browser_chain(task, run_id, calls, steps),
+                                        task, max_model_calls, max_steps)
+                     if mode == 'retry' else browser_chain(task, run_id))
+            runner = EvolutionRunner(journal, budget, Path(workspaces), chain)
+            return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task['task_id'],
+                                                       max_steps=1, timeout_s=max(timeout_s, browser_timeout_s)))
         catalog = None if cloud else SkillCatalog.from_bundle(Path(candidate.bundle_path), runner=skill_runner)
         if catalog is not None and gate is not None:
             # Gated out = an empty catalog, which is exactly what A0 runs with (bootstrap bundle).

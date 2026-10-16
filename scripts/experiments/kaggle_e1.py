@@ -371,6 +371,28 @@ def e2b_jobs() -> list[tuple[str, list[str]]]:
     return jobs
 
 
+# ---------------------------------------------------------------- C: browser families
+PLAYWRIGHT = 'playwright==1.63.0'           # = the Mac experiment venv
+BROWSER_FAMILIES = ['web_form', 'web_invoice', 'web_prefs', 'web_catalog', 'web_lookup']
+
+
+def browser_setup() -> None:
+    """Headless Chromium for the page-scoped browser chain (root VM: Playwright adds --no-sandbox)."""
+    sh([PY, '-m', 'pip', 'install', '-q', PLAYWRIGHT])
+    sh([PY, '-m', 'playwright', 'install', '--with-deps', 'chromium'])
+    log('browser ready', version=subprocess.run([PY, '-m', 'playwright', '--version'], capture_output=True,
+                                                 text=True).stdout.strip())
+
+
+def browser_calibration_jobs(per_family: int = 12) -> list[tuple[str, list[str]]]:
+    """Raw student (A0) on calibration seeds of the browser families; no cloud calls."""
+    script = 'scripts/experiments/stream_calibrate.py'
+    groups = [['web_form', 'web_lookup'], ['web_invoice', 'web_prefs'], ['web_catalog']]
+    return [(f'c-cal-{i}', [script, '--root', str(OUT / 'c-calibration' / f'part{i}'), '--per-family', str(per_family),
+                            '--families', ','.join(g), '--port', str(18300 + i), '--skill-runner', 'process'])
+            for i, g in enumerate(groups)]
+
+
 # ---------------------------------------------------------------- P4-L3: LoRA distillation
 HF_MODEL = 'InternScience/Agents-A1-4B'
 HF_REVISION = '945c40a4aa6f534d434a353207b8d42ecf7a5293'
@@ -435,7 +457,8 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
+                                        'c-cal', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -446,7 +469,18 @@ def main(argv=None):
         log('phase from repository control file', phase=args.phase, only=only)
     if args.phase in ('e2', 'e2b'):
         PHASE_CAP['usd'] = E2_CAP_USD if args.phase == 'e2' else E2B_CAP_USD
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora') else json.loads((OUT / 'host.json').read_text())
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'c-cal') else json.loads((OUT / 'host.json').read_text())
+    if args.phase == 'c-cal':
+        browser_setup()
+        run_jobs(info, browser_calibration_jobs(), 'c-cal')
+        from stream_calibrate import summarize
+        rows = [json.loads(l) for f in sorted((OUT / 'c-calibration').glob('part*/results.jsonl'))
+                for l in f.read_text().splitlines() if l.strip()]
+        log('c-cal summary', **summarize([r for r in rows if r.get('status') != 'crashed'], OUT / 'c-calibration'))
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
