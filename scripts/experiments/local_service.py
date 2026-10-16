@@ -17,6 +17,8 @@ import os
 # Overridable for other hosts (e.g. Kaggle); the same GGUF file is verified by sha256 there.
 MODEL=Path(os.environ.get('KAGE_MODEL_PATH', Path.home()/'.kage/models/agents-a1-4b/Agents-A1-4B-Q4_K_M.gguf'))
 SERVER=Path(os.environ.get('KAGE_LLAMA_SERVER', '/opt/homebrew/bin/llama-server'))
+# P4-L3: optional LoRA adapter (GGUF) applied on top of the frozen base model.
+LORA=os.environ.get('KAGE_LORA')
 
 
 def write_json(path,value):
@@ -36,7 +38,7 @@ def server_argv(port):
             '--cache-type-k','q8_0','--cache-type-v','q8_0','--temp','0.85','--top-p','0.95','--top-k','20','--presence-penalty','1.1',
             # llama.cpp's host-RAM prompt cache defaults to 8 GiB per server; four servers filled Kaggle's
             # 32 GB and got killed (E-1 v5/v9), and it made the Mac sluggish. Outputs are unaffected.
-            '--cache-ram','0']
+            '--cache-ram','0']+(['--lora',LORA] if LORA else [])
 
 
 def occupied(port):

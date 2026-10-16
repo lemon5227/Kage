@@ -151,6 +151,9 @@ def main():
         config['eval_only'] = args.eval_only
     if args.skill_runner != 'docker':
         config['skill_runner'] = args.skill_runner
+    if os.environ.get('KAGE_LORA'):              # P4-L3: the student runs with a LoRA adapter
+        from local_service import file_hash
+        config['student']['lora'] = {'path': os.environ['KAGE_LORA'], 'sha256': file_hash(os.environ['KAGE_LORA'])}
     if ARMS[args.arm].get('gate'):
         # Gated arms rank the (at most 3) admitted skills by relevance; an empty gate falls back to A0's prompt.
         args.skill_preview = 'preview_relevant'

@@ -371,6 +371,57 @@ def e2b_jobs() -> list[tuple[str, list[str]]]:
     return jobs
 
 
+# ---------------------------------------------------------------- P4-L3: LoRA distillation
+HF_MODEL = 'InternScience/Agents-A1-4B'
+HF_REVISION = '945c40a4aa6f534d434a353207b8d42ecf7a5293'
+SFT_DATA = ROOT / 'evidence' / 'distill' / 'sft.jsonl'
+LORA_REPLICATES = 3
+
+
+def lora_setup() -> dict:
+    """Training stack + full-precision base weights + llama.cpp's LoRA→GGUF converter (same commit)."""
+    sh([PY, '-m', 'pip', 'install', '-q', '-U', 'transformers', 'peft', 'accelerate'])
+    from huggingface_hub import snapshot_download
+    hf = Path(snapshot_download(HF_MODEL, revision=HF_REVISION, local_dir=str(TOOLS / 'hf-model'),
+                                allow_patterns=['*.json', '*.safetensors', '*.jinja', '*.txt', 'tokenizer*']))
+    src = TOOLS / 'llama.cpp'
+    if not (src / 'convert_lora_to_gguf.py').exists():
+        shutil.rmtree(src / '.git', ignore_errors=True)
+        sh(['git', 'clone', '-q', 'https://github.com/ggml-org/llama.cpp', str(src / 'tmp-src')])
+        sh(['git', '-C', str(src / 'tmp-src'), 'checkout', '-q', LLAMA_COMMIT])
+        for f in (src / 'tmp-src').iterdir():
+            dest = src / f.name
+            if not dest.exists():
+                shutil.move(str(f), dest)
+        shutil.rmtree(src / 'tmp-src', ignore_errors=True)
+    sh([PY, '-m', 'pip', 'install', '-q', str(src / 'gguf-py'), 'sentencepiece', 'protobuf'])
+    import torch
+    import transformers
+    info = {'hf_model': str(hf), 'transformers': transformers.__version__, 'torch': torch.__version__,
+            'converter': str(src / 'convert_lora_to_gguf.py')}
+    log('lora setup done', **info)
+    return info
+
+
+def train_and_convert(linfo: dict, out: Path, extra: list[str]) -> Path:
+    adapter = out / 'adapter'
+    sh([PY, 'scripts/experiments/lora_train.py', '--data', str(SFT_DATA), '--model', linfo['hf_model'],
+        '--out', str(adapter), *extra], cwd=ROOT, env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
+    gguf = out / 'adapter.gguf'
+    sh([PY, linfo['converter'], str(adapter), '--base', linfo['hf_model'], '--outfile', str(gguf),
+        '--outtype', 'f16'], cwd=ROOT)
+    log('adapter converted', gguf=str(gguf), mb=round(gguf.stat().st_size / 2**20, 1))
+    return gguf
+
+
+def lora_eval_jobs(n: int = LORA_REPLICATES) -> list[tuple[str, list[str]]]:
+    """The LoRA student without skills or memory, evaluated n times (GPU outputs are not bit-reproducible)."""
+    script, m = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_v1'
+    return [(f'L3-r{i}', [script, '--arm', 'A0', '--root', str(OUT / f'L3-r{i}'), '--eval-only', 'cp0',
+                          '--stream-manifest', str(m / 'stream-seed1.json'), '--eval-manifest', str(m / 'eval.json'),
+                          '--skill-runner', 'process', '--port', str(18300 + i)]) for i in range(1, n + 1)]
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -384,7 +435,7 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -395,7 +446,7 @@ def main(argv=None):
         log('phase from repository control file', phase=args.phase, only=only)
     if args.phase in ('e2', 'e2b'):
         PHASE_CAP['usd'] = E2_CAP_USD if args.phase == 'e2' else E2B_CAP_USD
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b') else json.loads((OUT / 'host.json').read_text())
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
@@ -403,6 +454,24 @@ def main(argv=None):
                                    '--skill-runner', 'process'])], 'smoke')
         print((OUT / 'smoke' / 'results.jsonl').read_text(), flush=True)
         log('teacher config present', ok=Path('~/.config/kage/teachers/deepseek.json').expanduser().exists())
+        return
+    if args.phase in ('lora-smoke', 'lora'):
+        linfo = lora_setup()
+        smoke = args.phase == 'lora-smoke'
+        targets = only[0] if only else 'full'
+        gguf = train_and_convert(linfo, OUT / 'lora', ['--smoke'] * smoke + ['--targets', targets])
+        os.environ['KAGE_LORA'] = str(gguf)
+        if smoke:      # one real task through llama-server with the adapter loaded
+            run_jobs(info, [('lora-smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'lora-smoke'),
+                                            '--per-family', '1', '--families', 'log_aggregation', '--port', '18299',
+                                            '--skill-runner', 'process'])], 'lora-smoke')
+            print((OUT / 'lora-smoke' / 'results.jsonl').read_text(), flush=True)
+        else:
+            run_jobs(info, lora_eval_jobs(), 'lora')
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json', '.safetensors'))
+                    and 'adapter' not in t.name else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
         return
     if args.phase in ('all', 'calibration'):
         run_jobs(info, calibration_jobs(), 'calibration')
