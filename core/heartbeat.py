@@ -149,6 +149,11 @@ class Heartbeat:
             return
         await self._deliver(notifications)
 
+    async def reply_now(self, notifications: list[dict]) -> None:
+        """A direct answer to something the user just did (e.g. a 👎): not held for activity,
+        but still subject to the policy (mute, quiet hours, rate limits)."""
+        await self._deliver(notifications)
+
     def record_feedback(self, notification_id: str, action: str) -> Optional[dict]:
         """Record the user's reaction to a delivered notification.
 

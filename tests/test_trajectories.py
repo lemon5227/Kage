@@ -90,3 +90,11 @@ def test_export_only_successful_train_turns_redacted(tmp_path):
     assert all(split_of(r['task_id']) == 'train' for r in rows)
     call = rows[1]['messages'][-1]['tool_calls'][0]['function']
     assert isinstance(call['arguments'], dict) and call['arguments']['path'] == '/Users/USER/notes/todo.md'
+
+
+def test_teacher_redo_shares_the_split_of_its_task(tmp_path):
+    rec = TrajectoryRecorder(tmp_path / 't')
+    for i in range(40):
+        rec.begin(f'ws-{i}-teacher', 'task', source='teacher', parent=f'ws-{i}')
+        r = rec.finish('ok', [WRITE])
+        assert r['split'] == split_of(f'ws-{i}') and r['parent'] == f'ws-{i}' and r['source'] == 'teacher'

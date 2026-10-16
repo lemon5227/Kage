@@ -92,7 +92,8 @@ class TrajectoryRecorder:
         record.update(final_text=final_text, tool_calls=calls, kind='task' if calls else 'chat',
                       auto_check={'all_tools_ok': bool(calls) and all(c['success'] for c in calls),
                                   'wrote_files': wrote},
-                      feedback=None, split=split_of(record['id']))
+                      feedback=None, split=split_of(record.get('parent') or record['id']))
+        # A teacher redo shares its task's split, so a held-out task never leaks into training.
         self._write(record)
         return record
 

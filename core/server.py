@@ -1136,7 +1136,7 @@ class KageServer:
         else:
             note = make_notification("learning:help", f"这次没做好\n“{task}”我没完成好。方便的话示范一次给我看吗？",
                                      type_="help_request")
-        await heartbeat.deliver_now([note])
+        await heartbeat.reply_now([note])
 
     async def _real_teacher_retry(self, action: dict[str, Any]) -> None:
         """The user accepted: the teacher redoes the task once; its steps are kept as a teacher trajectory."""

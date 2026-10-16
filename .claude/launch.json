@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kage-avatar",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "kage-avatar", "run", "dev"],
+      "port": 1420
+    }
+  ]
+}
