@@ -143,6 +143,11 @@ def main():
               'max_steps': 5, 'max_tool_actions': 12, 'timeout_s': 150, 'skill_context_mode': 'preview',
               'output_tokens': STUDENT_OUTPUT_TOKENS},
               'teacher_ledger': str(ledger_path()), 'teacher_cap_usd': 1.0, 'teacher_input_bytes': TEACHER_INPUT_BYTES}
+    if any(t.get('fixture') for t in stream_m['tasks'] + eval_m['tasks']):
+        # C: browser tasks use their own protocol (chain_runner defaults), the same for every arm.
+        config['browser'] = {'max_model_calls': 10, 'max_steps': 8, 'page_actions_per_step': 1, 'primitives': 16,
+                             'timeout_s': 360, 'context': os.environ.get('KAGE_CTX', '8192'),
+                             'observation': 'compact-v1', 'save_settle_s': 1, 'teacher_context': 'latest DOM only'}
     if ARMS[args.arm]['help'] != 'never':
         config['experiment_cap_usd'] = args.experiment_cap_usd
     if args.eval_only:

@@ -166,3 +166,61 @@ def test_retry_attempts_each_start_from_a_clean_backend(tmp_path):
     # Attempt 1 saved a wrong total; attempt 2 saved the right one on a fresh backend, so the check
     # sees exactly one POST of the right record.
     assert fills.read_text() == 'xx' and out.score == 1.0, out.metadata
+
+
+def test_gated_learner_learns_a_browser_procedure_from_the_teacher(tmp_path):
+    """A4mG on web_invoice: the student sums only the visible rows unless a remembered demonstration
+    shows the "Show more rows" step; the teacher (oracle, cloud browser chain) demonstrates it once."""
+    from core.evolution.mutator import bundle_digest
+    from core.evolution.relevance import RELEVANCE_MIN, InstructionSpace, SkillSources
+    tasks = [t for t in (make_task('web_invoice', s) for s in range(1000, 1100))
+             if len(t['fixture']['rows']) > t['fixture']['visible_rows']][:2]
+    by_instruction = {t['instruction']: t for t in tasks}
+
+    def task_of(messages):
+        text = '\n'.join(str(m.get('content') or '') for m in messages)
+        return next(t for i, t in by_instruction.items() if i in text), text
+
+    class Student(ModelProvider):
+        def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+            task, text = task_of(messages)
+            current = text[text.rfind(task['instruction']):]          # this task, after any remembered demo
+            learned = '"target": "Show more rows"' in text[:text.rfind(task['instruction'])]
+            fx, done = task['fixture'], current.count('"acted"')
+            steps = ([('click', 'Show more rows', None)] if learned else []) + [
+                ('fill', fx['fields'][0]['label'], str(task['scoring_criteria']['expected']['record']['total'])
+                 if learned else '1'), ('click', fx['submit'], None)]
+            if done >= len(steps):
+                return ModelResponse(text='Saved.', usage=USAGE)
+            op, label, value = steps[done]
+            obs, refs, _ = _latest([{'content': current}])
+            args = {'observation_id': obs, 'operation': op, 'target_ref': refs[label], **({'value': value} if value else {})}
+            return ModelResponse(text='', tool_calls=[{'name': 'browser_act', 'arguments': args}], usage=USAGE)
+
+    class Teacher(ModelProvider):
+        def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+            task, text = task_of(messages)
+            oracle = Oracle(task)
+            oracle.done = text.count('"acted"')
+            return oracle.generate(messages, tools, max_tokens, temperature)
+
+    big = BudgetConfig(max_api_calls=10_000, max_input_tokens_total=10**8, max_output_tokens_total=10**7)
+    sources = SkillSources(tmp_path / 'L' / 'skill_sources.json', InstructionSpace(tmp_path / 'L' / 'space.json'))
+    memory = MemoryStore(tmp_path / 'L' / 'memory.jsonl', min_jaccard=RELEVANCE_MIN, similarity=sources.space.similarity)
+    student = chain_runner(Journal(tmp_path / 's.sqlite'), BudgetTracker(big, tmp_path / 'sb.sqlite'), tmp_path / 'ws',
+                           lambda run_id: Student(), memory=memory, mode='memory', gate=sources)
+    teacher_run = chain_runner(Journal(tmp_path / 't.sqlite'), BudgetTracker(big, tmp_path / 'tb.sqlite'), tmp_path / 'tws',
+                               lambda run_id: Teacher(), cloud=True)
+    boot = tmp_path / 'boot'
+    boot.mkdir()
+    (boot / 'manifest.json').write_text('{"version":1,"skills":[]}')
+    bootstrap = Candidate('no-skills', (), 'skill', str(boot), bundle_digest(boot))
+    teacher = TeacherCache(tmp_path / 'cache', lambda task: teacher_run(bootstrap, task, 'teacher-' + task['task_id']))
+    learner = StreamLearner(tmp_path / 'L', 'A4mG', bootstrap=bootstrap, run_student=student, teacher=teacher,
+                            propose_skill=lambda *a, **k: (_ for _ in ()).throw(AssertionError('no file skills')),
+                            memory=memory, skill_sources=sources)
+    first = learner.step(tasks[0])
+    assert first['student_score'] == 0.0 and first['teacher_score'] == 1.0, first
+    assert first['learning'].get('memory_stored') is True, first['learning']
+    second = learner.step(tasks[1])
+    assert second['solved_by_student'] and not second['helped'], second

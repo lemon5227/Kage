@@ -394,6 +394,42 @@ def browser_calibration_jobs(families: list[str] | None = None, per_family: int 
             for i, f in enumerate(families or BROWSER_FAMILIES)]
 
 
+C2_CAP_USD = 0.80                           # C2 browser learning run (home ledger ~US$2.67 left on 10-17)
+C2_ARMS = ('A3', 'A4mG')
+C2_CONSTANT = ('A0-r1', 'A0-r2', 'A0-r3', 'A1')
+
+
+def c2_jobs() -> list[tuple[str, list[str]]]:
+    """C2: learning on browser tasks. A0 x3 same-environment replicates and A1 at cp0 (constant arms);
+    A3 (memory, Jaccard) and A4mG (memory behind the relevance gate) x2 streams, checkpoints 22/44; their cp0
+    (empty memory = A0's prompt) is A0-r1's."""
+    script, m = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_web_v1'
+    common = ['--eval-manifest', str(m / 'eval.json'), '--skill-runner', 'process',
+              '--teacher-cache', str(OUT / 'teacher-cache-web'), '--experiment-cap-usd', str(C2_CAP_USD)]
+    jobs, port = [], 18400
+    for seed in (1, 2):
+        for arm in C2_ARMS:
+            port += 1
+            jobs.append((f'web-{arm}-s{seed}', [script, '--arm', arm, '--root', str(OUT / 'web' / f'seed{seed}' / arm),
+                                                '--stream-manifest', str(m / f'stream-seed{seed}.json'),
+                                                '--checkpoints', '22,44', '--port', str(port), *common]))
+    for name in C2_CONSTANT:
+        port += 1
+        jobs.append((f'web-{name}', [script, '--arm', name.split('-')[0], '--root', str(OUT / 'web' / name),
+                                     '--eval-only', 'cp0', '--stream-manifest', str(m / 'stream-seed1.json'),
+                                     '--port', str(port), *common]))
+    return jobs
+
+
+def c2_report() -> None:
+    web = OUT / 'web'
+    arms = [x for s in (1, 2) for a in C2_ARMS for x in ('--arm-dir', f'{a}-s{s}={web / f"seed{s}" / a}')]
+    arms += [x for n in C2_CONSTANT for x in ('--arm-dir', f'{n}={web / n}')]
+    arms += [x for n in C2_CONSTANT for x in ('--constant', n)]
+    subprocess.run([PY, 'scripts/experiments/stream_report.py', *arms, '--cp0-from', 'A0-r1',
+                    '--out', str(OUT / 'web-report')], cwd=ROOT, check=False)
+
+
 # ---------------------------------------------------------------- P4-L3: LoRA distillation
 HF_MODEL = 'InternScience/Agents-A1-4B'
 HF_REVISION = '945c40a4aa6f534d434a353207b8d42ecf7a5293'
@@ -459,7 +495,7 @@ def package() -> None:
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-                                        'c-cal', 'package'], default='all')
+                                        'c-cal', 'c2', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -470,7 +506,9 @@ def main(argv=None):
         log('phase from repository control file', phase=args.phase, only=only)
     if args.phase in ('e2', 'e2b'):
         PHASE_CAP['usd'] = E2_CAP_USD if args.phase == 'e2' else E2B_CAP_USD
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'c-cal') else json.loads((OUT / 'host.json').read_text())
+    if args.phase == 'c2':
+        PHASE_CAP['usd'] = C2_CAP_USD
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'c-cal':
         browser_setup()
         os.environ['KAGE_CTX'] = BROWSER_CTX
@@ -479,6 +517,20 @@ def main(argv=None):
         rows = [json.loads(l) for f in sorted((OUT / 'c-calibration').glob('*/results.jsonl'))
                 for l in f.read_text().splitlines() if l.strip()]
         log('c-cal summary', **summarize([r for r in rows if r.get('status') != 'crashed'], OUT / 'c-calibration'))
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'c2':
+        browser_setup()
+        os.environ['KAGE_CTX'] = BROWSER_CTX
+        for cache in Path('/kaggle/input').glob('**/e1/teacher-cache-web'):       # reruns reuse paid demos
+            if not (OUT / 'teacher-cache-web').exists():
+                shutil.copytree(cache, OUT / 'teacher-cache-web')
+                log('browser teacher cache reused', source=str(cache))
+            break
+        run_jobs(info, c2_jobs(), 'c2')
+        c2_report()
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
