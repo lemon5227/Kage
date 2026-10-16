@@ -107,7 +107,13 @@ def selection_step(learner, *, label: str, round_index: int, architect, run_stud
             rows = [scrub(json.loads(l)) for l in Path(r['trace_path']).read_text().splitlines() if l.strip()]
             (d / 'trace.jsonl').write_text(''.join(json.dumps(x) + '\n' for x in rows))
     summary = {'parent': parent_id, 'validation_tasks': len(tasks), 'parent_passed': sum(v >= 1.0 for v in before.values())}
-    proposal = architect.propose(archive, BRIEF, run_id=f'architect-{learner.arm}-{label}{learner.run_suffix}')
+    # Compact overview up front so the architect need not open every file (v10: it never did answer).
+    overview = ['Validation overview (task | score | shown by current policy | top skill similarities):']
+    for task_id, r in runs[parent_digest].items():
+        top = ', '.join(f"{g['skill_id']}={g['similarity']:.2f}" for g in r['gate'][:3]) or 'no skills'
+        overview.append(f"- {task_id} | {r['score']:.0f} | {r['shown'] or '[]'} | {top}")
+    brief = BRIEF + '\n' + '\n'.join(overview) + '\nPer-task details: <version>/tasks/<task_id>/gate.json and trace.jsonl (failures).'
+    proposal = architect.propose(archive, brief, run_id=f'architect-{learner.arm}-{label}{learner.run_suffix}')
     summary.update(status=proposal['status'], cost_usd=proposal.get('cost_usd'), turns=proposal.get('turns'))
     if proposal['status'] != 'proposed':
         return summary

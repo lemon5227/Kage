@@ -44,7 +44,8 @@ SYSTEM = (
     "kernel are fixed. You may change exactly ONE of these policy modules: "
     + ", ".join(f"{t} (python: def {f}(...))" for t, f in TARGETS.items()) + ". "
     "Inspect the version archive (sources, validation scores, raw traces) with read-only tools, "
-    "find a concrete failure pattern, and propose one change. Reply with ONE JSON object per turn: "
+    "find a concrete failure pattern, and propose one change. You have at most " + str(MAX_TURNS) + " replies in "
+    "total including the final one, so read only what you need. Reply with ONE JSON object per turn: "
     '{"tool": "ls"|"cat"|"grep", "args": {"path": ..., "start": int, "end": int, "pattern": ...}} '
     'or {"final": {"target": ..., "hypothesis": ..., "code": ...}}. Standard library only; no file '
     "or network access in code. Your hypothesis is unverified until validation."
@@ -187,7 +188,11 @@ class Architect:
                 return {'status': 'proposed', 'turns': turn + 1, 'cost_usd': round(spent, 6), 'log': log, **candidate}
             result = tools.call(str(reply.get('tool')), reply.get('args') or {})
             log.append({'turn': turn, 'tool': reply.get('tool'), 'args': reply.get('args')})
-            messages.append({'role': 'user', 'content': f'[{reply.get("tool")}]\n{result}'})
+            left = MAX_TURNS - turn - 1
+            # E-2 (Kaggle v10): all 6 architect runs spent 8 turns reading files and never answered.
+            note = (f'\n[{left} turn(s) left. Your next reply must be {{"final": ...}}.]' if left <= 2
+                    else f'\n[{left} turns left.]')
+            messages.append({'role': 'user', 'content': f'[{reply.get("tool")}]\n{result}{note}'})
         return {'status': 'turn_limit', 'turns': MAX_TURNS, 'cost_usd': round(spent, 6), 'log': log}
 
 

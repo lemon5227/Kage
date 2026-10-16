@@ -86,3 +86,14 @@ def test_promotion_and_rejection_paths(tmp_path):
                     lambda d: {'a': 0.0 if d else 1.0, 'b': 1.0 if d else 0.0}, parent_dir=None)
     assert not worse['promoted'] and worse['regressed'] == ['a']
     assert split_of(17000) == 'validation'
+
+
+def test_architect_is_told_its_turn_budget_and_answers_in_time(tmp_path):
+    from core.evolution.architect import MAX_TURNS
+    reads = [json.dumps({'tool': 'ls', 'args': {'path': '.'}})] * (MAX_TURNS - 1)
+    final = json.dumps({'final': {'target': 'help_policy', 'hypothesis': 'ask when nothing written', 'code': HELP_CODE}})
+    model = Scripted(reads + [final])
+    out = Architect(model, ledger(tmp_path), cap_usd=1.0).propose(archive(tmp_path), 'Improve.', run_id='arch-turns')
+    assert out['status'] == 'proposed' and out['turns'] == MAX_TURNS
+    assert 'must be {"final"' in model.seen[-1] and '1 turn(s) left' in model.seen[-1]
+    assert f'{MAX_TURNS - 1} turns left' in model.seen[1]

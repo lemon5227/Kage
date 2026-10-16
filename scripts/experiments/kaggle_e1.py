@@ -40,6 +40,7 @@ LLAMA_COMMIT = 'b29c606e2'              # = Homebrew llama.cpp 0.4.1 build 10964
 TEACHER = {'provider_type': 'openai', 'base_url': 'https://api.deepseek.com', 'model_name': 'deepseek-flash',
            'timeout_sec': 120}
 E1_CAP_USD = 0.80                       # E-1 allocation after the user raised the total to US$2 (2026-10-15)
+E2B_CAP_USD = 0.40                      # E-2b: A6 rerun after the architect fix (home ledger ~US$0.95 left)
 E2_CAP_USD = 0.50                       # E-2 allocation (home ledger had US$1.19 left after E-1c)
 LEDGER_HEADROOM_USD = 0.10              # ledger cap above the experiment cap: reservations never starve the stop
 DEADLINE_S = 11 * 3600                  # Kaggle stops sessions at 12 h; leave time to package
@@ -356,6 +357,20 @@ def e2_jobs() -> list[tuple[str, list[str]]]:
     return sorted(jobs, key=lambda job: not job[0].startswith('A6'))
 
 
+def e2b_jobs() -> list[tuple[str, list[str]]]:
+    """E-2b: A6 x2 again (v10: the architect never answered within its turn budget, so L2 was not tested),
+    plus three same-environment A0 evaluations: identical requests gave different held-out scores across runs
+    (temperature 0.7), and A0's single v6 evaluation is not a fair constant for v10-era arms."""
+    script, m = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_v1'
+    common = ['--eval-manifest', str(m / 'eval.json'), '--skill-runner', 'process',
+              '--teacher-cache', str(OUT / 'teacher-cache'), '--experiment-cap-usd', str(E2B_CAP_USD)]
+    jobs = [job for job in e2_jobs() if job[0] in ('A6-s1', 'A6-s2')]
+    for i in range(1, 4):
+        jobs.append((f'A0-r{i}', [script, '--arm', 'A0', '--root', str(OUT / f'A0-r{i}'), '--eval-only', 'cp0',
+                                  '--stream-manifest', str(m / 'stream-seed1.json'), '--port', str(18230 + i), *common]))
+    return jobs
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -369,7 +384,7 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -378,9 +393,9 @@ def main(argv=None):
     if control.exists() and control.read_text().strip():
         args.phase, *only = control.read_text().split()      # e.g. "rerun A3-s1 A3-s2"
         log('phase from repository control file', phase=args.phase, only=only)
-    if args.phase == 'e2':
-        PHASE_CAP['usd'] = E2_CAP_USD
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2') else json.loads((OUT / 'host.json').read_text())
+    if args.phase in ('e2', 'e2b'):
+        PHASE_CAP['usd'] = E2_CAP_USD if args.phase == 'e2' else E2B_CAP_USD
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
@@ -399,13 +414,13 @@ def main(argv=None):
             raise SystemExit('rerun needs the previous run output attached as input')
         seed_from_previous(prev, ['seed1/A4', 'seed2/A4'])
         run_jobs(info, rerun_jobs(only), 'rerun')
-    if args.phase in ('e1b', 'e1c', 'e2'):
+    if args.phase in ('e1b', 'e1c', 'e2', 'e2b'):
         prev = previous_output()
         if prev is None:
             raise SystemExit(f'{args.phase} needs the previous run output attached as input (teacher cache)')
         seed_from_previous(prev, [])
-        run_jobs(info, {'e1b': e1b_jobs, 'e1c': e1c_jobs, 'e2': e2_jobs}[args.phase](), args.phase)
-    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'package'):
+        run_jobs(info, {'e1b': e1b_jobs, 'e1c': e1c_jobs, 'e2': e2_jobs, 'e2b': e2b_jobs}[args.phase](), args.phase)
+    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'package'):
         package()
 
 

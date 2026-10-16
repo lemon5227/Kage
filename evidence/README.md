@@ -19,6 +19,7 @@
 | `kaggle/v7-results.tar.gz` | E-1 第 7 版：A3×2 重跑 | E-1 完成 |
 | `kaggle/v8-results.tar.gz` | E-1b：A4r×2 | E-1b 结果 |
 | `kaggle/v9-results.tar.gz` | E-1c：A4g/A4m×2 | E-1c 结果 |
+| `kaggle/v10-results.tar.gz` | E-2：A4mG/A5/A6/A6-fixed×2（代码 ca1e322） | E-2 结果 |
 | `reports/*` | 由 `stream_report.py` 生成的 report.md / summary.json / curves.png；技术报告里的数字只从这些 summary.json 取 | — |
 
 每个结果包内：每臂一个目录（config.json 冻结配置、stream.jsonl、checkpoints.jsonl、competence.json、library.json、模型轨迹、技能提案），共享的 teacher-cache，以及 `kaggle-status.jsonl`（任务启动/重启/内存记录）。
