@@ -150,7 +150,9 @@ A4mG 9:2, p = 0.065; A6-fixed vs A5 3:1, p = 0.62; A6 vs A6-fixed 1:5, p = 0.22)
 help policy that fired once, yet differ by 7/48: each arm learns its own skills, and A4mG's log-aggregation
 skill was wrong in both seeds (10 of its 12 failures).
 
-**Run-to-run variance.** The student samples at temperature 0.7, so identical requests can pass or fail. Four
+**Run-to-run variance.** Decoding is greedy (temperature 0, one server slot), yet llama.cpp on a GPU is not
+bit-reproducible: across four identical A0 evaluations, 15 of 48 tasks changed outcome, none of them through a
+timeout. Four
 same-model evaluations of the raw student (A0) gave 7, 10, 13 and 7 of 24 in-family tasks and 8, 5, 8 and 6 of 12
 held-out tasks per seed. Treating A0's single evaluation as a constant (as in E-1) makes its paired p-values
 optimistic; the learning-vs-raw gap (≈ 40% vs ≈ 85–94%) is far larger than this variance, but the gaps between
