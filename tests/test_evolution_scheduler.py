@@ -210,4 +210,4 @@ def test_runs_are_capped_by_and_charged_to_the_global_ledger(tmp_path):
     sched.note_failure({"task_id": "t", "run_id": "r1", "status": "unknown"})
     assert _run_to_end(sched)
     assert calls[0]["config"]["budget"]["max_cost_usd"] <= 1.0          # global remainder, not the daily 5.0
-    assert abs(remaining_usd(global_teacher_budget()) - 1.99) < 1e-4    # fake run cost 0.01 charged (cap US$2)
+    assert abs(remaining_usd(global_teacher_budget()) - 3.99) < 1e-4    # fake run cost 0.01 charged (cap US$4)

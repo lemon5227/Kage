@@ -758,6 +758,12 @@ class KageServer:
         self._notices_path = os.path.expanduser(str(evolution_cfg.get("notices_path", NOTICES_PATH)))
         self._evolution_cfg = evolution_cfg
         self.evolution_scheduler = EvolutionScheduler(evolution_cfg, self.session_manager)
+        # A4: idle practice on variants of the user's real file tasks (opt-in: evolution.practice).
+        from core.evolution.real_practice import PracticeScheduler
+        self.practice_scheduler = PracticeScheduler(
+            evolution_cfg, last_user_time=self.session_manager.get_last_user_time,
+            model_ready=lambda: bool(_local_runtime.status().get("running")),
+            start_round=self._practice_round, notices=NoticeStore(self._notices_path))
         # Promoted skills enter the daily registry only after the user accepts (adopt_skill).
         from core.skill_adoption import SkillAdoption
         self.skill_adoption = SkillAdoption(self.tool_registry)
@@ -779,7 +785,7 @@ class KageServer:
             on_notifications=self._deliver_proactive_notifications,
             proactive_config=heartbeat_cfg,
             sources=[ImportantDateSource(lambda: memory_profile), self.evolution_scheduler,
-                     NoticeSource(NoticeStore(self._notices_path))],
+                     NoticeSource(NoticeStore(self._notices_path)), self.practice_scheduler],
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
@@ -1139,6 +1145,30 @@ class KageServer:
             note = make_notification("learning:help", f"这次没做好\n“{task}”我没完成好。方便的话示范一次给我看吗？",
                                      type_="help_request")
         await heartbeat.reply_now([note])
+
+    async def _practice_round(self, *, variants: int, k_seeds: int) -> dict:
+        """One idle practice round: teacher-made variants, solved by the local model with file tools only."""
+        from core.evolution.real_practice import PRACTICE_TOOLS, practice_round
+        from core.evolution.real_teacher import LedgeredTeacher
+        from core.tool_executor import ToolExecutor
+        from core.tool_registry import ToolRegistry
+        from core.trajectories import RecordingProvider
+        registry = ToolRegistry()
+        for name in PRACTICE_TOOLS:
+            if self.tool_registry.has_tool(name):
+                registry.register(self.tool_registry._tools[name])
+        executor = ToolExecutor(tool_registry=registry)
+        daily = float((getattr(self, "_evolution_cfg", {}) or {}).get("real_teacher_daily_usd", 0.05))
+        teacher = LedgeredTeacher(daily_usd=daily, run_id="practice")
+
+        def make_runner(recorder):
+            return self.agentic_loop.create_isolated_runner(
+                model_provider=RecordingProvider(self.background_model_provider, recorder), tool_executor=executor)
+        summary = await practice_round(store=self.trajectories, teacher=teacher, make_runner=make_runner,
+                                       variants=variants, k_seeds=k_seeds)
+        self._log_server_event("practice.round", tasks=summary["tasks"], passed=summary["passed"],
+                               errors=len(summary["errors"]))
+        return summary
 
     async def _real_teacher_retry(self, action: dict[str, Any]) -> None:
         """The user accepted: the teacher redoes the task once; its steps are kept as a teacher trajectory."""

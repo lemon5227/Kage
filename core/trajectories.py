@@ -158,6 +158,8 @@ def evidence(record: dict) -> str:
     """'user' (👍), 'auto' (checks passed, not 👎), 'failed' (👎) or 'none'."""
     if record.get('feedback') == 'down':
         return 'failed'
+    if record.get('source') == 'practice':                 # judged by the practice task's own checker
+        return 'auto' if (record.get('auto_check') or {}).get('checker_passed') else 'failed'
     if record.get('feedback') == 'up':
         return 'user'
     check = record.get('auto_check') or {}
