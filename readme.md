@@ -11,8 +11,9 @@
   <a href="#toward-a-self-evolving-personal-agent">Vision</a> ·
   <a href="#research-program">Research</a> ·
   <a href="#get-started">Get started</a> ·
-  <a href="docs/agent-memory-evolution-master-plan-2026-09-29.md">Roadmap</a> ·
-  <a href="docs/experiments/README.md">Experiments</a> ·
+  <a href="#results-a-4b-local-model-that-learns-from-a-teacher">Results</a> ·
+  <a href="docs/report/kage-tech-report.md">Report</a> ·
+  <a href="roadmap.md">Roadmap</a> ·
   <a href="docs/project-guide.en.md">Full guide</a>
 </p>
 
@@ -78,18 +79,41 @@ Verification is tied to actual outcomes where a reliable checker exists—for ex
 
 The research objective is <strong>persistent, transferable capability growth</strong>, measured alongside task success, regressions, latency, tokens, and learning cost. Parameter learning remains a future stage.
 
-## Current experimental foundation
+## Results: a 4B local model that learns from a teacher
 
-| Component | Implemented foundation | Next validation |
-| :--- | :--- | :--- |
-| Agent runtime | Multi-step model/tool loop, local/cloud routing, cancellation | Reliability across broader task families |
-| Browser teaching | Recording, corrections, candidate extraction, fresh-page replay | Actual human acceptance and broader workflows |
-| Experience and skills | Evidence-bound episodes, candidate versions, skill execution | Automatic adoption and measurable transfer |
-| Module evolution | Candidate code loading and recovery-module comparison | More modules and improvement policies |
+On **Kage-Stream v1**, a frozen benchmark of 60 tasks per stream (4 task families learned in the stream, 2 held-out
+families, 3 read-only negative families), the local student is Agents-A1-4B (Q4_K_M, llama.cpp) and the teacher is
+DeepSeek. After each failure the teacher demonstrates once, and the agent keeps the demonstration as a verified
+skill, a stored trajectory, or both. Evaluation checkpoints switch learning and help off.
 
-The latest browser teaching package passed <strong>992 engineering tests</strong>, with <strong>two verified captures and two fresh-input replays</strong>. Its local 4B model completed both pilot tasks but made <strong>zero new-skill calls</strong>: workflow reuse works, while automatic adoption and a learning advantage remain unproven.
+![In-family success rate by checkpoint for every arm](docs/assets/readme/growth-curve.png)
 
-[Browser teaching report](docs/experiments/2026-10-07-browser-demonstration.md) · [Skill transfer comparison](docs/experiments/2026-10-01-c4-transfer-ablation.md) · [Self-modification pilot](docs/experiments/2026-10-01-e3-recovery-self-modification.md)
+| Arm (2 seeds) | In-family, after 60 tasks | Held-out families | Negatives / misuse |
+| :--- | :---: | :---: | :---: |
+| A0 raw student | 14/48 (29%) | 16/24 | 24/24 · 0 |
+| A1 same budget spent on retries | 12/48 (25%) | 10/24 | 24/24 · 0 |
+| A3 trajectory memory | 42/48 (88%) | 12/24 | 24/24 · 0 |
+| A4 skill library | 39/48 (81%) | 14/24 | 24/24 · 0 |
+| A4m skills + memory | 43/48 (90%) | 9/24 | 23/24 · 1 |
+| A5 + relevance gate + proactive help | 43/48 (90%) | 12/24 | 24/24 · 0 |
+| **A6-fixed + background practice and skill maintenance** | **45/48 (94%)** | 12/24 | 24/24 · 0 |
+| A6 + architect evolving skill selection | 41/48 (85%) | 9/24 | 24/24 · 0 |
+
+What the evidence supports:
+
+- **Learning from demonstrations works.** Every learning arm beats the raw student and the retry baseline by a
+  wide margin (A4 vs A0: 25 vs 0 discordant pairs, p = 6e-8), at about US$0.07–0.20 of teacher calls per arm.
+- **Skills, memory, practice and proactive help are not distinguishable** on this benchmark. The paired
+  differences among learning arms are not significant (p ≥ 0.065), and the raw student itself varies by
+  ±3 tasks between identical runs.
+- **A relevance gate is necessary.** Without it, irrelevant skills and demonstrations distracted the student on
+  held-out tasks. With it, an unfamiliar task gets exactly the raw student's request, and no read-only task
+  ever triggered a skill.
+- **Self-modification needs robust validation.** An LLM architect that rewrites the skill-selection policy got
+  2 of 6 proposals promoted on single-run validation. One of them undid the gate, so the arm with the architect
+  scored below the arm without it.
+
+[Technical report](docs/report/kage-tech-report.md) · [Related work](docs/report/related-work.md) · [Raw evidence and reports](evidence/README.md) · [Work log](docs/worklog/2026-10-claude.md)
 
 ### Personal-assistant interface
 
@@ -157,11 +181,11 @@ See [configuration details](docs/project-guide.en.md#models-and-cloud-configurat
 
 ## Roadmap
 
-1. <strong>Broaden the action environment.</strong> Complete human browser teaching acceptance, extend native macOS accessibility, and add independently checked cross-app tasks.
-2. <strong>Make experience reliably reusable.</strong> Improve memory selection, skill discovery, candidate lineage, and transfer evaluation; expand evolving modules and failure-driven routing.
-3. <strong>Bring verified learning into local models.</strong> Build diverse teacher trajectories, then evaluate small-model distillation, visual grounding, and inference engines against measured bottlenecks.
+1. <strong>Finish P5 outputs.</strong> Technical report, demo recording, and this README with curves and ablations.
+2. <strong>Make self-modification safe.</strong> Promote evolved policies only after repeated validation runs that also include unfamiliar task types.
+3. <strong>Bring verified learning into the local model (P4).</strong> Choose one: LoRA distillation of accepted teacher demonstrations, or browser task families for the stream benchmark.
 
-[Master task plan (start here)](docs/plans/MASTER-TASK-PLAN.md) · [Task logs](docs/task-logs/README.md) · [Complete E/C task queue](docs/plans/task-queue-2026-10-01.md) · [Research roadmap](docs/agent-memory-evolution-master-plan-2026-09-29.md) · [Execution handoff](docs/plans/execution-handoff-2026-10-03.md)
+[Roadmap and current status (start here)](roadmap.md) · [Task book](docs/plans/tasks-2026-10-14.md) · [Design: self-evolving, proactive agent](docs/plans/self-evolving-proactive-agent-2026-10-14.md) · [Kaggle runbook](docs/development/kaggle-runbook.md)
 
 ## Explore the project
 
