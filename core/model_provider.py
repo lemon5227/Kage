@@ -4,7 +4,7 @@ Model Provider — 模型抽象层
 统一的 LLM 调用接口，支持 OpenAI 兼容 API（OpenAI、本地 llama-server 等）。
 
 从 config/settings.json 读取 cloud_api 配置。
-若无有效 API 密钥，则默认指向本地 llama-server（http://127.0.0.1:8080/v1）。
+若无有效 API 密钥，则默认指向本地 llama-server（http://127.0.0.1:18080/v1）。
 """
 
 import json
@@ -257,5 +257,5 @@ def create_provider_from_settings(settings_path: str = "config/settings.json") -
     return OpenAICompatibleProvider(
         api_key="local",
         model_name="local-model",
-        base_url="http://127.0.0.1:8080/v1",
+        base_url="http://127.0.0.1:18080/v1",
     )

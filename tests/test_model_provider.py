@@ -180,7 +180,7 @@ class TestCreateProviderFromSettings:
 
         provider = create_provider_from_settings(settings_file)
         assert isinstance(provider, OpenAICompatibleProvider)
-        assert "127.0.0.1:8080" in provider.base_url
+        assert "127.0.0.1:18080" in provider.base_url
 
     def test_cloud_provider_when_configured(self, tmp_path):
         settings = {
@@ -221,4 +221,4 @@ class TestCreateProviderFromSettings:
 
         provider = create_provider_from_settings(settings_file)
         assert isinstance(provider, OpenAICompatibleProvider)
-        assert "127.0.0.1:8080" in provider.base_url
+        assert "127.0.0.1:18080" in provider.base_url

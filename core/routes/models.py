@@ -292,7 +292,7 @@ async def activate_model(payload: dict):
         st = srv._local_runtime.status()
         if not st.get("running"):
             return {"error": "base_url not provided and llama-server not running"}
-        base_url = f"http://{st.get('host') or '127.0.0.1'}:{st.get('port') or 8080}/v1"
+        base_url = f"http://{st.get('host') or '127.0.0.1'}:{st.get('port') or 18080}/v1"
 
     timeout_sec = int(payload.get("timeout_sec") or 120)
     patch = {

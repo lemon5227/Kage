@@ -616,7 +616,7 @@ def build_live_provider(
             "mode": mode,
             "model": str(local_cfg.get("model_name") or "local-model"),
             "base_url": f"http://{local_cfg.get('host') or '127.0.0.1'}:"
-                        f"{int(local_cfg.get('port') or 8080)}/v1",
+                        f"{int(local_cfg.get('port') or 18080)}/v1",
             "provider_type": "openai-compatible(local runtime)",
             "credential_source": "local-runtime",
         }

@@ -163,7 +163,7 @@ def build_loop(config_path, allow_paid_teacher=False):
         catalog=SkillCatalog.from_bundle(Path(candidate.bundle_path),runner=docker)
         policy=RecoveryPolicy.from_bundle(Path(candidate.bundle_path),runner=docker,skill_catalog=catalog)
         provider=RecordedLocalProvider(root/f'student-{candidate.digest[:16]}.jsonl',api_key='local',
-            model_name=runtime.get('model_name','local-model'),base_url=f"http://{runtime.get('host','127.0.0.1')}:{int(runtime.get('port',8080))}/v1",
+            model_name=runtime.get('model_name','local-model'),base_url=f"http://{runtime.get('host','127.0.0.1')}:{int(runtime.get('port',18080))}/v1",
             timeout_sec=min(120,int(runtime.get('timeout_sec',120))))
         return KageChainProvider(provider,provider_mode='local',model_label=student_provider.model_name,
             max_model_calls=6,max_tool_actions=12,agentic_loop_cls=FiveStepLoop,

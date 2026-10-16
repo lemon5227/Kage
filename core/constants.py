@@ -15,7 +15,7 @@ DEFAULT_SERVER_PORT = 12345
 # Local Model Runtime
 # ============================================================================
 DEFAULT_LLM_HOST = "127.0.0.1"
-DEFAULT_LLM_PORT = 8080
+DEFAULT_LLM_PORT = 18080   # 8080 collides with OrbStack/Docker on the dev Mac (2026-10-16)
 DEFAULT_LLM_CTX = 8192
 DEFAULT_LLM_MAX_TOKENS = 1024
 DEFAULT_LLM_TEMPERATURE = 0.7

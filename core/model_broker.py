@@ -13,7 +13,7 @@ def _make_openai_compatible_provider(cfg: dict[str, Any] | None) -> OpenAICompat
     return OpenAICompatibleProvider(
         api_key=str(config.get("api_key") or "local"),
         model_name=str(config.get("model_name") or "local-model"),
-        base_url=str(config.get("base_url") or "http://127.0.0.1:8080/v1"),
+        base_url=str(config.get("base_url") or "http://127.0.0.1:18080/v1"),
         timeout_sec=int(config.get("timeout_sec") or 120),
     )
 
@@ -72,7 +72,7 @@ class ModelBroker:
         local_provider_cfg = {
             "api_key": "local",
             "model_name": str(local_runtime.get("model_name") or "local-model"),
-            "base_url": f"http://{local_runtime.get('host') or '127.0.0.1'}:{int(local_runtime.get('port') or 8080)}/v1",
+            "base_url": f"http://{local_runtime.get('host') or '127.0.0.1'}:{int(local_runtime.get('port') or 18080)}/v1",
             "timeout_sec": int(local_runtime.get("timeout_sec") or 120),
         }
         cloud_api_key = str(cloud_cfg.get("api_key") or "").strip()

@@ -373,7 +373,7 @@ def _with_config_defaults(cfg: dict) -> dict:
     local_runtime_defaults = {
         "engine": "llama.cpp",
         "host": "127.0.0.1",
-        "port": 8080,
+        "port": 18080,
         "ctx": 8192,
         "max_tokens": 1024,
         "temperature": 0.7,

@@ -38,7 +38,7 @@ def test_with_config_defaults_adds_local_runtime_defaults():
     runtime = cfg["model"]["local_runtime"]
     assert runtime["engine"] == "llama.cpp"
     assert runtime["host"] == "127.0.0.1"
-    assert runtime["port"] == 8080
+    assert runtime["port"] == 18080
     assert runtime["ctx"] == 8192
     assert runtime["reasoning"] == "off"
     broker = cfg["model"]["broker"]

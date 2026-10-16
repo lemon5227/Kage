@@ -93,7 +93,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-path", help="Absolute path to a local GGUF model file.")
     parser.add_argument("--binary-path", help="Optional absolute path to llama-server.")
     parser.add_argument("--host", default="127.0.0.1", help="Runtime host.")
-    parser.add_argument("--port", type=int, default=8080, help="Runtime port.")
+    parser.add_argument("--port", type=int, default=18080, help="Runtime port.")
     parser.add_argument("--ctx", type=int, default=4096, help="Context window for smoke boot.")
     parser.add_argument("--ngl", type=int, default=99, help="GPU layers for llama-server.")
     parser.add_argument(

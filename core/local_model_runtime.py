@@ -47,7 +47,7 @@ class LocalModelRuntime:
             "status": "stopped",  # stopped|starting|running|error
             "pid": None,
             "host": "127.0.0.1",
-            "port": 8080,
+            "port": 18080,
             "model_id": None,
             "model_path": None,
             "started_at": None,
@@ -107,7 +107,7 @@ class LocalModelRuntime:
 
     def build_command(self, llama_bin: str, model_path: str, payload: dict[str, Any]) -> list[str]:
         host = str(payload.get("host") or "127.0.0.1").strip() or "127.0.0.1"
-        port = int(payload.get("port") or 8080)
+        port = int(payload.get("port") or 18080)
         ctx = int(payload.get("ctx") or 8192)
         max_tokens = int(payload.get("max_tokens") or 1024)
         temp = float(payload.get("temp") or 0.7)
@@ -158,7 +158,7 @@ class LocalModelRuntime:
 
     def start(self, payload: dict[str, Any]) -> RuntimeStartResult:
         host = str(payload.get("host") or "127.0.0.1").strip() or "127.0.0.1"
-        port = int(payload.get("port") or 8080)
+        port = int(payload.get("port") or 18080)
         force_restart = bool(payload.get("force_restart") or False)
 
         model_id, model_path, err = self.resolve_model(payload)
