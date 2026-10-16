@@ -1,9 +1,9 @@
 # Kage: A Small Local Agent That Learns From a Teacher, Knows What It Does Not Know, and Evolves in the Background
 
-*Draft technical report (W6-2), 2026-10-16. Sections marked **[E-2 pending]** are filled once the E-2 run finishes.
+*Draft technical report (W6-2), 2026-10-16.
 Every number comes from a `stream_report` summary: `artifacts/e1-report/summary.json` (E-1),
-`artifacts/e1b-report/summary.json` (E-1b), `artifacts/e1c-report/summary.json` (E-1c); raw runs are on the
-`evidence/*` branch and in the Kaggle outputs.*
+`evidence/reports/<name>/summary.json` (e1, e1b, e1c, e2, e2b); raw runs are in `evidence/kaggle/` (see
+`evidence/README.md`). A0 replicate counts are recomputed from the `checkpoints.jsonl` files in `evidence/kaggle/v6` and `v11`.*
 
 ## Abstract
 
@@ -18,7 +18,11 @@ memory (A4 vs A3 at cp60: 10 vs 11 discordant pairs, p = 1), and every learning 
 families (16/24 → 6–14/24) through prompt interference. P3 addresses this with a relevance gate under which an
 unfamiliar task sees exactly the raw student's request, replaces benchmark family labels with agent-side
 clusters, adds competence-driven proactive help (A5) and background evolution (practice, skill repair, and an
-architect that evolves the skill-selection policy, A6) **[E-2 pending]**.
+architect that evolves the skill-selection policy, A6). In E-2 the gate removed held-out interference (held-out
+scores back inside the raw student's run-to-run range, zero misuse) without losing in-family gains (A6-fixed
+45/48, A5 43/48). Proactive help almost never triggered on this stream, background practice added no
+significant gain, and the L2 architect, validated on ten noisy tasks, promoted policies that made things
+slightly worse (41/48), one of which undid the gate.
 
 ## 1. Motivation
 
@@ -122,19 +126,50 @@ Held-out families F5/F6 (24 tasks), cp0 → cp60: A4 16 → 14, A3 16 → 12, A4
 no skill calls on these tasks. The student was distracted by irrelevant skills and weakly matched
 demonstrations in its prompt. This motivated the relevance gate (§2).
 
-### 5.4 Relevance gate, proactive help and background evolution (E-2) **[E-2 pending]**
+### 5.4 Relevance gate, proactive help and background evolution (E-2, E-2b)
 
-Planned comparisons (pre-registered in `scripts/experiments/stream_report.py` PAIRS):
-A4mG vs A4m (does the gate remove held-out interference without losing in-family gains?),
-A5 vs A4mG (H2: equal or better pass rate with fewer teacher calls), A6 vs A5 and A6 vs A6-fixed (H3: does
-background evolution help, and does the L2 architect add anything over the fixed rule?), and negative misuse
-≤ A0 + 5 pp (H4). Also reported: cluster purity against benchmark families.
+| Arm | cp60 in-family (/48) | held-out (/24) | negatives / misuse | teacher calls (2 seeds) |
+|---|---|---|---|---|
+| A4m (no gate, E-1c) | 43 | 9 | 23/24, 1 | 26 |
+| A4mG = A4m + gate + clusters | 36 | 13 | 24/24, 0 | 25 |
+| A5 = A4mG + proactive help | 43 | 12 | 24/24, 0 | 29 |
+| A6-fixed = A5 + practice and maintenance | 45 | 12 | 24/24, 0 | 23 |
+| A6 = A6-fixed + L2 architect (E-2b) | 41 | 9 | 24/24, 0 | 21 |
+
+None of the paired differences among these arms is significant (A5 vs A4mG 11:5, p = 0.21; A6-fixed vs A5 6:4,
+p = 0.75; A6 vs A6-fixed 4:11, p = 0.12).
+
+**Run-to-run variance.** The student samples at temperature 0.7, so identical requests can pass or fail. Four
+same-model evaluations of the raw student (A0) gave 7, 10, 13 and 7 of 24 in-family tasks and 8, 5, 8 and 6 of 12
+held-out tasks per seed. Treating A0's single evaluation as a constant (as in E-1) makes its paired p-values
+optimistic; the learning-vs-raw gap (≈ 40% vs ≈ 85–94%) is far larger than this variance, but the gaps between
+learning variants are not.
+
+**Gate (H4).** Recomputed from each arm's final state, the gated arms injected no skill and no demonstration on
+any of the 48 held-out evaluations and never called a skill there; held-out scores (≈ 6/12 per seed) lie inside
+the raw student's range (5–8/12), while the ungated A4m (4.5/12) lies below it. On in-family tasks the gate never
+withheld the relevant skill or demonstration. Agent-side clusters: 21 clusters for 14 (family, seed) pairs,
+100% pure; a family's different phrasings were sometimes split.
+
+**Proactive help (H2).** A5 asked before attempting only once in 120 stream tasks. After the first failure in a
+new cluster the after-failure help already teaches something relevant, and the policy then tries first, so the
+"low competence and nothing relevant known" state rarely persists. On this benchmark the mechanism has almost
+no room to act; H2 is untested rather than refuted.
+
+**Background evolution and L2 (H3).** Practice ran 72 tasks per arm (A6-fixed 56 passed; A6 in E-2b 66). After a
+fix that told the architect its turn budget (in E-2 it spent all 8 turns reading files), it proposed in 6/6
+rounds at US$0.004–0.006 each and 2 proposals were promoted, each because 1 of ~10 validation tasks improved
+with no regression. One promoted policy lowered the similarity threshold from 0.3 to 0.1, which re-admits weakly
+related skills; A6 then scored below A6-fixed on both in-family and held-out tasks. With a stochastic student,
+single-run validation on ten tasks selects noise.
 
 ## 6. Negative results and threats to validity
 
 - Skill extraction did not beat memory (§5.2); improvements after E-1 were found by looking at E-1 results.
 - A0/A1 are evaluated once and reused at every checkpoint and seed, which makes their paired p-values
-  optimistic.
+  optimistic; four A0 replicates span 7–13/24 in-family (§5.4).
+- L2 promotion used one run per validation task; with this student's variance it promotes noise. Safer
+  promotion needs repeated runs per task and validation items from unfamiliar task types.
 - The TF-IDF gate works because benchmark instructions are templated (same-family ≥ 0.38 vs cross-family
   ≤ 0.25 on replay); free-form user tasks would need an embedding model.
 - Two stream orders, 48 in-family evaluation tasks per checkpoint: small samples, wide confidence intervals.

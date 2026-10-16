@@ -4,6 +4,7 @@ ba82bf56c484aebf90095c672efa5638f27647d86ba21e2646d76b078d20428e  ./2026-10-14-s
 5630d81f3543dbdb65eb67d689d2761e134376c6025da969ce01602aedaeff3a  ./2026-10-15-calibration-mac.tar.gz
 899af035d268de6540dd39466098a37ce5cfcbc2002e3253a1a32ab7d88fcfdb  ./kaggle/v1-notebook.log
 241a090bb59f83036716592cce34241456534114bf702f6fad8785f7ad86d88a  ./kaggle/v10-results.tar.gz
+00012dbc15cde00de6dcf4cf32b199d90cfc4012fc726a2912f9a22125843e16  ./kaggle/v11-results.tar.gz
 001b2d3a7d5345cf29b61eb10ca4615a032119d7f513a91da4f3b1fc7d47cf47  ./kaggle/v2-notebook.log
 957f2f72b76ef05d7d7cc4c661026faec680156ce5493a0831a8b6a3319f090d  ./kaggle/v3-notebook.log
 19ee1b080c8bace3a079d605f881ad75409cec947cc0b060d94703e3d820d3b2  ./kaggle/v4-notebook.log
@@ -27,3 +28,6 @@ f728846b43a227f5312f8cec34d2816e8923b3fa557e9600f1bbc35baa128d75  ./reports/e1c-
 976af5a08bf7c1e77d9f70399b9a3492e65835a57420eaf47c51fecae00a82a7  ./reports/e2-report/curves.png
 415857ecd8bc6deb219afd8242805cf514eb90e3dbc7a2aa1ecaa20c1141ea3b  ./reports/e2-report/report.md
 9d87bf9eb371e0ba7e3c078f4b5ede2aa1598c7cbca34d658fbbcee48df54a2e  ./reports/e2-report/summary.json
+d0460063efde03915cb348aed0895cf01f3161505ea7d6e37c637755c526418e  ./reports/e2b-report/curves.png
+6fbfed752b41a83c4d06e3e328cc42ff94aaba525c96138f4a8641d115149433  ./reports/e2b-report/report.md
+efdffc24128602227d476504bcc469d38bb00aabe2d30d3187711822e4231c43  ./reports/e2b-report/summary.json
