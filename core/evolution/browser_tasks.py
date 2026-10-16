@@ -7,10 +7,13 @@ page read-back equal to the backend). Expected records are derived here and neve
 the model; the instruction only states the public goal.
 
 Families:
-  web_form     fill some text fields, leave the prefilled ones alone, save
-  web_invoice  compute a total from a table (sometimes excluding a row), enter it, save
+  web_form     copy current values from a contact note into some fields, leave a prefilled one alone
+  web_invoice  compute a table total under one rule (exclusions, price floor or tax), enter it, save
   web_prefs    reach target checkbox states from a random start, save
-  web_catalog  filter by city and category, choose the cheapest or the dearest match
+  web_catalog  filter by city and category, choose under a rating floor or the best-rated match
+
+Calibration v13 (raw student, 12 each): the first versions, with every value in the instruction,
+were solved 92-100% (form, invoice, catalog); these versions make the model read the page.
   web_lookup   negative: answer a question from the page; nothing may be saved
 
 English only, like the file families: TF-IDF relevance shares no tokens across languages, so a
@@ -46,32 +49,41 @@ def _web_task(family, instruction, fixture, record):
 
 
 def web_form(seed: int) -> dict:
+    """Copy the current values for some fields from a contact note on the page (which also lists
+    outdated values and a different value for a field the task says to leave alone)."""
     rng = random.Random(f'web_form:{seed}')
     chosen = rng.sample(_FORM_FIELDS, rng.randint(3, 5))
     keep = set(n for n, _ in rng.sample(chosen, 1 if len(chosen) < 5 else 2))   # prefilled, must stay
-    fields, record, asks = [], {}, []
+    fields, record, note, fill = [], {}, [], []
     for name, labels in chosen:
-        label = _pick(rng, labels)
-        value = _pick(rng, _FORM_VALUES[name])
+        label, note_label = rng.sample(labels, 2)            # the note uses the other wording
+        value, other = rng.sample(_FORM_VALUES[name], 2)
         if name in keep:
             fields.append({'name': name, 'label': label, 'initial': value})
+            note.append(f'{note_label}: {other}')            # a trap: the task says keep the form's value
         else:
             fields.append({'name': name, 'label': label})
-            asks.append((label, value))
+            fill.append(label)
+            note.append(f'{note_label}: {value}')
+            if rng.random() < 0.6:
+                note.append(f'Previous {note_label.lower()} (no longer valid): {other}')
         record[name] = value
-    pairs = ', '.join(f'{label} to "{value}"' for label, value in asks)
+    rng.shuffle(note)
+    wanted = ', '.join(fill)
     kept = ', '.join(f['label'] for f in fields if f['name'] in keep)
     submit = _pick(rng, _SAVE)
     instruction = _pick(rng, [
-        f'Fill in the profile form fields: set {pairs}. Leave the prefilled {kept} field unchanged. '
-        'Save the profile form and confirm the saved field values.',
-        f'In the profile form, fill the fields {pairs}; do not change the prefilled {kept} field. '
-        f'Save the profile form with "{submit}" and confirm the saved field values.',
-        f'Update the profile form fields ({pairs}) without changing the prefilled {kept} field, '
-        'then save the profile form and confirm the saved field values.',
+        f'Fill in the profile form fields {wanted} with the current values from the contact note on the page '
+        f'(not the previous ones). Leave the prefilled {kept} field unchanged. Save the profile form and confirm '
+        'the saved field values.',
+        f'In the profile form, fill the fields {wanted} using the contact note shown on the page (current values '
+        f'only); do not change the prefilled {kept} field. Save the profile form with "{submit}" and confirm the '
+        'saved field values.',
+        f'Update the profile form fields {wanted} from the contact note on the page, ignoring outdated values and '
+        f'without changing the prefilled {kept} field, then save the profile form and confirm the saved field values.',
     ])
     fixture = {'kind': 'profile', 'title': _pick(rng, ['Profile editor', 'Contact details', 'Account settings']),
-               'fields': fields, 'submit': submit}
+               'note': ['Contact note'] + note, 'fields': fields, 'submit': submit}
     return _web_task('web_form', instruction, fixture, record)
 
 
@@ -79,15 +91,31 @@ _ITEMS = ['Compute', 'Storage', 'Support', 'Licences', 'Backup', 'Training', 'Ho
 
 
 def web_invoice(seed: int) -> dict:
+    """Total of a 5-8 row table under one rule: all rows, all but two items, rows from a unit price
+    up, or plus a tax rate rounded to whole money."""
     rng = random.Random(f'web_invoice:{seed}')
     rows = [{'item': item, 'qty': rng.randint(1, 9), 'price': rng.randint(3, 60)}
-            for item in rng.sample(_ITEMS, rng.randint(3, 5))]
-    skip = _pick(rng, rows)['item'] if rng.random() < 0.4 else None
-    total = sum(r['qty'] * r['price'] for r in rows if r['item'] != skip)
+            for item in rng.sample(_ITEMS, rng.randint(5, 8))]
+    line = lambda r: r['qty'] * r['price']
+    rule = _pick(rng, ['all', 'except', 'min_price', 'tax'])
+    if rule == 'except':
+        skip = [r['item'] for r in rng.sample(rows, 2)]
+        total = sum(line(r) for r in rows if r['item'] not in skip)
+        what = f'quantity times unit price over all rows except {skip[0]} and {skip[1]}'
+    elif rule == 'min_price':
+        threshold = sorted(r['price'] for r in rows)[rng.randint(1, len(rows) - 2)]
+        total = sum(line(r) for r in rows if r['price'] >= threshold)
+        what = f'quantity times unit price over the rows whose unit price is at least {threshold}'
+    elif rule == 'tax':
+        base = sum(line(r) for r in rows)
+        rate = _pick(rng, [r for r in (5, 8, 10, 12, 15, 20) if (base * r) % 100 != 50] or [10])
+        total = round(base * (100 + rate) / 100)
+        what = f'quantity times unit price over all rows, plus {rate}% tax, rounded to a whole number'
+    else:
+        total = sum(line(r) for r in rows)
+        what = 'quantity times unit price over all rows'
     label = _pick(rng, ['Total', 'Amount due', 'Invoice total'])
     submit = _pick(rng, ['Save total', 'Submit', 'Record amount'])
-    what = 'quantity times unit price over all rows' if skip is None else \
-        f'quantity times unit price over all rows except {skip}'
     instruction = _pick(rng, [
         f'Compute the invoice total as the sum of {what}. Enter the invoice total in {label}, save it, '
         'and confirm the saved invoice total.',
@@ -149,35 +177,46 @@ _HOTELS = ['Garden Inn', 'River Loft', 'Casa Flora', 'Harbor House', 'Old Mill',
 
 
 def web_catalog(seed: int) -> dict:
+    """Filter by city and category, then choose by price under a rating floor (the cheapest match
+    is always below it) or the best-rated match; decoys elsewhere are cheaper and better rated."""
     rng = random.Random(f'web_catalog:{seed}')
     city, other = rng.sample(_CITIES, 2)
     category = _pick(rng, _CATEGORIES)
-    names = rng.sample(_HOTELS, rng.randint(5, 7))
+    n_match = rng.randint(3, 4)
+    names = rng.sample(_HOTELS, n_match + rng.randint(4, 5))
     prices = rng.sample(range(30, 260, 5), len(names))
+    ratings = rng.sample([x / 10 for x in range(30, 50)], len(names))
     items = []
-    for i, (name, price) in enumerate(zip(names, prices)):
-        # At least two real matches, plus decoys from the other city or another category.
-        if i < 2:
+    for i, (name, price, rating) in enumerate(zip(names, prices, ratings)):
+        if i < n_match:
             c, cat = city, category
+        elif rng.random() < 0.5:
+            c, cat = other, category
         else:
-            c = _pick(rng, [city, other])
-            cat = category if c == other else _pick(rng, [x for x in _CATEGORIES if x != category] + [category])
-        items.append({'id': f'h{i}', 'name': name, 'city': c, 'category': cat, 'price': price})
+            c, cat = city, _pick(rng, [x for x in _CATEGORIES if x != category])
+        items.append({'id': f'h{i}', 'name': name, 'city': c, 'category': cat, 'price': price, 'rating': rating})
+    matches = sorted(items[:n_match], key=lambda i: i['price'])
+    by_rating = sorted(matches[1:], key=lambda i: i['rating'])
+    if rng.random() < 0.7 and any(m['rating'] > matches[0]['rating'] for m in matches[1:]):
+        # A floor above the cheapest match's rating, met by at least one other match.
+        floor = round(max(matches[0]['rating'] + 0.1, by_rating[0]['rating']), 1)
+        floor = min(floor, by_rating[-1]['rating'])
+        pick = min((m for m in matches if m['rating'] >= floor), key=lambda i: i['price'])
+        which = f'cheapest matching hotel with a rating of at least {floor}'
+    else:
+        pick = max(matches, key=lambda i: i['rating'])
+        which = 'best-rated matching hotel'
     rng.shuffle(items)
-    matches = [i for i in items if i['city'] == city and i['category'] == category]
-    cheapest = rng.random() < 0.7
-    pick = (min if cheapest else max)(matches, key=lambda i: i['price'])
-    which = 'cheapest' if cheapest else 'most expensive'
     query_label = _pick(rng, ['City', 'Destination', 'Where'])
     category_label = f'{category} only'
     apply_label = _pick(rng, ['Apply filters', 'Show matching hotels', 'Search'])
     instruction = _pick(rng, [
         f'Filter the hotel catalog: set {query_label} to {city}, enable "{category_label}", apply the filters, '
-        f'then choose the {which} matching hotel and confirm the selected hotel.',
+        f'then choose the {which} and confirm the selected hotel.',
         f'In the hotel catalog, filter to {category} hotels in {city} (set {query_label}, enable "{category_label}", '
-        f'apply the filters with "{apply_label}"), then choose the {which} matching hotel and confirm the selected hotel.',
-        f'Apply the hotel catalog filters ({query_label} {city}, "{category_label}") and choose the {which} '
-        'matching hotel; confirm the selected hotel.',
+        f'apply the filters with "{apply_label}"), then choose the {which} and confirm the selected hotel.',
+        f'Apply the hotel catalog filters ({query_label} {city}, "{category_label}") and choose the {which}; '
+        'confirm the selected hotel.',
     ])
     fixture = {'kind': 'catalog', 'title': _pick(rng, ['Hotel catalog', 'Stays', 'Book a room']),
                'query_label': query_label, 'category_label': category_label, 'category': category,

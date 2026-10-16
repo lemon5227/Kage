@@ -384,13 +384,13 @@ def browser_setup() -> None:
                                                  text=True).stdout.strip())
 
 
-def browser_calibration_jobs(per_family: int = 12) -> list[tuple[str, list[str]]]:
-    """Raw student (A0) on calibration seeds of the browser families; no cloud calls."""
+def browser_calibration_jobs(families: list[str] | None = None, per_family: int = 12) -> list[tuple[str, list[str]]]:
+    """Raw student (A0) on calibration seeds of the browser families, one job per family; no cloud calls.
+    ``kaggle_phase`` may name families ("c-cal web_form web_invoice") to recalibrate only those."""
     script = 'scripts/experiments/stream_calibrate.py'
-    groups = [['web_form', 'web_lookup'], ['web_invoice', 'web_prefs'], ['web_catalog']]
-    return [(f'c-cal-{i}', [script, '--root', str(OUT / 'c-calibration' / f'part{i}'), '--per-family', str(per_family),
-                            '--families', ','.join(g), '--port', str(18300 + i), '--skill-runner', 'process'])
-            for i, g in enumerate(groups)]
+    return [(f'c-cal-{f}', [script, '--root', str(OUT / 'c-calibration' / f), '--per-family', str(per_family),
+                            '--families', f, '--port', str(18300 + i), '--skill-runner', 'process'])
+            for i, f in enumerate(families or BROWSER_FAMILIES)]
 
 
 # ---------------------------------------------------------------- P4-L3: LoRA distillation
@@ -472,9 +472,9 @@ def main(argv=None):
     info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'c-cal') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'c-cal':
         browser_setup()
-        run_jobs(info, browser_calibration_jobs(), 'c-cal')
+        run_jobs(info, browser_calibration_jobs(only or None), 'c-cal')
         from stream_calibrate import summarize
-        rows = [json.loads(l) for f in sorted((OUT / 'c-calibration').glob('part*/results.jsonl'))
+        rows = [json.loads(l) for f in sorted((OUT / 'c-calibration').glob('*/results.jsonl'))
                 for l in f.read_text().splitlines() if l.strip()]
         log('c-cal summary', **summarize([r for r in rows if r.get('status') != 'crashed'], OUT / 'c-calibration'))
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:

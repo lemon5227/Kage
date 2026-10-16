@@ -23,7 +23,9 @@ def render_fixture(fixture):
         table=''
         if kind=='invoice':
             table='<table><tr><th>Item</th><th>Quantity</th><th>Unit price</th></tr>'+''.join(f'<tr><td>{esc(r["item"])}</td><td>{r["qty"]}</td><td>{r["price"]}</td></tr>' for r in fixture['rows'])+'</table>'
-        body=table+'<form>'+''.join(fields)+f'<button>{esc(fixture["submit"])}</button></form>'
+        # Optional page text the task refers to (stream web_form: values to copy from a contact note).
+        note=''.join(f'<p class="note">{esc(line)}</p>' for line in fixture.get('note',[]))
+        body=note+table+'<form>'+''.join(fields)+f'<button>{esc(fixture["submit"])}</button></form>'
         script='''document.querySelector('form').onsubmit=async e=>{e.preventDefault(); const result={};
         for(const input of document.querySelectorAll('input')) result[input.name]=input.type==='checkbox' ? input.checked : input.value;
         if(KIND==='invoice') result.total=Number(result.total);
@@ -33,7 +35,7 @@ def render_fixture(fixture):
         # Public catalog data is page content. It contains no checker/expected id.
         script='''const items=ITEMS;let category=false,applied=null;
         function show(rows){const root=document.querySelector('#items');root.replaceChildren();
-        for(const item of rows){const row=document.createElement('article');row.textContent=item.name+' | '+item.city+' | '+item.category+' | '+item.price;
+        for(const item of rows){const row=document.createElement('article');row.textContent=item.name+' | '+item.city+' | '+item.category+' | '+item.price+(item.rating!==undefined?' | rating '+item.rating:'');
         const button=document.createElement('button');button.textContent='Choose '+item.name;
         button.onclick=()=>save({property_id:item.id,city:applied?.city??'',category:applied?.category??''});row.append(button);root.append(row);}}
         document.querySelector('#category').onclick=e=>{category=e.target.checked;};
