@@ -1,4 +1,9 @@
-# 演示脚本（W6-4 草稿）
+# 演示脚本（W6-4）
+
+成片：[`docs/assets/demo/kage-demo.mp4`](../assets/demo/kage-demo.mp4)（83 秒，1600×1000）。生成方式：
+`python scripts/demo/render_video.py --out <路径>`——运行 `scripts/demo/replay_demo.py` 回放真实记录（不启动模型），
+按时间戳把终端输出渲染成画面，最后接成长曲线，由 ffmpeg 编码。不依赖录屏权限，换设备可原样重现。
+直接在终端看：`python scripts/demo/replay_demo.py`。
 
 目标：≤ 3 分钟，6 个镜头，每个镜头对应一次**真实运行**里的事件（数据：`evidence/kaggle/v10-results.tar.gz` → `e1/seed1/A6/`，E-2，A6 种子 1）。
 录制方式：屏幕左边是终端，逐条回放该运行的 `stream.jsonl` / `evolution.jsonl`，并打开对应的模型轨迹；右边是 Kage 窗口里的消息气泡（交互层 `notices.py` 生成的三类消息）。旁白用中文或英文均可。

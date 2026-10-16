@@ -113,7 +113,7 @@ What the evidence supports:
   2 of 6 proposals promoted on single-run validation. One of them undid the gate, so the arm with the architect
   scored below the arm without it.
 
-[Technical report](docs/report/kage-tech-report.md) · [Related work](docs/report/related-work.md) · [Raw evidence and reports](evidence/README.md) · [Work log](docs/worklog/2026-10-claude.md)
+[Demo video (83 s)](docs/assets/demo/kage-demo.mp4) · [Technical report](docs/report/kage-tech-report.md) · [Related work](docs/report/related-work.md) · [Raw evidence and reports](evidence/README.md) · [Work log](docs/worklog/2026-10-claude.md)
 
 ### Personal-assistant interface
 

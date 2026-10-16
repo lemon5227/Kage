@@ -103,7 +103,7 @@
 - **相关性门控是必要的。** 没有门控时，无关的技能和示范会干扰学生做未学过的题。有门控后，陌生任务收到的请求与原学生完全相同，只读题也从未触发技能。
 - **自修改需要稳健的验证。** 让 LLM 架构师改写技能选用策略，按单次验证启用了 6 个方案中的 2 个。其中一个撤销了门控，所以带架构师的组反而低于不带的组。
 
-[技术报告](docs/report/kage-tech-report.md) · [相关工作](docs/report/related-work.md) · [原始证据与报告](evidence/README.md) · [工作日志](docs/worklog/2026-10-claude.md)
+[演示视频（83 秒）](docs/assets/demo/kage-demo.mp4) · [技术报告](docs/report/kage-tech-report.md) · [相关工作](docs/report/related-work.md) · [原始证据与报告](evidence/README.md) · [工作日志](docs/worklog/2026-10-claude.md)
 
 ### 个人助手交互界面
 
