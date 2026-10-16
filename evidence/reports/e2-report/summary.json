@@ -4,21 +4,21 @@
       "checkpoints": {
         "cp0": {
           "in_family": {
-            "k": 30,
-            "n": 72,
-            "rate": 0.4166666666666667,
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
             "ci95": [
-              0.3099,
-              0.5319
+              0.1824,
+              0.4318
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
             "ci95": [
-              0.0,
-              0.0
+              0.4671,
+              0.8203
             ]
           },
           "negative": {
@@ -46,21 +46,21 @@
         },
         "cp30": {
           "in_family": {
-            "k": 30,
-            "n": 72,
-            "rate": 0.4166666666666667,
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
             "ci95": [
-              0.3099,
-              0.5319
+              0.1824,
+              0.4318
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
             "ci95": [
-              0.0,
-              0.0
+              0.4671,
+              0.8203
             ]
           },
           "negative": {
@@ -88,21 +88,21 @@
         },
         "cp60": {
           "in_family": {
-            "k": 30,
-            "n": 72,
-            "rate": 0.4166666666666667,
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
             "ci95": [
-              0.3099,
-              0.5319
+              0.1824,
+              0.4318
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
             "ci95": [
-              0.0,
-              0.0
+              0.4671,
+              0.8203
             ]
           },
           "negative": {
@@ -147,21 +147,21 @@
       "checkpoints": {
         "cp0": {
           "in_family": {
-            "k": 22,
-            "n": 72,
-            "rate": 0.3055555555555556,
+            "k": 12,
+            "n": 48,
+            "rate": 0.25,
             "ci95": [
-              0.2113,
-              0.4195
+              0.1492,
+              0.3878
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 10,
+            "n": 24,
+            "rate": 0.4166666666666667,
             "ci95": [
-              0.0,
-              0.0
+              0.2447,
+              0.6117
             ]
           },
           "negative": {
@@ -189,21 +189,21 @@
         },
         "cp30": {
           "in_family": {
-            "k": 22,
-            "n": 72,
-            "rate": 0.3055555555555556,
+            "k": 12,
+            "n": 48,
+            "rate": 0.25,
             "ci95": [
-              0.2113,
-              0.4195
+              0.1492,
+              0.3878
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 10,
+            "n": 24,
+            "rate": 0.4166666666666667,
             "ci95": [
-              0.0,
-              0.0
+              0.2447,
+              0.6117
             ]
           },
           "negative": {
@@ -231,21 +231,21 @@
         },
         "cp60": {
           "in_family": {
-            "k": 22,
-            "n": 72,
-            "rate": 0.3055555555555556,
+            "k": 12,
+            "n": 48,
+            "rate": 0.25,
             "ci95": [
-              0.2113,
-              0.4195
+              0.1492,
+              0.3878
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 10,
+            "n": 24,
+            "rate": 0.4166666666666667,
             "ci95": [
-              0.0,
-              0.0
+              0.2447,
+              0.6117
             ]
           },
           "negative": {
@@ -1318,255 +1318,6 @@
       "teacher_calls": 29,
       "help_declined": 0
     },
-    "A6": {
-      "checkpoints": {
-        "cp0": {
-          "in_family": {
-            "k": 14,
-            "n": 48,
-            "rate": 0.2916666666666667,
-            "ci95": [
-              0.1824,
-              0.4318
-            ]
-          },
-          "cross_family": {
-            "k": 16,
-            "n": 24,
-            "rate": 0.6666666666666666,
-            "ci95": [
-              0.4671,
-              0.8203
-            ]
-          },
-          "negative": {
-            "k": 24,
-            "n": 24,
-            "rate": 1.0,
-            "ci95": [
-              0.862,
-              1.0
-            ]
-          },
-          "misuse": {
-            "k": 0,
-            "n": 24
-          },
-          "retention_f1": {
-            "k": 0,
-            "n": 12,
-            "rate": 0.0,
-            "ci95": [
-              0.0,
-              0.2425
-            ]
-          }
-        },
-        "cp30": {
-          "in_family": {
-            "k": 43,
-            "n": 48,
-            "rate": 0.8958333333333334,
-            "ci95": [
-              0.7783,
-              0.9547
-            ]
-          },
-          "cross_family": {
-            "k": 11,
-            "n": 24,
-            "rate": 0.4583333333333333,
-            "ci95": [
-              0.2789,
-              0.6493
-            ]
-          },
-          "negative": {
-            "k": 24,
-            "n": 24,
-            "rate": 1.0,
-            "ci95": [
-              0.862,
-              1.0
-            ]
-          },
-          "misuse": {
-            "k": 0,
-            "n": 24
-          },
-          "retention_f1": {
-            "k": 11,
-            "n": 12,
-            "rate": 0.9166666666666666,
-            "ci95": [
-              0.6461,
-              0.9851
-            ]
-          }
-        },
-        "cp60": {
-          "in_family": {
-            "k": 45,
-            "n": 48,
-            "rate": 0.9375,
-            "ci95": [
-              0.8316,
-              0.9785
-            ]
-          },
-          "cross_family": {
-            "k": 12,
-            "n": 24,
-            "rate": 0.5,
-            "ci95": [
-              0.3143,
-              0.6857
-            ]
-          },
-          "negative": {
-            "k": 24,
-            "n": 24,
-            "rate": 1.0,
-            "ci95": [
-              0.862,
-              1.0
-            ]
-          },
-          "misuse": {
-            "k": 0,
-            "n": 24
-          },
-          "retention_f1": {
-            "k": 11,
-            "n": 12,
-            "rate": 0.9166666666666666,
-            "ci95": [
-              0.6461,
-              0.9851
-            ]
-          }
-        }
-      },
-      "stream": [
-        {
-          "tasks": "0-9",
-          "n": 20,
-          "student_solved": 11,
-          "student_attempted": 20,
-          "teacher_calls": 9,
-          "skills_accepted": 6,
-          "cloud_usd": 0.051743,
-          "cumulative_cloud_usd": 0.051743
-        },
-        {
-          "tasks": "10-19",
-          "n": 8,
-          "student_solved": 7,
-          "student_attempted": 8,
-          "teacher_calls": 1,
-          "skills_accepted": 1,
-          "cloud_usd": 0.010661,
-          "cumulative_cloud_usd": 0.062404
-        },
-        {
-          "tasks": "20-29",
-          "n": 12,
-          "student_solved": 10,
-          "student_attempted": 12,
-          "teacher_calls": 2,
-          "skills_accepted": 0,
-          "cloud_usd": 0.021576,
-          "cumulative_cloud_usd": 0.08398
-        },
-        {
-          "tasks": "30-39",
-          "n": 16,
-          "student_solved": 12,
-          "student_attempted": 16,
-          "teacher_calls": 4,
-          "skills_accepted": 4,
-          "cloud_usd": 0.044967,
-          "cumulative_cloud_usd": 0.128947
-        },
-        {
-          "tasks": "40-49",
-          "n": 8,
-          "student_solved": 7,
-          "student_attempted": 8,
-          "teacher_calls": 1,
-          "skills_accepted": 1,
-          "cloud_usd": 0.004935,
-          "cumulative_cloud_usd": 0.133882
-        },
-        {
-          "tasks": "50-59",
-          "n": 16,
-          "student_solved": 15,
-          "student_attempted": 16,
-          "teacher_calls": 1,
-          "skills_accepted": 0,
-          "cloud_usd": 0.006852,
-          "cumulative_cloud_usd": 0.140734
-        },
-        {
-          "tasks": "60-69",
-          "n": 12,
-          "student_solved": 11,
-          "student_attempted": 12,
-          "teacher_calls": 1,
-          "skills_accepted": 1,
-          "cloud_usd": 0.02165,
-          "cumulative_cloud_usd": 0.162384
-        },
-        {
-          "tasks": "70-79",
-          "n": 8,
-          "student_solved": 7,
-          "student_attempted": 8,
-          "teacher_calls": 1,
-          "skills_accepted": 0,
-          "cloud_usd": 0.021338,
-          "cumulative_cloud_usd": 0.183722
-        },
-        {
-          "tasks": "80-89",
-          "n": 20,
-          "student_solved": 17,
-          "student_attempted": 20,
-          "teacher_calls": 3,
-          "skills_accepted": 3,
-          "cloud_usd": 0.02986,
-          "cumulative_cloud_usd": 0.213583
-        }
-      ],
-      "help": {
-        "before_attempt": 0,
-        "student_requested": 0,
-        "after_failure": 23,
-        "asked_before_tasks": 0,
-        "precision_before": null,
-        "missed_asks": 23
-      },
-      "clusters": {
-        "tasks": 120,
-        "clusters": 21,
-        "families": 14,
-        "purity": 1.0,
-        "mixed_clusters": 0
-      },
-      "evolution": {
-        "rounds": 12,
-        "practice_tasks": 72,
-        "practice_passed": 62,
-        "repairs_tried": 2,
-        "repairs_accepted": 1,
-        "retired": 2,
-        "architect_proposals": 0,
-        "architect_promoted": 0
-      },
-      "teacher_calls": 23,
-      "help_declined": 0
-    },
     "A6-fixed": {
       "checkpoints": {
         "cp0": {
@@ -1815,207 +1566,712 @@
       },
       "teacher_calls": 23,
       "help_declined": 0
+    },
+    "A6": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
+            "ci95": [
+              0.1824,
+              0.4318
+            ]
+          },
+          "cross_family": {
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
+            "ci95": [
+              0.4671,
+              0.8203
+            ]
+          },
+          "negative": {
+            "k": 24,
+            "n": 24,
+            "rate": 1.0,
+            "ci95": [
+              0.862,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 24
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 12,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.2425
+            ]
+          }
+        },
+        "cp30": {
+          "in_family": {
+            "k": 43,
+            "n": 48,
+            "rate": 0.8958333333333334,
+            "ci95": [
+              0.7783,
+              0.9547
+            ]
+          },
+          "cross_family": {
+            "k": 11,
+            "n": 24,
+            "rate": 0.4583333333333333,
+            "ci95": [
+              0.2789,
+              0.6493
+            ]
+          },
+          "negative": {
+            "k": 24,
+            "n": 24,
+            "rate": 1.0,
+            "ci95": [
+              0.862,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 24
+          },
+          "retention_f1": {
+            "k": 11,
+            "n": 12,
+            "rate": 0.9166666666666666,
+            "ci95": [
+              0.6461,
+              0.9851
+            ]
+          }
+        },
+        "cp60": {
+          "in_family": {
+            "k": 45,
+            "n": 48,
+            "rate": 0.9375,
+            "ci95": [
+              0.8316,
+              0.9785
+            ]
+          },
+          "cross_family": {
+            "k": 12,
+            "n": 24,
+            "rate": 0.5,
+            "ci95": [
+              0.3143,
+              0.6857
+            ]
+          },
+          "negative": {
+            "k": 24,
+            "n": 24,
+            "rate": 1.0,
+            "ci95": [
+              0.862,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 24
+          },
+          "retention_f1": {
+            "k": 11,
+            "n": 12,
+            "rate": 0.9166666666666666,
+            "ci95": [
+              0.6461,
+              0.9851
+            ]
+          }
+        }
+      },
+      "stream": [
+        {
+          "tasks": "0-9",
+          "n": 20,
+          "student_solved": 11,
+          "student_attempted": 20,
+          "teacher_calls": 9,
+          "skills_accepted": 6,
+          "cloud_usd": 0.051743,
+          "cumulative_cloud_usd": 0.051743
+        },
+        {
+          "tasks": "10-19",
+          "n": 8,
+          "student_solved": 7,
+          "student_attempted": 8,
+          "teacher_calls": 1,
+          "skills_accepted": 1,
+          "cloud_usd": 0.010661,
+          "cumulative_cloud_usd": 0.062404
+        },
+        {
+          "tasks": "20-29",
+          "n": 12,
+          "student_solved": 10,
+          "student_attempted": 12,
+          "teacher_calls": 2,
+          "skills_accepted": 0,
+          "cloud_usd": 0.021576,
+          "cumulative_cloud_usd": 0.08398
+        },
+        {
+          "tasks": "30-39",
+          "n": 16,
+          "student_solved": 12,
+          "student_attempted": 16,
+          "teacher_calls": 4,
+          "skills_accepted": 4,
+          "cloud_usd": 0.044967,
+          "cumulative_cloud_usd": 0.128947
+        },
+        {
+          "tasks": "40-49",
+          "n": 8,
+          "student_solved": 7,
+          "student_attempted": 8,
+          "teacher_calls": 1,
+          "skills_accepted": 1,
+          "cloud_usd": 0.004935,
+          "cumulative_cloud_usd": 0.133882
+        },
+        {
+          "tasks": "50-59",
+          "n": 16,
+          "student_solved": 15,
+          "student_attempted": 16,
+          "teacher_calls": 1,
+          "skills_accepted": 0,
+          "cloud_usd": 0.006852,
+          "cumulative_cloud_usd": 0.140734
+        },
+        {
+          "tasks": "60-69",
+          "n": 12,
+          "student_solved": 11,
+          "student_attempted": 12,
+          "teacher_calls": 1,
+          "skills_accepted": 1,
+          "cloud_usd": 0.02165,
+          "cumulative_cloud_usd": 0.162384
+        },
+        {
+          "tasks": "70-79",
+          "n": 8,
+          "student_solved": 7,
+          "student_attempted": 8,
+          "teacher_calls": 1,
+          "skills_accepted": 0,
+          "cloud_usd": 0.021338,
+          "cumulative_cloud_usd": 0.183722
+        },
+        {
+          "tasks": "80-89",
+          "n": 20,
+          "student_solved": 17,
+          "student_attempted": 20,
+          "teacher_calls": 3,
+          "skills_accepted": 3,
+          "cloud_usd": 0.02986,
+          "cumulative_cloud_usd": 0.213583
+        }
+      ],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 23,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 23
+      },
+      "clusters": {
+        "tasks": 120,
+        "clusters": 21,
+        "families": 14,
+        "purity": 1.0,
+        "mixed_clusters": 0
+      },
+      "evolution": {
+        "rounds": 12,
+        "practice_tasks": 72,
+        "practice_passed": 62,
+        "repairs_tried": 2,
+        "repairs_accepted": 1,
+        "retired": 2,
+        "architect_proposals": 0,
+        "architect_promoted": 0
+      },
+      "teacher_calls": 23,
+      "help_declined": 0
     }
   },
   "paired": {
     "A4 vs A0": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 25,
-        "b_only": 11,
-        "p": 0.028817
+        "pairs": 48,
+        "a_only": 22,
+        "b_only": 2,
+        "p": 3.5881996154785156e-05,
+        "all": {
+          "pairs": 96,
+          "a_only": 25,
+          "b_only": 11,
+          "p": 0.028816719655878842
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 27,
-        "b_only": 4,
-        "p": 3.4e-05
+        "pairs": 48,
+        "a_only": 25,
+        "b_only": 0,
+        "p": 5.960464477539063e-08,
+        "all": {
+          "pairs": 96,
+          "a_only": 27,
+          "b_only": 4,
+          "p": 3.39532271027565e-05
+        }
       }
     },
     "A4 vs A1": {
       "cp0": {
-        "pairs": 96,
-        "a_only": 16,
-        "b_only": 8,
-        "p": 0.15159
+        "pairs": 48,
+        "a_only": 6,
+        "b_only": 4,
+        "p": 0.75390625,
+        "all": {
+          "pairs": 96,
+          "a_only": 16,
+          "b_only": 8,
+          "p": 0.15158963203430176
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 31,
-        "b_only": 9,
-        "p": 0.00068
+        "pairs": 48,
+        "a_only": 24,
+        "b_only": 2,
+        "p": 1.049041748046875e-05,
+        "all": {
+          "pairs": 96,
+          "a_only": 31,
+          "b_only": 9,
+          "p": 0.0006795482549932785
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 37,
-        "b_only": 6,
-        "p": 2e-06
+        "pairs": 48,
+        "a_only": 27,
+        "b_only": 0,
+        "p": 1.4901161193847656e-08,
+        "all": {
+          "pairs": 96,
+          "a_only": 37,
+          "b_only": 6,
+          "p": 1.636124125070637e-06
+        }
       }
     },
     "A4 vs A3": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 15,
-        "b_only": 17,
-        "p": 0.86005
+        "pairs": 48,
+        "a_only": 8,
+        "b_only": 12,
+        "p": 0.5034446716308594,
+        "all": {
+          "pairs": 96,
+          "a_only": 15,
+          "b_only": 17,
+          "p": 0.860050065908581
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 10,
-        "b_only": 11,
-        "p": 1.0
+        "pairs": 48,
+        "a_only": 5,
+        "b_only": 8,
+        "p": 0.5810546875,
+        "all": {
+          "pairs": 96,
+          "a_only": 10,
+          "b_only": 11,
+          "p": 1.0
+        }
+      }
+    },
+    "A4m vs A0": {
+      "cp0": {
+        "pairs": 48,
+        "a_only": 0,
+        "b_only": 0,
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "cp30": {
+        "pairs": 48,
+        "a_only": 27,
+        "b_only": 1,
+        "p": 2.1606683731079102e-07,
+        "all": {
+          "pairs": 96,
+          "a_only": 29,
+          "b_only": 11,
+          "p": 0.006426576095691416
+        }
+      },
+      "cp60": {
+        "pairs": 48,
+        "a_only": 30,
+        "b_only": 1,
+        "p": 2.9802322387695312e-08,
+        "all": {
+          "pairs": 96,
+          "a_only": 33,
+          "b_only": 12,
+          "p": 0.0024589003220967243
+        }
+      }
+    },
+    "A4m vs A3": {
+      "cp0": {
+        "pairs": 48,
+        "a_only": 0,
+        "b_only": 0,
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
+      },
+      "cp30": {
+        "pairs": 48,
+        "a_only": 9,
+        "b_only": 7,
+        "p": 0.803619384765625,
+        "all": {
+          "pairs": 96,
+          "a_only": 13,
+          "b_only": 11,
+          "p": 0.8388197422027588
+        }
+      },
+      "cp60": {
+        "pairs": 48,
+        "a_only": 6,
+        "b_only": 5,
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 9,
+          "b_only": 12,
+          "p": 0.6636238098144531
+        }
       }
     },
     "A4mG vs A4m": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 12,
-        "b_only": 8,
-        "p": 0.503445
+        "pairs": 48,
+        "a_only": 4,
+        "b_only": 5,
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 12,
+          "b_only": 8,
+          "p": 0.5034446716308594
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 11,
-        "b_only": 13,
-        "p": 0.83882
+        "pairs": 48,
+        "a_only": 2,
+        "b_only": 9,
+        "p": 0.0654296875,
+        "all": {
+          "pairs": 96,
+          "a_only": 11,
+          "b_only": 13,
+          "p": 0.8388197422027588
+        }
       }
     },
     "A4mG vs A0": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 28,
-        "b_only": 6,
-        "p": 0.000195
+        "pairs": 48,
+        "a_only": 27,
+        "b_only": 2,
+        "p": 1.6242265701293945e-06,
+        "all": {
+          "pairs": 96,
+          "a_only": 28,
+          "b_only": 6,
+          "p": 0.00019512558355927467
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 27,
-        "b_only": 8,
-        "p": 0.001878
+        "pairs": 48,
+        "a_only": 26,
+        "b_only": 4,
+        "p": 5.947612226009369e-05,
+        "all": {
+          "pairs": 96,
+          "a_only": 27,
+          "b_only": 8,
+          "p": 0.001878225477412343
+        }
       }
     },
     "A5 vs A4mG": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 7,
-        "b_only": 11,
-        "p": 0.480682
+        "pairs": 48,
+        "a_only": 6,
+        "b_only": 7,
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 7,
+          "b_only": 11,
+          "p": 0.480682373046875
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 11,
-        "b_only": 5,
-        "p": 0.210114
+        "pairs": 48,
+        "a_only": 9,
+        "b_only": 2,
+        "p": 0.0654296875,
+        "all": {
+          "pairs": 96,
+          "a_only": 11,
+          "b_only": 5,
+          "p": 0.210113525390625
+        }
       }
     },
     "A5 vs A4": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 14,
-        "b_only": 10,
-        "p": 0.541256
+        "pairs": 48,
+        "a_only": 9,
+        "b_only": 5,
+        "p": 0.4239501953125,
+        "all": {
+          "pairs": 96,
+          "a_only": 14,
+          "b_only": 10,
+          "p": 0.5412561893463135
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 12,
-        "b_only": 10,
-        "p": 0.831812
+        "pairs": 48,
+        "a_only": 8,
+        "b_only": 4,
+        "p": 0.3876953125,
+        "all": {
+          "pairs": 96,
+          "a_only": 12,
+          "b_only": 10,
+          "p": 0.8318119049072266
+        }
       }
     },
     "A6 vs A5": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 12,
-        "b_only": 6,
-        "p": 0.237885
+        "pairs": 48,
+        "a_only": 9,
+        "b_only": 4,
+        "p": 0.266845703125,
+        "all": {
+          "pairs": 96,
+          "a_only": 12,
+          "b_only": 6,
+          "p": 0.237884521484375
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 7,
-        "b_only": 5,
-        "p": 0.774414
+        "pairs": 48,
+        "a_only": 4,
+        "b_only": 2,
+        "p": 0.6875,
+        "all": {
+          "pairs": 96,
+          "a_only": 7,
+          "b_only": 5,
+          "p": 0.7744140625
+        }
       }
     },
     "A6-fixed vs A5": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 10,
-        "b_only": 4,
-        "p": 0.179565
+        "pairs": 48,
+        "a_only": 6,
+        "b_only": 3,
+        "p": 0.5078125,
+        "all": {
+          "pairs": 96,
+          "a_only": 10,
+          "b_only": 4,
+          "p": 0.1795654296875
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 6,
-        "b_only": 4,
-        "p": 0.753906
+        "pairs": 48,
+        "a_only": 3,
+        "b_only": 1,
+        "p": 0.625,
+        "all": {
+          "pairs": 96,
+          "a_only": 6,
+          "b_only": 4,
+          "p": 0.75390625
+        }
       }
     },
     "A6 vs A6-fixed": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 8,
-        "b_only": 8,
-        "p": 1.0
+        "pairs": 48,
+        "a_only": 5,
+        "b_only": 3,
+        "p": 0.7265625,
+        "all": {
+          "pairs": 96,
+          "a_only": 8,
+          "b_only": 8,
+          "p": 1.0
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 6,
-        "b_only": 6,
-        "p": 1.0
+        "pairs": 48,
+        "a_only": 2,
+        "b_only": 2,
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 6,
+          "b_only": 6,
+          "p": 1.0
+        }
       }
     }
   },

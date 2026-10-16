@@ -16,7 +16,9 @@ from math import comb, sqrt
 from pathlib import Path
 
 Z = 1.96
-PAIRS = [('A4', 'A0'), ('A4', 'A1'), ('A4', 'A3'), ('A4mG', 'A4m'), ('A4mG', 'A0'), ('A5', 'A4mG'), ('A5', 'A4'),
+PAIRS = [('A4', 'A0'), ('A4', 'A1'), ('A4', 'A3'),
+         ('A4r', 'A0'), ('A4r', 'A3'), ('A4r', 'A4'), ('A4g', 'A0'), ('A4g', 'A3'), ('A4g', 'A4'),
+         ('A4m', 'A0'), ('A4m', 'A3'), ('A4m', 'A4g'), ('A4mG', 'A4m'), ('A4mG', 'A0'), ('A5', 'A4mG'), ('A5', 'A4'),
          ('A6', 'A5'), ('A6-fixed', 'A5'), ('A6', 'A6-fixed')]
 RETENTION_FAMILY = 'subset_selection'   # F1 carries the old knapsack ability
 
@@ -106,8 +108,10 @@ def _rate(rows: list[dict]) -> dict:
     return {'k': k, 'n': n, 'rate': (k / n) if n else None, 'ci95': [round(lo, 4), round(hi, 4)]}
 
 
-def checkpoint_table(arm: dict) -> dict:
-    learned = {r['family'] for r in arm['stream'] if not r.get('negative')}
+def checkpoint_table(arm: dict, default_learned: set[str] = frozenset()) -> dict:
+    # A non-learning arm has no stream: use the families the learning arms saw, so its "in-family"
+    # covers the same tasks as theirs (before 2026-10-16 it silently covered all capability families).
+    learned = {r['family'] for r in arm['stream'] if not r.get('negative')} or set(default_learned)
     by_cp = defaultdict(list)
     for row in arm['checkpoints']:
         by_cp[row['checkpoint']].append(row)
@@ -124,15 +128,21 @@ def checkpoint_table(arm: dict) -> dict:
     return out
 
 
-def paired(a: dict, b: dict) -> dict:
+def paired(a: dict, b: dict, learned: set[str] = frozenset()) -> dict:
+    """McNemar per checkpoint on in-family tasks (primary); 'all' keeps every eval task (incl. held-out, negatives)."""
     out = {}
     index_a = {(r['checkpoint'], r['key']): r['score'] >= 1.0 for r in a['checkpoints']}
     index_b = {(r['checkpoint'], r['key']): r['score'] >= 1.0 for r in b['checkpoints']}
-    for cp in sorted({k[0] for k in index_a} & {k[0] for k in index_b}, key=_cp_order):
-        keys = [k for k in index_a if k[0] == cp and k in index_b]
+    family = {(r['checkpoint'], r['key']): (r['family'], bool(r.get('negative'))) for r in a['checkpoints']}
+
+    def test(keys):
         bb = sum(index_a[k] and not index_b[k] for k in keys)
         cc = sum(index_b[k] and not index_a[k] for k in keys)
-        out[cp] = {'pairs': len(keys), 'a_only': bb, 'b_only': cc, 'p': round(mcnemar_exact(bb, cc), 6)}
+        return {'pairs': len(keys), 'a_only': bb, 'b_only': cc, 'p': mcnemar_exact(bb, cc)}
+    for cp in sorted({k[0] for k in index_a} & {k[0] for k in index_b}, key=_cp_order):
+        keys = [k for k in index_a if k[0] == cp and k in index_b]
+        inside = [k for k in keys if not family[k][1] and (not learned or family[k][0] in learned)]
+        out[cp] = {**test(inside), 'all': test(keys)}
     return out
 
 
@@ -216,15 +226,16 @@ def build(arms: dict[str, list[Path]], cp0_from: str | None = None, constant: tu
             arm['checkpoints'] += [{**r, 'key': (pos, r['task_id']), 'shared_from': cp0_from}
                                    for pos in positions for r in shared]
     summary = {'arms': {}, 'paired': {}}
+    learned = {r['family'] for a in data.values() for r in a['stream'] if not r.get('negative')}
     for name, arm in data.items():
-        summary['arms'][name] = {'checkpoints': checkpoint_table(arm), 'stream': stream_blocks(arm),
+        summary['arms'][name] = {'checkpoints': checkpoint_table(arm, learned), 'stream': stream_blocks(arm),
                                  'help': help_quality(arm), 'clusters': cluster_quality(arm),
                                  'evolution': evolution_summary(arm),
                                  'teacher_calls': sum(bool(r.get('helped')) for r in arm['stream']),
                                  'help_declined': sum(bool(r.get('help_declined')) for r in arm['stream'])}
     for a, b in PAIRS:
         if a in data and b in data:
-            summary['paired'][f'{a} vs {b}'] = paired(data[a], data[b])
+            summary['paired'][f'{a} vs {b}'] = paired(data[a], data[b], learned)
     return summary
 
 
@@ -238,10 +249,13 @@ def render(summary: dict, plotted: bool) -> str:
             mis = f"{r['misuse']['k']}/{r['misuse']['n']}" if r['misuse']['n'] else '无数据'
             lines.append(f"| {name} | {cp} | {_fmt(r['in_family'])} | {_fmt(r['cross_family'])} | "
                          f"{_fmt(r['negative'])} | {mis} | {_fmt(r['retention_f1'])} |")
-    lines += ['', '## 配对比较（McNemar 精确）', '', '| 比较 | 检查点 | 配对数 | 仅前者过 | 仅后者过 | p |', '|---|---|---|---|---|---|']
+    lines += ['', '## 配对比较（McNemar 精确；族内题，括号内为全部评测题）', '',
+              '| 比较 | 检查点 | 配对数 | 仅前者过 | 仅后者过 | p |', '|---|---|---|---|---|---|']
     for pair, cps in summary['paired'].items():
         for cp, r in cps.items():
-            lines.append(f"| {pair} | {cp} | {r['pairs']} | {r['a_only']} | {r['b_only']} | {r['p']:.4g} |")
+            al = r['all']
+            lines.append(f"| {pair} | {cp} | {r['pairs']} ({al['pairs']}) | {r['a_only']} ({al['a_only']}) | "
+                         f"{r['b_only']} ({al['b_only']}) | {r['p']:.4g} ({al['p']:.4g}) |")
     lines += ['', '## 学习流（每 10 个任务）', '',
               '| 臂 | 任务 | 学生独立成功/尝试 | 教师调用 | 接受技能 | 云费 | 累计云费 |', '|---|---|---|---|---|---|---|']
     for name, arm in summary['arms'].items():

@@ -4,21 +4,21 @@
       "checkpoints": {
         "cp0": {
           "in_family": {
-            "k": 30,
-            "n": 72,
-            "rate": 0.4166666666666667,
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
             "ci95": [
-              0.3099,
-              0.5319
+              0.1824,
+              0.4318
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
             "ci95": [
-              0.0,
-              0.0
+              0.4671,
+              0.8203
             ]
           },
           "negative": {
@@ -46,21 +46,21 @@
         },
         "cp30": {
           "in_family": {
-            "k": 30,
-            "n": 72,
-            "rate": 0.4166666666666667,
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
             "ci95": [
-              0.3099,
-              0.5319
+              0.1824,
+              0.4318
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
             "ci95": [
-              0.0,
-              0.0
+              0.4671,
+              0.8203
             ]
           },
           "negative": {
@@ -88,21 +88,21 @@
         },
         "cp60": {
           "in_family": {
-            "k": 30,
-            "n": 72,
-            "rate": 0.4166666666666667,
+            "k": 14,
+            "n": 48,
+            "rate": 0.2916666666666667,
             "ci95": [
-              0.3099,
-              0.5319
+              0.1824,
+              0.4318
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 16,
+            "n": 24,
+            "rate": 0.6666666666666666,
             "ci95": [
-              0.0,
-              0.0
+              0.4671,
+              0.8203
             ]
           },
           "negative": {
@@ -137,27 +137,31 @@
         "asked_before_tasks": 0,
         "precision_before": null,
         "missed_asks": 0
-      }
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 0,
+      "help_declined": 0
     },
     "A1": {
       "checkpoints": {
         "cp0": {
           "in_family": {
-            "k": 22,
-            "n": 72,
-            "rate": 0.3055555555555556,
+            "k": 12,
+            "n": 48,
+            "rate": 0.25,
             "ci95": [
-              0.2113,
-              0.4195
+              0.1492,
+              0.3878
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 10,
+            "n": 24,
+            "rate": 0.4166666666666667,
             "ci95": [
-              0.0,
-              0.0
+              0.2447,
+              0.6117
             ]
           },
           "negative": {
@@ -185,21 +189,21 @@
         },
         "cp30": {
           "in_family": {
-            "k": 22,
-            "n": 72,
-            "rate": 0.3055555555555556,
+            "k": 12,
+            "n": 48,
+            "rate": 0.25,
             "ci95": [
-              0.2113,
-              0.4195
+              0.1492,
+              0.3878
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 10,
+            "n": 24,
+            "rate": 0.4166666666666667,
             "ci95": [
-              0.0,
-              0.0
+              0.2447,
+              0.6117
             ]
           },
           "negative": {
@@ -227,21 +231,21 @@
         },
         "cp60": {
           "in_family": {
-            "k": 22,
-            "n": 72,
-            "rate": 0.3055555555555556,
+            "k": 12,
+            "n": 48,
+            "rate": 0.25,
             "ci95": [
-              0.2113,
-              0.4195
+              0.1492,
+              0.3878
             ]
           },
           "cross_family": {
-            "k": 0,
-            "n": 0,
-            "rate": null,
+            "k": 10,
+            "n": 24,
+            "rate": 0.4166666666666667,
             "ci95": [
-              0.0,
-              0.0
+              0.2447,
+              0.6117
             ]
           },
           "negative": {
@@ -276,7 +280,11 @@
         "asked_before_tasks": 0,
         "precision_before": null,
         "missed_asks": 0
-      }
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 0,
+      "help_declined": 0
     },
     "A3": {
       "checkpoints": {
@@ -476,7 +484,11 @@
         "asked_before_tasks": 0,
         "precision_before": null,
         "missed_asks": 37
-      }
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 37,
+      "help_declined": 0
     },
     "A4": {
       "checkpoints": {
@@ -676,68 +688,126 @@
         "asked_before_tasks": 0,
         "precision_before": null,
         "missed_asks": 35
-      }
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 35,
+      "help_declined": 0
     }
   },
   "paired": {
     "A4 vs A0": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 25,
-        "b_only": 11,
-        "p": 0.028817
+        "pairs": 48,
+        "a_only": 22,
+        "b_only": 2,
+        "p": 3.5881996154785156e-05,
+        "all": {
+          "pairs": 96,
+          "a_only": 25,
+          "b_only": 11,
+          "p": 0.028816719655878842
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 27,
-        "b_only": 4,
-        "p": 3.4e-05
+        "pairs": 48,
+        "a_only": 25,
+        "b_only": 0,
+        "p": 5.960464477539063e-08,
+        "all": {
+          "pairs": 96,
+          "a_only": 27,
+          "b_only": 4,
+          "p": 3.39532271027565e-05
+        }
       }
     },
     "A4 vs A1": {
       "cp0": {
-        "pairs": 96,
-        "a_only": 16,
-        "b_only": 8,
-        "p": 0.15159
+        "pairs": 48,
+        "a_only": 6,
+        "b_only": 4,
+        "p": 0.75390625,
+        "all": {
+          "pairs": 96,
+          "a_only": 16,
+          "b_only": 8,
+          "p": 0.15158963203430176
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 31,
-        "b_only": 9,
-        "p": 0.00068
+        "pairs": 48,
+        "a_only": 24,
+        "b_only": 2,
+        "p": 1.049041748046875e-05,
+        "all": {
+          "pairs": 96,
+          "a_only": 31,
+          "b_only": 9,
+          "p": 0.0006795482549932785
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 37,
-        "b_only": 6,
-        "p": 2e-06
+        "pairs": 48,
+        "a_only": 27,
+        "b_only": 0,
+        "p": 1.4901161193847656e-08,
+        "all": {
+          "pairs": 96,
+          "a_only": 37,
+          "b_only": 6,
+          "p": 1.636124125070637e-06
+        }
       }
     },
     "A4 vs A3": {
       "cp0": {
-        "pairs": 96,
+        "pairs": 48,
         "a_only": 0,
         "b_only": 0,
-        "p": 1.0
+        "p": 1.0,
+        "all": {
+          "pairs": 96,
+          "a_only": 0,
+          "b_only": 0,
+          "p": 1.0
+        }
       },
       "cp30": {
-        "pairs": 96,
-        "a_only": 15,
-        "b_only": 17,
-        "p": 0.86005
+        "pairs": 48,
+        "a_only": 8,
+        "b_only": 12,
+        "p": 0.5034446716308594,
+        "all": {
+          "pairs": 96,
+          "a_only": 15,
+          "b_only": 17,
+          "p": 0.860050065908581
+        }
       },
       "cp60": {
-        "pairs": 96,
-        "a_only": 10,
-        "b_only": 11,
-        "p": 1.0
+        "pairs": 48,
+        "a_only": 5,
+        "b_only": 8,
+        "p": 0.5810546875,
+        "all": {
+          "pairs": 96,
+          "a_only": 10,
+          "b_only": 11,
+          "p": 1.0
+        }
       }
     }
   },

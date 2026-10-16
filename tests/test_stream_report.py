@@ -82,8 +82,9 @@ def test_report_from_fake_arms(tmp_path):
     assert a4cp['in_family']['k'] == 4 and a4cp['in_family']['n'] == 4
     assert a4cp['cross_family']['n'] == 1 and a4cp['misuse'] == {'k': 1, 'n': 1}
     pair = summary['paired']['A4 vs A0']['cp20']
-    assert (pair['a_only'], pair['b_only'], pair['pairs']) == (3, 1, 5)
-    assert pair['p'] == pytest.approx(R.mcnemar_exact(3, 1), abs=1e-6)
+    assert (pair['a_only'], pair['b_only'], pair['pairs']) == (3, 0, 4)          # in-family only
+    assert (pair['all']['a_only'], pair['all']['b_only'], pair['all']['pairs']) == (3, 1, 5)
+    assert pair['p'] == pytest.approx(R.mcnemar_exact(3, 0), abs=1e-6)
     blocks = summary['arms']['A4']['stream']
     assert blocks[0]['teacher_calls'] == 2 and blocks[0]['skills_accepted'] == 1
     assert blocks[0]['cloud_usd'] == pytest.approx(0.03) and blocks[1]['cumulative_cloud_usd'] == pytest.approx(0.03)
@@ -114,6 +115,6 @@ def test_constant_arms_and_shared_cp0_pair_across_checkpoints_and_seeds(tmp_path
         write(d, 'checkpoints.jsonl', [cp('cp60', 't1', 'log_aggregation', 1.0), cp('cp60', 't2', 'log_aggregation', 1.0)])
         write(d, 'stream.jsonl', [{'index': 0, 'task_id': 's', 'family': 'log_aggregation', 'student_score': 0.0}])
     s = R.build({'A0': [a0], 'A4': [a4s1, a4s2]}, cp0_from='A0', constant=('A0',))
-    assert s['paired']['A4 vs A0']['cp60'] == {'pairs': 4, 'a_only': 2, 'b_only': 0, 'p': 0.5}
+    assert {k: v for k, v in s['paired']['A4 vs A0']['cp60'].items() if k != 'all'} == {'pairs': 4, 'a_only': 2, 'b_only': 0, 'p': 0.5}
     assert s['paired']['A4 vs A0']['cp0']['pairs'] == 4 and s['paired']['A4 vs A0']['cp0']['a_only'] == 0
     assert s['arms']['A4']['checkpoints']['cp0']['in_family']['n'] == 4

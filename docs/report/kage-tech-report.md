@@ -1,9 +1,9 @@
 # Kage: A Small Local Agent That Learns From a Teacher, Knows What It Does Not Know, and Evolves in the Background
 
-*Draft technical report (W6-2), 2026-10-16.
-Every number comes from a `stream_report` summary: `artifacts/e1-report/summary.json` (E-1),
-`evidence/reports/<name>/summary.json` (e1, e1b, e1c, e2, e2b); raw runs are in `evidence/kaggle/` (see
-`evidence/README.md`). A0 replicate counts are recomputed from the `checkpoints.jsonl` files in `evidence/kaggle/v6` and `v11`.*
+*Technical report (W6-2), 2026-10-16.
+Every number comes from a `stream_report` summary in `evidence/reports/<name>/summary.json` (e1, e1b, e1c, e2, e2b),
+rebuilt from the raw runs in `evidence/kaggle/` by `scripts/experiments/rebuild_reports.py`. A0 replicate counts
+come from the `checkpoints.jsonl` files of Kaggle runs v6 and v11. Paired tests are on in-family tasks.*
 
 ## Abstract
 
@@ -12,14 +12,14 @@ programming tasks. When it fails, it asks a cloud teacher (DeepSeek) for a demon
 demonstration into something reusable: a parameterised, sandbox-verified skill, a stored trajectory, or both.
 On Kage-Stream v1, a frozen continual-learning benchmark of 4 learned task families, 2 held-out families and 3
 negative (read-only) families, learning from demonstrations raises the student's in-family pass rate from 14/48
-(29%) to 39–43/48 (81–90%) after a 60-task stream, against 31% for a budget-matched retry baseline, for about
-US$0.07–0.20 of teacher calls per arm and seed pair. Skill libraries were **not** better than plain trajectory
-memory (A4 vs A3 at cp60: 10 vs 11 discordant pairs, p = 1), and every learning variant **hurt** held-out
-families (16/24 → 6–14/24) through prompt interference. P3 addresses this with a relevance gate under which an
+(29%) to 39–45/48 (81–94%) after a 60-task stream, against 12/48 (25%) for a budget-matched retry baseline, for
+US$0.07–0.20 of teacher calls per arm over two seeds. Skill libraries were **not** better than plain trajectory
+memory (A4 vs A3 at cp60: 5 vs 8 discordant in-family pairs, p = 0.58), and without a relevance gate the learned
+knowledge distracted the student on held-out families. P3 addresses this with a relevance gate under which an
 unfamiliar task sees exactly the raw student's request, replaces benchmark family labels with agent-side
 clusters, adds competence-driven proactive help (A5) and background evolution (practice, skill repair, and an
 architect that evolves the skill-selection policy, A6). In E-2 the gate removed held-out interference (held-out
-scores back inside the raw student's run-to-run range, zero misuse) without losing in-family gains (A6-fixed
+scores back inside the raw student's run-to-run range, zero misuse) while in-family gains remained (A6-fixed
 45/48, A5 43/48). Proactive help almost never triggered on this stream, background practice added no
 significant gain, and the L2 architect, validated on ten noisy tasks, promoted policies that made things
 slightly worse (41/48), one of which undid the gate.
@@ -88,34 +88,43 @@ eval set (48 in-family + 24 held-out + 24 negative) were frozen before E-1 (sha2
 
 Arms run the same stream, evaluation set and student budgets. Checkpoints at 0, 30 and 60 stream tasks
 evaluate the current state with learning and help switched off. A0 (raw) and A1 (the same total local budget
-spent on retries) never change state and are evaluated once. Paired comparisons use the exact McNemar test over
-the 48 in-family tasks × 2 seeds. Hardware: Kaggle T4 ×2 (llama.cpp b29c606e2, CUDA), up to 4 jobs in parallel;
+spent on retries) never change state and are evaluated once; their single evaluation is reused for every
+checkpoint and seed (four later A0 replicates quantify how optimistic that is, §5.4). Paired comparisons use the
+exact McNemar test over the 24 in-family evaluation tasks × 2 seeds (48 pairs); the reports also list the test
+over all evaluation tasks. Hardware: Kaggle T4 ×2 (llama.cpp b29c606e2, CUDA), up to 4 jobs in parallel;
 infrastructure crashes are never scored (the job restarts and resumes from that task).
 
 ## 5. Results
+
+![In-family success rate at checkpoints 0/30/60, all arms](../../evidence/reports/e2b-report/curves.png)
+
+*In-family success rate (24 tasks × 2 seeds) by checkpoint; error bars are 95% Wilson intervals. A0/A1 are
+single evaluations drawn as constants.*
 
 ### 5.1 Learning from demonstrations works (E-1, H1 part 1)
 
 | Arm | cp0 | cp30 | cp60 (in-family, of 48) |
 |---|---|---|---|
 | A0 raw student | 14 | 14 | 14 |
-| A1 budget-matched retries | – | – | ≈31% (22/72 over F1–F6) |
+| A1 budget-matched retries | 12 | 12 | 12 |
 | A3 trajectory memory | 14 | 38 | **42** |
 | A4 skill library | 14 | 34 | **39** |
 
-A4 vs A0 at cp60: 27 vs 4 discordant pairs, p = 3.4e-5; A4 vs A1: 37 vs 6, p = 2e-6. The F1 knapsack regression
+A4 vs A0 at cp60: 25 vs 0 discordant pairs, p = 6e-8; A4 vs A1: 27 vs 0, p = 1.5e-8. The F1 knapsack regression
 recovered from 0/12 to 11/12 (A4) and 10/12 (A3). Negatives: 24/24, no skill misuse.
 
 ### 5.2 Skills are not better than trajectory memory (E-1, E-1b, E-1c; H1 part 2)
 
-A4 vs A3 at cp60: 10 vs 11, p = 1. Diagnosis found that the skill preview was alphabetical and hid the matching
+A4 vs A3 at cp60: 5 vs 8, p = 0.58. Diagnosis found that the skill preview was alphabetical and hid the matching
 skill as the library grew (all 8 in-family cp60 failures). Post-hoc fixes, reported as such:
 
 | Arm (post-hoc) | Change | cp60 in-family | vs A3 at cp60 |
 |---|---|---|---|
-| A4r | relevance-ranked preview | 38/48 | 9:16, p = 0.23 |
-| A4g | + verification on earlier same-family tasks, one generalisation rewrite | 40/48 | 8:16, p = 0.15 |
-| A4m | A4g + trajectory memory | 43/48 | 9:12, p = 0.66 |
+| A4r | relevance-ranked preview | 38/48 | 6:10, p = 0.45 |
+| A4g | + verification on earlier same-family tasks, one generalisation rewrite | 40/48 | 6:8, p = 0.79 |
+| A4m | A4g + trajectory memory | 43/48 | 6:5, p = 1 |
+
+Each of them is far above the raw student (vs A0 at cp60: A4r 25:1, A4g 29:3, A4m 30:1; all p < 1e-5).
 
 The fixes made the student actually use its skills, but pass rates did not follow: on this benchmark a
 verified skill and a verified demonstration carry about the same information for a 4B student.
@@ -136,8 +145,10 @@ demonstrations in its prompt. This motivated the relevance gate (§2).
 | A6-fixed = A5 + practice and maintenance | 45 | 12 | 24/24, 0 | 23 |
 | A6 = A6-fixed + L2 architect (E-2b) | 41 | 9 | 24/24, 0 | 21 |
 
-None of the paired differences among these arms is significant (A5 vs A4mG 11:5, p = 0.21; A6-fixed vs A5 6:4,
-p = 0.75; A6 vs A6-fixed 4:11, p = 0.12).
+None of the paired in-family differences among these arms is significant (A4mG vs A4m 2:9, p = 0.065; A5 vs
+A4mG 9:2, p = 0.065; A6-fixed vs A5 3:1, p = 0.62; A6 vs A6-fixed 1:5, p = 0.22). A4mG and A5 differ only in a
+help policy that fired once, yet differ by 7/48: each arm learns its own skills, and A4mG's log-aggregation
+skill was wrong in both seeds (10 of its 12 failures).
 
 **Run-to-run variance.** The student samples at temperature 0.7, so identical requests can pass or fail. Four
 same-model evaluations of the raw student (A0) gave 7, 10, 13 and 7 of 24 in-family tasks and 8, 5, 8 and 6 of 12
@@ -176,9 +187,11 @@ single-run validation on ten tasks selects noise.
 
 ## 7. Cost
 
-Total teacher budget US$2.00 (global ledger, reserve-before-call). Cumulative cloud spend per arm over two
-seeds (E-1c summary): A3 $0.071, A4 $0.192, A4r $0.087, A4g $0.178, A4m $0.203. Student execution, practice and
-evaluation are local and free.
+Total teacher budget US$2.00 (global ledger, reserve-before-call); US$1.12 was spent over all experiments,
+including void and repeated runs. Cloud spend per arm over two seeds (e2b summary): A3 $0.071, A4 $0.192,
+A4m $0.203, A4mG $0.193, A5 $0.163, A6-fixed $0.186, A6 $0.090 (its stream reused more cached proposals), with
+21–37 teacher calls per arm. Teacher demonstrations are cached per task and shared, so most arm cost is skill
+proposals. Student execution, practice and evaluation run locally (Kaggle T4) at no API cost.
 
 ## 8. Related work
 
