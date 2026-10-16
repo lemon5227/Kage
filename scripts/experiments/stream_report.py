@@ -16,7 +16,8 @@ from math import comb, sqrt
 from pathlib import Path
 
 Z = 1.96
-PAIRS = [('A4', 'A0'), ('A4', 'A1'), ('A4', 'A3'), ('A5', 'A4'), ('A6', 'A5'), ('A6', 'A6-fixed')]
+PAIRS = [('A4', 'A0'), ('A4', 'A1'), ('A4', 'A3'), ('A4mG', 'A4m'), ('A4mG', 'A0'), ('A5', 'A4mG'), ('A5', 'A4'),
+         ('A6', 'A5'), ('A6-fixed', 'A5'), ('A6', 'A6-fixed')]
 RETENTION_FAMILY = 'subset_selection'   # F1 carries the old knapsack ability
 
 
@@ -43,7 +44,7 @@ def _jsonl(path: Path) -> list[dict]:
 
 
 def load_arm(dirs: list[Path]) -> dict:
-    checkpoints, stream, spend, help_log = [], [], [], []
+    checkpoints, stream, spend, help_log, evolution = [], [], [], [], []
     for pos, root in enumerate(dirs):
         for row in _jsonl(root / 'checkpoints.jsonl'):
             checkpoints.append({**row, 'key': (pos, row['task_id'])})
@@ -51,10 +52,48 @@ def load_arm(dirs: list[Path]) -> dict:
             stream.append({**row, 'seed_pos': pos})
         for row in _jsonl(root / 'spend.jsonl'):
             spend.append({**row, 'seed_pos': pos})
+        for row in _jsonl(root / 'evolution.jsonl'):
+            evolution.append({**row, 'seed_pos': pos})
         comp = root / 'competence.json'
         if comp.exists():
             help_log += [{**h, 'seed_pos': pos} for h in json.loads(comp.read_text()).get('help_log', [])]
-    return {'checkpoints': checkpoints, 'stream': stream, 'spend': spend, 'help_log': help_log}
+    return {'checkpoints': checkpoints, 'stream': stream, 'spend': spend, 'help_log': help_log, 'evolution': evolution}
+
+
+def cluster_quality(arm: dict) -> dict | None:
+    """Agent-side clusters vs benchmark families (P3 automatic grouping accuracy)."""
+    rows = [r for r in arm['stream'] if 'cluster' in r]
+    if not rows:
+        return None
+    by_cluster = defaultdict(list)
+    for r in rows:
+        by_cluster[(r['seed_pos'], r['cluster'])].append(r['family'])
+    majority = sum(max(fams.count(f) for f in set(fams)) for fams in by_cluster.values())
+    families = {(r['seed_pos'], r['family']) for r in rows}
+    return {'tasks': len(rows), 'clusters': len(by_cluster), 'families': len(families),
+            'purity': majority / len(rows),
+            'mixed_clusters': sum(len(set(f)) > 1 for f in by_cluster.values())}
+
+
+def evolution_summary(arm: dict) -> dict | None:
+    if not arm['evolution']:
+        return None
+    out = {'rounds': len(arm['evolution']), 'practice_tasks': 0, 'practice_passed': 0, 'repairs_tried': 0,
+           'repairs_accepted': 0, 'retired': 0, 'architect_proposals': 0, 'architect_promoted': 0}
+    for r in arm['evolution']:
+        p = r.get('practice') or {}
+        out['practice_tasks'] += p.get('tasks', 0)
+        out['practice_passed'] += p.get('passed', 0)
+        m = r.get('maintenance') or {}
+        if m.get('repair'):
+            out['repairs_tried'] += 1
+            out['repairs_accepted'] += bool(m['repair'].get('accepted'))
+        out['retired'] += len(m.get('retired') or [])
+        a = r.get('architect')
+        if a and a.get('status') == 'proposed':
+            out['architect_proposals'] += 1
+            out['architect_promoted'] += bool(a.get('promoted'))
+    return out
 
 
 def _cp_order(label: str) -> int:
@@ -133,7 +172,7 @@ def help_quality(arm: dict) -> dict:
     last_student = {}
     precise = asked_before = missed = 0
     for row in rows:
-        fam = (row['seed_pos'], row['family'])
+        fam = (row['seed_pos'], row.get('cluster', row['family']))      # the agent's own grouping when it has one
         asked = 'student_score' not in row and bool((row.get('help_decision') or {}).get('ask'))
         if asked:
             asked_before += 1
@@ -179,7 +218,10 @@ def build(arms: dict[str, list[Path]], cp0_from: str | None = None, constant: tu
     summary = {'arms': {}, 'paired': {}}
     for name, arm in data.items():
         summary['arms'][name] = {'checkpoints': checkpoint_table(arm), 'stream': stream_blocks(arm),
-                                 'help': help_quality(arm)}
+                                 'help': help_quality(arm), 'clusters': cluster_quality(arm),
+                                 'evolution': evolution_summary(arm),
+                                 'teacher_calls': sum(bool(r.get('helped')) for r in arm['stream']),
+                                 'help_declined': sum(bool(r.get('help_declined')) for r in arm['stream'])}
     for a, b in PAIRS:
         if a in data and b in data:
             summary['paired'][f'{a} vs {b}'] = paired(data[a], data[b])
@@ -212,6 +254,22 @@ def render(summary: dict, plotted: bool) -> str:
         prec = '无数据' if h['precision_before'] is None else f"{h['precision_before']:.0%}"
         lines.append(f"| {name} | {h['before_attempt']} | {h['student_requested']} | {h['after_failure']} | {prec} | {h['missed_asks']} |")
     lines += ['', '精准率（近似）= 事前求教的任务中，同族上一次学生独立尝试失败的比例；漏问 = 未求教、学生自己也没请求帮助、且失败的任务数。']
+    clustered = {n: a for n, a in summary['arms'].items() if a.get('clusters')}
+    if clustered:
+        lines += ['', '## 自动归族（智能体自己的聚类 vs 基准族标签）', '',
+                  '| 臂 | 流任务 | 聚类数 | 真实族数 | 纯度 | 混族聚类 | 教师调用 | 拒绝求教 |', '|---|---|---|---|---|---|---|---|']
+        for name, arm in clustered.items():
+            c = arm['clusters']
+            lines.append(f"| {name} | {c['tasks']} | {c['clusters']} | {c['families']} | {c['purity']:.0%} | "
+                         f"{c['mixed_clusters']} | {arm['teacher_calls']} | {arm['help_declined']} |")
+    evolving = {n: a for n, a in summary['arms'].items() if a.get('evolution')}
+    if evolving:
+        lines += ['', '## 后台演化', '', '| 臂 | 轮数 | 自练通过 | 修复接受/尝试 | 停用 | 架构师晋级/提案 |', '|---|---|---|---|---|---|']
+        for name, arm in evolving.items():
+            e = arm['evolution']
+            lines.append(f"| {name} | {e['rounds']} | {e['practice_passed']}/{e['practice_tasks']} | "
+                         f"{e['repairs_accepted']}/{e['repairs_tried']} | {e['retired']} | "
+                         f"{e['architect_promoted']}/{e['architect_proposals']} |")
     if not plotted:
         lines += ['', '（未生成 curves.png：当前环境没有 matplotlib。）']
     return '\n'.join(lines) + '\n'

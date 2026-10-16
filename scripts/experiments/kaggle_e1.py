@@ -40,6 +40,7 @@ LLAMA_COMMIT = 'b29c606e2'              # = Homebrew llama.cpp 0.4.1 build 10964
 TEACHER = {'provider_type': 'openai', 'base_url': 'https://api.deepseek.com', 'model_name': 'deepseek-flash',
            'timeout_sec': 120}
 E1_CAP_USD = 0.80                       # E-1 allocation after the user raised the total to US$2 (2026-10-15)
+E2_CAP_USD = 0.50                       # E-2 allocation (home ledger had US$1.19 left after E-1c)
 LEDGER_HEADROOM_USD = 0.10              # ledger cap above the experiment cap: reservations never starve the stop
 DEADLINE_S = 11 * 3600                  # Kaggle stops sessions at 12 h; leave time to package
 PY = sys.executable
@@ -47,6 +48,7 @@ PIP = ['jsonschema', 'numpy', 'jieba', 'rank-bm25', 'defusedxml', 'lxml', 'openp
        'tqdm', 'huggingface_hub', 'fastapi', 'uvicorn', 'websockets', 'edge-tts', 'pygame', 'psutil']
 
 START = time.time()
+PHASE_CAP = {'usd': E1_CAP_USD}         # set per phase in main(); E-2 uses its own allocation
 
 
 def log(msg: str, **fields) -> None:
@@ -176,7 +178,7 @@ def write_teacher_config() -> None:
 def job_env(info: dict, gpu: int) -> dict:
     return {**os.environ, 'KAGE_MODEL_PATH': info['model'], 'KAGE_LLAMA_SERVER': info['server'],
             'CUDA_VISIBLE_DEVICES': str(gpu), 'KAGE_TEACHER_LEDGER': str(OUT / 'teacher-ledger.sqlite'),
-            'KAGE_TEACHER_CAP_USD': str(E1_CAP_USD + LEDGER_HEADROOM_USD)}
+            'KAGE_TEACHER_CAP_USD': str(PHASE_CAP['usd'] + LEDGER_HEADROOM_USD)}
 
 
 MAX_PARALLEL = 4            # v5: six concurrent servers -> three were killed mid-run (likely memory)
@@ -333,6 +335,27 @@ def e1c_jobs() -> list[tuple[str, list[str]]]:
     return jobs
 
 
+E2_ARMS = ('A4mG', 'A5', 'A6', 'A6-fixed')
+
+
+def e2_jobs() -> list[tuple[str, list[str]]]:
+    """E-2 (P3): relevance gate + agent-side clusters (A4mG), gated proactive help (A5), background
+    evolution with L2 skill-selection architect (A6) and its fixed-rule control (A6-fixed).
+    Same frozen stream/eval/student budgets as E-1; cp0 is A0's (the empty gate is A0's prompt)."""
+    script, m = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_v1'
+    common = ['--eval-manifest', str(m / 'eval.json'), '--skill-runner', 'process',
+              '--teacher-cache', str(OUT / 'teacher-cache'), '--experiment-cap-usd', str(E2_CAP_USD)]
+    jobs, port = [], 18201
+    for seed in (1, 2):
+        for arm in E2_ARMS:
+            jobs.append((f'{arm}-s{seed}', [script, '--arm', arm, '--root', str(OUT / f'seed{seed}' / arm),
+                                            '--stream-manifest', str(m / f'stream-seed{seed}.json'),
+                                            '--checkpoints', '30,60', '--port', str(port), *common]))
+            port += 1
+    # The evolving arms take longest: start them first so the pool's tail is short.
+    return sorted(jobs, key=lambda job: not job[0].startswith('A6'))
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -346,7 +369,7 @@ def package() -> None:
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'package'], default='all')
+    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -355,7 +378,9 @@ def main(argv=None):
     if control.exists() and control.read_text().strip():
         args.phase, *only = control.read_text().split()      # e.g. "rerun A3-s1 A3-s2"
         log('phase from repository control file', phase=args.phase, only=only)
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c') else json.loads((OUT / 'host.json').read_text())
+    if args.phase == 'e2':
+        PHASE_CAP['usd'] = E2_CAP_USD
+    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'smoke':
         # One local task end to end (server start, CUDA inference, sandboxed checker) + teacher config present.
         run_jobs(info, [('smoke', ['scripts/experiments/stream_calibrate.py', '--root', str(OUT / 'smoke'),
@@ -374,13 +399,13 @@ def main(argv=None):
             raise SystemExit('rerun needs the previous run output attached as input')
         seed_from_previous(prev, ['seed1/A4', 'seed2/A4'])
         run_jobs(info, rerun_jobs(only), 'rerun')
-    if args.phase in ('e1b', 'e1c'):
+    if args.phase in ('e1b', 'e1c', 'e2'):
         prev = previous_output()
         if prev is None:
             raise SystemExit(f'{args.phase} needs the previous run output attached as input (teacher cache)')
         seed_from_previous(prev, [])
-        run_jobs(info, e1b_jobs() if args.phase == 'e1b' else e1c_jobs(), args.phase)
-    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'e1c', 'package'):
+        run_jobs(info, {'e1b': e1b_jobs, 'e1c': e1c_jobs, 'e2': e2_jobs}[args.phase](), args.phase)
+    if args.phase in ('all', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'package'):
         package()
 
 

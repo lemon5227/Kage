@@ -26,6 +26,8 @@ class FamilyStats:
     failures: int = 0
     helped: int = 0          # tasks where a teacher/user had to step in
     seen: int = 0            # tasks observed (including help-only ones)
+    help_learned: int = 0    # help events that left something learned (skill accepted / demo stored)
+    help_wasted: int = 0     # help events that taught nothing (failed or read-only demonstration)
 
     def posterior(self, prior=(1.0, 1.0)):
         return prior[0] + self.successes, prior[1] + self.failures
@@ -116,7 +118,19 @@ class CompetenceModel:
                               'when': when, 'p_success': round(self.family(family).p_success, 4),
                               'reason': reason[:300]})
 
+    def record_help_outcome(self, family: str, learned: bool) -> None:
+        stats = self.family(family)
+        if learned:
+            stats.help_learned += 1
+        else:
+            stats.help_wasted += 1
+
     # ---------- decisions ----------
+    def help_useful(self, family: str, *, max_wasted: int = 2) -> bool:
+        """Is asking here still worth it? No once `max_wasted` helps taught nothing and none taught anything."""
+        stats = self.family(family)
+        return not (stats.help_wasted >= max_wasted and stats.help_learned == 0)
+
     def should_request_help(self, family: str, *, value: float = 1.0, help_cost: float = 0.25,
                             min_observations: int = 2) -> dict:
         """Ask before attempting when expected loss of a failed attempt exceeds the help cost.

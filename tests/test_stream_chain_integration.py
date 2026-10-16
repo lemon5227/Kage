@@ -182,3 +182,120 @@ def test_relevant_preview_shows_the_matching_skill_when_the_library_grows(tmp_pa
         run(library, make_task('log_aggregation', 1000), f'run-{mode}')
         seen[mode] = 'log_line_counter' in log.read_text().split('skill preview')[1]
     assert seen == {'preview': False, 'preview_relevant': True}
+
+
+def test_gated_real_chain_learns_and_keeps_unrelated_prompts_identical_to_a0(tmp_path):
+    from core.evolution.relevance import RELEVANCE_MIN, InstructionSpace, SkillSources
+    from core.evolution.stream import MemoryStore
+    budget = lambda name: BudgetTracker(BudgetConfig(max_api_calls=10_000), tmp_path / name)
+    journal = Journal(tmp_path / 'journal.sqlite')
+    runner = ProcessSkillRunner(timeout_s=10)
+    sources = SkillSources(tmp_path / 'A4mG' / 'skill_sources.json', InstructionSpace(tmp_path / 'A4mG' / 'space.json'))
+    memory = MemoryStore(tmp_path / 'A4mG' / 'memory.jsonl', min_jaccard=RELEVANCE_MIN, similarity=sources.space.similarity)
+    student = chain_runner(journal, budget('s.sqlite'), tmp_path / 'ws', lambda run_id: Student(), skill_runner=runner,
+                           memory=memory, mode='memory', gate=sources, skill_preview='preview_relevant')
+    teacher_run = chain_runner(Journal(tmp_path / 't.sqlite'), budget('t-b.sqlite'), tmp_path / 'tws',
+                               lambda run_id: Teacher(), cloud=True)
+    boot = tmp_path / 'boot'
+    boot.mkdir()
+    (boot / 'manifest.json').write_text('{"version":1,"skills":[]}')
+    bootstrap = Candidate('no-skills', (), 'skill', str(boot), bundle_digest(boot))
+    teacher = TeacherCache(tmp_path / 'cache', lambda task: teacher_run(bootstrap, task, 'teacher-' + task['task_id']))
+
+    def propose(parent, task, demo, hint=None):
+        trace = [json.loads(l) for l in open(demo.trace_path)]
+        return Mutator(Optimizer(), budget('o.sqlite'), journal, tmp_path / 'mut' / task['task_id']).propose(
+            parent, {'task_id': task['task_id'], 'instruction': task['instruction'], 'failure_reason': 'x', 'trace': trace})
+
+    learner = StreamLearner(tmp_path / 'A4mG', 'A4mG', bootstrap=bootstrap, run_student=student, teacher=teacher,
+                            propose_skill=propose, memory=memory, skill_sources=sources)
+    first = learner.step(make_task('log_aggregation', 1000))
+    assert first['learning']['accepted'] is True and first['cluster'] == 'c0'
+    assert learner.step(make_task('log_aggregation', 1001))['solved_by_student']
+    # Unrelated task: the gated student's prompt is byte-identical to the raw student's.
+    class Recorder(ModelProvider):            # runs in the chain's worker: record through files
+        def __init__(self, path):
+            self.path = path
+
+        def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+            if not self.path.exists():
+                self.path.write_text(json.dumps(messages, sort_keys=True))   # whole request, memory included
+            return ModelResponse(text='Done.', usage={'input_tokens': 1, 'output_tokens': 1})
+    other = make_task('text_normalize', 9000)
+    gated = chain_runner(journal, budget('g.sqlite'), tmp_path / 'wsg', lambda run_id: Recorder(tmp_path / 'gated.txt'),
+                         skill_runner=runner, memory=memory, mode='memory', gate=sources, skill_preview='preview_relevant')
+    plain = chain_runner(Journal(tmp_path / 'a0.sqlite'), budget('a0.sqlite'), tmp_path / 'ws0',
+                         lambda run_id: Recorder(tmp_path / 'a0.txt'), skill_runner=runner)
+    gated(learner.library, other, 'gated-other')
+    plain(bootstrap, other, 'a0-other')
+    assert (tmp_path / 'gated.txt').read_text() == (tmp_path / 'a0.txt').read_text()
+    assert 'count_log_lines' not in (tmp_path / 'gated.txt').read_text()
+    # A related task still sees the learned skill.
+    (tmp_path / 'gated.txt').unlink()
+    gated(learner.library, make_task('log_aggregation', 9001), 'gated-related')
+    assert 'count_log_lines' in (tmp_path / 'gated.txt').read_text()
+
+
+def test_a6_evolution_round_over_real_chain(tmp_path):
+    from core.evolution.architect import Architect
+    from core.evolution.l2_selection import selection_step
+    from core.evolution.practice import evolve_round
+    from core.evolution.relevance import RELEVANCE_MIN, InstructionSpace, SkillSources
+    from core.evolution.stream import MemoryStore
+    budget = lambda name: BudgetTracker(BudgetConfig(max_api_calls=10_000), tmp_path / name)
+    journal = Journal(tmp_path / 'journal.sqlite')
+    runner = ProcessSkillRunner(timeout_s=10)
+    root = tmp_path / 'A6'
+    sources = SkillSources(root / 'skill_sources.json', InstructionSpace(root / 'space.json'), runner=runner)
+    memory = MemoryStore(root / 'memory.jsonl', min_jaccard=RELEVANCE_MIN, similarity=sources.space.similarity)
+    student = chain_runner(journal, budget('s.sqlite'), tmp_path / 'ws', lambda run_id: Student(), skill_runner=runner,
+                           memory=memory, mode='memory', gate=sources, skill_preview='preview_relevant')
+    teacher_run = chain_runner(Journal(tmp_path / 't.sqlite'), budget('t-b.sqlite'), tmp_path / 'tws',
+                               lambda run_id: Teacher(), cloud=True)
+    boot = tmp_path / 'boot'
+    boot.mkdir()
+    (boot / 'manifest.json').write_text('{"version":1,"skills":[]}')
+    bootstrap = Candidate('no-skills', (), 'skill', str(boot), bundle_digest(boot))
+    teacher = TeacherCache(tmp_path / 'cache', lambda task: teacher_run(bootstrap, task, 'teacher-' + task['task_id']))
+
+    def propose(parent, task, demo, hint=None):
+        trace = [json.loads(l) for l in open(demo.trace_path)]
+        return Mutator(Optimizer(), budget('o.sqlite'), journal, tmp_path / 'mut' / task['task_id']).propose(
+            parent, {'task_id': task['task_id'], 'instruction': task['instruction'], 'failure_reason': 'x', 'trace': trace})
+
+    class ArchitectModel(ModelProvider):
+        def __init__(self):
+            self.turn = 0
+
+        def generate(self, messages, tools=None, max_tokens=200, temperature=0.7):
+            self.turn += 1
+            reply = ({'tool': 'grep', 'args': {'pattern': 'similarity', 'path': '.'}} if self.turn == 1 else
+                     {'final': {'target': 'skill_selection', 'hypothesis': 'never show skills',
+                                'code': 'def select(instruction, skills):\n    return []\n'}})
+            return ModelResponse(text=json.dumps(reply), usage={'input_tokens': 500, 'output_tokens': 50})
+
+    def architect_step(lrn, *, label):
+        return selection_step(lrn, label=label, round_index=0, architect=Architect(ArchitectModel(), budget('a.sqlite')))
+
+    def evolver(lrn, *, label, round_index, architect):
+        return evolve_round(lrn, label=label, round_index=round_index, architect=architect, practice_tasks=2,
+                            propose_repair=None, architect_step=architect_step)
+    learner = StreamLearner(root, 'A6', bootstrap=bootstrap, run_student=student, teacher=teacher,
+                            propose_skill=propose, memory=memory, skill_sources=sources, evolver=evolver)
+    learner.cfg = {**learner.cfg, 'evolve': {'every': 2, 'practice': 2, 'architect_every': 2}}
+    # Document frequencies of a stream already under way (with N≈4 instructions TF-IDF is immature;
+    # on the real stream order no same-family task falls below the gate, 2026-10-16 replay).
+    from core.evolution.stream_tasks import FAMILIES
+    for family in FAMILIES:
+        for seed in range(1100, 1104):
+            sources.space.observe(make_task(family, seed)['instruction'])
+    for i in range(2):
+        learner.step(make_task('log_aggregation', 1000 + i))
+    summary = learner.maybe_evolve()
+    assert summary['practice']['tasks'] == 2 and summary['practice']['passed'] == 2
+    arch = summary['architect']
+    assert arch['status'] == 'proposed' and arch['validation_tasks'] == 1 and arch['parent_passed'] == 1
+    assert arch['promoted'] is False and arch['regressed']          # hiding the skill breaks the log task
+    assert sources.policy is None                                   # parent rule stays active
+    assert json.loads((root / 'evolution.jsonl').read_text())['label'] == 'e2'
+    assert learner.maybe_evolve() is None

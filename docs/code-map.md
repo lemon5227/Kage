@@ -49,7 +49,9 @@ scheduler.py（T09，空闲触发，默认关）─→ 子进程 kage_evolve.py 
 | `budget.py` | 274 | 预留/结算式预算 | 核心 |
 | `teacher_budget.py` | 36 | 全局 $1 教师账本（`~/.config/kage/teachers/ledger.sqlite`） | 核心；所有云调用必须走它 |
 | `journal.py` | 273 | SQLite 实验日志 + T14 谱系 | 核心；W4-4 数据源 |
-| `stream.py` | 220 | 学习流 A0/A4/A5、教师缓存、`chain_runner` | **主线** |
+| `stream.py` | 560 | 学习流各臂（A0…A6）、教师缓存、`chain_runner`（含相关性门控） | **主线** |
+| `relevance.py` | 220 | TF-IDF 相关性、自动归族、技能来源与 L2 选用策略 | **主线** |
+| `l2_selection.py` | 150 | A6 架构师演化技能选用策略（验证晋级） | **主线** |
 | `stream_tasks.py` | 157 | 任务族生成器（F3 + 只读负例），清单哈希 | **主线**；W1-2…7 在此扩充 |
 | `competence.py` | 167 | 能力自评：求教决策、练习目标、技能状态 | **主线** |
 | `promotion.py` | 132 | 父子配对比较、原子激活 | E1/G1 用；W4 复用 |

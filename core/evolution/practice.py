@@ -28,10 +28,16 @@ from core.evolution.stream_tasks import NEGATIVE_FAMILIES, SPLITS, make_task, sp
 
 class PracticeRound:
     def __init__(self, root: Path, competence: CompetenceModel, *,
-                 run_student: Callable[[Candidate, dict, str], RunResult]):
+                 run_student: Callable[[Candidate, dict, str], RunResult],
+                 key_of: Callable[[dict], str] | None = None,
+                 generator_of: Callable[[str], str | None] | None = None):
+        # key_of/generator_of: competence keys are the agent's clusters in P3 arms; the environment
+        # still supplies fresh variants through the generator that produced the cluster's tasks.
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self.competence, self.run_student = competence, run_student
+        self.key_of = key_of or (lambda task: task['family'])
+        self.generator_of = generator_of or (lambda key: key)
         self.state_path = self.root / 'practice_state.json'
 
     def _next_seeds(self, family: str, count: int) -> list[int]:
@@ -49,8 +55,9 @@ class PracticeRound:
             out.write(json.dumps(row, ensure_ascii=False, default=str) + '\n')
 
     def run(self, library: Candidate, budget_tasks: int, *, k: int = 2, label: str = '') -> dict:
-        targets = [t for t in self.competence.practice_targets(k=k + len(NEGATIVE_FAMILIES))
-                   if t['family'] not in NEGATIVE_FAMILIES][:k]
+        ranked = self.competence.practice_targets(k=len(self.competence.families))
+        targets = [t | {'generator': self.generator_of(t['family'])} for t in ranked]
+        targets = [t for t in targets if t['generator'] and t['generator'] not in NEGATIVE_FAMILIES][:k]
         summary = {'label': label, 'created': time.time(), 'library': library.digest[:16],
                    'targets': targets, 'families': {}, 'tasks': 0, 'passed': 0}
         if not targets or budget_tasks <= 0:
@@ -58,17 +65,19 @@ class PracticeRound:
             return summary
         shares = [budget_tasks // len(targets) + (i < budget_tasks % len(targets)) for i in range(len(targets))]
         for target, share in zip(targets, shares):
-            family = target['family']
-            fam = summary['families'].setdefault(family, {'tasks': 0, 'passed': 0, 'p_before': target['p_success']})
+            key, family = target['family'], target['generator']
+            fam = summary['families'].setdefault(key, {'tasks': 0, 'passed': 0, 'p_before': target['p_success'],
+                                                       'generator': family})
             for seed in self._next_seeds(family, share):
                 task = make_task(family, seed)
+                key = self.key_of(task)
                 result = self.run_student(library, task, f"practice-{label}-{task['task_id']}")
                 calls = skill_calls(result)
                 solved = result.score >= 1.0
                 for call in calls:
                     if call.get('skill_id'):
                         self.competence.record_skill(call['skill_id'], call['success'] and solved)
-                self.competence.record_task(family, solved)
+                self.competence.record_task(key, solved)
                 fam['tasks'] += 1
                 fam['passed'] += int(solved)
                 for skill_id in sorted({c['skill_id'] for c in calls if c.get('skill_id') and c['success']}):
@@ -76,11 +85,11 @@ class PracticeRound:
                         self._log('skill_successes.jsonl', {'skill_id': skill_id, 'family': family, 'seed': seed})
                 if not solved:
                     self._log('repair_queue.jsonl', {
-                        'task_id': task['task_id'], 'family': family, 'seed': seed, 'label': label,
+                        'task_id': task['task_id'], 'family': family, 'cluster': key, 'seed': seed, 'label': label,
                         'skill_ids_called': sorted({c['skill_id'] for c in calls if c.get('skill_id')}),
                         'failure': {'status': result.status, 'score': result.score,
                                     'trace_path': result.trace_path}})
-            fam['p_after'] = round(self.competence.family(family).p_success, 4)
+            fam['p_after'] = round(self.competence.family(target['family']).p_success, 4)
             summary['tasks'] += fam['tasks']
             summary['passed'] += fam['passed']
         self._log('practice_rounds.jsonl', summary)
@@ -109,7 +118,8 @@ def _trace(path) -> list[dict]:
 
 def maintain_library(root: Path, library: Candidate, competence: CompetenceModel, *,
                      propose: Callable[[Candidate, dict], Candidate] | None,
-                     run_student: Callable[[Candidate, dict, str], RunResult] | None) -> tuple[Candidate, dict]:
+                     run_student: Callable[[Candidate, dict, str], RunResult] | None,
+                     adopt: Callable[[Candidate, list[dict]], None] | None = None) -> tuple[Candidate, dict]:
     """One maintenance pass: repair at most one skill, retire weak/idle ones, record merge candidates.
 
     A repaired version replaces the old one only if it passes the queued failure tasks AND up to two
@@ -154,6 +164,8 @@ def maintain_library(root: Path, library: Candidate, competence: CompetenceModel
         summary['repair'] = {'skill_id': target, 'accepted': accepted, 'checked': len(checks)}
         if accepted:
             log('repair', skill_id=target, parent=library.candidate_id, child=child.candidate_id, checked=len(checks))
+            if adopt is not None:
+                adopt(child, checks)          # P3 gate: the repaired skill is now verified on these too
             library = child
         else:
             log('repair_rejected', skill_id=target, parent=library.candidate_id, checked=len(checks), error=error)
@@ -199,3 +211,31 @@ def maintain_library(root: Path, library: Candidate, competence: CompetenceModel
         log('merge_candidates', pairs=summary['merge_candidates'])
     state_path.write_text(json.dumps(state))
     return library, summary
+
+
+# ---------------------------------------------------------------- A6 background evolution round
+def evolve_round(learner, *, label: str, round_index: int, architect: bool, practice_tasks: int,
+                 propose_repair, architect_step=None) -> dict:
+    """One idle-time round for an evolving StreamLearner (W4-5): practise → maintain → (architect).
+
+    Practice and maintenance checks run locally; only a repair proposal and the architect use the
+    teacher ledger. The learner's library and competence are updated in place.
+    """
+    from core.evolution.stream import _checked
+
+    def run(candidate, task, run_id):              # same restart/crash rules as stream tasks
+        return _checked(learner.run_student(candidate, task, run_id + learner.run_suffix), 'evolution')
+    key_of = (lambda task: learner.clusters.assign(task['instruction'], generator=task['family'])) \
+        if learner.clusters is not None else None
+    generator_of = learner.clusters.generator_of if learner.clusters is not None else None
+    practice = PracticeRound(learner.root / 'practice', learner.competence, run_student=run,
+                             key_of=key_of, generator_of=generator_of)
+    summary = {'round': round_index, 'practice': practice.run(learner.library, practice_tasks, label=label)}
+    library, maintenance = maintain_library(learner.root / 'practice', learner.library, learner.competence,
+                                            propose=propose_repair, run_student=run,
+                                            adopt=learner._adopt)
+    learner.library = library
+    summary['maintenance'] = maintenance
+    if architect and architect_step is not None:
+        summary['architect'] = architect_step(learner, label=label)
+    return summary

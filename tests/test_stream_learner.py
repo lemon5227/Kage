@@ -72,7 +72,7 @@ def test_proactive_arm_asks_before_attempt_when_competence_low(tmp_path):
     world = World(tmp_path)
     def bad_propose(parent, task, demo):          # learning keeps failing -> competence stays low
         raise ValueError('invalid candidate')
-    learner = StreamLearner(tmp_path / 'A5', 'A5', bootstrap=EMPTY, run_student=world.student,
+    learner = StreamLearner(tmp_path / 'A5', 'A5-e0', bootstrap=EMPTY, run_student=world.student,
                             teacher=TeacherCache(tmp_path / 'cache5', world.solve), propose_skill=bad_propose)
     rows = [learner.step(t) for t in stream_tasks(4)]
     assert 'student_score' in rows[0] and 'student_score' in rows[1]     # explores first
@@ -83,7 +83,7 @@ def test_proactive_arm_asks_before_attempt_when_competence_low(tmp_path):
 def test_teacher_cache_shared_and_replay_guard(tmp_path):
     world = World(tmp_path)
     cache = TeacherCache(tmp_path / 'shared', world.solve)
-    for arm in ('A4', 'A5'):
+    for arm in ('A4', 'A5-e0'):
         learner = StreamLearner(tmp_path / arm, arm, bootstrap=EMPTY, run_student=world.student,
                                 teacher=cache, propose_skill=world.propose)
         learner.step(stream_tasks(1)[0])

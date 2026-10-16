@@ -69,5 +69,6 @@ def test_no_targets_is_a_noop(tmp_path):
 
 def test_practice_split_is_disjoint():
     assert split_of(13000) == 'practice' and split_of(16999) == 'practice'
+    assert split_of(17000) == 'validation'          # W4-3 architect validation follows practice
     with pytest.raises(ValueError):
-        split_of(17000)
+        split_of(19000)

@@ -59,6 +59,11 @@ class SkillCatalog:
             entries[skill_id] = (descriptor, digest, source, function)
         return cls(entries, runner or ProcessSkillRunner(timeout_s=timeout_s))
 
+    def restrict(self, skill_ids) -> "SkillCatalog":
+        """Same snapshot, only the given skills (relevance gate: the rest stay invisible to this task)."""
+        keep = set(skill_ids)
+        return SkillCatalog({k: v for k, v in self._entries.items() if k in keep}, self.runner)
+
     @staticmethod
     def _terms(text: str) -> set[str]:
         # Split ids like log_line_count on underscores; fold a plural "s" so level/levels meet.

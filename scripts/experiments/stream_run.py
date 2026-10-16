@@ -28,6 +28,7 @@ from core.evolution.contracts import Candidate
 from core.evolution.journal import Journal
 from core.evolution.mutator import Mutator, bundle_digest
 from core.evolution.playbook import Playbook, parse_lessons
+from core.evolution.relevance import RELEVANCE_MIN, InstructionSpace, SkillSources
 from core.evolution.stream import ARMS, MemoryStore, StreamLearner, TeacherBudgetExhausted, TeacherCache, chain_runner
 from core.evolution.stream_tasks import manifest
 from core.evolution.teacher_budget import global_teacher_budget, ledger_path, remaining_usd
@@ -150,6 +151,14 @@ def main():
         config['eval_only'] = args.eval_only
     if args.skill_runner != 'docker':
         config['skill_runner'] = args.skill_runner
+    if ARMS[args.arm].get('gate'):
+        # Gated arms rank the (at most 3) admitted skills by relevance; an empty gate falls back to A0's prompt.
+        args.skill_preview = 'preview_relevant'
+        config['relevance'] = {'similarity': 'tfidf-cosine, df over observed instructions', 'min': RELEVANCE_MIN,
+                               'memory_min': RELEVANCE_MIN, 'max_shown': 3}
+    if ARMS[args.arm].get('evolve'):
+        config['evolution'] = ARMS[args.arm]['evolve'] | {'repair': 'maintain_library (W4-2)',
+                                                          'practice_split': 'practice', 'l2_validation_split': 'validation'}
     if args.skill_preview != 'preview':
         config['student']['skill_context_mode'] = args.skill_preview
     if args.stream_manifest:
@@ -198,12 +207,16 @@ def run(args, config, stream_m, eval_m, checkpoints):
         return RecordedLocalProvider(args.root / 'model-traces' / f'{run_id}.jsonl', api_key='local',
             model_name='agents-a1-4b', base_url=f'http://127.0.0.1:{args.port}/v1', timeout_sec=120)
     learn = ARMS[args.arm]['learn']
-    memory = MemoryStore(args.root / 'memory.jsonl') if learn in ('memory', 'both') else None
+    gated = bool(ARMS[args.arm].get('gate'))
+    sources = SkillSources(args.root / 'skill_sources.json', InstructionSpace(args.root / 'space.json'),
+                           runner=docker) if gated else None
+    memory = (MemoryStore(args.root / 'memory.jsonl', min_jaccard=RELEVANCE_MIN, similarity=sources.space.similarity)
+              if gated else MemoryStore(args.root / 'memory.jsonl')) if learn in ('memory', 'both') else None
     playbook = Playbook(args.root / 'playbook.json') if args.playbook else None
     recovery_bundle = help_bundle(args.root / 'recovery-help') if args.in_task_help else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
                                tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory, playbook=playbook,
-                               recovery_bundle=recovery_bundle, skill_preview=args.skill_preview,
+                               recovery_bundle=recovery_bundle, skill_preview=args.skill_preview, gate=sources,
                                mode='memory' if memory else 'retry' if args.arm == 'A1' else 'plain')
 
     teacher = proposer = None
@@ -244,15 +257,50 @@ def run(args, config, stream_m, eval_m, checkpoints):
                     playbook.save()
         proposer = propose if learn in (True, 'both') else None
 
+        def propose_repair(parent, feedback):
+            # W4-2 repair of a skill that failed in practice; same optimizer, own proposal slot.
+            optimizer = RecordedLocalProvider(args.root / 'optimizer-model.jsonl', api_key=cloud['api_key'],
+                model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=3000,
+                input_byte_cap=TEACHER_INPUT_BYTES)
+            return Mutator(optimizer, global_teacher_budget(), journal,
+                           args.root / 'mutations' / f"repair-{feedback['task_id']}").propose(parent, feedback)
+
+        def architect_step(lrn, *, label):
+            from core.evolution.architect import Architect
+            from core.evolution.l2_selection import selection_step
+            model = RecordedLocalProvider(args.root / 'architect-model.jsonl', api_key=cloud['api_key'],
+                model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=1500,
+                input_byte_cap=TEACHER_INPUT_BYTES)
+            index = int(label[1:]) // ARMS[args.arm]['evolve']['architect_every'] - 1
+            return selection_step(lrn, label=label, round_index=index,
+                                  architect=Architect(model, global_teacher_budget()))
+
+    evolver = None
+    if ARMS[args.arm].get('evolve'):
+        from core.evolution.practice import evolve_round
+        evolve_cfg = ARMS[args.arm]['evolve']
+
+        def evolver(lrn, *, label, round_index, architect):
+            return evolve_round(lrn, label=label, round_index=round_index, architect=architect,
+                                practice_tasks=evolve_cfg['practice'], propose_repair=propose_repair,
+                                architect_step=architect_step)
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
                             teacher=teacher, propose_skill=proposer, memory=memory,
-                            run_suffix=os.environ.get('KAGE_RUN_SUFFIX', ''))
+                            run_suffix=os.environ.get('KAGE_RUN_SUFFIX', ''), skill_sources=sources, evolver=evolver)
     eval_tasks = eval_m['tasks']
     if args.eval_only:
         print(json.dumps(learner.evaluate(eval_tasks, args.eval_only)), flush=True)
         return
     capped = False
     for index, task in enumerate(stream_m['tasks'] + [None]):
+        if not capped and len(learner.done) == index:
+            # A6: the round due after `index` tasks runs before that checkpoint (resumable, logged once).
+            try:
+                evolved = learner.maybe_evolve()
+            except TeacherBudgetExhausted as exc:
+                capped, evolved = True, {'stopped': 'teacher_budget_exhausted', 'detail': str(exc)}
+            if evolved:
+                print(json.dumps({'evolution': evolved}, default=str)[:4000], flush=True)
         if index in checkpoints:            # evaluate() skips tasks already logged for this checkpoint
             summary = learner.evaluate(eval_tasks, f'cp{index}')
             print(json.dumps(summary), flush=True)
