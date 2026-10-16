@@ -38,7 +38,9 @@ def plan(task):
     if want is None:
         return []
     if fx['kind'] == 'profile':
-        steps = [('fill', f['label'], want[f['name']]) for f in fx['fields'] if 'initial' not in f]
+        first = [('fill', f['label'], want[f['name']]) for f in fx['fields'] if 'initial' not in f and f.get('step') != 2]
+        later = [('fill', f['label'], want[f['name']]) for f in fx['fields'] if 'initial' not in f and f.get('step') == 2]
+        steps = first + ([('click', 'Next', None)] if later else []) + later
     elif fx['kind'] == 'invoice':
         hidden = len(fx['rows']) - fx.get('visible_rows', len(fx['rows']))
         steps = [('click', 'Show more rows', None)] * -(-hidden // 3) + [('fill', fx['fields'][0]['label'], str(want['total']))]

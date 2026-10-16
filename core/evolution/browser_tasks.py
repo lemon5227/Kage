@@ -7,7 +7,7 @@ page read-back equal to the backend). Expected records are derived here and neve
 the model; the instruction only states the public goal.
 
 Families:
-  web_form     copy current values from a contact note into some fields, leave a prefilled one alone
+  web_form     two-step form: copy current values from a contact note (later fields appear after Next)
   web_invoice  compute a table total under one rule (exclusions, price floor or tax), enter it, save
   web_prefs    reach target checkbox states from a random start, save
   web_catalog  filter by city and category, choose under a rating floor or the best-rated match
@@ -15,7 +15,9 @@ Families:
 Calibration (raw student, 12 each): v13, every value in the instruction -> form/invoice/catalog
 92-100%; v14, values read from the page under rules -> still 92-100%. Single-page tasks of <=4
 actions are within the 4B student's reach; these versions need 4-7 actions with hidden information
-(more rows, rating details) under the browser protocol of 8 steps / 10 calls.
+(more rows, rating details) under the browser protocol of 8 steps / 10 calls. v15: form 12/12,
+invoice 1/12 (never expanded the rows), prefs 4/12, catalog 7/12 -> form got a second step, invoice
+needs one expansion click, catalog uses the rating floor more often.
   web_lookup   negative: answer a question from the page; nothing may be saved
 
 English only, like the file families: TF-IDF relevance shares no tokens across languages, so a
@@ -71,6 +73,10 @@ def web_form(seed: int) -> dict:
                 note.append(f'Previous {note_label.lower()} (no longer valid): {other}')
         record[name] = value
     rng.shuffle(note)
+    # Two-step form: the last 1-2 fields to fill appear only after "Next" (saving early leaves them empty).
+    later = [f for f in fields if 'initial' not in f][-rng.randint(1, 2):]
+    for f in later:
+        f['step'] = 2
     wanted = ', '.join(fill)
     kept = ', '.join(f['label'] for f in fields if f['name'] in keep)
     submit = _pick(rng, _SAVE)
@@ -131,7 +137,7 @@ def web_invoice(seed: int) -> dict:
     # "all rows": a total from the visible rows alone is wrong.
     fixture = {'kind': 'invoice', 'title': _pick(rng, ['Invoice review', 'Billing', 'Order summary']),
                'fields': [{'name': 'total', 'label': label}], 'rows': rows, 'submit': submit,
-               'visible_rows': rng.randint(3, 4)}
+               'visible_rows': max(len(rows) - 3, rng.randint(3, 4))}       # one "Show more rows" click reveals the rest
     return _web_task('web_invoice', instruction, fixture, {'total': total})
 
 
@@ -204,7 +210,7 @@ def web_catalog(seed: int) -> dict:
         items.append({'id': f'h{i}', 'name': name, 'city': c, 'category': cat, 'price': price, 'rating': rating})
     matches = sorted(items[:n_match], key=lambda i: i['price'])
     by_rating = sorted(matches[1:], key=lambda i: i['rating'])
-    if rng.random() < 0.7 and any(m['rating'] > matches[0]['rating'] for m in matches[1:]):
+    if rng.random() < 0.85 and any(m['rating'] > matches[0]['rating'] for m in matches[1:]):
         # A floor above the cheapest match's rating, met by at least one other match.
         floor = round(max(matches[0]['rating'] + 0.1, by_rating[0]['rating']), 1)
         floor = min(floor, by_rating[-1]['rating'])

@@ -19,7 +19,11 @@ def render_fixture(fixture):
             checked=' checked' if checkbox and field['initial'] else ''
             # Text fields may start prefilled (stream web_form: fields the task says to leave alone).
             value=f' value="{esc(field["initial"])}"' if not checkbox and isinstance(field.get('initial'),str) else ''
-            fields.append(f'<label>{esc(field["label"])}<input name="{esc(field["name"])}" aria-label="{esc(field["label"])}" type="{"checkbox" if checkbox else "text"}"{checked}{value}></label>')
+            # Second-step fields (stream web_form) stay hidden until "Next" is clicked; save works at any time.
+            step2=' class="step2" hidden' if field.get('step')==2 else ''
+            fields.append(f'<label{step2}>{esc(field["label"])}<input name="{esc(field["name"])}" aria-label="{esc(field["label"])}" type="{"checkbox" if checkbox else "text"}"{checked}{value}></label>')
+        if any(field.get('step')==2 for field in fixture['fields']):
+            fields.append('<button type="button" id="next">Next</button>')
         table=''
         if kind=='invoice':
             # Rows beyond 'visible_rows' stay hidden until "Show more rows" is clicked (3 more per click).
@@ -34,6 +38,7 @@ def render_fixture(fixture):
         for(const input of document.querySelectorAll('input')) result[input.name]=input.type==='checkbox' ? input.checked : input.value;
         if(KIND==='invoice') result.total=Number(result.total);
         await save(result);};
+        const next=document.querySelector('#next');if(next)next.onclick=()=>{document.querySelectorAll('label.step2').forEach(l=>l.hidden=false);next.remove();};
         const more=document.querySelector('#more');if(more)more.onclick=()=>{const rows=[...document.querySelectorAll('tr.row[hidden]')];
         rows.slice(0,3).forEach(r=>r.hidden=false);if(rows.length<=3)more.remove();};'''.replace('KIND',json.dumps(kind))
     elif kind=='catalog':

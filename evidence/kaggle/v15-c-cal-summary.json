@@ -1,0 +1,30 @@
+{
+  "web_catalog": {
+    "passed": 7,
+    "total": 12,
+    "rate": 0.5833,
+    "negative": false,
+    "in_band": false
+  },
+  "web_form": {
+    "passed": 12,
+    "total": 12,
+    "rate": 1.0,
+    "negative": false,
+    "in_band": false
+  },
+  "web_invoice": {
+    "passed": 1,
+    "total": 12,
+    "rate": 0.0833,
+    "negative": false,
+    "in_band": false
+  },
+  "web_prefs": {
+    "passed": 4,
+    "total": 12,
+    "rate": 0.3333,
+    "negative": false,
+    "in_band": true
+  }
+}
