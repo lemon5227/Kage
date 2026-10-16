@@ -2,7 +2,7 @@
 
 Notebook (Accelerator: GPU T4 x2, Internet on, Secret DEEPSEEK_API_KEY):
 
-    !cd /kaggle/tmp && git clone -b claude/task-progress-861574 --depth 1 https://github.com/lemon5227/Kage.git
+    !cd /kaggle/tmp && git clone -b dev --depth 1 https://github.com/lemon5227/Kage.git
     !cd /kaggle/tmp/Kage && python scripts/experiments/kaggle_e1.py
 
 Same student as on the Mac: InternScience/Agents-A1-4B-Q4_K_M-GGUF at the locked revision (sha256

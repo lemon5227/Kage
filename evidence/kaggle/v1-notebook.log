@@ -1,0 +1,67 @@
+[{"stream_name":"stderr","time":8.260236635,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.260299303,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.260326378,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.260332222,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":8.921377564,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.921410554,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.92141613,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.921423774,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":13.00038794,"data":"\u001b[33m53fc71c\u001b[m\u001b[33m (\u001b[m\u001b[1;34mgrafted\u001b[m\u001b[33m, \u001b[m\u001b[1;36mHEAD\u001b[m\u001b[33m -\u003e \u001b[m\u001b[1;32mclaude/task-progress-861574\u001b[m\u001b[33m, \u001b[m\u001b[1;31morigin/claude/task-progress-861574\u001b[m\u001b[33m)\u001b[m fix(experiments): pin the system CUDA toolkit for the Kaggle llama.cpp build and print the CUDA layout\r\n"}
+,{"stream_name":"stdout","time":88.011044755,"data":"/usr/local/cuda/bin/nvcc\r\n"}
+,{"stream_name":"stdout","time":88.011077495,"data":"/usr/local/cuda\r\n"}
+,{"stream_name":"stdout","time":88.011097687,"data":"/usr/local/cuda-12\r\n"}
+,{"stream_name":"stdout","time":88.011100913,"data":"/usr/local/cuda-12.8\r\n"}
+,{"stream_name":"stdout","time":88.011103763,"data":"/root/.julia/artifacts/89df8823e2dffe926bfbe09b177903259b2fe484/lib/libcuda.so.1\r\n"}
+,{"stream_name":"stdout","time":88.011106753,"data":"/root/.julia/artifacts/89df8823e2dffe926bfbe09b177903259b2fe484/lib/libcuda.so.610.43.02\r\n"}
+,{"stream_name":"stdout","time":88.011109827,"data":"/root/.julia/artifacts/89df8823e2dffe926bfbe09b177903259b2fe484/lib/libcuda.so\r\n"}
+,{"stream_name":"stdout","time":88.011112802,"data":"/root/.julia/artifacts/2c8e4324b86fc70a7c041ce8dc72b5f9b41a7a98/lib/libcuda.so.1\r\n"}
+,{"stream_name":"stdout","time":88.011115595,"data":"/root/.julia/artifacts/2c8e4324b86fc70a7c041ce8dc72b5f9b41a7a98/lib/libcuda.so.610.43.02\r\n"}
+,{"stream_name":"stdout","time":88.011118746,"data":"cmake version 3.31.10\r\n"}
+,{"stream_name":"stdout","time":88.011121479,"data":"\r\n"}
+,{"stream_name":"stdout","time":89.891187949,"data":"\u001b[0mCMAKE_BUILD_TYPE=Release\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.145847581,"data":"\u001b[31mCMake Error at ggml/src/ggml-cuda/CMakeLists.txt:171 (target_link_libraries):\r\n"}
+,{"stream_name":"stdout","time":96.145878112,"data":"  Target \"ggml-cuda\" links to:\r\n"}
+,{"stream_name":"stdout","time":96.145884721,"data":"\r\n"}
+,{"stream_name":"stdout","time":96.145889974,"data":"    CUDA::cuda_driver\r\n"}
+,{"stream_name":"stdout","time":96.145895081,"data":"\r\n"}
+,{"stream_name":"stdout","time":96.145900007,"data":"  but the target was not found.  Possible reasons include:\r\n"}
+,{"stream_name":"stdout","time":96.145905081,"data":"\r\n"}
+,{"stream_name":"stdout","time":96.145909755,"data":"    * There is a typo in the target name.\r\n"}
+,{"stream_name":"stdout","time":96.145914841,"data":"    * A find_package call is missing for an IMPORTED target.\r\n"}
+,{"stream_name":"stdout","time":96.145920127,"data":"    * An ALIAS target is missing.\r\n"}
+,{"stream_name":"stdout","time":96.145961067,"data":"\r\n"}
+,{"stream_name":"stdout","time":96.145968323,"data":"\r\n"}
+,{"stream_name":"stdout","time":96.145972547,"data":"\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.197414489,"data":"\u001b[0mCMake Generate step failed.  Build files cannot be regenerated correctly.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218305119,"data":"Traceback (most recent call last):\r\n"}
+,{"stream_name":"stdout","time":96.21834636,"data":"  File \u001b[35m\"/kaggle/working/Kage/scripts/experiments/kaggle_e1.py\"\u001b[0m, line \u001b[35m226\u001b[0m, in \u001b[35m\u003cmodule\u003e\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218351745,"data":"    \u001b[31mmain\u001b[0m\u001b[1;31m()\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218354888,"data":"    \u001b[31m~~~~\u001b[0m\u001b[1;31m^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218357808,"data":"  File \u001b[35m\"/kaggle/working/Kage/scripts/experiments/kaggle_e1.py\"\u001b[0m, line \u001b[35m208\u001b[0m, in \u001b[35mmain\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218361047,"data":"    info = \u001b[31msetup\u001b[0m\u001b[1;31m()\u001b[0m if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1') else json.loads((OUT / 'host.json').read_text())\r\n"}
+,{"stream_name":"stdout","time":96.218364214,"data":"           \u001b[31m~~~~~\u001b[0m\u001b[1;31m^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218367005,"data":"  File \u001b[35m\"/kaggle/working/Kage/scripts/experiments/kaggle_e1.py\"\u001b[0m, line \u001b[35m90\u001b[0m, in \u001b[35msetup\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218370026,"data":"    \u001b[31msh\u001b[0m\u001b[1;31m(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DCMAKE_CUDA_ARCHITECTURES=75',\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.21837295,"data":"    \u001b[31m~~\u001b[0m\u001b[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218375912,"data":"        \u001b[1;31mf'-DCUDAToolkit_ROOT={cuda}', f'-DCMAKE_CUDA_COMPILER={cuda}/bin/nvcc',\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218378757,"data":"        \u001b[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218381462,"data":"        \u001b[1;31mf'-DCMAKE_LIBRARY_PATH={stubs}', f'-DCMAKE_EXE_LINKER_FLAGS=-L{stubs}', f'-DCMAKE_SHARED_LINKER_FLAGS=-L{stubs}',\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218384275,"data":"        \u001b[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218387074,"data":"        \u001b[1;31m'-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release'], stdout=subprocess.DEVNULL)\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.21838989,"data":"        \u001b[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218392613,"data":"  File \u001b[35m\"/kaggle/working/Kage/scripts/experiments/kaggle_e1.py\"\u001b[0m, line \u001b[35m60\u001b[0m, in \u001b[35msh\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218396035,"data":"    \u001b[31msubprocess.run\u001b[0m\u001b[1;31m(cmd, check=True, shell=isinstance(cmd, str), **kw)\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.21839897,"data":"    \u001b[31m~~~~~~~~~~~~~~\u001b[0m\u001b[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218401773,"data":"  File \u001b[35m\"/usr/lib/python3.13/subprocess.py\"\u001b[0m, line \u001b[35m577\u001b[0m, in \u001b[35mrun\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":96.218416046,"data":"    raise CalledProcessError(retcode, process.args,\r\n"}
+,{"stream_name":"stdout","time":96.218418778,"data":"                             output=stdout, stderr=stderr)\r\n"}
+,{"stream_name":"stdout","time":96.218424214,"data":"\u001b[1;35msubprocess.CalledProcessError\u001b[0m: \u001b[35mCommand '['cmake', '-S', '/kaggle/tmp/llama.cpp', '-B', '/kaggle/tmp/llama.cpp/build', '-DGGML_CUDA=ON', '-DCMAKE_CUDA_ARCHITECTURES=75', '-DCUDAToolkit_ROOT=/usr/local/cuda', '-DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc', '-DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs', '-DCMAKE_EXE_LINKER_FLAGS=-L/usr/local/cuda/lib64/stubs', '-DCMAKE_SHARED_LINKER_FLAGS=-L/usr/local/cuda/lib64/stubs', '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release']' returned non-zero exit status 1.\u001b[0m\r\n"}
+,{"stream_name":"stderr","time":99.03331632,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":99.033347987,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":99.212417941,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":99.212459634,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":99.966240312,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":100.037524069,"data":"[NbConvertApp] Writing 6710 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":102.77278077,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":103.329681459,"data":"[NbConvertApp] Writing 279333 bytes to __results__.html\n"}
+]

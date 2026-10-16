@@ -1,0 +1,55 @@
+[{"stream_name":"stderr","time":12.131038844,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":12.131087341,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":12.131094683,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":12.131099497,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":12.973480846,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":12.973513691,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":12.973525453,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":12.973528793,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":14.679478781,"data":"secret deepseek ConnectionError Connection error trying to communicate with service.\n"}
+,{"stream_name":"stdout","time":14.679516739,"data":"secret DEEPSEEK_API_KEY ConnectionError Connection error trying to communicate with service.\n"}
+,{"stream_name":"stdout","time":16.877624443,"data":"\u001b[33mf6b2455\u001b[m\u001b[33m (\u001b[m\u001b[1;34mgrafted\u001b[m\u001b[33m, \u001b[m\u001b[1;36mHEAD\u001b[m\u001b[33m -\u003e \u001b[m\u001b[1;32mclaude/task-progress-861574\u001b[m\u001b[33m, \u001b[m\u001b[1;31morigin/claude/task-progress-861574\u001b[m\u001b[33m)\u001b[m fix(experiments): report why a Kaggle secret lookup failed\r\n"}
+,{"stream_name":"stdout","time":140.264379659,"data":"/usr/local/cuda/bin/nvcc\r\n"}
+,{"stream_name":"stdout","time":140.264413862,"data":"/usr/local/cuda\r\n"}
+,{"stream_name":"stdout","time":140.264420443,"data":"/usr/local/cuda-12\r\n"}
+,{"stream_name":"stdout","time":140.264425466,"data":"/usr/local/cuda-12.8\r\n"}
+,{"stream_name":"stdout","time":140.264430571,"data":"\tlibcudart.so.12 (libc6,x86-64) =\u003e /usr/local/cuda/targets/x86_64-linux/lib/libcudart.so.12\r\n"}
+,{"stream_name":"stdout","time":140.264437958,"data":"\tlibcudart.so (libc6,x86-64) =\u003e /usr/local/cuda/targets/x86_64-linux/lib/libcudart.so\r\n"}
+,{"stream_name":"stdout","time":140.26444809,"data":"/usr/local/nvidia/lib64/libcuda.so\r\n"}
+,{"stream_name":"stdout","time":140.264451771,"data":"/usr/local/nvidia/lib64/libcuda.so.1\r\n"}
+,{"stream_name":"stdout","time":140.264455349,"data":"/usr/local/nvidia/lib64/libcuda.so.580.178.04\r\n"}
+,{"stream_name":"stdout","time":140.264458738,"data":"/usr/local/cuda-12.8/compat/libcuda.so.1\r\n"}
+,{"stream_name":"stdout","time":140.264461977,"data":"/usr/local/cuda-12.8/compat/libcuda.so\r\n"}
+,{"stream_name":"stdout","time":140.264465293,"data":"cmake version 3.31.10\r\n"}
+,{"stream_name":"stdout","time":140.26446857,"data":"\r\n"}
+,{"stream_name":"stdout","time":142.146301215,"data":"\u001b[0mCMAKE_BUILD_TYPE=Release\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":1901.635570528,"data":"Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\r\n"}
+,{"stream_name":"stdout","time":1901.786071414,"data":"\r\n"}
+,{"stream_name":"stdout","time":1902.547585289,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:   0%| |  0.00B / 2.71GB          \u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes:                |  0.00B            \r\n"}
+,{"stream_name":"stdout","time":1903.775492219,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:   0%| | 10.9MB / 2.71GB          \u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes:                | 5.03MB            \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes:                | 8.89MB,  494kB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ▏              | 26.4MB,  856kB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ▎              | 53.7MB, 2.55MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ▍              | 80.4MB, 5.86MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ▋              |  123MB, 7.63MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ▊              |  151MB, 11.6MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █              |  187MB, 14.2MB/s  \r\n"}
+,{"stream_name":"stdout","time":1904.867146959,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:   3%| | 78.0MB / 2.71GB, 1.06MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █▏             |  221MB, 19.5MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █▍             |  264MB, 21.6MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █▋             |  300MB, 23.9MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █▉             |  354MB, 27.1MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██▎            |  412MB, 31.9MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██▊            |  499MB, 40.4MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███            |  556MB, 44.3MB/s  \r\n"}
+,{"stream_name":"stdout","time":1904.969229526,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  10%| |  279MB / 2.71GB, 7.32MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███▎           |  607MB, 52.3MB/s  \r\n"}
+,{"stream_name":"stdout","time":1905.072620613,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  15%|▏|  413MB / 2.71GB, 25.2MB/s\u001b[A\r\n"}
+,{"stream_name":"stdout","time":1905.591052363,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  18%|▏|  480MB / 2.71GB, 37.3MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███▋           |  663MB, 55.2MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███▉           |  705MB, 57.6MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████▏          |  748MB, 60.0MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████▍          |  803MB, 63.3MB/s  \r\n"}
+,{"stream_name":"stdout","time":1906.070484923,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  25%|▎|  682MB / 2.71GB, 43.1MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████▋          |  856MB, 67.7MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████          |  909MB, 71.9MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████▍         |  985MB, 76.1MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████▊         | 1.05GB, 82.3MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████▏        | 1.13GB, 87.7MB/s  \r\n"}
+,{"stream_name":"stdout","time":1906.172276932,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  28%|▎|  768MB / 2.71GB, 59.5MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████▌        | 1.19GB, 93.4MB/s  \r\n"}
+,{"stream_name":"stdout","time":1906.377829398,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  30%|▎|  816MB / 2.71GB, 64.6MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████▉        | 1.26GB,  100MB/s  \r\n"}
+,{"stream_name":"stdout","time":1906.585973294,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  33%|▎|  883MB / 2.71GB, 68.3MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███████▍       | 1.34GB,  105MB/s  \r\n"}
+,{"stream_name":"stdout","time":1907.162391662,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  42%|▍| 1.15GB / 2.71GB, 73.1MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████████       | 1.46GB,  109MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████████▍      | 1.53GB,  116MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████████      | 1.64GB,  124MB/s  \r\n"}
+,{"stream_name":"stdout","time":1907.257690804,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  47%|▍| 1.29GB / 2.71GB, 95.6MB/s\u001b[A\r\n"}
+,{"stream_name":"stdout","time":1907.358960089,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  50%|▍| 1.35GB / 2.71GB,  103MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████████▋     | 1.75GB,  132MB/s  \r\n"}
+,{"stream_name":"stdout","time":1915.169238432,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file:  55%|▌| 1.49GB / 2.71GB,  108MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████████▏    | 1.83GB,  137MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████████▌    | 1.91GB,  140MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███████████    | 2.00GB,  145MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███████████▌   | 2.08GB,  152MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████████████▎  | 2.22GB,  162MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ████████████▊  | 2.31GB,  167MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████████████▎ | 2.40GB,  173MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: █████████████▉ | 2.51GB,  184MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████████████▍| 2.60GB,  189MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ██████████████▊| 2.67GB,  121MB/s  \r\n"}
+,{"stream_name":"stdout","time":1915.373854788,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file: 100%|█| 2.71GB / 2.71GB,  115MB/s\u001b[A\rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███████████████| 2.70GB,  122MB/s  \rAgents-A1-4B-Q4_K_M.gguf: downloading bytes: ███████████████| 2.70GB,  122MB/s  \r\n"}
+,{"stream_name":"stdout","time":1915.424551572,"data":"\rAgents-A1-4B-Q4_K_M.gguf: reconstructing file: 100%|█| 2.71GB / 2.71GB,  156MB/s\r\n"}
+,{"stream_name":"stdout","time":1935.617082592,"data":"secret 'DEEPSEEK_API_KEY': ConnectionError: Connection error trying to communicate with service.\r\n"}
+,{"stream_name":"stdout","time":1935.715903508,"data":"secret 'deepseek': ConnectionError: Connection error trying to communicate with service.\r\n"}
+,{"stream_name":"stdout","time":1935.715941757,"data":"no Kaggle secret named DEEPSEEK_API_KEY or deepseek is attached\r\n"}
+,{"stream_name":"stderr","time":1939.086448545,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":1939.08650579,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":1939.310760476,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":1939.310802359,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":1940.235294359,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":1940.329999908,"data":"[NbConvertApp] Writing 6163 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":1943.317543123,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":1943.950517144,"data":"[NbConvertApp] Writing 279255 bytes to __results__.html\n"}
+]
