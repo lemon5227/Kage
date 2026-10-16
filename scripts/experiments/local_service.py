@@ -19,6 +19,9 @@ MODEL=Path(os.environ.get('KAGE_MODEL_PATH', Path.home()/'.kage/models/agents-a1
 SERVER=Path(os.environ.get('KAGE_LLAMA_SERVER', '/opt/homebrew/bin/llama-server'))
 # P4-L3: optional LoRA adapter (GGUF) applied on top of the frozen base model.
 LORA=os.environ.get('KAGE_LORA')
+# C: browser runs need longer histories (8 steps of DOM observations); a larger window does not change
+# outputs for prompts that already fit, so file-family runs keep 8192.
+CTX=os.environ.get('KAGE_CTX','8192')
 
 
 def write_json(path,value):
@@ -34,7 +37,7 @@ def file_hash(path):
 
 def server_argv(port):
     return [str(SERVER),'-m',str(MODEL),'--alias','agents-a1-4b','--jinja','--host','127.0.0.1','--port',str(port),
-            '-ngl','99','--flash-attn','auto','-c','8192','-np','1','-n','1024','--reasoning','off',
+            '-ngl','99','--flash-attn','auto','-c',CTX,'-np','1','-n','1024','--reasoning','off',
             '--cache-type-k','q8_0','--cache-type-v','q8_0','--temp','0.85','--top-p','0.95','--top-k','20','--presence-penalty','1.1',
             # llama.cpp's host-RAM prompt cache defaults to 8 GiB per server; four servers filled Kaggle's
             # 32 GB and got killed (E-1 v5/v9), and it made the Mac sluggish. Outputs are unaffected.

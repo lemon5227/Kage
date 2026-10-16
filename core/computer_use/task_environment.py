@@ -22,25 +22,33 @@ def render_fixture(fixture):
             fields.append(f'<label>{esc(field["label"])}<input name="{esc(field["name"])}" aria-label="{esc(field["label"])}" type="{"checkbox" if checkbox else "text"}"{checked}{value}></label>')
         table=''
         if kind=='invoice':
-            table='<table><tr><th>Item</th><th>Quantity</th><th>Unit price</th></tr>'+''.join(f'<tr><td>{esc(r["item"])}</td><td>{r["qty"]}</td><td>{r["price"]}</td></tr>' for r in fixture['rows'])+'</table>'
+            # Rows beyond 'visible_rows' stay hidden until "Show more rows" is clicked (3 more per click).
+            shown=int(fixture.get('visible_rows',len(fixture['rows'])))
+            table='<table><tr><th>Item</th><th>Quantity</th><th>Unit price</th></tr>'+''.join(f'<tr class="row"{"" if i<shown else " hidden"}><td>{esc(r["item"])}</td><td>{r["qty"]}</td><td>{r["price"]}</td></tr>' for i,r in enumerate(fixture['rows']))+'</table>'
+            if shown<len(fixture['rows']):
+                table+='<button type="button" id="more">Show more rows</button>'
         # Optional page text the task refers to (stream web_form: values to copy from a contact note).
         note=''.join(f'<p class="note">{esc(line)}</p>' for line in fixture.get('note',[]))
         body=note+table+'<form>'+''.join(fields)+f'<button>{esc(fixture["submit"])}</button></form>'
         script='''document.querySelector('form').onsubmit=async e=>{e.preventDefault(); const result={};
         for(const input of document.querySelectorAll('input')) result[input.name]=input.type==='checkbox' ? input.checked : input.value;
         if(KIND==='invoice') result.total=Number(result.total);
-        await save(result);};'''.replace('KIND',json.dumps(kind))
+        await save(result);};
+        const more=document.querySelector('#more');if(more)more.onclick=()=>{const rows=[...document.querySelectorAll('tr.row[hidden]')];
+        rows.slice(0,3).forEach(r=>r.hidden=false);if(rows.length<=3)more.remove();};'''.replace('KIND',json.dumps(kind))
     elif kind=='catalog':
         body=f'<label>{esc(fixture["query_label"])}<input name="city" aria-label="{esc(fixture["query_label"])}"></label><label>{esc(fixture["category_label"])}<input type="checkbox" id="category" aria-label="{esc(fixture["category_label"])}"></label><button id="apply">{esc(fixture["apply_label"])}</button><section id="items"></section>'
         # Public catalog data is page content. It contains no checker/expected id.
         script='''const items=ITEMS;let category=false,applied=null;
         function show(rows){const root=document.querySelector('#items');root.replaceChildren();
-        for(const item of rows){const row=document.createElement('article');row.textContent=item.name+' | '+item.city+' | '+item.category+' | '+item.price+(item.rating!==undefined?' | rating '+item.rating:'');
+        for(const item of rows){const row=document.createElement('article');row.textContent=item.name+' | '+item.city+' | '+item.category+' | '+item.price+(item.rating!==undefined&&!HIDE?' | rating '+item.rating:'');
+        if(item.rating!==undefined&&HIDE){const d=document.createElement('button');d.textContent='Details '+item.name;
+        d.onclick=()=>{d.replaceWith(document.createTextNode(' | rating '+item.rating+' | '));};row.append(d);}
         const button=document.createElement('button');button.textContent='Choose '+item.name;
         button.onclick=()=>save({property_id:item.id,city:applied?.city??'',category:applied?.category??''});row.append(button);root.append(row);}}
         document.querySelector('#category').onclick=e=>{category=e.target.checked;};
         document.querySelector('#apply').onclick=()=>{applied={city:document.querySelector('input').value,category:category?CATEGORY:''};
-        show(items.filter(i=>i.city===applied.city && (!applied.category || i.category===applied.category)));};show(items);'''.replace('ITEMS',json.dumps(fixture['items'],ensure_ascii=False).replace('<','\\u003c')).replace('CATEGORY',json.dumps(fixture['category']))
+        show(items.filter(i=>i.city===applied.city && (!applied.category || i.category===applied.category)));};show(items);'''.replace('ITEMS',json.dumps(fixture['items'],ensure_ascii=False).replace('<','\\u003c')).replace('CATEGORY',json.dumps(fixture['category'])).replace('HIDE',json.dumps(bool(fixture.get('ratings_hidden'))))
     else:
         raise ValueError('unknown browser fixture kind')
     delay=int(fixture.get('readback_delay_ms',0))

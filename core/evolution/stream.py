@@ -525,7 +525,7 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
                  tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None,
                  recovery_bundle: Path | None = None, skill_preview: str = 'preview', gate=None,
-                 browser_timeout_s=240):
+                 browser_timeout_s=360, browser_max_model_calls=10, browser_max_steps=8):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
 
     Shared by scripts/experiments/stream_run.py (live models) and the integration test
@@ -533,8 +533,9 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
 
     ``gate`` (relevance.SkillSources): only skills verified near this instruction are visible;
     with none, the catalog is empty and the prompt equals the raw student's (A0).
-    Browser tasks (``fixture``) run on ``BrowserChainProvider`` / ``BrowserCloudProvider`` with the
-    same call/step caps; memory mode shows the remembered demonstration as earlier turns.
+    Browser tasks (``fixture``) run on ``BrowserChainProvider`` / ``BrowserCloudProvider`` with their own
+    protocol (10 calls / 8 steps, one page action per step; same for every arm); memory mode shows the
+    remembered demonstration as earlier turns.
     """
     from core.agentic_loop import AgenticLoop
     from core.evolution.agent_provider import KageChainProvider
@@ -557,12 +558,13 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
         def generate_step(self, task_def, step, history, workspace_dir):
             return super().generate_step(task_def, step, self.demonstration + history, workspace_dir)
 
-    def browser_chain(task, run_id, call_cap=max_model_calls, step_cap=max_steps):
+    def browser_chain(task, run_id, call_cap=browser_max_model_calls, step_cap=browser_max_steps):
         # C: a page-scoped browser chain on a fresh local fixture; file skills do not apply here.
         from core.computer_use.experiment import BrowserChainProvider, BrowserCloudProvider
         cls = BrowserCloudProvider if cloud else BrowserChainProvider
+        browser_loop = type('StreamLoop', (AgenticLoop,), {'MAX_STEPS': step_cap, 'TOOL_MAX_TOKENS': tool_max_tokens})
         kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
-                      max_model_calls=call_cap, agentic_loop_cls=loop_cls, max_loop_steps=min(step_cap, call_cap),
+                      max_model_calls=call_cap, agentic_loop_cls=browser_loop, max_loop_steps=min(step_cap, call_cap),
                       settle_saves=True)
         demonstration = memory.retrieve(task['instruction']) if mode == 'memory' else []
         chain = cls(model_factory(run_id), task, **kwargs)
@@ -573,8 +575,9 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
 
     def run(candidate, task, run_id):
         if task.get('fixture') is not None:
-            chain = (LocalRetryProvider(lambda calls=max_model_calls, steps=max_steps: browser_chain(task, run_id, calls, steps),
-                                        task, max_model_calls, max_steps)
+            chain = (LocalRetryProvider(lambda calls=browser_max_model_calls, steps=browser_max_steps:
+                                        browser_chain(task, run_id, calls, steps),
+                                        task, browser_max_model_calls, browser_max_steps)
                      if mode == 'retry' else browser_chain(task, run_id))
             runner = EvolutionRunner(journal, budget, Path(workspaces), chain)
             return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task['task_id'],

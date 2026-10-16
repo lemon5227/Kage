@@ -12,8 +12,10 @@ Families:
   web_prefs    reach target checkbox states from a random start, save
   web_catalog  filter by city and category, choose under a rating floor or the best-rated match
 
-Calibration v13 (raw student, 12 each): the first versions, with every value in the instruction,
-were solved 92-100% (form, invoice, catalog); these versions make the model read the page.
+Calibration (raw student, 12 each): v13, every value in the instruction -> form/invoice/catalog
+92-100%; v14, values read from the page under rules -> still 92-100%. Single-page tasks of <=4
+actions are within the 4B student's reach; these versions need 4-7 actions with hidden information
+(more rows, rating details) under the browser protocol of 8 steps / 10 calls.
   web_lookup   negative: answer a question from the page; nothing may be saved
 
 English only, like the file families: TF-IDF relevance shares no tokens across languages, so a
@@ -52,8 +54,8 @@ def web_form(seed: int) -> dict:
     """Copy the current values for some fields from a contact note on the page (which also lists
     outdated values and a different value for a field the task says to leave alone)."""
     rng = random.Random(f'web_form:{seed}')
-    chosen = rng.sample(_FORM_FIELDS, rng.randint(3, 5))
-    keep = set(n for n, _ in rng.sample(chosen, 1 if len(chosen) < 5 else 2))   # prefilled, must stay
+    chosen = rng.sample(_FORM_FIELDS, rng.randint(4, 6))
+    keep = set(n for n, _ in rng.sample(chosen, 1))           # prefilled, must stay; 3-5 fields to fill
     fields, record, note, fill = [], {}, [], []
     for name, labels in chosen:
         label, note_label = rng.sample(labels, 2)            # the note uses the other wording
@@ -87,7 +89,8 @@ def web_form(seed: int) -> dict:
     return _web_task('web_form', instruction, fixture, record)
 
 
-_ITEMS = ['Compute', 'Storage', 'Support', 'Licences', 'Backup', 'Training', 'Hosting', 'Audit']
+_ITEMS = ['Compute', 'Storage', 'Support', 'Licences', 'Backup', 'Training', 'Hosting', 'Audit', 'Monitoring',
+          'Consulting']
 
 
 def web_invoice(seed: int) -> dict:
@@ -95,7 +98,7 @@ def web_invoice(seed: int) -> dict:
     up, or plus a tax rate rounded to whole money."""
     rng = random.Random(f'web_invoice:{seed}')
     rows = [{'item': item, 'qty': rng.randint(1, 9), 'price': rng.randint(3, 60)}
-            for item in rng.sample(_ITEMS, rng.randint(5, 8))]
+            for item in rng.sample(_ITEMS, rng.randint(6, 9))]
     line = lambda r: r['qty'] * r['price']
     rule = _pick(rng, ['all', 'except', 'min_price', 'tax'])
     if rule == 'except':
@@ -124,8 +127,11 @@ def web_invoice(seed: int) -> dict:
         f'Enter the invoice total in {label}: the sum of {what}. Save the invoice total and confirm the '
         'saved invoice total.',
     ])
+    # Only the first rows are visible; "Show more rows" reveals 3 more per click. The instruction says
+    # "all rows": a total from the visible rows alone is wrong.
     fixture = {'kind': 'invoice', 'title': _pick(rng, ['Invoice review', 'Billing', 'Order summary']),
-               'fields': [{'name': 'total', 'label': label}], 'rows': rows, 'submit': submit}
+               'fields': [{'name': 'total', 'label': label}], 'rows': rows, 'submit': submit,
+               'visible_rows': rng.randint(3, 4)}
     return _web_task('web_invoice', instruction, fixture, {'total': total})
 
 
@@ -139,14 +145,14 @@ def _cap(text: str) -> str:
 
 def web_prefs(seed: int) -> dict:
     rng = random.Random(f'web_prefs:{seed}')
-    chosen = rng.sample(_PREFS, rng.randint(3, 5))
+    chosen = rng.sample(_PREFS, rng.randint(4, 6))
     initial = {n: rng.random() < 0.5 for n, _ in chosen}
     targets = rng.sample(chosen, rng.randint(2, len(chosen)))
     want = {n: rng.random() < 0.5 for n, _ in targets}
-    # 1-3 clicks plus save: the chain has 5 steps and one page action per step. A target already
-    # in its wanted state stays in the instruction (clicking it would be wrong).
+    # 1-5 clicks plus save (8 steps, one page action each). A target already in its wanted state
+    # stays in the instruction (clicking it would be wrong).
     changed = [n for n, _ in targets if want[n] != initial[n]]
-    for n in changed[3:]:
+    for n in changed[5:]:
         want[n] = initial[n]
     if not changed:
         n = targets[0][0]
@@ -178,11 +184,12 @@ _HOTELS = ['Garden Inn', 'River Loft', 'Casa Flora', 'Harbor House', 'Old Mill',
 
 def web_catalog(seed: int) -> dict:
     """Filter by city and category, then choose by price under a rating floor (the cheapest match
-    is always below it) or the best-rated match; decoys elsewhere are cheaper and better rated."""
+    is always below it) or the best-rated match; ratings show only after a hotel's "Details" click,
+    and decoys elsewhere are cheaper and better rated."""
     rng = random.Random(f'web_catalog:{seed}')
     city, other = rng.sample(_CITIES, 2)
     category = _pick(rng, _CATEGORIES)
-    n_match = rng.randint(3, 4)
+    n_match = 3
     names = rng.sample(_HOTELS, n_match + rng.randint(4, 5))
     prices = rng.sample(range(30, 260, 5), len(names))
     ratings = rng.sample([x / 10 for x in range(30, 50)], len(names))
@@ -220,7 +227,7 @@ def web_catalog(seed: int) -> dict:
     ])
     fixture = {'kind': 'catalog', 'title': _pick(rng, ['Hotel catalog', 'Stays', 'Book a room']),
                'query_label': query_label, 'category_label': category_label, 'category': category,
-               'apply_label': apply_label, 'items': items}
+               'apply_label': apply_label, 'items': items, 'ratings_hidden': True}
     return _web_task('web_catalog', instruction, fixture,
                      {'property_id': pick['id'], 'city': city, 'category': category})
 

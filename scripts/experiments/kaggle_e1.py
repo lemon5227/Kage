@@ -373,6 +373,7 @@ def e2b_jobs() -> list[tuple[str, list[str]]]:
 
 # ---------------------------------------------------------------- C: browser families
 PLAYWRIGHT = 'playwright==1.63.0'           # = the Mac experiment venv
+BROWSER_CTX = '16384'                       # 8 steps x ~1k tokens of DOM observation + system prompt
 BROWSER_FAMILIES = ['web_form', 'web_invoice', 'web_prefs', 'web_catalog', 'web_lookup']
 
 
@@ -472,6 +473,7 @@ def main(argv=None):
     info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'c-cal') else json.loads((OUT / 'host.json').read_text())
     if args.phase == 'c-cal':
         browser_setup()
+        os.environ['KAGE_CTX'] = BROWSER_CTX
         run_jobs(info, browser_calibration_jobs(only or None), 'c-cal')
         from stream_calibrate import summarize
         rows = [json.loads(l) for f in sorted((OUT / 'c-calibration').glob('*/results.jsonl'))

@@ -40,13 +40,16 @@ def plan(task):
     if fx['kind'] == 'profile':
         steps = [('fill', f['label'], want[f['name']]) for f in fx['fields'] if 'initial' not in f]
     elif fx['kind'] == 'invoice':
-        steps = [('fill', fx['fields'][0]['label'], str(want['total']))]
+        hidden = len(fx['rows']) - fx.get('visible_rows', len(fx['rows']))
+        steps = [('click', 'Show more rows', None)] * -(-hidden // 3) + [('fill', fx['fields'][0]['label'], str(want['total']))]
     elif fx['kind'] == 'preferences':
         steps = [('click', f['label'], None) for f in fx['fields'] if want[f['name']] != f['initial']]
     else:
         item = next(i for i in fx['items'] if i['id'] == want['property_id'])
+        matches = [i for i in fx['items'] if i['city'] == want['city'] and i['category'] == want['category']]
+        details = [('click', f"Details {i['name']}", None) for i in matches] if fx.get('ratings_hidden') else []
         return [('fill', fx['query_label'], want['city']), ('click', fx['category_label'], None),
-                ('click', fx['apply_label'], None), ('click', f"Choose {item['name']}", None)]
+                ('click', fx['apply_label'], None), *details, ('click', f"Choose {item['name']}", None)]
     return steps + [('click', fx['submit'], None)]
 
 
@@ -88,7 +91,7 @@ def test_generated_tasks_are_deterministic_and_within_the_action_cap(family):
     for seed in range(1000, 1040):
         a, b = make_task(family, seed), make_task(family, seed)
         assert a == b and a['split'] == 'stream' and a['scoring_criteria']['type'] == 'json_exact_match'
-        assert len(plan(a)) <= 4, (family, seed)          # 5 loop steps, one page action each
+        assert len(plan(a)) <= 7, (family, seed)          # 8 loop steps, one page action each + answer
     assert len({make_task(family, s)['instruction'] for s in range(1000, 1040)}) > 20
 
 
