@@ -128,3 +128,37 @@ export function handleProactive(data: { event?: string; notification?: Proactive
   else if (data.event === 'skill_adopted') toast(`已启用：${(data.tools || []).join('、')}`);
   else if (data.event === 'skill_adoption_failed') toast(`启用失败：${data.error || ''}`, 6000);
 }
+
+// One-click verdict after a task turn (A2): the label stored with the turn's trajectory.
+let reviewEl: HTMLDivElement | null = null;
+
+export function showTurnReview(turnId: string, ms = 30000): void {
+  if (!turnId) return;
+  ensureStyles();
+  reviewEl?.remove();
+  const el = document.createElement('div');
+  el.className = 'kage-toast';
+  el.style.bottom = card ? '180px' : '18px';
+  el.setAttribute('role', 'group');
+  el.setAttribute('aria-label', '这次做得对吗');
+  const label = document.createElement('span');
+  label.textContent = '这次做对了吗？ ';
+  el.append(label);
+  for (const [text, value, aria] of [['👍', 'up', '做对了'], ['👎', 'down', '没做对']] as const) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = text;
+    b.setAttribute('aria-label', aria);
+    b.style.cssText = 'margin-left:6px;border:0;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:14px;';
+    b.addEventListener('click', () => {
+      send({ type: 'turn_feedback', turn_id: turnId, value });
+      el.remove();
+      reviewEl = null;
+      toast(value === 'up' ? '记下了，谢谢' : '记下了，我会想办法学会', 2500);
+    });
+    el.append(b);
+  }
+  document.body.appendChild(el);
+  reviewEl = el;
+  window.setTimeout(() => { if (reviewEl === el) { el.remove(); reviewEl = null; } }, ms);
+}

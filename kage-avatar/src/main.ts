@@ -2,7 +2,7 @@ import './style.css';
 import * as PIXI from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { handleProactive, initNotices } from './notices';
+import { handleProactive, initNotices, showTurnReview } from './notices';
 
 const MOTION_COOLDOWN_MS = 4000;
 const MOTION_DEMO_LOOP = false;
@@ -346,6 +346,10 @@ function setupWebSocket(model: Live2DModel) {
 
       if (data.type === "proactive") {
         handleProactive(data);
+      }
+
+      if (data.type === "turn_review" && data.turn_id) {
+        showTurnReview(String(data.turn_id));
       }
 
       if (data.type === "job") {

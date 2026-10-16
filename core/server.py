@@ -567,6 +567,8 @@ app.include_router(memory_router)
 app.include_router(browser_tasks_router)
 from core.routes.browser_demonstrations import router as browser_demonstrations_router
 app.include_router(browser_demonstrations_router)
+from core.routes.trajectories import router as trajectories_router
+app.include_router(trajectories_router)
 
 # Re-exports for backward compatibility
 from core.routes.system import (
@@ -740,6 +742,12 @@ class KageServer:
                 if isinstance(cfg.get("skills"), dict) else False
             ),
         )
+        # --- Usage-time trajectories (A2): real turns recorded locally for later learning ---
+        from core.trajectories import DEFAULT_ROOT as TRAJ_ROOT, RecordingProvider, TrajectoryRecorder
+        traj_cfg = cfg.get("trajectories", {}) if isinstance(cfg.get("trajectories", {}), dict) else {}
+        self.trajectories = TrajectoryRecorder(traj_cfg.get("root", TRAJ_ROOT),
+                                               enabled=bool(traj_cfg.get("enabled", True)))
+        self.agentic_loop.model = RecordingProvider(self.agentic_loop.model, self.trajectories)
 
         # --- Idle-time self-evolution (opt-in via evolution.auto) ---
         from core.evolution.scheduler import EvolutionScheduler
@@ -870,6 +878,9 @@ class KageServer:
         agentic = getattr(self, "agentic_loop", None)
         if agentic is not None:
             agentic.model = self.background_model_provider
+            if getattr(self, "trajectories", None) is not None:
+                from core.trajectories import RecordingProvider
+                agentic.model = RecordingProvider(agentic.model, self.trajectories)
 
         logger.info(
             "ModelBroker reloaded — modes: routing=%s realtime=%s background=%s fallback=%s",
@@ -1095,6 +1106,16 @@ class KageServer:
                 except Exception:
                     logger.warning("Proactive action %s failed", follow.get("type"), exc_info=True)
         return notification
+
+    async def handle_turn_feedback(self, message: dict[str, Any]) -> Optional[dict[str, Any]]:
+        """👍/👎 from the UI on a finished task turn: the label stored with its trajectory."""
+        value = str(message.get("value") or "")
+        turn_id = str(message.get("turn_id") or "")
+        if value not in ("up", "down") or not turn_id:
+            return None
+        record = await asyncio.to_thread(self.trajectories.feedback, turn_id, value)
+        self._log_server_event("turn.feedback", turn_id=turn_id, value=value, found=record is not None)
+        return record
 
     async def _notify_audio_event(self, event: str, **fields) -> None:
         await self.send_message("audio", self._audio_event_payload(event, **fields))
@@ -1642,12 +1663,28 @@ class KageServer:
                 await self.send_state("THINKING")
 
                 # Unified agentic loop (model -> tools -> observe -> model)
-                loop_result = await self.agentic_loop.run(
-                    user_input=user_input,
-                    current_emotion=current_emotion_str,
-                )
+                turn_key = str(self._active_turn_id or f"turn-{uuid4().hex[:8]}")
+                self.trajectories.begin(turn_key, str(user_input or ""))
+                loop_result = None
+                try:
+                    loop_result = await self.agentic_loop.run(
+                        user_input=user_input,
+                        current_emotion=current_emotion_str,
+                    )
+                finally:
+                    record = None
+                    try:
+                        record = self.trajectories.finish(
+                            str(getattr(loop_result, "final_text", "") or ""),
+                            list(getattr(loop_result, "tool_calls_executed", None) or []))
+                    except Exception:
+                        logger.warning("Trajectory record failed", exc_info=True)
                 final_speech = loop_result.final_text
                 executed_tools = bool(loop_result.tool_calls_executed)
+                if record is not None and record.get("kind") == "task":
+                    # Ask for a one-click verdict on task turns (the training label for later learning).
+                    await self.send_message("turn_review", {"turn_id": record["id"],
+                                                            "auto_check": record.get("auto_check", {})})
 
                 # If a tool requests confirmation, ask the user and pause.
                 need_confirm = None
@@ -2131,6 +2168,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         await kage_server._text_input_queue.put((incoming_turn_id, msg["text"].strip()))
                 elif msg.get("type") == "proactive_feedback":
                     await kage_server.handle_proactive_feedback(msg)
+                elif msg.get("type") == "turn_feedback":
+                    await kage_server.handle_turn_feedback(msg)
             except (json.JSONDecodeError, Exception):
                 pass
     except WebSocketDisconnect:
