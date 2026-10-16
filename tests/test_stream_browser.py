@@ -224,3 +224,29 @@ def test_gated_learner_learns_a_browser_procedure_from_the_teacher(tmp_path):
     assert first['learning'].get('memory_stored') is True, first['learning']
     second = learner.step(tasks[1])
     assert second['solved_by_student'] and not second['helped'], second
+
+
+def test_hidden_content_is_absent_until_revealed(tmp_path):
+    """v16: a page rule (label{display:block}) overrode [hidden], so step-2 form fields were visible."""
+    import asyncio
+    from playwright.async_api import async_playwright
+    from core.computer_use.browser import BrowserAdapter
+    from core.computer_use.task_environment import browser_task_server
+    form = next(t for t in (make_task('web_form', s) for s in range(1000, 1050))
+                if any(f.get('step') == 2 for f in t['fixture']['fields']))
+    later = {f['label'] for f in form['fixture']['fields'] if f.get('step') == 2}
+
+    async def labels_before_and_after():
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            with browser_task_server(form['fixture'], tmp_path) as (url, _):
+                page = await (await browser.new_context()).new_page()
+                await page.goto(url)
+                adapter = BrowserAdapter(page)
+                before = {t['label'] for t in (await adapter.observe())['targets']}
+                nxt = next(t['target_ref'] for t in adapter.current['targets'] if t['label'] == 'Next')
+                after = await adapter.act(adapter.current['observation_id'], 'click', nxt)
+            await browser.close()
+            return before, {t['label'] for t in after['observation']['targets']}
+    before, after = asyncio.run(labels_before_and_after())
+    assert not later & before and later <= after

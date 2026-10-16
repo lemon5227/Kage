@@ -58,7 +58,7 @@ def render_fixture(fixture):
         raise ValueError('unknown browser fixture kind')
     delay=int(fixture.get('readback_delay_ms',0))
     common="""async function save(record){const response=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});const saved=await response.json();if(DELAY>0)await new Promise(resolve=>setTimeout(resolve,DELAY));document.querySelector('[data-result]').textContent=JSON.stringify(saved);}""".replace('DELAY',str(delay))
-    return f'<!doctype html><meta charset="utf-8"><title>{esc(fixture["title"])}</title><style>label,article{{display:block;margin:12px}}table td{{padding:8px}}</style><h1>{esc(fixture["title"])}</h1>{body}<pre data-result></pre><script>{common}{script}</script>'.encode()
+    return f'<!doctype html><meta charset="utf-8"><title>{esc(fixture["title"])}</title><style>[hidden]{{display:none!important}}label,article{{display:block;margin:12px}}table td{{padding:8px}}</style><h1>{esc(fixture["title"])}</h1>{body}<pre data-result></pre><script>{common}{script}</script>'.encode()
 
 
 @contextmanager

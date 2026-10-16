@@ -1,0 +1,3054 @@
+{
+ "created": "2026-10-16T23:33:27.570582+00:00",
+ "suite_id": "kage-stream-web-v1",
+ "sha256": "8d0669d0af1b077b121ec041498070a7bf51d7094ba11526dd40746057b3b881",
+ "tasks": [
+  {
+   "task_id": "stream-v1-web_invoice-3504",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Enter the invoice total in Total: the sum of quantity times unit price over all rows. Save the invoice total and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Hosting",
+      "qty": 7,
+      "price": 45
+     },
+     {
+      "item": "Support",
+      "qty": 6,
+      "price": 9
+     },
+     {
+      "item": "Monitoring",
+      "qty": 6,
+      "price": 19
+     },
+     {
+      "item": "Storage",
+      "qty": 2,
+      "price": 44
+     },
+     {
+      "item": "Licences",
+      "qty": 7,
+      "price": 38
+     },
+     {
+      "item": "Audit",
+      "qty": 4,
+      "price": 31
+     }
+    ],
+    "submit": "Save total",
+    "visible_rows": 4
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 961
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3505",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable Weekly digest, Product news, Push alerts and disable SMS notifications without changing the other notification settings. Save the notification settings with \"Save\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": true
+     }
+    ],
+    "submit": "Save"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "product": true,
+      "weekly": true,
+      "push": true,
+      "sms": false,
+      "email": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3600",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "How many units of Consulting are on this invoice? Just tell me; do not change or save anything.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Order summary",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Training",
+      "qty": 9,
+      "price": 30
+     },
+     {
+      "item": "Hosting",
+      "qty": 6,
+      "price": 10
+     },
+     {
+      "item": "Compute",
+      "qty": 2,
+      "price": 36
+     },
+     {
+      "item": "Storage",
+      "qty": 6,
+      "price": 17
+     },
+     {
+      "item": "Consulting",
+      "qty": 2,
+      "price": 60
+     },
+     {
+      "item": "Licences",
+      "qty": 4,
+      "price": 48
+     }
+    ],
+    "submit": "Save total",
+    "visible_rows": 3
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3507",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "Update the notification settings checkboxes so that you enable Email notifications, Security alerts and disable SMS notifications, keeping the other notification settings unchanged; then save the notification settings and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": true
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "product": true,
+      "security": true,
+      "sms": false,
+      "email": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3500",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "Change the notification settings checkboxes: enable Push alerts and disable Email notifications; leave the other notification settings unchanged. Save the notification settings and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": true
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "email": false,
+      "push": true,
+      "weekly": true,
+      "sms": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3508",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Enter the invoice total in Amount due: the sum of quantity times unit price over all rows, plus 15% tax, rounded to a whole number. Save the invoice total and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Order summary",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Amount due"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Backup",
+      "qty": 9,
+      "price": 12
+     },
+     {
+      "item": "Hosting",
+      "qty": 7,
+      "price": 3
+     },
+     {
+      "item": "Audit",
+      "qty": 9,
+      "price": 60
+     },
+     {
+      "item": "Consulting",
+      "qty": 6,
+      "price": 25
+     },
+     {
+      "item": "Storage",
+      "qty": 2,
+      "price": 12
+     },
+     {
+      "item": "Monitoring",
+      "qty": 5,
+      "price": 28
+     },
+     {
+      "item": "Training",
+      "qty": 1,
+      "price": 21
+     },
+     {
+      "item": "Licences",
+      "qty": 8,
+      "price": 48
+     }
+    ],
+    "submit": "Save total",
+    "visible_rows": 5
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 1596
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3509",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "Filter the hotel catalog: set Where to Tallinn, enable \"Business only\", apply the filters, then choose the best-rated matching hotel and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Hotel catalog",
+    "query_label": "Where",
+    "category_label": "Business only",
+    "category": "Business",
+    "apply_label": "Apply filters",
+    "items": [
+     {
+      "id": "h7",
+      "name": "Blue Door",
+      "city": "Valencia",
+      "category": "Business",
+      "price": 175,
+      "rating": 3.5
+     },
+     {
+      "id": "h6",
+      "name": "River Loft",
+      "city": "Valencia",
+      "category": "Business",
+      "price": 195,
+      "rating": 3.6
+     },
+     {
+      "id": "h5",
+      "name": "Sky Rooms",
+      "city": "Valencia",
+      "category": "Business",
+      "price": 140,
+      "rating": 4.7
+     },
+     {
+      "id": "h0",
+      "name": "Station Hotel",
+      "city": "Tallinn",
+      "category": "Business",
+      "price": 70,
+      "rating": 3.0
+     },
+     {
+      "id": "h2",
+      "name": "Casa Flora",
+      "city": "Tallinn",
+      "category": "Business",
+      "price": 95,
+      "rating": 4.2
+     },
+     {
+      "id": "h1",
+      "name": "Garden Inn",
+      "city": "Tallinn",
+      "category": "Business",
+      "price": 60,
+      "rating": 4.5
+     },
+     {
+      "id": "h3",
+      "name": "Harbor House",
+      "city": "Valencia",
+      "category": "Business",
+      "price": 45,
+      "rating": 3.9
+     },
+     {
+      "id": "h4",
+      "name": "Pine Lodge",
+      "city": "Tallinn",
+      "category": "Design",
+      "price": 65,
+      "rating": 3.1
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h1",
+      "city": "Tallinn",
+      "category": "Business"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3511",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Enter the invoice total in Invoice total: the sum of quantity times unit price over all rows, plus 12% tax, rounded to a whole number. Save the invoice total and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Invoice review",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Invoice total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Backup",
+      "qty": 2,
+      "price": 27
+     },
+     {
+      "item": "Compute",
+      "qty": 4,
+      "price": 39
+     },
+     {
+      "item": "Audit",
+      "qty": 5,
+      "price": 60
+     },
+     {
+      "item": "Monitoring",
+      "qty": 6,
+      "price": 6
+     },
+     {
+      "item": "Training",
+      "qty": 7,
+      "price": 12
+     },
+     {
+      "item": "Support",
+      "qty": 2,
+      "price": 29
+     }
+    ],
+    "submit": "Submit",
+    "visible_rows": 4
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 771
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3510",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable Push alerts and disable Product news without changing the other notification settings. Save the notification settings with \"Save settings\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Alerts",
+    "fields": [
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": false
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": true
+     }
+    ],
+    "submit": "Save settings"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "push": true,
+      "sms": false,
+      "email": false,
+      "product": false,
+      "security": true,
+      "weekly": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3509",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Work out the invoice total (quantity times unit price over all rows except Monitoring and Backup), enter the invoice total into Invoice total, save it with \"Record amount\" and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Invoice total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Storage",
+      "qty": 2,
+      "price": 21
+     },
+     {
+      "item": "Consulting",
+      "qty": 5,
+      "price": 15
+     },
+     {
+      "item": "Audit",
+      "qty": 9,
+      "price": 50
+     },
+     {
+      "item": "Backup",
+      "qty": 9,
+      "price": 21
+     },
+     {
+      "item": "Support",
+      "qty": 2,
+      "price": 20
+     },
+     {
+      "item": "Hosting",
+      "qty": 1,
+      "price": 56
+     },
+     {
+      "item": "Monitoring",
+      "qty": 5,
+      "price": 44
+     }
+    ],
+    "submit": "Record amount",
+    "visible_rows": 4
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 663
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3601",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "Only look at the page and answer: Is \"Email notifications\" currently switched on? Do not submit the form.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     }
+    ],
+    "submit": "Save"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3510",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Work out the invoice total (quantity times unit price over all rows), enter the invoice total into Total, save it with \"Submit\" and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Order summary",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Training",
+      "qty": 9,
+      "price": 20
+     },
+     {
+      "item": "Hosting",
+      "qty": 1,
+      "price": 17
+     },
+     {
+      "item": "Backup",
+      "qty": 5,
+      "price": 39
+     },
+     {
+      "item": "Monitoring",
+      "qty": 6,
+      "price": 47
+     },
+     {
+      "item": "Audit",
+      "qty": 7,
+      "price": 36
+     },
+     {
+      "item": "Licences",
+      "qty": 6,
+      "price": 37
+     },
+     {
+      "item": "Consulting",
+      "qty": 3,
+      "price": 26
+     },
+     {
+      "item": "Storage",
+      "qty": 6,
+      "price": 21
+     }
+    ],
+    "submit": "Submit",
+    "visible_rows": 5
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 1352
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3503",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Work out the invoice total (quantity times unit price over the rows whose unit price is at least 42), enter the invoice total into Invoice total, save it with \"Submit\" and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Order summary",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Invoice total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Backup",
+      "qty": 9,
+      "price": 59
+     },
+     {
+      "item": "Storage",
+      "qty": 9,
+      "price": 43
+     },
+     {
+      "item": "Audit",
+      "qty": 8,
+      "price": 39
+     },
+     {
+      "item": "Training",
+      "qty": 7,
+      "price": 42
+     },
+     {
+      "item": "Hosting",
+      "qty": 2,
+      "price": 54
+     },
+     {
+      "item": "Compute",
+      "qty": 6,
+      "price": 21
+     }
+    ],
+    "submit": "Submit",
+    "visible_rows": 3
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 1320
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3506",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "Update the notification settings checkboxes so that you enable Security alerts and disable Email notifications, Weekly digest, keeping the other notification settings unchanged; then save the notification settings and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": true
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     }
+    ],
+    "submit": "Save settings"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "product": true,
+      "sms": true,
+      "push": true,
+      "weekly": false,
+      "email": false,
+      "security": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3605",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "Is \"Security alerts\" currently switched on? Just tell me; do not change or save anything.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Settings",
+    "fields": [
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": false
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": true
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": true
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3508",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable Weekly digest, Security alerts and disable Email notifications without changing the other notification settings. Save the notification settings with \"Apply\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Alerts",
+    "fields": [
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": true
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "weekly": true,
+      "security": true,
+      "push": false,
+      "email": false,
+      "product": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3504",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "Update the notification settings checkboxes so that you enable Security alerts, SMS notifications, Push alerts and disable Email notifications, Product news; then save the notification settings and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "security": true,
+      "sms": true,
+      "push": true,
+      "product": false,
+      "email": false
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3511",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "In the hotel catalog, filter to Business hotels in Budapest (set Destination, enable \"Business only\", apply the filters with \"Show matching hotels\"), then choose the cheapest matching hotel with a rating of at least 3.5 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Stays",
+    "query_label": "Destination",
+    "category_label": "Business only",
+    "category": "Business",
+    "apply_label": "Show matching hotels",
+    "items": [
+     {
+      "id": "h0",
+      "name": "River Loft",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 245,
+      "rating": 4.4
+     },
+     {
+      "id": "h3",
+      "name": "Casa Flora",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 110,
+      "rating": 4.2
+     },
+     {
+      "id": "h1",
+      "name": "Sky Rooms",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 230,
+      "rating": 3.5
+     },
+     {
+      "id": "h4",
+      "name": "Pine Lodge",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 160,
+      "rating": 4.5
+     },
+     {
+      "id": "h5",
+      "name": "Harbor House",
+      "city": "Budapest",
+      "category": "Design",
+      "price": 130,
+      "rating": 4.9
+     },
+     {
+      "id": "h6",
+      "name": "Station Hotel",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 80,
+      "rating": 3.1
+     },
+     {
+      "id": "h2",
+      "name": "Blue Door",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 60,
+      "rating": 3.3
+     },
+     {
+      "id": "h7",
+      "name": "Garden Inn",
+      "city": "Lisbon",
+      "category": "Business",
+      "price": 190,
+      "rating": 3.8
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h1",
+      "city": "Budapest",
+      "category": "Business"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3602",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "How many units of Licences are on this invoice? Just tell me; do not change or save anything.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Invoice total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Licences",
+      "qty": 5,
+      "price": 3
+     },
+     {
+      "item": "Training",
+      "qty": 1,
+      "price": 41
+     },
+     {
+      "item": "Audit",
+      "qty": 5,
+      "price": 18
+     },
+     {
+      "item": "Storage",
+      "qty": 9,
+      "price": 55
+     },
+     {
+      "item": "Compute",
+      "qty": 7,
+      "price": 16
+     },
+     {
+      "item": "Backup",
+      "qty": 6,
+      "price": 56
+     }
+    ],
+    "submit": "Record amount",
+    "visible_rows": 3
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3508",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "Filter the hotel catalog: set Where to Budapest, enable \"Business only\", apply the filters, then choose the best-rated matching hotel and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Stays",
+    "query_label": "Where",
+    "category_label": "Business only",
+    "category": "Business",
+    "apply_label": "Search",
+    "items": [
+     {
+      "id": "h5",
+      "name": "Old Mill",
+      "city": "Valencia",
+      "category": "Business",
+      "price": 215,
+      "rating": 4.4
+     },
+     {
+      "id": "h1",
+      "name": "Blue Door",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 185,
+      "rating": 3.1
+     },
+     {
+      "id": "h3",
+      "name": "Sky Rooms",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 45,
+      "rating": 3.5
+     },
+     {
+      "id": "h6",
+      "name": "Pine Lodge",
+      "city": "Budapest",
+      "category": "Design",
+      "price": 155,
+      "rating": 3.8
+     },
+     {
+      "id": "h2",
+      "name": "Station Hotel",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 70,
+      "rating": 4.6
+     },
+     {
+      "id": "h0",
+      "name": "Garden Inn",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 150,
+      "rating": 4.1
+     },
+     {
+      "id": "h4",
+      "name": "Casa Flora",
+      "city": "Valencia",
+      "category": "Business",
+      "price": 115,
+      "rating": 4.9
+     },
+     {
+      "id": "h7",
+      "name": "Harbor House",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 50,
+      "rating": 3.2
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h2",
+      "city": "Budapest",
+      "category": "Business"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3501",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "In the hotel catalog, filter to Family hotels in Budapest (set Where, enable \"Family only\", apply the filters with \"Show matching hotels\"), then choose the cheapest matching hotel with a rating of at least 4.3 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Hotel catalog",
+    "query_label": "Where",
+    "category_label": "Family only",
+    "category": "Family",
+    "apply_label": "Show matching hotels",
+    "items": [
+     {
+      "id": "h0",
+      "name": "Harbor House",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 195,
+      "rating": 4.6
+     },
+     {
+      "id": "h5",
+      "name": "River Loft",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 165,
+      "rating": 4.5
+     },
+     {
+      "id": "h1",
+      "name": "Old Mill",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 140,
+      "rating": 4.2
+     },
+     {
+      "id": "h6",
+      "name": "Linden Court",
+      "city": "Valencia",
+      "category": "Family",
+      "price": 245,
+      "rating": 3.3
+     },
+     {
+      "id": "h2",
+      "name": "Pine Lodge",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 230,
+      "rating": 3.0
+     },
+     {
+      "id": "h4",
+      "name": "Station Hotel",
+      "city": "Valencia",
+      "category": "Family",
+      "price": 90,
+      "rating": 4.1
+     },
+     {
+      "id": "h3",
+      "name": "Casa Flora",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 75,
+      "rating": 3.5
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h0",
+      "city": "Budapest",
+      "category": "Family"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3506",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "Filter the hotel catalog: set Where to Budapest, enable \"Budget only\", apply the filters, then choose the cheapest matching hotel with a rating of at least 3.4 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Hotel catalog",
+    "query_label": "Where",
+    "category_label": "Budget only",
+    "category": "Budget",
+    "apply_label": "Show matching hotels",
+    "items": [
+     {
+      "id": "h6",
+      "name": "Harbor House",
+      "city": "Valencia",
+      "category": "Budget",
+      "price": 170,
+      "rating": 3.6
+     },
+     {
+      "id": "h1",
+      "name": "Casa Flora",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 110,
+      "rating": 3.2
+     },
+     {
+      "id": "h3",
+      "name": "Old Mill",
+      "city": "Valencia",
+      "category": "Budget",
+      "price": 50,
+      "rating": 3.5
+     },
+     {
+      "id": "h2",
+      "name": "Blue Door",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 195,
+      "rating": 3.8
+     },
+     {
+      "id": "h4",
+      "name": "Garden Inn",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 45,
+      "rating": 4.7
+     },
+     {
+      "id": "h7",
+      "name": "Linden Court",
+      "city": "Valencia",
+      "category": "Budget",
+      "price": 125,
+      "rating": 3.3
+     },
+     {
+      "id": "h5",
+      "name": "Pine Lodge",
+      "city": "Valencia",
+      "category": "Budget",
+      "price": 100,
+      "rating": 3.1
+     },
+     {
+      "id": "h0",
+      "name": "Sky Rooms",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 175,
+      "rating": 3.4
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h0",
+      "city": "Budapest",
+      "category": "Budget"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3507",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "Filter the hotel catalog: set Destination to Tallinn, enable \"Design only\", apply the filters, then choose the cheapest matching hotel with a rating of at least 3.9 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Stays",
+    "query_label": "Destination",
+    "category_label": "Design only",
+    "category": "Design",
+    "apply_label": "Search",
+    "items": [
+     {
+      "id": "h6",
+      "name": "Blue Door",
+      "city": "Tallinn",
+      "category": "Family",
+      "price": 100,
+      "rating": 4.9
+     },
+     {
+      "id": "h2",
+      "name": "Pine Lodge",
+      "city": "Tallinn",
+      "category": "Design",
+      "price": 130,
+      "rating": 3.7
+     },
+     {
+      "id": "h3",
+      "name": "Sky Rooms",
+      "city": "Tallinn",
+      "category": "Budget",
+      "price": 120,
+      "rating": 4.4
+     },
+     {
+      "id": "h1",
+      "name": "River Loft",
+      "city": "Tallinn",
+      "category": "Design",
+      "price": 200,
+      "rating": 4.8
+     },
+     {
+      "id": "h5",
+      "name": "Station Hotel",
+      "city": "Tallinn",
+      "category": "Family",
+      "price": 85,
+      "rating": 4.5
+     },
+     {
+      "id": "h0",
+      "name": "Old Mill",
+      "city": "Tallinn",
+      "category": "Design",
+      "price": 60,
+      "rating": 3.8
+     },
+     {
+      "id": "h4",
+      "name": "Harbor House",
+      "city": "Kyoto",
+      "category": "Design",
+      "price": 135,
+      "rating": 4.3
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h1",
+      "city": "Tallinn",
+      "category": "Design"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3607",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "Is \"Product news\" currently switched on? Just tell me; do not change or save anything.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Notification preferences",
+    "fields": [
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     }
+    ],
+    "submit": "Save settings"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3500",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "In the hotel catalog, filter to Budget hotels in Budapest (set Destination, enable \"Budget only\", apply the filters with \"Search\"), then choose the cheapest matching hotel with a rating of at least 4.3 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Stays",
+    "query_label": "Destination",
+    "category_label": "Budget only",
+    "category": "Budget",
+    "apply_label": "Search",
+    "items": [
+     {
+      "id": "h6",
+      "name": "Station Hotel",
+      "city": "Porto",
+      "category": "Budget",
+      "price": 190,
+      "rating": 4.9
+     },
+     {
+      "id": "h4",
+      "name": "Old Mill",
+      "city": "Budapest",
+      "category": "Design",
+      "price": 50,
+      "rating": 3.9
+     },
+     {
+      "id": "h5",
+      "name": "River Loft",
+      "city": "Porto",
+      "category": "Budget",
+      "price": 210,
+      "rating": 4.3
+     },
+     {
+      "id": "h3",
+      "name": "Pine Lodge",
+      "city": "Budapest",
+      "category": "Design",
+      "price": 150,
+      "rating": 4.1
+     },
+     {
+      "id": "h2",
+      "name": "Garden Inn",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 245,
+      "rating": 3.2
+     },
+     {
+      "id": "h1",
+      "name": "Harbor House",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 205,
+      "rating": 4.5
+     },
+     {
+      "id": "h0",
+      "name": "Blue Door",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 180,
+      "rating": 4.2
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h1",
+      "city": "Budapest",
+      "category": "Budget"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3606",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "Only look at the page and answer: How many units of Training are on this invoice? Do not submit the form.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Invoice review",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Amount due"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Storage",
+      "qty": 3,
+      "price": 46
+     },
+     {
+      "item": "Training",
+      "qty": 1,
+      "price": 59
+     },
+     {
+      "item": "Support",
+      "qty": 7,
+      "price": 11
+     },
+     {
+      "item": "Audit",
+      "qty": 9,
+      "price": 24
+     },
+     {
+      "item": "Monitoring",
+      "qty": 4,
+      "price": 11
+     },
+     {
+      "item": "Backup",
+      "qty": 6,
+      "price": 56
+     },
+     {
+      "item": "Hosting",
+      "qty": 4,
+      "price": 52
+     },
+     {
+      "item": "Licences",
+      "qty": 7,
+      "price": 46
+     }
+    ],
+    "submit": "Save total",
+    "visible_rows": 5
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3501",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Work out the invoice total (quantity times unit price over all rows, plus 12% tax, rounded to a whole number), enter the invoice total into Total, save it with \"Record amount\" and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Backup",
+      "qty": 6,
+      "price": 17
+     },
+     {
+      "item": "Support",
+      "qty": 9,
+      "price": 6
+     },
+     {
+      "item": "Training",
+      "qty": 9,
+      "price": 39
+     },
+     {
+      "item": "Audit",
+      "qty": 5,
+      "price": 32
+     },
+     {
+      "item": "Compute",
+      "qty": 5,
+      "price": 24
+     },
+     {
+      "item": "Consulting",
+      "qty": 9,
+      "price": 46
+     },
+     {
+      "item": "Hosting",
+      "qty": 9,
+      "price": 4
+     }
+    ],
+    "submit": "Record amount",
+    "visible_rows": 4
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 1385
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3509",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "Update the notification settings checkboxes so that you enable Product news, Security alerts, keeping the other notification settings unchanged; then save the notification settings and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Settings",
+    "fields": [
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": true
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": false
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": false
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "weekly": false,
+      "sms": true,
+      "email": true,
+      "security": true,
+      "product": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3505",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Enter the invoice total in Invoice total: the sum of quantity times unit price over all rows except Training and Compute. Save the invoice total and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Invoice total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Consulting",
+      "qty": 1,
+      "price": 31
+     },
+     {
+      "item": "Licences",
+      "qty": 6,
+      "price": 10
+     },
+     {
+      "item": "Hosting",
+      "qty": 9,
+      "price": 30
+     },
+     {
+      "item": "Audit",
+      "qty": 3,
+      "price": 54
+     },
+     {
+      "item": "Monitoring",
+      "qty": 7,
+      "price": 60
+     },
+     {
+      "item": "Training",
+      "qty": 5,
+      "price": 23
+     },
+     {
+      "item": "Backup",
+      "qty": 3,
+      "price": 12
+     },
+     {
+      "item": "Compute",
+      "qty": 1,
+      "price": 46
+     },
+     {
+      "item": "Support",
+      "qty": 5,
+      "price": 24
+     }
+    ],
+    "submit": "Submit",
+    "visible_rows": 6
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 1099
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3501",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable Product news, Weekly digest, Push alerts and disable SMS notifications, Security alerts. Save the notification settings with \"Save\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Alerts",
+    "fields": [
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     }
+    ],
+    "submit": "Save"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "security": false,
+      "weekly": true,
+      "push": true,
+      "sms": false,
+      "product": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3504",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "Apply the hotel catalog filters (City Budapest, \"Business only\") and choose the cheapest matching hotel with a rating of at least 4.0; confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Hotel catalog",
+    "query_label": "City",
+    "category_label": "Business only",
+    "category": "Business",
+    "apply_label": "Show matching hotels",
+    "items": [
+     {
+      "id": "h1",
+      "name": "Linden Court",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 35,
+      "rating": 3.0
+     },
+     {
+      "id": "h0",
+      "name": "River Loft",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 245,
+      "rating": 4.2
+     },
+     {
+      "id": "h5",
+      "name": "Pine Lodge",
+      "city": "Budapest",
+      "category": "Family",
+      "price": 45,
+      "rating": 4.4
+     },
+     {
+      "id": "h2",
+      "name": "Garden Inn",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 155,
+      "rating": 4.0
+     },
+     {
+      "id": "h3",
+      "name": "Old Mill",
+      "city": "Budapest",
+      "category": "Design",
+      "price": 65,
+      "rating": 3.5
+     },
+     {
+      "id": "h4",
+      "name": "Harbor House",
+      "city": "Budapest",
+      "category": "Budget",
+      "price": 170,
+      "rating": 3.4
+     },
+     {
+      "id": "h6",
+      "name": "Sky Rooms",
+      "city": "Porto",
+      "category": "Business",
+      "price": 100,
+      "rating": 3.6
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h2",
+      "city": "Budapest",
+      "category": "Business"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3503",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable Weekly digest and disable Product news without changing the other notification settings. Save the notification settings with \"Save settings\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Alerts",
+    "fields": [
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": false
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": true
+     }
+    ],
+    "submit": "Save settings"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "security": false,
+      "email": false,
+      "product": false,
+      "weekly": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3506",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Work out the invoice total (quantity times unit price over all rows), enter the invoice total into Total, save it with \"Submit\" and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Invoice review",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Training",
+      "qty": 2,
+      "price": 7
+     },
+     {
+      "item": "Hosting",
+      "qty": 1,
+      "price": 26
+     },
+     {
+      "item": "Consulting",
+      "qty": 3,
+      "price": 47
+     },
+     {
+      "item": "Monitoring",
+      "qty": 2,
+      "price": 35
+     },
+     {
+      "item": "Storage",
+      "qty": 1,
+      "price": 6
+     },
+     {
+      "item": "Support",
+      "qty": 5,
+      "price": 37
+     },
+     {
+      "item": "Compute",
+      "qty": 4,
+      "price": 46
+     }
+    ],
+    "submit": "Submit",
+    "visible_rows": 4
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 626
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3511",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable SMS notifications, Push alerts, Security alerts and disable Weekly digest, Product news. Save the notification settings with \"Apply\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Settings",
+    "fields": [
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": false
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     }
+    ],
+    "submit": "Apply"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "product": false,
+      "weekly": false,
+      "sms": true,
+      "security": true,
+      "push": true
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3604",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "Only look at the page and answer: How many units of Backup are on this invoice? Do not submit the form.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Invoice review",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Amount due"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Consulting",
+      "qty": 4,
+      "price": 36
+     },
+     {
+      "item": "Support",
+      "qty": 4,
+      "price": 25
+     },
+     {
+      "item": "Storage",
+      "qty": 3,
+      "price": 51
+     },
+     {
+      "item": "Audit",
+      "qty": 1,
+      "price": 42
+     },
+     {
+      "item": "Licences",
+      "qty": 1,
+      "price": 26
+     },
+     {
+      "item": "Monitoring",
+      "qty": 9,
+      "price": 27
+     },
+     {
+      "item": "Compute",
+      "qty": 6,
+      "price": 5
+     },
+     {
+      "item": "Backup",
+      "qty": 9,
+      "price": 12
+     }
+    ],
+    "submit": "Record amount",
+    "visible_rows": 5
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3507",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Compute the invoice total as the sum of quantity times unit price over all rows. Enter the invoice total in Amount due, save it, and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Amount due"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Licences",
+      "qty": 9,
+      "price": 32
+     },
+     {
+      "item": "Audit",
+      "qty": 2,
+      "price": 8
+     },
+     {
+      "item": "Consulting",
+      "qty": 3,
+      "price": 36
+     },
+     {
+      "item": "Training",
+      "qty": 3,
+      "price": 14
+     },
+     {
+      "item": "Backup",
+      "qty": 6,
+      "price": 60
+     },
+     {
+      "item": "Support",
+      "qty": 3,
+      "price": 48
+     }
+    ],
+    "submit": "Save total",
+    "visible_rows": 3
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 958
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3510",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "Filter the hotel catalog: set City to Kyoto, enable \"Business only\", apply the filters, then choose the best-rated matching hotel and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Hotel catalog",
+    "query_label": "City",
+    "category_label": "Business only",
+    "category": "Business",
+    "apply_label": "Show matching hotels",
+    "items": [
+     {
+      "id": "h6",
+      "name": "Station Hotel",
+      "city": "Kyoto",
+      "category": "Family",
+      "price": 245,
+      "rating": 4.9
+     },
+     {
+      "id": "h7",
+      "name": "Casa Flora",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 165,
+      "rating": 3.2
+     },
+     {
+      "id": "h5",
+      "name": "Linden Court",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 180,
+      "rating": 4.1
+     },
+     {
+      "id": "h2",
+      "name": "Sky Rooms",
+      "city": "Kyoto",
+      "category": "Business",
+      "price": 250,
+      "rating": 3.3
+     },
+     {
+      "id": "h3",
+      "name": "Old Mill",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 215,
+      "rating": 4.6
+     },
+     {
+      "id": "h0",
+      "name": "River Loft",
+      "city": "Kyoto",
+      "category": "Business",
+      "price": 205,
+      "rating": 4.0
+     },
+     {
+      "id": "h1",
+      "name": "Garden Inn",
+      "city": "Kyoto",
+      "category": "Business",
+      "price": 235,
+      "rating": 3.4
+     },
+     {
+      "id": "h4",
+      "name": "Pine Lodge",
+      "city": "Budapest",
+      "category": "Business",
+      "price": 100,
+      "rating": 4.5
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h0",
+      "city": "Kyoto",
+      "category": "Business"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_prefs-3502",
+   "family": "web_prefs",
+   "split": "stream",
+   "instruction": "In the notification settings, enable SMS notifications, Weekly digest, Email notifications and disable Product news, Security alerts, Push alerts. Save the notification settings with \"Save settings\" and confirm them.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Alerts",
+    "fields": [
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": true
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": true
+     },
+     {
+      "name": "weekly",
+      "label": "Weekly digest",
+      "initial": true
+     },
+     {
+      "name": "product",
+      "label": "Product news",
+      "initial": false
+     }
+    ],
+    "submit": "Save settings"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "email": true,
+      "push": false,
+      "sms": true,
+      "security": false,
+      "weekly": true,
+      "product": false
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3500",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Enter the invoice total in Amount due: the sum of quantity times unit price over all rows. Save the invoice total and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Order summary",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Amount due"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Audit",
+      "qty": 5,
+      "price": 50
+     },
+     {
+      "item": "Monitoring",
+      "qty": 7,
+      "price": 8
+     },
+     {
+      "item": "Backup",
+      "qty": 6,
+      "price": 59
+     },
+     {
+      "item": "Storage",
+      "qty": 2,
+      "price": 21
+     },
+     {
+      "item": "Licences",
+      "qty": 3,
+      "price": 30
+     },
+     {
+      "item": "Consulting",
+      "qty": 9,
+      "price": 56
+     }
+    ],
+    "submit": "Save total",
+    "visible_rows": 3
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 1296
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3502",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "In the hotel catalog, filter to Design hotels in Valencia (set Destination, enable \"Design only\", apply the filters with \"Show matching hotels\"), then choose the cheapest matching hotel with a rating of at least 4.4 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Book a room",
+    "query_label": "Destination",
+    "category_label": "Design only",
+    "category": "Design",
+    "apply_label": "Show matching hotels",
+    "items": [
+     {
+      "id": "h4",
+      "name": "Linden Court",
+      "city": "Valencia",
+      "category": "Budget",
+      "price": 145,
+      "rating": 4.2
+     },
+     {
+      "id": "h6",
+      "name": "Pine Lodge",
+      "city": "Lisbon",
+      "category": "Design",
+      "price": 165,
+      "rating": 3.9
+     },
+     {
+      "id": "h2",
+      "name": "Station Hotel",
+      "city": "Valencia",
+      "category": "Design",
+      "price": 250,
+      "rating": 4.5
+     },
+     {
+      "id": "h0",
+      "name": "Sky Rooms",
+      "city": "Valencia",
+      "category": "Design",
+      "price": 95,
+      "rating": 4.3
+     },
+     {
+      "id": "h3",
+      "name": "Blue Door",
+      "city": "Lisbon",
+      "category": "Design",
+      "price": 205,
+      "rating": 3.2
+     },
+     {
+      "id": "h1",
+      "name": "River Loft",
+      "city": "Valencia",
+      "category": "Design",
+      "price": 255,
+      "rating": 4.0
+     },
+     {
+      "id": "h5",
+      "name": "Garden Inn",
+      "city": "Lisbon",
+      "category": "Design",
+      "price": 105,
+      "rating": 3.5
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h2",
+      "city": "Valencia",
+      "category": "Design"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_lookup-3603",
+   "family": "web_lookup",
+   "split": "stream",
+   "instruction": "Is \"Email notifications\" currently switched on? Just tell me; do not change or save anything.",
+   "fixture": {
+    "kind": "preferences",
+    "title": "Settings",
+    "fields": [
+     {
+      "name": "push",
+      "label": "Push alerts",
+      "initial": false
+     },
+     {
+      "name": "email",
+      "label": "Email notifications",
+      "initial": false
+     },
+     {
+      "name": "security",
+      "label": "Security alerts",
+      "initial": false
+     },
+     {
+      "name": "sms",
+      "label": "SMS notifications",
+      "initial": false
+     }
+    ],
+    "submit": "Save"
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": null,
+     "posts": 0,
+     "readback_matches_backend": false
+    }
+   },
+   "negative": true
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3505",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "In the hotel catalog, filter to Family hotels in Porto (set Where, enable \"Family only\", apply the filters with \"Search\"), then choose the best-rated matching hotel and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Stays",
+    "query_label": "Where",
+    "category_label": "Family only",
+    "category": "Family",
+    "apply_label": "Search",
+    "items": [
+     {
+      "id": "h6",
+      "name": "Garden Inn",
+      "city": "Porto",
+      "category": "Budget",
+      "price": 40,
+      "rating": 4.4
+     },
+     {
+      "id": "h4",
+      "name": "Pine Lodge",
+      "city": "Kyoto",
+      "category": "Family",
+      "price": 120,
+      "rating": 4.7
+     },
+     {
+      "id": "h1",
+      "name": "River Loft",
+      "city": "Porto",
+      "category": "Family",
+      "price": 110,
+      "rating": 4.6
+     },
+     {
+      "id": "h5",
+      "name": "Harbor House",
+      "city": "Kyoto",
+      "category": "Family",
+      "price": 225,
+      "rating": 4.5
+     },
+     {
+      "id": "h2",
+      "name": "Casa Flora",
+      "city": "Porto",
+      "category": "Family",
+      "price": 115,
+      "rating": 3.8
+     },
+     {
+      "id": "h0",
+      "name": "Sky Rooms",
+      "city": "Porto",
+      "category": "Family",
+      "price": 180,
+      "rating": 4.0
+     },
+     {
+      "id": "h3",
+      "name": "Blue Door",
+      "city": "Porto",
+      "category": "Business",
+      "price": 95,
+      "rating": 4.1
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h1",
+      "city": "Porto",
+      "category": "Family"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_invoice-3502",
+   "family": "web_invoice",
+   "split": "stream",
+   "instruction": "Enter the invoice total in Total: the sum of quantity times unit price over all rows. Save the invoice total and confirm the saved invoice total.",
+   "fixture": {
+    "kind": "invoice",
+    "title": "Billing",
+    "fields": [
+     {
+      "name": "total",
+      "label": "Total"
+     }
+    ],
+    "rows": [
+     {
+      "item": "Storage",
+      "qty": 9,
+      "price": 52
+     },
+     {
+      "item": "Monitoring",
+      "qty": 8,
+      "price": 52
+     },
+     {
+      "item": "Licences",
+      "qty": 7,
+      "price": 16
+     },
+     {
+      "item": "Audit",
+      "qty": 2,
+      "price": 5
+     },
+     {
+      "item": "Support",
+      "qty": 1,
+      "price": 11
+     },
+     {
+      "item": "Training",
+      "qty": 8,
+      "price": 41
+     },
+     {
+      "item": "Backup",
+      "qty": 1,
+      "price": 10
+     },
+     {
+      "item": "Compute",
+      "qty": 8,
+      "price": 46
+     },
+     {
+      "item": "Hosting",
+      "qty": 6,
+      "price": 56
+     }
+    ],
+    "submit": "Submit",
+    "visible_rows": 6
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "total": 2059
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-web_catalog-3503",
+   "family": "web_catalog",
+   "split": "stream",
+   "instruction": "In the hotel catalog, filter to Business hotels in Tallinn (set Destination, enable \"Business only\", apply the filters with \"Search\"), then choose the cheapest matching hotel with a rating of at least 3.5 and confirm the selected hotel.",
+   "fixture": {
+    "kind": "catalog",
+    "title": "Book a room",
+    "query_label": "Destination",
+    "category_label": "Business only",
+    "category": "Business",
+    "apply_label": "Search",
+    "items": [
+     {
+      "id": "h6",
+      "name": "Garden Inn",
+      "city": "Lisbon",
+      "category": "Business",
+      "price": 85,
+      "rating": 3.5
+     },
+     {
+      "id": "h0",
+      "name": "Old Mill",
+      "city": "Tallinn",
+      "category": "Business",
+      "price": 35,
+      "rating": 3.4
+     },
+     {
+      "id": "h1",
+      "name": "Sky Rooms",
+      "city": "Tallinn",
+      "category": "Business",
+      "price": 110,
+      "rating": 3.1
+     },
+     {
+      "id": "h3",
+      "name": "Station Hotel",
+      "city": "Tallinn",
+      "category": "Budget",
+      "price": 200,
+      "rating": 4.5
+     },
+     {
+      "id": "h7",
+      "name": "Linden Court",
+      "city": "Tallinn",
+      "category": "Family",
+      "price": 225,
+      "rating": 3.8
+     },
+     {
+      "id": "h4",
+      "name": "River Loft",
+      "city": "Tallinn",
+      "category": "Design",
+      "price": 75,
+      "rating": 4.3
+     },
+     {
+      "id": "h5",
+      "name": "Blue Door",
+      "city": "Lisbon",
+      "category": "Business",
+      "price": 210,
+      "rating": 4.7
+     },
+     {
+      "id": "h2",
+      "name": "Casa Flora",
+      "city": "Tallinn",
+      "category": "Business",
+      "price": 45,
+      "rating": 3.9
+     }
+    ],
+    "ratings_hidden": true
+   },
+   "initial_files": {},
+   "scoring_criteria": {
+    "type": "json_exact_match",
+    "file": "browser-check.json",
+    "expected": {
+     "record": {
+      "property_id": "h2",
+      "city": "Tallinn",
+      "category": "Business"
+     },
+     "posts": 1,
+     "readback_matches_backend": true
+    }
+   },
+   "negative": false
+  }
+ ],
+ "role": "stream",
+ "order_seed": 1
+}
