@@ -754,6 +754,7 @@ class KageServer:
         from core.evolution.notices import DEFAULT_PATH as NOTICES_PATH, NoticeSource, NoticeStore
         evolution_cfg = cfg.get("evolution", {}) if isinstance(cfg.get("evolution", {}), dict) else {}
         self._notices_path = os.path.expanduser(str(evolution_cfg.get("notices_path", NOTICES_PATH)))
+        self._evolution_cfg = evolution_cfg
         self.evolution_scheduler = EvolutionScheduler(evolution_cfg, self.session_manager)
         # Promoted skills enter the daily registry only after the user accepts (adopt_skill).
         from core.skill_adoption import SkillAdoption
@@ -784,6 +785,7 @@ class KageServer:
             "start_teaching": self._start_teaching,
             "adopt_skill": self._adopt_skill,
             "notice_reply": self._notice_reply,
+            "real_teacher_retry": self._real_teacher_retry,
         }
 
         # Short-lived interactive dialog state unified with SessionManager
@@ -1115,7 +1117,65 @@ class KageServer:
             return None
         record = await asyncio.to_thread(self.trajectories.feedback, turn_id, value)
         self._log_server_event("turn.feedback", turn_id=turn_id, value=value, found=record is not None)
+        if value == "down" and record is not None and record.get("source") == "real":
+            await self._offer_teacher_redo(record)
         return record
+
+    async def _offer_teacher_redo(self, record: dict[str, Any]) -> None:
+        """A3: after a 👎, offer to have the teacher redo the task; nothing runs until the user accepts."""
+        from core.evolution.real_teacher import teacher_available
+        from core.proactive import make_notification
+        heartbeat = getattr(self, "heartbeat", None)
+        if heartbeat is None:
+            return
+        task = str(record.get("user_input") or "")[:80]
+        if teacher_available():
+            note = make_notification("learning:help", f"这次没做好\n“{task}”我没完成好。要我请老师示范一次吗？"
+                                     "老师会重新做这件事，我会记住做法。", type_="help_request",
+                                     action={"type": "real_teacher_retry", "turn_id": record["id"]})
+        else:
+            note = make_notification("learning:help", f"这次没做好\n“{task}”我没完成好。方便的话示范一次给我看吗？",
+                                     type_="help_request")
+        await heartbeat.deliver_now([note])
+
+    async def _real_teacher_retry(self, action: dict[str, Any]) -> None:
+        """The user accepted: the teacher redoes the task once; its steps are kept as a teacher trajectory."""
+        from core.evolution.real_teacher import DailyCapReached, LedgeredTeacher
+        from core.trajectories import RecordingProvider, TrajectoryRecorder
+        record = self.trajectories.get(str(action.get("turn_id") or ""))
+        if record is None:
+            return
+        daily = float((getattr(self, "_evolution_cfg", {}) or {}).get("real_teacher_daily_usd", 0.05))
+        recorder = TrajectoryRecorder(self.trajectories.root, enabled=self.trajectories.enabled)
+        teacher_id = f"{record['id']}-teacher"
+        try:
+            teacher = LedgeredTeacher(daily_usd=daily, run_id=teacher_id)
+        except Exception as exc:
+            await self.send_message("proactive", {"event": "teacher_failed", "error": f"{type(exc).__name__}"})
+            return
+        runner = self.agentic_loop.create_isolated_runner(model_provider=RecordingProvider(teacher, recorder))
+        recorder.begin(teacher_id, str(record.get("user_input") or ""), source="teacher", parent=record["id"])
+        result, error = None, None
+        await self.send_message("proactive", {"event": "teacher_started", "turn_id": record["id"]})
+        try:
+            result = await runner.run(user_input=str(record.get("user_input") or ""), current_emotion="neutral")
+        except DailyCapReached:
+            error = "daily_cap"
+        except Exception as exc:
+            error = type(exc).__name__
+            logger.warning("Teacher redo failed", exc_info=True)
+        finally:
+            done = recorder.finish(str(getattr(result, "final_text", "") or ""),
+                                   list(getattr(result, "tool_calls_executed", None) or []))
+        if error == "daily_cap" or (result is None and error):
+            text = ("今天请老师的额度用完了。方便的话你示范一次，我照着学。" if error == "daily_cap"
+                    else "请老师重做时出错了，这次先记下，之后再试。")
+            await self.send_message("proactive", {"event": "teacher_failed", "error": error})
+            await self.mouth_speak(text, "neutral")
+            return
+        await self.mouth_speak(f"老师重做好了：{str(result.final_text or '')[:200]}", "neutral")
+        if done is not None and done.get("kind") == "task":
+            await self.send_message("turn_review", {"turn_id": done["id"], "auto_check": done.get("auto_check", {})})
 
     async def _notify_audio_event(self, event: str, **fields) -> None:
         await self.send_message("audio", self._audio_event_payload(event, **fields))

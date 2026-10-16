@@ -127,6 +127,8 @@ export function handleProactive(data: { event?: string; notification?: Proactive
   else if (data.event === 'teaching_started') toast('已打开示范录制，请开始演示');
   else if (data.event === 'skill_adopted') toast(`已启用：${(data.tools || []).join('、')}`);
   else if (data.event === 'skill_adoption_failed') toast(`启用失败：${data.error || ''}`, 6000);
+  else if (data.event === 'teacher_started') toast('正在请老师示范…', 6000);
+  else if (data.event === 'teacher_failed') toast('这次没能请到老师', 4000);
 }
 
 // One-click verdict after a task turn (A2): the label stored with the turn's trajectory.

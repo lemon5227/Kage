@@ -63,12 +63,15 @@ class TrajectoryRecorder:
         self._open: dict | None = None
 
     # ------------------------------------------------------------------ recording
-    def begin(self, turn_id: str, user_input: str) -> None:
+    def begin(self, turn_id: str, user_input: str, *, source: str = 'real', parent: str | None = None) -> None:
+        """Open a turn. ``source`` is 'real' (the user's task) or 'teacher' (a teacher redo of ``parent``)."""
         if not self.enabled:
             return
         with self._lock:
             self._open = {'id': turn_id, 'created': datetime.datetime.now().isoformat(timespec='seconds'),
-                          'source': 'real', 'user_input': user_input, 'steps': []}
+                          'source': source, 'user_input': user_input, 'steps': []}
+            if parent:
+                self._open['parent'] = parent
 
     def step(self, messages, tools, response) -> None:
         with self._lock:
