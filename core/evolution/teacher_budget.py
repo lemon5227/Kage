@@ -12,7 +12,7 @@ from pathlib import Path
 
 from core.evolution.budget import BudgetConfig, BudgetTracker
 
-GLOBAL_TEACHER_CAP_USD = 2.00
+GLOBAL_TEACHER_CAP_USD = 4.00   # user: $1 (10-14) + $1 (10-15) + $2 (10-16)
 INPUT_USD_PER_M = 0.30
 OUTPUT_USD_PER_M = 1.20
 DEFAULT_LEDGER = Path('~/.config/kage/teachers/ledger.sqlite')

@@ -2,6 +2,7 @@ import './style.css';
 import * as PIXI from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { handleProactive, initNotices } from './notices';
 
 const MOTION_COOLDOWN_MS = 4000;
 const MOTION_DEMO_LOOP = false;
@@ -301,6 +302,9 @@ function setupWebSocket(model: Live2DModel) {
   let expressionResetTimer: number | undefined;
 
   socket.onopen = () => console.log("🔌 Connected to Brain");
+  initNotices((payload) => {
+    if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(payload));
+  });
 
   socket.onerror = () => {
     try {
@@ -338,6 +342,10 @@ function setupWebSocket(model: Live2DModel) {
       // Handle Speech Text
       if (data.type === "speech") {
         console.log("Kage Says: " + data.text);
+      }
+
+      if (data.type === "proactive") {
+        handleProactive(data);
       }
 
       if (data.type === "job") {
