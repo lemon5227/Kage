@@ -1,0 +1,1372 @@
+{
+  "arms": {
+    "A3-s1": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 6,
+            "n": 18,
+            "rate": 0.3333333333333333,
+            "ci95": [
+              0.1628,
+              0.5625
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [
+        {
+          "tasks": "0-9",
+          "n": 10,
+          "student_solved": 3,
+          "student_attempted": 10,
+          "teacher_calls": 7,
+          "skills_accepted": 5,
+          "cloud_usd": 0.07663,
+          "cumulative_cloud_usd": 0.07663
+        },
+        {
+          "tasks": "10-19",
+          "n": 10,
+          "student_solved": 2,
+          "student_attempted": 10,
+          "teacher_calls": 8,
+          "skills_accepted": 4,
+          "cloud_usd": 0.124004,
+          "cumulative_cloud_usd": 0.200634
+        },
+        {
+          "tasks": "20-29",
+          "n": 10,
+          "student_solved": 5,
+          "student_attempted": 10,
+          "teacher_calls": 5,
+          "skills_accepted": 3,
+          "cloud_usd": 0.066226,
+          "cumulative_cloud_usd": 0.26686
+        },
+        {
+          "tasks": "30-39",
+          "n": 10,
+          "student_solved": 5,
+          "student_attempted": 10,
+          "teacher_calls": 5,
+          "skills_accepted": 4,
+          "cloud_usd": 0.087649,
+          "cumulative_cloud_usd": 0.354509
+        },
+        {
+          "tasks": "40-49",
+          "n": 4,
+          "student_solved": 2,
+          "student_attempted": 4,
+          "teacher_calls": 2,
+          "skills_accepted": 2,
+          "cloud_usd": 0.04579,
+          "cumulative_cloud_usd": 0.400298
+        }
+      ],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 27,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 27
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 27,
+      "help_declined": 0
+    },
+    "A4mG-s1": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 6,
+            "n": 18,
+            "rate": 0.3333333333333333,
+            "ci95": [
+              0.1628,
+              0.5625
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [
+        {
+          "tasks": "0-9",
+          "n": 10,
+          "student_solved": 4,
+          "student_attempted": 10,
+          "teacher_calls": 6,
+          "skills_accepted": 4,
+          "cloud_usd": 0.084049,
+          "cumulative_cloud_usd": 0.084049
+        },
+        {
+          "tasks": "10-19",
+          "n": 10,
+          "student_solved": 3,
+          "student_attempted": 10,
+          "teacher_calls": 7,
+          "skills_accepted": 4,
+          "cloud_usd": 0.187126,
+          "cumulative_cloud_usd": 0.271174
+        },
+        {
+          "tasks": "20-29",
+          "n": 10,
+          "student_solved": 5,
+          "student_attempted": 10,
+          "teacher_calls": 5,
+          "skills_accepted": 3,
+          "cloud_usd": 0.037253,
+          "cumulative_cloud_usd": 0.308427
+        },
+        {
+          "tasks": "30-39",
+          "n": 10,
+          "student_solved": 5,
+          "student_attempted": 10,
+          "teacher_calls": 5,
+          "skills_accepted": 4,
+          "cloud_usd": 0.07049,
+          "cumulative_cloud_usd": 0.378917
+        },
+        {
+          "tasks": "40-49",
+          "n": 4,
+          "student_solved": 1,
+          "student_attempted": 4,
+          "teacher_calls": 3,
+          "skills_accepted": 3,
+          "cloud_usd": 0.005746,
+          "cumulative_cloud_usd": 0.384663
+        }
+      ],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 26,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 26
+      },
+      "clusters": {
+        "tasks": 44,
+        "clusters": 4,
+        "families": 4,
+        "purity": 1.0,
+        "mixed_clusters": 0
+      },
+      "evolution": null,
+      "teacher_calls": 26,
+      "help_declined": 0
+    },
+    "A3-s2": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 1,
+            "n": 6,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0301,
+              0.5635
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [
+        {
+          "tasks": "0-9",
+          "n": 10,
+          "student_solved": 3,
+          "student_attempted": 10,
+          "teacher_calls": 7,
+          "skills_accepted": 6,
+          "cloud_usd": 0.104053,
+          "cumulative_cloud_usd": 0.104053
+        },
+        {
+          "tasks": "10-19",
+          "n": 10,
+          "student_solved": 4,
+          "student_attempted": 10,
+          "teacher_calls": 6,
+          "skills_accepted": 4,
+          "cloud_usd": 0.147529,
+          "cumulative_cloud_usd": 0.251582
+        },
+        {
+          "tasks": "20-29",
+          "n": 10,
+          "student_solved": 7,
+          "student_attempted": 10,
+          "teacher_calls": 3,
+          "skills_accepted": 3,
+          "cloud_usd": 0.061885,
+          "cumulative_cloud_usd": 0.313467
+        },
+        {
+          "tasks": "30-39",
+          "n": 10,
+          "student_solved": 5,
+          "student_attempted": 10,
+          "teacher_calls": 5,
+          "skills_accepted": 2,
+          "cloud_usd": 0.051269,
+          "cumulative_cloud_usd": 0.364737
+        },
+        {
+          "tasks": "40-49",
+          "n": 4,
+          "student_solved": 2,
+          "student_attempted": 4,
+          "teacher_calls": 2,
+          "skills_accepted": 1,
+          "cloud_usd": 0.036895,
+          "cumulative_cloud_usd": 0.401632
+        }
+      ],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 23,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 23
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 23,
+      "help_declined": 0
+    },
+    "A4mG-s2": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 6,
+            "n": 18,
+            "rate": 0.3333333333333333,
+            "ci95": [
+              0.1628,
+              0.5625
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [
+        {
+          "tasks": "0-9",
+          "n": 10,
+          "student_solved": 4,
+          "student_attempted": 10,
+          "teacher_calls": 6,
+          "skills_accepted": 5,
+          "cloud_usd": 0.113284,
+          "cumulative_cloud_usd": 0.113284
+        },
+        {
+          "tasks": "10-19",
+          "n": 10,
+          "student_solved": 4,
+          "student_attempted": 10,
+          "teacher_calls": 6,
+          "skills_accepted": 4,
+          "cloud_usd": 0.135081,
+          "cumulative_cloud_usd": 0.248365
+        },
+        {
+          "tasks": "20-29",
+          "n": 10,
+          "student_solved": 7,
+          "student_attempted": 10,
+          "teacher_calls": 3,
+          "skills_accepted": 3,
+          "cloud_usd": 0.051084,
+          "cumulative_cloud_usd": 0.299449
+        },
+        {
+          "tasks": "30-39",
+          "n": 10,
+          "student_solved": 5,
+          "student_attempted": 10,
+          "teacher_calls": 5,
+          "skills_accepted": 2,
+          "cloud_usd": 0.074739,
+          "cumulative_cloud_usd": 0.374189
+        },
+        {
+          "tasks": "40-49",
+          "n": 4,
+          "student_solved": 2,
+          "student_attempted": 4,
+          "teacher_calls": 2,
+          "skills_accepted": 1,
+          "cloud_usd": 0.010831,
+          "cumulative_cloud_usd": 0.38502
+        }
+      ],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 22,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 22
+      },
+      "clusters": {
+        "tasks": 44,
+        "clusters": 5,
+        "families": 4,
+        "purity": 1.0,
+        "mixed_clusters": 0
+      },
+      "evolution": null,
+      "teacher_calls": 22,
+      "help_declined": 0
+    },
+    "A0-r1": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 3,
+            "n": 18,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0584,
+              0.3922
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 0,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 0
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 0,
+      "help_declined": 0
+    },
+    "A0-r2": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 5,
+            "n": 18,
+            "rate": 0.2777777777777778,
+            "ci95": [
+              0.125,
+              0.5087
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 0,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 0
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 0,
+      "help_declined": 0
+    },
+    "A0-r3": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 4,
+            "n": 18,
+            "rate": 0.2222222222222222,
+            "ci95": [
+              0.09,
+              0.4522
+            ]
+          },
+          "cross_family": {
+            "k": 1,
+            "n": 6,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0301,
+              0.5635
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 4,
+            "n": 18,
+            "rate": 0.2222222222222222,
+            "ci95": [
+              0.09,
+              0.4522
+            ]
+          },
+          "cross_family": {
+            "k": 1,
+            "n": 6,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0301,
+              0.5635
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 4,
+            "n": 18,
+            "rate": 0.2222222222222222,
+            "ci95": [
+              0.09,
+              0.4522
+            ]
+          },
+          "cross_family": {
+            "k": 1,
+            "n": 6,
+            "rate": 0.16666666666666666,
+            "ci95": [
+              0.0301,
+              0.5635
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 0,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 0
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 0,
+      "help_declined": 0
+    },
+    "A1": {
+      "checkpoints": {
+        "cp0": {
+          "in_family": {
+            "k": 0,
+            "n": 18,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.1759
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp22": {
+          "in_family": {
+            "k": 0,
+            "n": 18,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.1759
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "cp44": {
+          "in_family": {
+            "k": 0,
+            "n": 18,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.1759
+            ]
+          },
+          "cross_family": {
+            "k": 0,
+            "n": 6,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.3903
+            ]
+          },
+          "negative": {
+            "k": 6,
+            "n": 6,
+            "rate": 1.0,
+            "ci95": [
+              0.6097,
+              1.0
+            ]
+          },
+          "misuse": {
+            "k": 0,
+            "n": 6
+          },
+          "retention_f1": {
+            "k": 0,
+            "n": 0,
+            "rate": null,
+            "ci95": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      },
+      "stream": [],
+      "help": {
+        "before_attempt": 0,
+        "student_requested": 0,
+        "after_failure": 0,
+        "asked_before_tasks": 0,
+        "precision_before": null,
+        "missed_asks": 0
+      },
+      "clusters": null,
+      "evolution": null,
+      "teacher_calls": 0,
+      "help_declined": 0
+    }
+  },
+  "paired": {},
+  "cp0_from": "A0-r1",
+  "constant_arms": [
+    "A0-r1",
+    "A0-r2",
+    "A0-r3",
+    "A1"
+  ]
+}
