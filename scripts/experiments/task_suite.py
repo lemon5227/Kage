@@ -20,14 +20,15 @@ from core.model_provider import OpenAICompatibleProvider
 
 
 class RecordedLocalProvider(OpenAICompatibleProvider):
-    def __init__(self, trace_path, output_limit=None, input_byte_cap=12000, **kwargs):
+    def __init__(self, trace_path, output_limit=None, input_byte_cap=12000, temperature=None, **kwargs):
         super().__init__(**kwargs)
         self.trace_path = trace_path
         self.output_limit = output_limit
         self.input_byte_cap = input_byte_cap   # historical protocols keep 12000; stream runs pass their own
+        self.temperature = temperature
 
     def generate(self, messages, **kwargs):
-        kwargs["temperature"] = 0
+        kwargs["temperature"] = 0 if self.temperature is None else self.temperature
         if self.thinking is False:
             kwargs["max_tokens"] = self.output_limit or min(300, kwargs.get("max_tokens", 300))
             if len(self._serialize_request(self._request_payload(messages,**kwargs))) > self.input_byte_cap:

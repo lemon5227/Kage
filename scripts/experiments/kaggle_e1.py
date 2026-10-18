@@ -95,7 +95,7 @@ def cuda_root() -> str:
     raise SystemExit('no CUDA toolkit with nvcc under /usr/local')
 
 
-def setup() -> dict:
+def setup(*, teacher_config: bool = True) -> dict:
     sh([PY, '-m', 'pip', 'install', '-q', *PIP])
     if not shutil.which('lsof'):
         sh('apt-get -qq update && apt-get -qq install -y lsof >/dev/null')
@@ -142,7 +142,8 @@ def setup() -> dict:
             digest.update(block)
     if digest.hexdigest() != MODEL_SHA256:
         raise SystemExit(f'model sha256 mismatch: {digest.hexdigest()}')
-    write_teacher_config()
+    if teacher_config:                    # rsr-smoke never calls a teacher
+        write_teacher_config()
     version = subprocess.run([str(server), '--version'], capture_output=True, text=True).stderr.strip()[:300]
     gpus = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'],
                           capture_output=True, text=True).stdout.strip().splitlines()
@@ -465,6 +466,54 @@ def c3_report() -> None:
                     '--out', str(OUT / 'web-report-c3')], cwd=ROOT, check=False)
 
 
+# ---------------------------------------------------------------- R2: guided fresh execution
+RSR_GUIDANCE = OUT / 'rsr-guidance'
+RSR_SCRIPT = 'scripts/experiments/rsr_collect.py'
+RSR_MEMBERS = {
+    'file': [('v10-results.tar.gz', 'e1/seed1/A4mG/memory.jsonl'),
+             ('v10-results.tar.gz', 'e1/seed2/A4mG/memory.jsonl')],
+    'web': [('v17-results.tar.gz', 'e1/web/seed1/A4mG/memory.jsonl'),
+            ('v17-results.tar.gz', 'e1/web/seed2/A4mG/memory.jsonl')],
+}
+
+
+def rsr_guidance() -> dict[str, list[Path]]:
+    """A4mG demonstrations from the file (v10) and browser (v17) runs, extracted verbatim."""
+    out = {}
+    for kind, members in RSR_MEMBERS.items():
+        paths = []
+        for index, (archive, member) in enumerate(members, 1):
+            path = RSR_GUIDANCE / f'{kind}-{index}.jsonl'
+            if not path.exists():                      # exact member names: skip AppleDouble entries
+                RSR_GUIDANCE.mkdir(parents=True, exist_ok=True)
+                with tarfile.open(ROOT / 'evidence' / 'kaggle' / archive) as tar:
+                    path.write_bytes(tar.extractfile(member).read())
+            paths.append(path)
+        out[kind] = paths
+    return out
+
+
+def rsr_smoke_jobs(guidance: dict[str, list[Path]]) -> list[tuple[str, list[str]]]:
+    """Three parallel collect jobs: file families, browser invoice/prefs, browser catalog.
+
+    Each job retrieves a remembered demonstration for practice tasks and runs the frozen student
+    at temperature 0.6 (two attempts per task), plus two read-only negatives per family."""
+    groups = [
+        ('file', 'subset_selection,interval_merge,log_aggregation,csv_transform', guidance['file']),
+        ('browser-forms', 'web_invoice,web_prefs', guidance['web']),
+        ('browser-catalog', 'web_catalog', guidance['web']),
+    ]
+    jobs = []
+    for index, (name, families, memories) in enumerate(groups):
+        jobs.append((f'rsr-{name}', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'rsr' / name),
+                                     '--port', str(18600 + index), '--families', families,
+                                     '--seeds', '8', '--k', '2', '--temperature', '0.6',
+                                     '--guidance', 'demo', '--negatives', '2',
+                                     '--skill-runner', 'process',
+                                     *[item for memory in memories for item in ('--memory', str(memory))]]))
+    return jobs
+
+
 # ---------------------------------------------------------------- P4-L3: LoRA distillation
 HF_MODEL = 'InternScience/Agents-A1-4B'
 HF_REVISION = '945c40a4aa6f534d434a353207b8d42ecf7a5293'
@@ -530,7 +579,7 @@ def package() -> None:
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-                                        'c-cal', 'c2', 'c3', 'package'], default='all')
+                                        'c-cal', 'c2', 'c3', 'rsr-smoke', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -545,7 +594,10 @@ def main(argv=None):
         PHASE_CAP['usd'] = C2_CAP_USD
     if args.phase == 'c3':
         PHASE_CAP['usd'] = C3_CAP_USD
-    info = setup() if args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3') else json.loads((OUT / 'host.json').read_text())
+    needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
+                                 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke')
+    info = (setup(teacher_config=args.phase != 'rsr-smoke') if needs_setup
+            else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
         browser_setup()
         os.environ['KAGE_CTX'] = BROWSER_CTX
@@ -582,6 +634,18 @@ def main(argv=None):
             break
         run_jobs(info, c3_jobs(), 'c3')
         c3_report()
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'rsr-smoke':
+        # R2: guided practice runs -> guidance-free SFT rows. No teacher, no cloud calls.
+        browser_setup()
+        os.environ['KAGE_CTX'] = BROWSER_CTX
+        jobs = rsr_smoke_jobs(rsr_guidance())
+        run_jobs(info, jobs, 'rsr-smoke')
+        for name, _ in jobs:
+            subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(OUT / 'rsr' / name)], cwd=ROOT, check=False)
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
