@@ -23,6 +23,7 @@ from typing import Callable
 from core.evolution.budget import BudgetExhaustedError
 from core.evolution.competence import CompetenceModel
 from core.evolution.contracts import Candidate, RunResult
+from core.evolution.leakage import screen_lessons
 from core.evolution.relevance import InstructionSpace, SkillSources, TaskClusters, skill_ids
 
 ARMS = {
@@ -479,10 +480,14 @@ class StreamLearner:
                         # Same stop as a refused demonstration: learning ends, checkpoints still run.
                         raise TeacherBudgetExhausted(f"lessons for {task['task_id']}: {exc}") from exc
                     lessons = [{**lesson, 'scope': 'task'} for lesson in extracted]
+                    lessons, rejected = screen_lessons(lessons, task)
                     outcomes = self.playbook.add(lessons, source_task=task['task_id'], family=task['family'],
                                                  trigger=task['instruction'])
                     self.playbook.save()
-                    row['learning']['lessons'] = {'n': len(lessons), 'outcomes': outcomes}
+                    row['learning']['lessons'] = {
+                        'n': len(lessons), 'rejected': len(rejected),
+                        'rejected_values': sorted({v for r in rejected for v in r['leaked']})[:20],
+                        'outcomes': outcomes}
                     if any(outcome in ('added', 'merged') for outcome in outcomes):
                         row['learning']['accepted'] = True
             learning = row.get('learning') or {}

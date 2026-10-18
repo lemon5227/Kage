@@ -206,7 +206,8 @@ def test_agl_learns_a_lesson_from_the_teacher_and_solves_the_next_task(tmp_path)
     first = learner.step(tasks[0])
     assert first['student_score'] == 0.0 and first['teacher_score'] == 1.0, first
     assert first['learning']['kind'] == 'lessons' and first['learning']['accepted'] is True, first['learning']
-    assert first['learning']['lessons'] == {'n': 1, 'outcomes': ['added']}, first['learning']
+    assert first['learning']['lessons'] == {'n': 1, 'rejected': 0, 'rejected_values': [],
+                                             'outcomes': ['added']}, first['learning']
     assert not (tmp_path / 'L' / 'memory.jsonl').exists()
     saved = Playbook(tmp_path / 'L' / 'playbook.json').entries
     assert len(saved) == 1 and saved[0]['scope'] == 'task' and saved[0]['do'] == LESSON['do']
