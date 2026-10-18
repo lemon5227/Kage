@@ -20,6 +20,7 @@ from pathlib import Path
 import re
 from typing import Callable
 
+from core.evolution.budget import BudgetExhaustedError
 from core.evolution.competence import CompetenceModel
 from core.evolution.contracts import Candidate, RunResult
 from core.evolution.relevance import InstructionSpace, SkillSources, TaskClusters, skill_ids
@@ -41,6 +42,11 @@ ARMS = {
     # A4mG = A4m + gate + clusters: isolates the gate's effect (E-1c unseen-family interference).
     'A4mG': {'learn': 'both', 'help': 'after_failure', 'verify_family': 2, 'generalize': 1,
              'gate': True, 'clusters': True},
+    # C3: A4mG plus teacher-written, task-scoped lessons extracted from each verified browser demo.
+    'A4mGL': {'learn': 'both', 'help': 'after_failure', 'verify_family': 2, 'generalize': 1,
+              'gate': True, 'clusters': True, 'lessons': True},
+    # C3 control: only the lessons above, with no demonstration memory and no skills.
+    'AGL': {'learn': 'lessons', 'help': 'after_failure', 'gate': True, 'clusters': True, 'lessons': True},
     # A5 = A4mG + proactive help: ask before trying when competence is low and nothing relevant is
     # known; do not ask where earlier help taught nothing learnable.
     'A5': {'learn': 'both', 'help': 'proactive_gated', 'verify_family': 2, 'generalize': 1,
@@ -229,21 +235,29 @@ class StreamLearner:
                  teacher: TeacherCache | None,
                  propose_skill: Callable[[Candidate, dict, RunResult], Candidate] | None,
                  help_cost: float = 0.25, memory: MemoryStore | None = None, run_suffix: str = '',
-                 skill_sources: SkillSources | None = None, evolver: Callable | None = None):
+                 skill_sources: SkillSources | None = None, evolver: Callable | None = None,
+                 playbook=None, extract_lessons: Callable | None = None):
         if arm not in ARMS:
             raise ValueError(f'unknown arm {arm}')
-        if ARMS[arm].get('gate') and ARMS[arm]['learn'] in (True, 'both') and skill_sources is None:
+        learn = ARMS[arm]['learn']
+        if ARMS[arm].get('lessons') and (playbook is None or extract_lessons is None):
+            raise ValueError('lesson arms need a playbook and a lesson extractor')
+        if ARMS[arm].get('gate') and learn in (True, 'both') and skill_sources is None:
             raise ValueError('gated skill arms need the SkillSources shared with the student runner')
         if ARMS[arm].get('evolve') and evolver is None:
             raise ValueError('evolving arms need an evolver')
-        if ARMS[arm]['learn'] in ('memory', 'both'):
+        if learn in ('memory', 'both'):
             if teacher is None or memory is None:
                 raise ValueError('memory arms need a teacher and a memory store')
-            if ARMS[arm]['learn'] == 'both' and propose_skill is None:
+            if learn == 'both' and propose_skill is None:
                 raise ValueError('the combined arm also needs a skill proposer')
-        elif ARMS[arm]['learn'] and (teacher is None or propose_skill is None):
+        elif learn == 'lessons':
+            if teacher is None:
+                raise ValueError('lesson arms need a teacher')
+        elif learn and (teacher is None or propose_skill is None):
             raise ValueError('learning arms need a teacher and a skill proposer')
         self.memory = memory
+        self.playbook, self.extract_lessons = playbook, extract_lessons
         # A restarted job must not reuse run ids: the runner caches a crashed run under its id and
         # would return that crash again without calling the model (Kaggle v6, A3).
         self.run_suffix = run_suffix
@@ -326,6 +340,10 @@ class StreamLearner:
 
     def _learn(self, task: dict, demo: RunResult) -> dict:
         info = {'attempted': True, 'accepted': False}
+        if self.cfg['learn'] == 'lessons':
+            # Browser lessons are extracted by the caller; nothing is stored in memory or the library.
+            info.update(kind='lessons')
+            return info
         if task.get('fixture') is not None and self.cfg['learn'] not in ('memory', 'both'):
             info['skill'] = 'not applicable to browser tasks'
             return info
@@ -454,6 +472,19 @@ class StreamLearner:
             # carries a procedure worth extracting (a read-only answer does not).
             if self.cfg['learn'] and demo.score >= 1.0 and changed_state(task, demo):
                 row['learning'] = self._learn(task, demo)
+                if self.cfg.get('lessons') and task.get('fixture') is not None:
+                    try:
+                        extracted = self.extract_lessons(task, demo, student)
+                    except BudgetExhaustedError as exc:
+                        # Same stop as a refused demonstration: learning ends, checkpoints still run.
+                        raise TeacherBudgetExhausted(f"lessons for {task['task_id']}: {exc}") from exc
+                    lessons = [{**lesson, 'scope': 'task'} for lesson in extracted]
+                    outcomes = self.playbook.add(lessons, source_task=task['task_id'], family=task['family'],
+                                                 trigger=task['instruction'])
+                    self.playbook.save()
+                    row['learning']['lessons'] = {'n': len(lessons), 'outcomes': outcomes}
+                    if any(outcome in ('added', 'merged') for outcome in outcomes):
+                        row['learning']['accepted'] = True
             learning = row.get('learning') or {}
             self.competence.record_help_outcome(key, bool(learning.get('accepted') or learning.get('memory_stored')))
         for call in row.get('skill_calls', []):
@@ -524,6 +555,7 @@ class StreamLearner:
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
                  tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None,
+                 playbook_similarity=None, playbook_min: float = 0.0,
                  recovery_bundle: Path | None = None, skill_preview: str = 'preview', gate=None,
                  browser_timeout_s=360, browser_max_model_calls=10, browser_max_steps=8):
     """Build ``run(candidate, task, run_id) -> RunResult`` over the real Kage chain.
@@ -558,14 +590,18 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
         def generate_step(self, task_def, step, history, workspace_dir):
             return super().generate_step(task_def, step, self.demonstration + history, workspace_dir)
 
-    def browser_chain(task, run_id, call_cap=browser_max_model_calls, step_cap=browser_max_steps):
+    def browser_chain(task, run_id, call_cap=browser_max_model_calls, step_cap=browser_max_steps, shown=None):
         # C: a page-scoped browser chain on a fresh local fixture; file skills do not apply here.
         from core.computer_use.experiment import BrowserChainProvider, BrowserCloudProvider
         cls = BrowserCloudProvider if cloud else BrowserChainProvider
         browser_loop = type('StreamLoop', (AgenticLoop,), {'MAX_STEPS': step_cap, 'TOOL_MAX_TOKENS': tool_max_tokens})
+        lessons = [] if cloud or playbook is None else playbook.select(
+            task['instruction'], similarity=playbook_similarity, min_score=playbook_min)
+        if shown is not None:
+            shown[:] = lessons
         kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
                       max_model_calls=call_cap, agentic_loop_cls=browser_loop, max_loop_steps=min(step_cap, call_cap),
-                      settle_saves=True)
+                      settle_saves=True, extra_guidance=playbook.render(lessons) if lessons else '')
         demonstration = memory.retrieve(task['instruction']) if mode == 'memory' else []
         chain = cls(model_factory(run_id), task, **kwargs)
         if demonstration:
@@ -575,19 +611,25 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
 
     def run(candidate, task, run_id):
         if task.get('fixture') is not None:
+            shown = []
             chain = (LocalRetryProvider(lambda calls=browser_max_model_calls, steps=browser_max_steps:
-                                        browser_chain(task, run_id, calls, steps),
+                                        browser_chain(task, run_id, calls, steps, shown),
                                         task, browser_max_model_calls, browser_max_steps)
-                     if mode == 'retry' else browser_chain(task, run_id))
+                     if mode == 'retry' else browser_chain(task, run_id, shown=shown))
             runner = EvolutionRunner(journal, budget, Path(workspaces), chain)
-            return runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task['task_id'],
-                                                       max_steps=1, timeout_s=max(timeout_s, browser_timeout_s)))
+            result = runner.run(candidate, task, RunSpec(run_id, candidate.candidate_id, task['task_id'],
+                                                         max_steps=1, timeout_s=max(timeout_s, browser_timeout_s)))
+            if shown:
+                playbook.record_use(shown, result.score >= 1.0)
+                playbook.save()
+            return result
         catalog = None if cloud else SkillCatalog.from_bundle(Path(candidate.bundle_path), runner=skill_runner)
         if catalog is not None and gate is not None:
             # Gated out = an empty catalog, which is exactly what A0 runs with (bootstrap bundle).
             catalog = catalog.restrict(gate.relevant(task['instruction'], catalog.digests))
         preview_mode = 'preview' if catalog is not None and not catalog.digests else skill_preview
-        lessons = playbook.select(task['instruction']) if playbook is not None else []
+        lessons = playbook.select(task['instruction'], similarity=playbook_similarity,
+                                  min_score=playbook_min) if playbook is not None else []
         guidance = playbook.render(lessons) if playbook is not None else ''
 
         def make_chain(call_cap=max_model_calls, step_cap=max_steps):

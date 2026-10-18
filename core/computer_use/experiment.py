@@ -144,6 +144,8 @@ class BrowserChainProvider(KageChainProvider):
                      for item in self.browser_skill_catalog.search('',limit=3)['skills']]
             soul+='\nBrowser reusable skill preview (descriptors only): '+json.dumps(preview,ensure_ascii=False,separators=(',',':'))
             soul+='\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual actions; otherwise search.\n'
+        if self.extra_guidance:
+            soul+='\n'+self.extra_guidance
         return soul
 
     def cache_identity(self):

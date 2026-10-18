@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from core.evolution.budget import BudgetConfig, BudgetTracker
 from core.evolution.contracts import Candidate
 from core.evolution.journal import Journal
+from core.evolution.lessons import extract_lessons
 from core.evolution.mutator import Mutator, bundle_digest
 from core.evolution.playbook import Playbook, parse_lessons
 from core.evolution.relevance import RELEVANCE_MIN, InstructionSpace, SkillSources
@@ -164,6 +165,8 @@ def main():
         args.skill_preview = 'preview_relevant'
         config['relevance'] = {'similarity': 'tfidf-cosine, df over observed instructions', 'min': RELEVANCE_MIN,
                                'memory_min': RELEVANCE_MIN, 'max_shown': 3}
+    if ARMS[args.arm].get('lessons'):
+        config['lessons'] = {'max_per_demo': 2, 'scope': 'task', 'select': 'tfidf >= RELEVANCE_MIN, top 2'}
     if ARMS[args.arm].get('evolve'):
         config['evolution'] = ARMS[args.arm]['evolve'] | {'repair': 'maintain_library (W4-2)',
                                                           'practice_split': 'practice', 'l2_validation_split': 'validation'}
@@ -220,14 +223,18 @@ def run(args, config, stream_m, eval_m, checkpoints):
                            runner=docker) if gated else None
     memory = (MemoryStore(args.root / 'memory.jsonl', min_jaccard=RELEVANCE_MIN, similarity=sources.space.similarity)
               if gated else MemoryStore(args.root / 'memory.jsonl')) if learn in ('memory', 'both') else None
-    playbook = Playbook(args.root / 'playbook.json') if args.playbook else None
+    playbook = (Playbook(args.root / 'playbook.json')
+                if args.playbook or ARMS[args.arm].get('lessons') else None)
     recovery_bundle = help_bundle(args.root / 'recovery-help') if args.in_task_help else None
     run_student = chain_runner(journal, local_budget, args.root / 'workspaces', student_model, skill_runner=docker,
                                tool_max_tokens=STUDENT_OUTPUT_TOKENS, memory=memory, playbook=playbook,
+                               playbook_similarity=sources.space.similarity if sources is not None else None,
+                               playbook_min=RELEVANCE_MIN,
                                recovery_bundle=recovery_bundle, skill_preview=args.skill_preview, gate=sources,
                                mode='memory' if memory else 'retry' if args.arm == 'A1' else 'plain')
 
     teacher = proposer = None
+    lesson_extractor = None
     if ARMS[args.arm]['learn'] or ARMS[args.arm]['help'] != 'never':
         cloud = json.loads(args.teacher_config.read_text())['model']['cloud_api']
         print(json.dumps({'teacher_model': cloud.get('model_name'), 'ledger_remaining_usd': round(remaining_usd(global_teacher_budget()), 4)}))
@@ -244,6 +251,15 @@ def run(args, config, stream_m, eval_m, checkpoints):
             return teacher_run(bootstrap, task, f"teacher-{task['task_id']}")
         teacher = TeacherCache(args.teacher_cache / 'results', solve)
 
+        if ARMS[args.arm].get('lessons'):
+            lesson_model = RecordedLocalProvider(args.root / 'lesson-model.jsonl', api_key=cloud['api_key'],
+                model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=600,
+                input_byte_cap=TEACHER_INPUT_BYTES)
+
+            def lesson_extractor(task, demo, student):
+                return extract_lessons(lesson_model, global_teacher_budget(), task=task, demo=demo,
+                                       student=student, run_id=f"lesson-{task['task_id']}")
+
         def propose(parent, task, demo, hint=None):
             optimizer = RecordedLocalProvider(args.root / 'optimizer-model.jsonl', api_key=cloud['api_key'],
                 model_name=cloud['model_name'], base_url=cloud['base_url'], thinking=False, output_limit=3000,
@@ -255,7 +271,7 @@ def run(args, config, stream_m, eval_m, checkpoints):
             root = args.root / 'mutations' / (task['task_id'] + ('-generalize' if hint else ''))
             try:
                 return Mutator(optimizer, global_teacher_budget(), journal, root,
-                               request_lessons=playbook is not None).propose(parent, feedback)
+                               request_lessons=args.playbook).propose(parent, feedback)
             finally:
                 # Lessons are kept even when the skill is later rejected: the failure taught them.
                 if playbook is not None and (root / 'lessons.json').exists():
@@ -294,7 +310,8 @@ def run(args, config, stream_m, eval_m, checkpoints):
                                 architect_step=architect_step)
     learner = StreamLearner(args.root, args.arm, bootstrap=bootstrap, run_student=run_student,
                             teacher=teacher, propose_skill=proposer, memory=memory,
-                            run_suffix=os.environ.get('KAGE_RUN_SUFFIX', ''), skill_sources=sources, evolver=evolver)
+                            run_suffix=os.environ.get('KAGE_RUN_SUFFIX', ''), skill_sources=sources, evolver=evolver,
+                            playbook=playbook, extract_lessons=lesson_extractor)
     eval_tasks = eval_m['tasks']
     if args.eval_only:
         print(json.dumps(learner.evaluate(eval_tasks, args.eval_only)), flush=True)
