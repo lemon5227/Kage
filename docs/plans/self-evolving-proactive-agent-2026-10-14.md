@@ -37,7 +37,15 @@
  按能力模型选薄弱族 → 生成变体自练 → 修技能 / 合并去重 / 淘汰低效技能
  → 演化 L2 策略（求教阈值、技能选用、恢复）→ validation 晋级 → active/回退
    BackgroundWorker + heartbeat 调度；search.py / RecoveryLoop 的 active、回退、幂等
+                               │
+                               ▼
+ ④ 巩固环（2026-10-18 新增，借鉴 Terminal-RSI 的 RSR；按轮，Kaggle）
+ 示范 + 经验规则作 runbook → 学生在新变体上带 runbook 重新执行（k 次）→ 只留验证通过 + 泄漏筛查
+ → 删掉 runbook 写成训练样本 → LoRA 候选 → 不带指导在冻结评测集上验收 → 启用/回退
+ → 下一轮用新学生重复（递归）。见 docs/plans/rsr-consolidation-2026-10-18.md
 ```
+
+②③ 产生的是“上下文里的知识”（技能、示范、规则），C2 显示学生常常不照做；④ 把带指导时的成功巩固进权重，评测时不再依赖上下文。
 
 ### 2.1 能力模型 `core/evolution/competence.py`（新增，约 150 行）
 - 输入：Journal 中每个任务族/技能的历史结果（成功、失败、教师介入、用户反馈）。
