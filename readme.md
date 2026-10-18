@@ -11,11 +11,18 @@
   <a href="#toward-a-self-evolving-personal-agent">Vision</a> ·
   <a href="#research-program">Research</a> ·
   <a href="#get-started">Get started</a> ·
+  <a href="#latest-october-2026">Latest</a> ·
   <a href="#results-a-4b-local-model-that-learns-from-a-teacher">Results</a> ·
   <a href="docs/report/kage-tech-report.md">Report</a> ·
   <a href="roadmap.md">Roadmap</a> ·
   <a href="docs/project-guide.en.md">Full guide</a>
 </p>
+
+## Latest (October 2026)
+
+- **Browser tasks join the benchmark.** Four seeded browser families plus a read-only negative, calibrated over four rounds and frozen as Kage-Stream-Web. On them, demonstration memory is always *retrieved* but rarely *followed* by the 4B student: a [new failure mode](#browser-tasks-retrieved-but-not-followed) that motivates the next stage.
+- **Learning in everyday use.** The desktop app now records each task locally (👍/👎 per task), offers a teacher redo after a 👎, reuses verified experience on similar requests, and practises on teacher-made variants when idle. Raw usage data never leaves the machine; only redacted exports may be used for training.
+- **Next: consolidation.** Turning guided successes into weights (runbook-guided fresh execution → verified → guidance removed → LoRA), in the spirit of the concurrent [Terminal-RSI](https://arxiv.org/abs/2610.22192) work but on a 4B model and a few-dollar budget. A paper is in preparation ([outline](docs/paper/outline.md)).
 
 ## Toward a self-evolving personal Agent
 
@@ -75,9 +82,9 @@ Verification is tied to actual outcomes where a reliable checker exists—for ex
 | L0 · Episodic memory | The experience retrieved for a task | Relevant context from earlier attempts |
 | L1 · Procedural memory | The executable skills available | Reuse and transfer of verified routines |
 | L2 · Scaffold evolution | Selected planning, retrieval, or recovery modules | Better ways to solve and recover |
-| L3 · Parameter learning | Future local-model adapters or weights | Distillation of verified teacher experience |
+| L3 · Consolidation | Local-model LoRA adapters | Guided successes become ability that no longer needs the guidance in context |
 
-The research objective is <strong>persistent, transferable capability growth</strong>, measured alongside task success, regressions, latency, tokens, and learning cost. Parameter learning remains a future stage.
+The research objective is <strong>persistent, transferable capability growth</strong>, measured alongside task success, regressions, latency, tokens, and learning cost. L0–L2 are implemented and evaluated; L3 is the current stage ([plan](docs/plans/rsr-consolidation-2026-10-18.md)): the student re-solves fresh variants with a teacher-derived runbook in context, only verified and leak-screened successes are kept, the runbook is removed, and the adapter is accepted only if it beats the raw student *without* guidance on frozen evaluation sets.
 
 ## Results: a 4B local model that learns from a teacher
 
@@ -112,6 +119,24 @@ What the evidence supports:
 - **Self-modification needs robust validation.** An LLM architect that rewrites the skill-selection policy got
   2 of 6 proposals promoted on single-run validation. One of them undid the gate, so the arm with the architect
   scored below the arm without it.
+
+### Browser tasks: retrieved but not followed
+
+On **Kage-Stream-Web** (form filling, invoice totals with hidden rows, notification settings, rating-constrained catalog choice, and a read-only negative; 8 steps per task, one page action per step), the same student learns from teacher demonstrations stored as label-level steps.
+
+| Family (6 eval tasks each) | Raw student, 3 runs | Learning arms after 44 tasks (4 runs) |
+| :--- | :---: | :---: |
+| Invoice total (expand hidden rows first) | 0, 0, 0 | 2, 2, 1, 2 |
+| Notification settings | 1, 1, 1 | 0, 0, 1, 1 |
+| Catalog choice under a rating floor | 2, 4, 3 | 3, 3, 3, 2 |
+| Two-step form (transfer, never learned) | 0, 0, 1 | 0, 0, 0, 0 |
+| Read-only question (negative) | 6, 6, 6 | 6, 6, 6, 6 · no misuse |
+
+Retrieval works: every evaluation prompt contained the relevant demonstration. Adoption does not: the student followed the "Show more rows" step in only 1–2 of 6 invoice tasks, and a click list from another instance does not carry rules such as "only toggle boxes whose state differs". Only the family whose procedure is literally identical across instances improved. This is why the next stage teaches rules (C3) and consolidates guided successes into weights (L3). [Analysis](evidence/reports/c2/analysis.md)
+
+### Learning in everyday use
+
+The same loop runs inside the desktop app: every task ends with a 👍/👎; a 👎 offers a teacher redo (US$0.05/day cap); verified successes are reused as experience on similar requests behind a relevance threshold; and when the user is away, Kage practises on teacher-made variants of its real file tasks in a scratch directory and reports what it learned. Trajectories stay in `~/.kage/trajectories` (viewable, deletable, off-switchable); about 1 in 10 real tasks is held out for evaluation.
 
 [Demo video (83 s)](docs/assets/demo/kage-demo.mp4) · [Technical report](docs/report/kage-tech-report.md) · [Related work](docs/report/related-work.md) · [Raw evidence and reports](evidence/README.md) · [Work log](docs/worklog/2026-10-claude.md)
 
@@ -181,9 +206,14 @@ See [configuration details](docs/project-guide.en.md#models-and-cloud-configurat
 
 ## Roadmap
 
-1. <strong>Finish P5 outputs.</strong> Technical report, demo recording, and this README with curves and ablations.
-2. <strong>Make self-modification safe.</strong> Promote evolved policies only after repeated validation runs that also include unfamiliar task types.
-3. <strong>Bring verified learning into the local model (P4).</strong> Choose one: LoRA distillation of accepted teacher demonstrations, or browser task families for the stream benchmark.
+- ✅ <strong>P0–P3, P5:</strong> benchmark, learning arms, relevance gate, proactive help, background evolution, technical report, demo.
+- ✅ <strong>A · Learning in everyday use:</strong> notices, 👍/👎, local trajectory store with redacted export, teacher redo, experience reuse, idle practice.
+- ✅ <strong>C1–C2 · Browser families:</strong> seeded families, four calibration rounds, frozen Kage-Stream-Web, learning run.
+- ⏳ <strong>C3 · Teacher-written rules:</strong> rule only vs demonstration + rule on the same frozen tasks.
+- ⏳ <strong>R · Consolidation:</strong> R1 leak screen → R2 runbook-guided fresh execution (≈2000 verified samples) → R3 LoRA accepted only if it beats the raw student without guidance → R4 one recursive round.
+- ⏳ <strong>Paper</strong> ([outline](docs/paper/outline.md)): what a 4B local agent can and cannot learn on a few-dollar teacher budget.
+
+<strong>How this project is built:</strong> Claude Code plans experiments, writes task cards and reviews every diff and result; well-specified implementation is delegated to a DeepSeek-V4.1-Flash executor running as an isolated Claude Code process ([deepseek-agent](https://github.com/lemon5227/deepseek-agent)); experiments run on Kaggle's free T4 GPUs under a US$4 teacher ledger. Every step is in the [work log](docs/worklog/2026-10-claude.md).
 
 [Roadmap and current status (start here)](roadmap.md) · [Task book](docs/plans/tasks-2026-10-14.md) · [Design: self-evolving, proactive agent](docs/plans/self-evolving-proactive-agent-2026-10-14.md) · [Kaggle runbook](docs/development/kaggle-runbook.md)
 
