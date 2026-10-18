@@ -22,6 +22,8 @@ LORA=os.environ.get('KAGE_LORA')
 # C: browser runs need longer histories (8 steps of DOM observations); a larger window does not change
 # outputs for prompts that already fit, so file-family runs keep 8192.
 CTX=os.environ.get('KAGE_CTX','8192')
+# KV cache type: q8_0 needs flash attention; a GPU without it (checked at Kaggle setup) falls back to f16.
+KV=os.environ.get('KAGE_KV','q8_0')
 
 
 def write_json(path,value):
@@ -38,7 +40,7 @@ def file_hash(path):
 def server_argv(port):
     return [str(SERVER),'-m',str(MODEL),'--alias','agents-a1-4b','--jinja','--host','127.0.0.1','--port',str(port),
             '-ngl','99','--flash-attn','auto','-c',CTX,'-np','1','-n','1024','--reasoning','off',
-            '--cache-type-k','q8_0','--cache-type-v','q8_0','--temp','0.85','--top-p','0.95','--top-k','20','--presence-penalty','1.1',
+            '--cache-type-k',KV,'--cache-type-v',KV,'--temp','0.85','--top-p','0.95','--top-k','20','--presence-penalty','1.1',
             # llama.cpp's host-RAM prompt cache defaults to 8 GiB per server; four servers filled Kaggle's
             # 32 GB and got killed (E-1 v5/v9), and it made the Mac sluggish. Outputs are unaffected.
             '--cache-ram','0']+(['--lora',LORA] if LORA else [])

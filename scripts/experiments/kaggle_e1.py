@@ -37,6 +37,8 @@ MODEL_REVISION = 'd92b02e27074b27542384f72bc0e72203c970f0f'
 MODEL_FILE = 'Agents-A1-4B-Q4_K_M.gguf'
 MODEL_SHA256 = 'd93c393a9bd5139a4b5cfe24d31ef553c5a497bfb8afec178a354ecbf508f062'
 LLAMA_COMMIT = 'b29c606e2'              # = Homebrew llama.cpp 0.4.1 build 10964 used on the Mac
+CUDA_ARCHS = '60;75'                    # P100 (sm_60) and T4 (sm_75); v18 queued >80 min for T4 x2
+BUILD_STAMP = f'{LLAMA_COMMIT} sm{CUDA_ARCHS}'   # a T4-only build (old stamp) is rebuilt once
 TEACHER = {'provider_type': 'openai', 'base_url': 'https://api.deepseek.com', 'model_name': 'deepseek-flash',
            'timeout_sec': 120}
 E1_CAP_USD = 0.80                       # E-1 allocation after the user raised the total to US$2 (2026-10-15)
@@ -67,7 +69,7 @@ def sh(cmd: list[str] | str, **kw) -> None:
 def find_prebuilt() -> Path | None:
     """A dataset under /kaggle/input holding llama-server + libs and a BUILD_COMMIT file for LLAMA_COMMIT."""
     for stamp in Path('/kaggle/input').glob('**/BUILD_COMMIT'):
-        if stamp.read_text().strip() == LLAMA_COMMIT and (stamp.parent / 'llama-server').exists():
+        if stamp.read_text().strip() == BUILD_STAMP and (stamp.parent / 'llama-server').exists():
             return stamp.parent
     return None
 
@@ -79,7 +81,7 @@ def save_build(bin_dir: Path) -> None:
     for f in bin_dir.iterdir():
         if f.name == 'llama-server' or '.so' in f.name:
             shutil.copy2(f, out / f.name)
-    (out / 'BUILD_COMMIT').write_text(LLAMA_COMMIT + '\n')
+    (out / 'BUILD_COMMIT').write_text(BUILD_STAMP + '\n')
     log('saved llama-server build for reuse', files=sorted(p.name for p in out.iterdir()))
 
 
@@ -127,7 +129,7 @@ def setup(*, teacher_config: bool = True) -> dict:
         # The build image has no libcuda (not even a stub); GGML_CUDA_NO_VMM drops llama.cpp's direct
         # link to the driver (used only for the VMM memory pool). Kernels and numerics are unchanged.
         sh(['cmake', '-S', str(src), '-B', str(src / 'build'), '-DGGML_CUDA=ON', '-DGGML_CUDA_NO_VMM=ON',
-            '-DCMAKE_CUDA_ARCHITECTURES=75',
+            f'-DCMAKE_CUDA_ARCHITECTURES={CUDA_ARCHS}',
             f'-DCUDAToolkit_ROOT={cuda}', f'-DCMAKE_CUDA_COMPILER={cuda}/bin/nvcc',
             f'-DCMAKE_LIBRARY_PATH={stubs}', f'-DCMAKE_EXE_LINKER_FLAGS=-L{stubs}', f'-DCMAKE_SHARED_LINKER_FLAGS=-L{stubs}',
             '-DLLAMA_CURL=OFF', '-DCMAKE_BUILD_TYPE=Release'], stdout=subprocess.DEVNULL)
@@ -150,10 +152,31 @@ def setup(*, teacher_config: bool = True) -> dict:
     info = {'server': str(server), 'server_version': version, 'model': str(model), 'model_sha256': MODEL_SHA256,
             'gpus': gpus, 'llama_commit': LLAMA_COMMIT, 'repo_head': subprocess.run(
                 ['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()}
+    info['kv_cache'] = probe_kv_cache(info)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / 'host.json').write_text(json.dumps(info, indent=1))
     log('setup done', **{k: info[k] for k in ('gpus', 'repo_head')})
     return info
+
+
+def probe_kv_cache(info: dict) -> str:
+    """Start one server with the q8_0 KV cache; if it cannot start (no flash attention on this GPU,
+    e.g. a P100), use f16 for every job and run fewer servers at once (f16 needs about twice the memory)."""
+    global MAX_PARALLEL
+    probe = OUT / 'kv-probe'
+    probe.mkdir(parents=True, exist_ok=True)
+    env = {'KAGE_MODEL_PATH': info['model'], 'KAGE_LLAMA_SERVER': info['server'], 'KAGE_CTX': BROWSER_CTX,
+           'KAGE_KV': 'q8_0'}
+    code = subprocess.run([PY, '-c', 'import sys; sys.path.insert(0, "scripts/experiments"); '
+                           'from local_service import LocalService; from pathlib import Path; '
+                           f'svc = LocalService(18999, Path("{probe}")); svc.__enter__(); svc.__exit__(None, None, None)'],
+                          cwd=ROOT, env={**os.environ, **env}, capture_output=True, text=True, timeout=300).returncode
+    kv = 'q8_0' if code == 0 else 'f16'
+    if kv == 'f16':
+        MAX_PARALLEL = min(MAX_PARALLEL, 3)
+    os.environ['KAGE_KV'] = kv
+    log('kv cache', type=kv, max_parallel=MAX_PARALLEL, gpus=info.get('gpus'))
+    return kv
 
 
 def write_teacher_config() -> None:
@@ -432,7 +455,8 @@ def c2_report() -> None:
 
 
 C3_CAP_USD = 0.30                           # C3 teacher-written lessons run
-C3_ARMS = ('A4mGL', 'AGL')                  # demo memory + lessons, and lessons only
+C3_ARMS = ('A4mGL', 'AGL', 'A4mG')          # demo + lessons, lessons only, and A4mG rerun on this hardware
+                                            # (v18 moved to a P100: v17's T4 numbers are another environment)
 C3_CONSTANT = ('A0-r4',)                    # fresh same-environment constant and shared cp0
 
 
