@@ -34,3 +34,13 @@ python scripts/dev/dsh_run.py --cwd <工作目录> --task-file <任务说明.md>
 - 问题：①一个 bug 源自卡片不完整——提取经验时账本耗尽抛 `BudgetExhaustedError`，没有转成 `TeacherBudgetExhausted`，任务会崩溃反复重启（Claude 已修并加测试）；②总结里说临时 `ps` 垫片“在仓库外”，实际在仓库内 `.tmp-bin/`（结束时已删除）；③沙箱里 `ps` 不可用，它用垫片跑浏览器测试——这种情况下测试结果必须由 Claude 在正常环境重跑。
 - 花费：token 估计约 $0.47（1166 万缓存命中 token，按缓存价 1/10 计）；第一次的包装器只在启动前查上限，单次运行可能超出——已改为运行中按估计花费超限即停，并在余额下降可见时按余额记账。
 - 结论：好用，继续用。卡片要写清错误处理与预算异常的处理方式；验收时必须自己重跑测试、看 diff。
+
+## 改用全局 DeepSeek 执行器（2026-10-18，取代 dsh）
+
+用户希望执行端做成全局可用、能随时关闭。现在用全局技能 `~/.claude/skills/deepseek-agent/`（所有 Claude 会话可见），不再用 dsh：
+- 执行端是一个独立的 Claude Code 进程，后端是 DeepSeek 的 Anthropic 兼容接口，模型 `deepseek-flash`（V4.1-Flash 1017）。
+- 隔离：独立配置目录 `~/.deepseek-agent/claude-config`、无 MCP、只带 DeepSeek key（用假服务器核对过：不发送 Claude 登录凭据）；不影响调用它的 Claude 会话与额度。
+- 可观察可指挥：`tail <run>` 看每一步工具调用/错误/拦截，`send <run> "..."` 中途插话（已验证在下一轮生效），`--resume` 续接会话。
+- 硬护栏：`guard.py` 在每次工具调用前拦截 git 历史操作、联网、读凭据、打印环境变量、本地模型服务、写工作目录外文件（已验证拦住读 key）。
+- 钱：`on`/`off` 开关；账本 `~/.deepseek-agent/ledger.jsonl`（已并入 dsh 的 $0.49），上限 $2，余额低于 ¥3 拒绝启动，运行中估计超限即停。
+- 测试运行：建文件、被拦截读 key、中途插话建第二个文件、报告模型名，全部符合预期，花费约 $0.013。
