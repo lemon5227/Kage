@@ -5,6 +5,9 @@
 
 **一句话**：一个跑在消费级硬件上的 4B 本地智能体，在 $4 云教师预算下，靠技能 / 记忆 / 经验规则能在同类任务上成长、负例零误用；但我们发现小模型“检索到了指导却不照做”，于是把带指导的成功巩固进权重（RSR 式），并测量它是否让能力不再依赖上下文。
 
+## 定位（2026-10-20 补充）
+两条同期路线：**改外层**（Harness²，谷歌，arXiv:2610.14224：提示/技能/记忆等 8 个组件，提出–试跑–组合，不需标准答案，强模型上最多 +11.5）与**改权重**（Terminal-RSI，腾讯，arXiv:2610.22192：带 runbook 重做 → 去指导 SFT → 强化学习，27B）。Kage 两层都有，并给出两篇都没有的证据：外层改进默认模型会照着做；4B 学生检索到指导却常常不照做（C2），所以需要巩固进权重（L3）。主张：*harness-level self-improvement presumes instruction adoption; small local models violate it, and consolidation recovers it*（待 R3 结果支撑）。
+
 ## 计划投稿
 先发 arXiv 预印本（随时可发，立刻能在简历上引用）；再投一个合适的 workshop（智能体 / 高效 LLM / 持续学习方向，截止日期到时再核对）。
 
@@ -13,7 +16,7 @@
 | 节 | 主张 | 证据 | 状态 |
 |---|---|---|---|
 | 1 引言 | 小模型 + 极低预算下的自进化是现实需求（本地、隐私、成本） | — | 可写 |
-| 2 相关工作 | 技能库（Voyager 等）、轨迹记忆、经验规则（ACE/SkillRL）、自我改进训练（STaR、上下文蒸馏、Terminal-RSI 同期工作） | `docs/report/related-work.md` 13 篇 + Terminal-RSI | 可写，需补 Terminal-RSI、STaR、上下文蒸馏 |
+| 2 相关工作 | 技能库（Voyager 等）、轨迹记忆、经验规则（ACE/SkillRL）、外层自改进（Meta-Harness、Harness² 同期）、权重自改进（STaR、上下文蒸馏、Terminal-RSI 同期） | `docs/report/related-work.md` 13 篇 + 两篇同期 | 可写，需补 Harness²、Terminal-RSI、STaR、上下文蒸馏 |
 | 3 系统 | 四个环（执行、学习、演化、巩固）+ 主动交互层；相关性门控；独立检查器；账本 | 代码 + 架构文档 | 可写 |
 | 4.1 基准 | Kage-Stream：文件 6 族 + 浏览器 4 族 + 负例，按种子生成、冻结哈希、校准到 10–50% | `eval/stream_v1`、`eval/stream_web_v1`、校准记录 v13–v16 | ✅ |
 | 4.2 从示范学习（文件族） | 记忆/技能把族内成功率从 ~29% 提到 ~85%，负例零误用 | E-1、E-1c（`evidence/reports/`） | ✅ |
