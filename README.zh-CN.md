@@ -211,6 +211,7 @@ npm run dev
 
 | 入口 | 内容 |
 | :--- | :--- |
+| [项目洞察与经验教训](docs/insights.md) | 实验教会了我们什么：现象、证据、根因、解决办法 |
 | [完整项目指南](docs/project-guide.zh-CN.md) | 详细研究背景、安装配置与实现边界 |
 | [实验档案](docs/experiments/README.md) | 方法、结果、失败与复现证据 |
 | [视觉风格说明](docs/assets/readme/VISUAL_STYLE.md) | 陪伴插画方向与后续人物更换 |

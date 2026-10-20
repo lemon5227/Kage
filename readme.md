@@ -221,6 +221,7 @@ See [configuration details](docs/project-guide.en.md#models-and-cloud-configurat
 
 | Start here | What you will find |
 | :--- | :--- |
+| [Insights and lessons learned](docs/insights.md) | What the experiments taught us: findings, evidence, root causes, fixes (Chinese) |
 | [Full project guide](docs/project-guide.en.md) | Detailed research context, setup, configuration, and implementation boundaries |
 | [Experiment archive](docs/experiments/README.md) | Methods, results, failures, and reproduction evidence |
 | [Visual style guide](docs/assets/readme/VISUAL_STYLE.md) | Companion artwork direction and future character changes |
