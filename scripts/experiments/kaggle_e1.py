@@ -37,8 +37,8 @@ MODEL_REVISION = 'd92b02e27074b27542384f72bc0e72203c970f0f'
 MODEL_FILE = 'Agents-A1-4B-Q4_K_M.gguf'
 MODEL_SHA256 = 'd93c393a9bd5139a4b5cfe24d31ef553c5a497bfb8afec178a354ecbf508f062'
 LLAMA_COMMIT = 'b29c606e2'              # = Homebrew llama.cpp 0.4.1 build 10964 used on the Mac
-CUDA_ARCHS = '60;75'                    # P100 (sm_60) and T4 (sm_75); v18 queued >80 min for T4 x2
-BUILD_STAMP = f'{LLAMA_COMMIT} sm{CUDA_ARCHS}'   # a T4-only build (old stamp) is rebuilt once
+CUDA_ARCHS = '75'                       # T4. The notebook only offers T4 x2 (no P100; checked 10-18).
+BUILD_STAMP = LLAMA_COMMIT              # if another GPU is ever added: build '60;75' and change the stamp
 TEACHER = {'provider_type': 'openai', 'base_url': 'https://api.deepseek.com', 'model_name': 'deepseek-flash',
            'timeout_sec': 120}
 E1_CAP_USD = 0.80                       # E-1 allocation after the user raised the total to US$2 (2026-10-15)
@@ -160,8 +160,8 @@ def setup(*, teacher_config: bool = True) -> dict:
 
 
 def probe_kv_cache(info: dict) -> str:
-    """Start one server with the q8_0 KV cache; if it cannot start (no flash attention on this GPU,
-    e.g. a P100), use f16 for every job and run fewer servers at once (f16 needs about twice the memory)."""
+    """Start one server with the q8_0 KV cache; if it cannot start (no flash attention on this GPU),
+    use f16 for every job and run fewer servers at once (f16 needs about twice the memory)."""
     global MAX_PARALLEL
     probe = OUT / 'kv-probe'
     probe.mkdir(parents=True, exist_ok=True)
