@@ -498,6 +498,9 @@ RSR_MEMBERS = {
              ('v10-results.tar.gz', 'e1/seed2/A4mG/memory.jsonl')],
     'web': [('v17-results.tar.gz', 'e1/web/seed1/A4mG/memory.jsonl'),
             ('v17-results.tar.gz', 'e1/web/seed2/A4mG/memory.jsonl')],
+    # C3 (v19): demo + rules was the strongest browser arm, so browser runbooks include its rules.
+    'web-lessons': [('v19-results.tar.gz', 'e1/web/seed1/A4mGL/playbook.json'),
+                    ('v19-results.tar.gz', 'e1/web/seed2/A4mGL/playbook.json')],
 }
 
 
@@ -507,7 +510,7 @@ def rsr_guidance() -> dict[str, list[Path]]:
     for kind, members in RSR_MEMBERS.items():
         paths = []
         for index, (archive, member) in enumerate(members, 1):
-            path = RSR_GUIDANCE / f'{kind}-{index}.jsonl'
+            path = RSR_GUIDANCE / f'{kind}-{index}{Path(member).suffix}'
             if not path.exists():                      # exact member names: skip AppleDouble entries
                 RSR_GUIDANCE.mkdir(parents=True, exist_ok=True)
                 with tarfile.open(ROOT / 'evidence' / 'kaggle' / archive) as tar:
@@ -520,21 +523,24 @@ def rsr_guidance() -> dict[str, list[Path]]:
 def rsr_smoke_jobs(guidance: dict[str, list[Path]]) -> list[tuple[str, list[str]]]:
     """Three parallel collect jobs: file families, browser invoice/prefs, browser catalog.
 
-    Each job retrieves a remembered demonstration for practice tasks and runs the frozen student
-    at temperature 0.6 (two attempts per task), plus two read-only negatives per family."""
+    The frozen student runs practice tasks with guidance at temperature 0.6 (two attempts per task),
+    plus two read-only negatives per family. File tasks: demonstrations only (rules were extracted for
+    browser tasks only). Browser tasks: demonstration + rules (C3/v19: A4mGL was the strongest arm and
+    its invoice gains spread across distinct tasks)."""
     groups = [
-        ('file', 'subset_selection,interval_merge,log_aggregation,csv_transform', guidance['file']),
-        ('browser-forms', 'web_invoice,web_prefs', guidance['web']),
-        ('browser-catalog', 'web_catalog', guidance['web']),
+        ('file', 'subset_selection,interval_merge,log_aggregation,csv_transform', 'demo', guidance['file'], []),
+        ('browser-forms', 'web_invoice,web_prefs', 'both', guidance['web'], guidance['web-lessons']),
+        ('browser-catalog', 'web_catalog', 'both', guidance['web'], guidance['web-lessons']),
     ]
     jobs = []
-    for index, (name, families, memories) in enumerate(groups):
+    for index, (name, families, kind, memories, playbooks) in enumerate(groups):
         jobs.append((f'rsr-{name}', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'rsr' / name),
                                      '--port', str(18600 + index), '--families', families,
                                      '--seeds', '8', '--k', '2', '--temperature', '0.6',
-                                     '--guidance', 'demo', '--negatives', '2',
+                                     '--guidance', kind, '--negatives', '2',
                                      '--skill-runner', 'process',
-                                     *[item for memory in memories for item in ('--memory', str(memory))]]))
+                                     *[item for memory in memories for item in ('--memory', str(memory))],
+                                     *[item for book in playbooks for item in ('--playbook', str(book))]]))
     return jobs
 
 
