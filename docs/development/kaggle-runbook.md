@@ -40,6 +40,8 @@
 | 13 | 取消运行后，下次运行找不到预编译程序和教师缓存 | 笔记的输入是“本笔记最新一版的输出”；被取消的版本（如 v12）没有输出 | 启动前在右侧 Input 里确认挂的是最后一个**成功**版本（当前为 v11）的输出，必要时手动改选 |
 | 14 | v22（r3-smoke）：`ImportError: cannot import name 'BucketBatchError' from 'huggingface_hub.errors'` | 同一个 Python 进程先导入了旧的 huggingface_hub（下载量化模型），之后 `pip install -U transformers` 把它在磁盘上升级，再惰性导入时新旧模块混用 | 依赖新装包的步骤（全精度模型下载、版本检查）放到全新子进程里跑（`fresh_python`）；训练与转换本来就是子进程 |
 | 15 | 下载输出时 CLI 会逐个拉取几千个文件，很慢 | `kaggle kernels output` 下载整个输出目录 | 等 `e1-results.tar.gz` 大小稳定后结束 CLI，自己解包；**不要在压缩包缺失时 `rm -rf e1`**——那可能是唯一的输出 |
+| 16 | v23：`NoMatchingPeftModuleError: Target modules .*language_model.* not found` | transformers 5 用因果 LM 加载 Agents-A1-4B，只载文本部分，层名是 `model.layers.N`（没有 `language_model`） | 目标正则不依赖前缀，只匹配 `layers.N.(self_attn|linear_attn|mlp)`；视觉层 `visual.blocks` 永不匹配 |
+| 17 | 本地复现：`convert_lora_to_gguf` 对 `linear_attn.out_proj` 抛 `NotImplementedError` | Qwen3.5 的 V 头数（32）≠ K 头数（16），转换器要重排 out_proj 的输入列，LoRA 的 A/B 无法这样重排 | `safe` 目标只留 `self_attn.o_proj` + MLP；**训练前先用随机假适配器在本地跑一次转换器**（不需要模型权重，只要 config.json），免得几小时训练后才失败 |
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复

@@ -21,8 +21,12 @@ import time
 
 TARGETS = {
     # full: every language-model projection; safe: ones llama.cpp's LoRA converter maps 1:1.
-    'full': r'.*language_model.*\.(q_proj|k_proj|v_proj|o_proj|in_proj_qkv|in_proj_z|out_proj|gate_proj|up_proj|down_proj)',
-    'safe': r'.*language_model.*\.(o_proj|out_proj|gate_proj|up_proj|down_proj)',
+    # Text decoder layers only: `model.language_model.layers.N` (image-text loader) or `model.layers.N`
+    # (causal-LM loader); vision blocks are `model.visual.blocks.N` and never match.
+    # `linear_attn.out_proj` is not safe: the converter reorders its V-head columns, which a LoRA pair
+    # cannot do (convert_lora_to_gguf raises NotImplementedError; checked locally at b29c606e2).
+    'full': r'(.*\.)?layers\.\d+\.(self_attn|linear_attn|mlp)\.(q_proj|k_proj|v_proj|o_proj|in_proj_qkv|in_proj_z|out_proj|gate_proj|up_proj|down_proj)',
+    'safe': r'(.*\.)?layers\.\d+\.(self_attn\.o_proj|mlp\.(gate_proj|up_proj|down_proj))',
 }
 
 

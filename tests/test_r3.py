@@ -182,6 +182,22 @@ def test_train_log_writer_records_train_and_val_rows(tmp_path):
 
 
 # ---------------------------------------------------------------- kaggle_e1
+@pytest.mark.parametrize('prefix', ['model.language_model.', 'model.'])
+def test_lora_targets_match_decoder_layers_under_both_loaders_and_never_vision(prefix):
+    # v23: transformers 5 loads Agents-A1-4B as a causal LM whose layers are `model.layers.N`;
+    # the old `.*language_model.*` pattern matched nothing.
+    import re
+    safe, full = lora_train.TARGETS['safe'], lora_train.TARGETS['full']
+    assert re.fullmatch(safe, prefix + 'layers.3.self_attn.o_proj')
+    assert not re.fullmatch(safe, prefix + 'layers.0.linear_attn.out_proj')   # converter cannot reorder it
+    assert re.fullmatch(safe, prefix + 'layers.7.mlp.down_proj')
+    assert not re.fullmatch(safe, prefix + 'layers.3.self_attn.q_proj')
+    assert not re.fullmatch(safe, prefix + 'layers.0.linear_attn.in_proj_qkv')
+    assert re.fullmatch(full, prefix + 'layers.0.linear_attn.in_proj_qkv')
+    for name in ('model.visual.blocks.0.attn.qkv', 'model.visual.blocks.0.mlp.linear_fc1', 'lm_head'):
+        assert not re.fullmatch(safe, name) and not re.fullmatch(full, name)
+
+
 def test_r3_phases_are_available():
     parser = kaggle_e1.build_parser()
     assert parser.parse_args(['--phase', 'r3-smoke']).phase == 'r3-smoke'

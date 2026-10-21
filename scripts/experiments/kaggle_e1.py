@@ -812,7 +812,7 @@ def main(argv=None):
         linfo = lora_setup()
         if args.phase == 'r3-smoke':
             out = OUT / 'r3-smoke'
-            gguf = r3_adapter(linfo, data, out, ['--smoke'])
+            gguf = r3_adapter(linfo, data, out, ['--smoke', '--targets', 'safe', '--val', str(data / 'val.jsonl')])
             browser_setup()
             jobs = [
                 ('r3-smoke-file', ['scripts/experiments/stream_calibrate.py', '--root', str(out / 'file'),
