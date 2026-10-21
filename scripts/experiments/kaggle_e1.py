@@ -520,27 +520,34 @@ def rsr_guidance() -> dict[str, list[Path]]:
     return out
 
 
-def rsr_smoke_jobs(guidance: dict[str, list[Path]]) -> list[tuple[str, list[str]]]:
-    """Three parallel collect jobs: file families, browser invoice/prefs, browser catalog.
+def rsr_smoke_jobs(guidance: dict[str, list[Path]], *, seeds: int = 8, k: int = 2,
+                   control: bool = False) -> list[tuple[str, list[str]]]:
+    """Collect jobs: file families (two jobs), browser invoice/prefs, browser catalog.
 
-    The frozen student runs practice tasks with guidance at temperature 0.6 (two attempts per task),
+    The frozen student runs practice tasks with guidance at temperature 0.6 (k attempts per task),
     plus two read-only negatives per family. File tasks: demonstrations only (rules were extracted for
     browser tasks only). Browser tasks: demonstration + rules (C3/v19: A4mGL was the strongest arm and
-    its invoice gains spread across distinct tasks)."""
+    its invoice gains spread across distinct tasks). ``control`` adds one job that runs all seven
+    families WITHOUT guidance on the first 8 seeds, k=2 (v20 follow-up: guidance vs sampling)."""
     groups = [
-        ('file', 'subset_selection,interval_merge,log_aggregation,csv_transform', 'demo', guidance['file'], []),
+        ('file-a', 'subset_selection,interval_merge', 'demo', guidance['file'], []),
+        ('file-b', 'log_aggregation,csv_transform', 'demo', guidance['file'], []),
         ('browser-forms', 'web_invoice,web_prefs', 'both', guidance['web'], guidance['web-lessons']),
         ('browser-catalog', 'web_catalog', 'both', guidance['web'], guidance['web-lessons']),
     ]
+    common = ['--temperature', '0.6', '--negatives', '2', '--skill-runner', 'process']
     jobs = []
     for index, (name, families, kind, memories, playbooks) in enumerate(groups):
         jobs.append((f'rsr-{name}', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'rsr' / name),
                                      '--port', str(18600 + index), '--families', families,
-                                     '--seeds', '8', '--k', '2', '--temperature', '0.6',
-                                     '--guidance', kind, '--negatives', '2',
-                                     '--skill-runner', 'process',
+                                     '--seeds', str(seeds), '--k', str(k), '--guidance', kind, *common,
                                      *[item for memory in memories for item in ('--memory', str(memory))],
                                      *[item for book in playbooks for item in ('--playbook', str(book))]]))
+    if control:
+        families = 'subset_selection,interval_merge,log_aggregation,csv_transform,web_invoice,web_prefs,web_catalog'
+        jobs.append(('rsr-control', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'rsr' / 'control'),
+                                     '--port', '18610', '--families', families, '--seeds', '8', '--k', '2',
+                                     '--guidance', 'none', *common]))
     return jobs
 
 
@@ -609,7 +616,7 @@ def package() -> None:
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-                                        'c-cal', 'c2', 'c3', 'rsr-smoke', 'package'], default='all')
+                                        'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'package'], default='all')
     args = p.parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
@@ -625,8 +632,8 @@ def main(argv=None):
     if args.phase == 'c3':
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
-                                 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke')
-    info = (setup(teacher_config=args.phase != 'rsr-smoke') if needs_setup
+                                 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr')
+    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr')) if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
         browser_setup()
@@ -668,14 +675,19 @@ def main(argv=None):
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
         return
-    if args.phase == 'rsr-smoke':
+    if args.phase in ('rsr-smoke', 'rsr'):
         # R2: guided practice runs -> guidance-free SFT rows. No teacher, no cloud calls.
         browser_setup()
         os.environ['KAGE_CTX'] = BROWSER_CTX
-        jobs = rsr_smoke_jobs(rsr_guidance())
+        # 'rsr-smoke' (v20): 8 seeds x 2. 'rsr' (v21): 24 seeds x 4 toward ~2000 samples, plus the unguided control.
+        jobs = (rsr_smoke_jobs(rsr_guidance()) if args.phase == 'rsr-smoke'
+                else rsr_smoke_jobs(rsr_guidance(), seeds=24, k=4, control=True))
         run_jobs(info, jobs, 'rsr-smoke')
         for name, _ in jobs:
-            subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(OUT / 'rsr' / name)], cwd=ROOT, check=False)
+            # v20: the job name ('rsr-file') is not the root dir ('file'); a failed build must be visible.
+            root = OUT / 'rsr' / name.removeprefix('rsr-')
+            done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(root)], cwd=ROOT, capture_output=True, text=True)
+            log('rsr build', job=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))

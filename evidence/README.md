@@ -24,6 +24,8 @@
 | `kaggle/v13…v16-c-cal-summary.json` | C 浏览器族难度校准（原学生 A0，每族 12 题）四轮摘要 | C 校准 v13–v16 |
 | `kaggle/v17-results.tar.gz` | C2 浏览器学习实验：A0×3、A1、A3/A4mG×2 流（stream-web-v1，代码 7a2faaf；去掉了截图与归档的旧页面快照） | C2 结果 |
 | `kaggle/v19-results.tar.gz` | C3 老师规则：A4mGL/AGL/A4mG × 2 流 + A0-r4（stream-web-v1，代码 8f496d8；去掉截图与旧页面快照） | C3 结果 |
+| `kaggle/v20-results.tar.gz` | R2 冒烟：带指导重新做题（文件=示范，浏览器=示范+规则），8 种子 × 2 次（代码 e21d0a2） | R2 冒烟 |
+| `reports/r2-smoke/` | v20 的 build 产物（Kaggle 上 build 因路径 bug 未运行，离线重建）：各组 stats.json 与 366 条训练样本 | R2 冒烟 |
 | `reports/*` | 由 `stream_report.py` 生成的 report.md / summary.json / curves.png；技术报告里的数字只从这些 summary.json 取 | — |
 
 每个结果包内：每臂一个目录（config.json 冻结配置、stream.jsonl、checkpoints.jsonl、competence.json、library.json、模型轨迹、技能提案），共享的 teacher-cache，以及 `kaggle-status.jsonl`（任务启动/重启/内存记录）。

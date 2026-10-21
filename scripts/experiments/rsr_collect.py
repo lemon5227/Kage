@@ -54,7 +54,9 @@ MAX_TOOL_ACTIONS = 12
 
 # ---------------------------------------------------------------- config and planning
 def guidance_kinds(value: str) -> list[str]:
-    return {'demo': ['demo'], 'lessons': ['lessons'], 'both': ['demo', 'lessons']}[value]
+    # 'none' is the control: the same tasks and temperature without any guidance (v20 showed guided yields
+    # far above A0's greedy evaluation; this separates the effect of guidance from that of sampling).
+    return {'none': [], 'demo': ['demo'], 'lessons': ['lessons'], 'both': ['demo', 'lessons']}[value]
 
 
 def practice_seeds(count: int) -> list[int]:
@@ -207,7 +209,7 @@ def collect_tasks(args, model_factory, *, skill_runner=None) -> None:
             lessons = (playbook.select(task['instruction'], similarity=space.similarity,
                                       min_score=RELEVANCE_MIN) if playbook is not None else [])
             used = (['demo'] if demo_rows else []) + (['lessons'] if lessons else [])
-            if not used:
+            if not used and kinds:
                 if task['task_id'] not in already_skipped:
                     _append(skipped, {'task_id': task['task_id'], 'family': family, 'seed': seed,
                                       'reason': 'no_guidance'})
@@ -385,7 +387,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument('--temperature', type=float, default=0.6)
     c.add_argument('--memory', action='append', default=[], help='memory.jsonl to merge as demonstrations')
     c.add_argument('--playbook', action='append', default=[], help='playbook.json to merge as lessons')
-    c.add_argument('--guidance', choices=['demo', 'lessons', 'both'], required=True)
+    c.add_argument('--guidance', choices=['none', 'demo', 'lessons', 'both'], required=True)
     c.add_argument('--negatives', type=int, default=0, help='read-only tasks per negative family')
     c.add_argument('--skill-runner', choices=['docker', 'process'], default='docker')
     c.add_argument('--no-manage-server', action='store_true')

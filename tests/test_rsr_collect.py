@@ -305,3 +305,13 @@ def test_collect_and_build_end_to_end_on_a_real_browser_task(tmp_path):
     first_action = target_trace[0]['response']['tool_calls'][0]['arguments']
     assert first_action['operation'] == 'click' and first_action['target_ref']
     assert sample['target']['tool_calls'][0]['function']['name'] == 'browser_act'
+
+
+def test_none_guidance_is_the_unguided_control():
+    """v20 follow-up: the control runs the same practice tasks without guidance (no --memory needed)."""
+    import argparse
+    import rsr_collect
+    assert rsr_collect.guidance_kinds('none') == []
+    parser = rsr_collect.build_parser()
+    args = parser.parse_args(['collect', '--root', '/tmp/x', '--families', 'web_invoice', '--guidance', 'none'])
+    rsr_collect.validate_collect(parser, args)          # no memory/playbook required

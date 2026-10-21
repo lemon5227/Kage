@@ -1,0 +1,122 @@
+{
+ "families": {
+  "csv_transform": {
+   "tasks": 8,
+   "attempts": 16,
+   "successes": 9,
+   "yield": 0.5625,
+   "samples_kept": 30,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "inspect_question": {
+   "tasks": 2,
+   "attempts": 2,
+   "successes": 2,
+   "yield": 1.0,
+   "samples_kept": 6,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "interval_merge": {
+   "tasks": 8,
+   "attempts": 16,
+   "successes": 13,
+   "yield": 0.8125,
+   "samples_kept": 41,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 1,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "log_aggregation": {
+   "tasks": 8,
+   "attempts": 16,
+   "successes": 11,
+   "yield": 0.6875,
+   "samples_kept": 38,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "lookalike_readonly": {
+   "tasks": 2,
+   "attempts": 2,
+   "successes": 2,
+   "yield": 1.0,
+   "samples_kept": 7,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "read_preserve": {
+   "tasks": 2,
+   "attempts": 2,
+   "successes": 2,
+   "yield": 1.0,
+   "samples_kept": 7,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "subset_selection": {
+   "tasks": 8,
+   "attempts": 16,
+   "successes": 15,
+   "yield": 0.9375,
+   "samples_kept": 48,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 1,
+    "cap": 0,
+    "no_trace": 0
+   }
+  },
+  "web_lookup": {
+   "tasks": 2,
+   "attempts": 2,
+   "successes": 2,
+   "yield": 1.0,
+   "samples_kept": 3,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  }
+ },
+ "no_guidance": {},
+ "totals": {
+  "tasks": 40,
+  "attempts": 72,
+  "successes": 56,
+  "yield": 0.7778,
+  "samples_kept": 180,
+  "dropped": {
+   "guidance_not_removed": 0,
+   "duplicate": 2,
+   "cap": 0,
+   "no_trace": 0
+  }
+ }
+}
