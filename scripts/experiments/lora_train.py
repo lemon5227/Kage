@@ -53,14 +53,15 @@ def response_loss(model, ids: list, labels: list):
     return torch.nn.functional.cross_entropy(logits, torch.tensor(ids[-n:], device=model.device))
 
 
-def validation_loss(model, data: list) -> float:
+def validation_loss(model, data: list, dtype=None) -> float:
     """Mean response-token loss over the val set (weighted by each example's response tokens)."""
     import torch
+    dtype = dtype or torch.float16
     total, tokens = 0.0, 0
     model.eval()
     with torch.no_grad():
         for ids, labels, _ in data:
-            with torch.autocast('cuda', dtype=torch.float16):
+            with torch.autocast('cuda', dtype=dtype):
                 loss = response_loss(model, ids, labels)
             count = sum(label != -100 for label in labels)
             total += loss.item() * count
@@ -83,6 +84,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--targets', choices=sorted(TARGETS), default='full')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
+    p.add_argument('--dtype', choices=['auto', 'fp16', 'bf16'], default='auto',
+                   help='auto: bf16 where supported (A100), else fp16 with a loss scaler (T4)')
     return p
 
 
@@ -111,12 +114,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_model(model_dir: str):
+def load_model(model_dir: str, dtype=None):
     import torch
     import transformers
     for name in ('AutoModelForCausalLM', 'AutoModelForImageTextToText'):
         try:
-            model = getattr(transformers, name).from_pretrained(model_dir, torch_dtype=torch.float16,
+            model = getattr(transformers, name).from_pretrained(model_dir, dtype=dtype or torch.float16,
                                                                device_map={'': 0}, low_cpu_mem_usage=True)
             return model, name
         except (ValueError, KeyError) as exc:
@@ -155,10 +158,13 @@ def main(argv=None):
     if args.smoke:
         # the longest example first: a smoke run must hit the peak memory of the real run
         data = sorted(data, key=lambda d: len(d[0]), reverse=True)[:4]
+        val_data = val_data[:16]
+    use_bf16 = args.dtype == 'bf16' or (args.dtype == 'auto' and torch.cuda.is_bf16_supported())
+    dtype = torch.bfloat16 if use_bf16 else torch.float16
     print(json.dumps({'examples': len(data), 'skipped_too_long': skipped,
                       'max_len': max(len(d[0]) for d in data), 'sample_target': data[0][2][:300]}), flush=True)
 
-    model, loader = load_model(args.model)
+    model, loader = load_model(args.model, dtype)
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
     model.enable_input_require_grads()
     config = LoraConfig(r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.05, target_modules=TARGETS[args.targets],
@@ -175,7 +181,9 @@ def main(argv=None):
     steps_total = 2 if args.smoke else math.ceil(len(data) * args.epochs / args.accum)
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: min(1.0, (s + 1) / max(1, steps_total // 10)) * max(0.0, 1 - s / steps_total))
-    scaler = torch.amp.GradScaler('cuda')
+    # fp16 needs a loss scaler; bf16 has fp32's range, so the scaler is disabled (a no-op) there.
+    # Colab smoke 10-21: fp16 overflow made the scaler skip both smoke steps and lora_B stayed all zero.
+    scaler = torch.amp.GradScaler('cuda', enabled=not use_bf16)
     model.train()
     args.out.mkdir(parents=True, exist_ok=True)
     train_log = TrainLog(args.out / 'train-log.jsonl') if args.val else None
@@ -183,7 +191,7 @@ def main(argv=None):
     epoch, logged_epoch, epoch_losses, recent = 0, 0, [], []
 
     def epoch_val() -> float | None:
-        return validation_loss(model, val_data) if val_data else None
+        return validation_loss(model, val_data, dtype) if val_data else None
 
     while step < steps_total:
         if not order:
@@ -196,7 +204,7 @@ def main(argv=None):
             order = list(range(len(data)))
             random.shuffle(order)
         ids, labels, _ = data[order.pop()]
-        with torch.autocast('cuda', dtype=torch.float16):
+        with torch.autocast('cuda', dtype=dtype):
             loss = response_loss(model, ids, labels) / args.accum
         scaler.scale(loss).backward()
         raw = loss.item() * args.accum
@@ -206,14 +214,16 @@ def main(argv=None):
         micro += 1
         if micro % args.accum == 0:
             scaler.unscale_(opt)
-            torch.nn.utils.clip_grad_norm_(params, 1.0)
+            grad_norm = float(torch.nn.utils.clip_grad_norm_(params, 1.0))
             scaler.step(opt)
             scaler.update()
             opt.zero_grad(set_to_none=True)
             sched.step()
             step += 1
             print(json.dumps({'step': step, 'of': steps_total, 'loss': round(sum(losses) / len(losses), 4),
-                              'lr': sched.get_last_lr()[0], 'seconds': round(time.time() - t0, 1),
+                              'lr': sched.get_last_lr()[0], 'grad_norm': round(grad_norm, 4),
+                              'scale': scaler.get_scale() if scaler.is_enabled() else None,
+                              'seconds': round(time.time() - t0, 1),
                               'gpu_mb': torch.cuda.max_memory_allocated() // 2**20}), flush=True)
             if train_log is not None and step % 10 == 0:
                 train_log.append(loss_record(epoch, step, sum(recent) / len(recent)))
@@ -224,13 +234,18 @@ def main(argv=None):
 
     wall = round(time.time() - started, 1)
     peak_gpu_mb = torch.cuda.max_memory_allocated() // 2**20
+    lora_b_max = max(float(p_.detach().abs().max()) for n_, p_ in model.named_parameters() if 'lora_B' in n_)
     model.save_pretrained(args.out)
     (args.out / 'train-config.json').write_text(json.dumps(
         vars(args) | {'data': str(args.data), 'out': str(args.out), 'val': str(args.val) if args.val else None,
                       'data_sha256': data_sha256, 'examples': len(data), 'skipped_too_long': skipped,
                       'val_examples': len(val_data), 'val_skipped_too_long': val_skipped,
-                      'steps': steps_total, 'wall_seconds': wall, 'peak_gpu_mb': peak_gpu_mb}, default=str))
-    print(json.dumps({'saved': str(args.out)}), flush=True)
+                      'steps': steps_total, 'wall_seconds': wall, 'peak_gpu_mb': peak_gpu_mb,
+                      'dtype': 'bf16' if use_bf16 else 'fp16', 'lora_b_max_abs': lora_b_max}, default=str))
+    print(json.dumps({'saved': str(args.out), 'lora_b_max_abs': lora_b_max}), flush=True)
+    if lora_b_max == 0.0:
+        # lora_B starts at zero: still zero means no optimizer step changed the adapter (skipped or no grads).
+        raise SystemExit('adapter unchanged after training (all lora_B == 0); refusing to hand it to eval')
 
 
 if __name__ == '__main__':
