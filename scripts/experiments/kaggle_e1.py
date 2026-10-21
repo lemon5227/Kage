@@ -200,10 +200,11 @@ def write_teacher_config() -> None:
     path.chmod(0o600)
 
 
-def job_env(info: dict, gpu: int) -> dict:
-    return {**os.environ, 'KAGE_MODEL_PATH': info['model'], 'KAGE_LLAMA_SERVER': info['server'],
-            'CUDA_VISIBLE_DEVICES': str(gpu), 'KAGE_TEACHER_LEDGER': str(OUT / 'teacher-ledger.sqlite'),
-            'KAGE_TEACHER_CAP_USD': str(PHASE_CAP['usd'] + LEDGER_HEADROOM_USD)}
+def job_env(info: dict, gpu: int, extra: dict | None = None) -> dict:
+    env = {**os.environ, 'KAGE_MODEL_PATH': info['model'], 'KAGE_LLAMA_SERVER': info['server'],
+           'CUDA_VISIBLE_DEVICES': str(gpu), 'KAGE_TEACHER_LEDGER': str(OUT / 'teacher-ledger.sqlite'),
+           'KAGE_TEACHER_CAP_USD': str(PHASE_CAP['usd'] + LEDGER_HEADROOM_USD)}
+    return {**env, **(extra or {})}
 
 
 MAX_PARALLEL = 4            # v5: six concurrent servers -> three were killed mid-run (likely memory)
@@ -226,35 +227,39 @@ def memory_snapshot() -> dict:
     return out
 
 
-def run_jobs(info: dict, jobs: list[tuple[str, list[str]]], label: str) -> None:
-    """Run jobs at most MAX_PARALLEL at a time; restart a job that exits non-zero (it resumes per task)."""
+def run_jobs(info: dict, jobs: list[tuple], label: str) -> None:
+    """Run jobs at most MAX_PARALLEL at a time; restart a job that exits non-zero (it resumes per task).
+
+    A job is ``(name, argv)`` or ``(name, argv, env)``; the extra env applies to that job only
+    (e.g. KAGE_LORA for the adapter runs, never for the plain A0 controls).
+    """
     gpus = max(1, len(info['gpus']))
-    pending = [(name, argv, 1) for name, argv in jobs]
+    pending = [(job[0], job[1], job[2] if len(job) > 2 else {}, 1) for job in jobs]
     running: dict[str, tuple] = {}
     slot_gpu = {}
-    log(f'{label} started', jobs=[n for n, _ in jobs], max_parallel=MAX_PARALLEL)
+    log(f'{label} started', jobs=[job[0] for job in jobs], max_parallel=MAX_PARALLEL)
     last_mem = 0.0
     while pending or running:
         while pending and len(running) < MAX_PARALLEL:
-            name, argv, attempt = pending.pop(0)
+            name, argv, extra, attempt = pending.pop(0)
             used = [slot_gpu[n] for n in running]
             gpu = min(range(gpus), key=lambda g: used.count(g))
             slot_gpu[name] = gpu
             logf = (OUT / f'{name}.log').open('a')
-            env = {**job_env(info, gpu), 'KAGE_RUN_SUFFIX': f'-a{attempt}' if attempt > 1 else ''}
+            env = {**job_env(info, gpu, extra), 'KAGE_RUN_SUFFIX': f'-a{attempt}' if attempt > 1 else ''}
             proc = subprocess.Popen([PY, *argv], cwd=ROOT, env=env, stdout=logf, stderr=subprocess.STDOUT)
-            running[name] = (proc, logf, argv, attempt)
+            running[name] = (proc, logf, argv, extra, attempt)
             log(f'{name} launched', attempt=attempt, gpu=gpu)
             time.sleep(20)                 # stagger model loads
         for name in list(running):
-            proc, logf, argv, attempt = running[name]
+            proc, logf, argv, extra, attempt = running[name]
             if proc.poll() is None:
                 continue
             logf.close()
             del running[name]
             log(f'{name} exit', code=proc.returncode, attempt=attempt, **memory_snapshot())
             if proc.returncode != 0 and attempt < MAX_ATTEMPTS:
-                pending.append((name, argv, attempt + 1))
+                pending.append((name, argv, extra, attempt + 1))
         if time.time() - last_mem > 300:
             log('resources', running=sorted(running), **memory_snapshot())
             last_mem = time.time()
@@ -583,9 +588,9 @@ def lora_setup() -> dict:
     return info
 
 
-def train_and_convert(linfo: dict, out: Path, extra: list[str]) -> Path:
+def train_and_convert(linfo: dict, out: Path, extra: list[str], data: Path = SFT_DATA) -> Path:
     adapter = out / 'adapter'
-    sh([PY, 'scripts/experiments/lora_train.py', '--data', str(SFT_DATA), '--model', linfo['hf_model'],
+    sh([PY, 'scripts/experiments/lora_train.py', '--data', str(data), '--model', linfo['hf_model'],
         '--out', str(adapter), *extra], cwd=ROOT, env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
     gguf = out / 'adapter.gguf'
     sh([PY, linfo['converter'], str(adapter), '--base', linfo['hf_model'], '--outfile', str(gguf),
@@ -602,6 +607,94 @@ def lora_eval_jobs(n: int = LORA_REPLICATES) -> list[tuple[str, list[str]]]:
                           '--skill-runner', 'process', '--port', str(18300 + i)]) for i in range(1, n + 1)]
 
 
+# ---------------------------------------------------------------- R3: LoRA-1 without guidance
+R2_DATA = ROOT / 'evidence' / 'reports' / 'r2' / 'sft-v21.jsonl.gz'
+R3_DATA_SCRIPT = 'scripts/experiments/r3_data.py'
+R3_RUNS = 3
+
+
+def prepare_r3_data() -> Path:
+    """Validate the R2 samples and split them into train/val (refuses transfer families and eval seeds)."""
+    data = OUT / 'r3-data'
+    try:
+        sh([PY, R3_DATA_SCRIPT, '--sft', str(R2_DATA), '--out', str(data)], cwd=ROOT)
+    except subprocess.CalledProcessError as exc:
+        log('r3 data build failed', code=exc.returncode)
+        raise SystemExit(1)
+    stats = json.loads((data / 'data-stats.json').read_text())
+    log('r3 data ready', rows=stats['rows_out'], tasks=stats['tasks'], dropped=stats['dropped'])
+    return data
+
+
+def r3_adapter(linfo: dict, data: Path, out: Path, extra: list[str]) -> Path:
+    """Train and convert; a failure stops the phase here, before any eval job can see a missing adapter."""
+    try:
+        gguf = train_and_convert(linfo, out, extra, data=data / 'train.jsonl')
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        log('r3 train/convert failed; eval jobs not started', error=str(exc)[-800:])
+        raise SystemExit(1)
+    if not gguf.exists():
+        log('r3 adapter missing after convert; eval jobs not started', path=str(gguf))
+        raise SystemExit(1)
+    return gguf
+
+
+def r3_eval_jobs(adapter: Path, n: int = R3_RUNS) -> list[tuple[str, list[str], dict[str, str]]]:
+    """A0 with and without the adapter, n runs each, on both frozen eval sets.
+
+    The adapter is a per-job environment entry: the A0 control jobs never get KAGE_LORA.
+    Browser jobs also carry KAGE_CTX; ports are distinct so the runs can overlap.
+    """
+    script, jobs, port = 'scripts/experiments/stream_run.py', [], 18700
+    for kind, manifest in (('file', ROOT / 'eval' / 'stream_v1'), ('web', ROOT / 'eval' / 'stream_web_v1')):
+        for arm in ('L3', 'A0'):
+            for index in range(1, n + 1):
+                env = {'KAGE_LORA': str(adapter)} if arm == 'L3' else {}
+                if kind == 'web':
+                    env['KAGE_CTX'] = BROWSER_CTX
+                jobs.append((f'{kind}-{arm}-r{index}', [
+                    script, '--arm', 'A0', '--root', str(OUT / 'r3' / kind / f'{arm}-r{index}'),
+                    '--eval-only', 'cp0', '--stream-manifest', str(manifest / 'stream-seed1.json'),
+                    '--eval-manifest', str(manifest / 'eval.json'), '--skill-runner', 'process',
+                    '--port', str(port)], env))
+                port += 1
+    return jobs
+
+
+def _latest_checkpoints(root: Path) -> list[dict]:
+    path = root / 'checkpoints.jsonl'
+    if not path.exists():
+        return []
+    latest = {}
+    for line in path.read_text().splitlines():
+        if line.strip():
+            row = json.loads(line)
+            latest[row['task_id']] = row          # a retried task replaces its earlier row
+    return list(latest.values())
+
+
+def r3_summary(jobs: list[tuple]) -> dict:
+    """Per eval set and run: pass counts per family and negative misuse (a run with no file is 'missing')."""
+    summary = {}
+    for name, argv, _ in jobs:
+        kind, arm, run = name.split('-', 2)
+        rows = _latest_checkpoints(Path(argv[argv.index('--root') + 1]))
+        families, misuse = {}, {}
+        for row in rows:
+            family = row['family']
+            entry = families.setdefault(family, {'passed': 0, 'total': 0})
+            entry['total'] += 1
+            entry['passed'] += int(float(row.get('score') or 0) >= 1.0)
+            if row.get('negative'):
+                misuse[family] = misuse.get(family, 0) + int(bool(row.get('misuse')))
+        summary.setdefault(kind, {})[f'{arm}-{run}'] = {
+            'families': families, 'negative_misuse': misuse,
+            'passed': sum(entry['passed'] for entry in families.values()),
+            'total': sum(entry['total'] for entry in families.values()),
+            'status': 'ok' if rows else 'missing'}
+    return summary
+
+
 def package() -> None:
     subprocess.run([PY, 'scripts/experiments/stream_report.py', '--arm-dir', f'A0={OUT / "A0"}',
                     '--arm-dir', f'A1={OUT / "A1"}',
@@ -613,11 +706,18 @@ def package() -> None:
     log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
 
 
-def main(argv=None):
+PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'package')
+
+
+def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--phase', choices=['all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-                                        'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'package'], default='all')
-    args = p.parse_args(argv)
+    p.add_argument('--phase', choices=PHASES, default='all')
+    return p
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
     # The notebook command never changes; the phase to run is controlled from the repository so a
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
     control = ROOT / 'scripts' / 'experiments' / 'kaggle_phase'
@@ -632,8 +732,9 @@ def main(argv=None):
     if args.phase == 'c3':
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
-                                 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr')
-    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr')) if needs_setup
+                                 'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
+                                 'r3-smoke', 'r3')
+    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3')) if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
         browser_setup()
@@ -690,6 +791,42 @@ def main(argv=None):
             log('rsr build', job=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase in ('r3-smoke', 'r3'):
+        # R3: LoRA-1 on guidance-free R2 samples, evaluated without skills, memory or lessons.
+        data = prepare_r3_data()            # fail fast before downloading/training
+        linfo = lora_setup()
+        if args.phase == 'r3-smoke':
+            out = OUT / 'r3-smoke'
+            gguf = r3_adapter(linfo, data, out, ['--smoke'])
+            browser_setup()
+            jobs = [
+                ('r3-smoke-file', ['scripts/experiments/stream_calibrate.py', '--root', str(out / 'file'),
+                                   '--per-family', '1', '--families', 'log_aggregation', '--port', '18750',
+                                   '--skill-runner', 'process'], {'KAGE_LORA': str(gguf)}),
+                ('r3-smoke-web', ['scripts/experiments/stream_calibrate.py', '--root', str(out / 'web'),
+                                  '--per-family', '1', '--families', 'web_invoice', '--port', '18751',
+                                  '--skill-runner', 'process'], {'KAGE_LORA': str(gguf), 'KAGE_CTX': BROWSER_CTX}),
+            ]
+            run_jobs(info, jobs, 'r3-smoke')
+            for name, _, _ in jobs:
+                results = out / name.removeprefix('r3-smoke-') / 'results.jsonl'
+                print(results.read_text() if results.exists() else '', flush=True)
+        else:
+            out = OUT / 'r3'
+            gguf = r3_adapter(linfo, data, out, ['--epochs', '2', '--rank', '16', '--lr', '1e-4',
+                                                '--targets', 'safe', '--val', str(data / 'val.jsonl')])
+            browser_setup()
+            jobs = r3_eval_jobs(gguf)
+            run_jobs(info, jobs, 'r3')
+            summary = r3_summary(jobs)
+            (out / 'summary.json').write_text(json.dumps(summary, indent=1))
+            log('r3 summary', passed={kind: {run: f"{row['passed']}/{row['total']}" for run, row in runs.items()}
+                                      for kind, runs in summary.items()})
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json', '.safetensors'))
+                    and 'adapter' not in t.name else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
         return
     if args.phase == 'smoke':

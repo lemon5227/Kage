@@ -26,6 +26,8 @@
 | `kaggle/v19-results.tar.gz` | C3 老师规则：A4mGL/AGL/A4mG × 2 流 + A0-r4（stream-web-v1，代码 8f496d8；去掉截图与旧页面快照） | C3 结果 |
 | `kaggle/v20-results.tar.gz` | R2 冒烟：带指导重新做题（文件=示范，浏览器=示范+规则），8 种子 × 2 次（代码 e21d0a2） | R2 冒烟 |
 | `reports/r2-smoke/` | v20 的 build 产物（Kaggle 上 build 因路径 bug 未运行，离线重建）：各组 stats.json 与 366 条训练样本 | R2 冒烟 |
+| `kaggle/v21-results.tar.gz` | R2 正式采集：4 组带指导（24 种子 × 4 次）+ 不带指导的对照组（代码 6a9d506；去掉工作区） | R2 结果 |
+| `reports/r2/` | R2 训练数据 `sft-v21.jsonl.gz`（1900 条，带指导的 4 组）、对照组样本 `sft-v21-control.jsonl.gz`（193 条，不进训练）、各组 stats.json；R3 从这里读 | R2 结果 |
 | `reports/*` | 由 `stream_report.py` 生成的 report.md / summary.json / curves.png；技术报告里的数字只从这些 summary.json 取 | — |
 
 每个结果包内：每臂一个目录（config.json 冻结配置、stream.jsonl、checkpoints.jsonl、competence.json、library.json、模型轨迹、技能提案），共享的 teacher-cache，以及 `kaggle-status.jsonl`（任务启动/重启/内存记录）。
