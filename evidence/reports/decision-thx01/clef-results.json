@@ -1,0 +1,5680 @@
+[
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9911,
+"conf": 0.9911,
+"latency_s": 0.391218900680542,
+"input_tokens": 215
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.40625596046447754,
+"input_tokens": 225
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9922,
+"conf": 0.9922,
+"latency_s": 0.5088992118835449,
+"input_tokens": 221
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9902,
+"conf": 0.9902,
+"latency_s": 0.5006489753723145,
+"input_tokens": 222
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9911,
+"conf": 0.9911,
+"latency_s": 0.561997652053833,
+"input_tokens": 214
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9914,
+"conf": 0.9914,
+"latency_s": 0.5536839962005615,
+"input_tokens": 225
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.991,
+"conf": 0.991,
+"latency_s": 0.319058895111084,
+"input_tokens": 216
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9907,
+"conf": 0.9907,
+"latency_s": 0.388355016708374,
+"input_tokens": 220
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9894,
+"conf": 0.9894,
+"latency_s": 0.17577004432678223,
+"input_tokens": 220
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.4189310073852539,
+"input_tokens": 219
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.38643503189086914,
+"input_tokens": 225
+},
+{
+"task": "T1_write_or_read",
+"id": "log_aggregation-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9901,
+"conf": 0.9901,
+"latency_s": 0.20452499389648438,
+"input_tokens": 214
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.8759281635284424,
+"input_tokens": 263
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.4883110523223877,
+"input_tokens": 271
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9919,
+"conf": 0.9919,
+"latency_s": 0.4260871410369873,
+"input_tokens": 269
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9921,
+"conf": 0.9921,
+"latency_s": 0.2662088871002197,
+"input_tokens": 270
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.5063199996948242,
+"input_tokens": 264
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.7319319248199463,
+"input_tokens": 264
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.3858187198638916,
+"input_tokens": 269
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9908,
+"conf": 0.9908,
+"latency_s": 0.4244399070739746,
+"input_tokens": 271
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9908,
+"conf": 0.9908,
+"latency_s": 0.35550999641418457,
+"input_tokens": 269
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9918,
+"conf": 0.9918,
+"latency_s": 0.21123003959655762,
+"input_tokens": 270
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.29917168617248535,
+"input_tokens": 270
+},
+{
+"task": "T1_write_or_read",
+"id": "subset_selection-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9925,
+"conf": 0.9925,
+"latency_s": 0.2472851276397705,
+"input_tokens": 263
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.322019100189209,
+"input_tokens": 258
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.25417494773864746,
+"input_tokens": 253
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9919,
+"conf": 0.9919,
+"latency_s": 0.3829190731048584,
+"input_tokens": 248
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9912,
+"conf": 0.9912,
+"latency_s": 0.23335599899291992,
+"input_tokens": 246
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.29126715660095215,
+"input_tokens": 252
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.38165879249572754,
+"input_tokens": 247
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9922,
+"conf": 0.9922,
+"latency_s": 0.4397602081298828,
+"input_tokens": 254
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.2555849552154541,
+"input_tokens": 258
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.3405880928039551,
+"input_tokens": 248
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.3036479949951172,
+"input_tokens": 246
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.4136960506439209,
+"input_tokens": 259
+},
+{
+"task": "T1_write_or_read",
+"id": "interval_merge-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9912,
+"conf": 0.9912,
+"latency_s": 0.3202979564666748,
+"input_tokens": 252
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.47060298919677734,
+"input_tokens": 280
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.3221571445465088,
+"input_tokens": 292
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9922,
+"conf": 0.9922,
+"latency_s": 0.3057241439819336,
+"input_tokens": 292
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.7266879081726074,
+"input_tokens": 272
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9918,
+"conf": 0.9918,
+"latency_s": 0.45325779914855957,
+"input_tokens": 294
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9911,
+"conf": 0.9911,
+"latency_s": 0.5892059803009033,
+"input_tokens": 292
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9918,
+"conf": 0.9918,
+"latency_s": 0.2046489715576172,
+"input_tokens": 292
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9897,
+"conf": 0.9897,
+"latency_s": 0.26873207092285156,
+"input_tokens": 282
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9919,
+"conf": 0.9919,
+"latency_s": 0.26885032653808594,
+"input_tokens": 283
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.44004106521606445,
+"input_tokens": 282
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.2269759178161621,
+"input_tokens": 282
+},
+{
+"task": "T1_write_or_read",
+"id": "csv_transform-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.39127492904663086,
+"input_tokens": 275
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9912,
+"conf": 0.9912,
+"latency_s": 0.2064530849456787,
+"input_tokens": 249
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9914,
+"conf": 0.9914,
+"latency_s": 0.388960599899292,
+"input_tokens": 222
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.4030420780181885,
+"input_tokens": 227
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9891,
+"conf": 0.9891,
+"latency_s": 0.21886682510375977,
+"input_tokens": 249
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9907,
+"conf": 0.9907,
+"latency_s": 0.3472249507904053,
+"input_tokens": 249
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.49242091178894043,
+"input_tokens": 251
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9907,
+"conf": 0.9907,
+"latency_s": 0.44718194007873535,
+"input_tokens": 247
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.263167142868042,
+"input_tokens": 249
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.2908143997192383,
+"input_tokens": 227
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9902,
+"conf": 0.9902,
+"latency_s": 0.2664613723754883,
+"input_tokens": 225
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.2942180633544922,
+"input_tokens": 246
+},
+{
+"task": "T1_write_or_read",
+"id": "text_normalize-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.4595949649810791,
+"input_tokens": 249
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9914,
+"conf": 0.9914,
+"latency_s": 0.4252810478210449,
+"input_tokens": 303
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9921,
+"conf": 0.9921,
+"latency_s": 0.19013524055480957,
+"input_tokens": 298
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.2804090976715088,
+"input_tokens": 301
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.24727892875671387,
+"input_tokens": 293
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.5760588645935059,
+"input_tokens": 299
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9918,
+"conf": 0.9918,
+"latency_s": 0.2403099536895752,
+"input_tokens": 304
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9921,
+"conf": 0.9921,
+"latency_s": 0.5151300430297852,
+"input_tokens": 296
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9925,
+"conf": 0.9925,
+"latency_s": 0.64742112159729,
+"input_tokens": 294
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9926,
+"conf": 0.9926,
+"latency_s": 0.8183979988098145,
+"input_tokens": 294
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9921,
+"conf": 0.9921,
+"latency_s": 0.33330821990966797,
+"input_tokens": 302
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9919,
+"conf": 0.9919,
+"latency_s": 0.19716787338256836,
+"input_tokens": 298
+},
+{
+"task": "T1_write_or_read",
+"id": "config_migrate-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9912,
+"conf": 0.9912,
+"latency_s": 0.3093712329864502,
+"input_tokens": 296
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9000",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9907,
+"conf": 0.9907,
+"latency_s": 0.554793119430542,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9001",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9867,
+"conf": 0.9867,
+"latency_s": 0.23502802848815918,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9002",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9951,
+"conf": 0.9951,
+"latency_s": 0.2981250286102295,
+"input_tokens": 172
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9003",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9946,
+"conf": 0.9946,
+"latency_s": 0.506533145904541,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9004",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9948,
+"conf": 0.9948,
+"latency_s": 0.5274860858917236,
+"input_tokens": 172
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9005",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9852,
+"conf": 0.9852,
+"latency_s": 0.2055809497833252,
+"input_tokens": 177
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9006",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.994,
+"conf": 0.994,
+"latency_s": 0.27000999450683594,
+"input_tokens": 174
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9007",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9951,
+"conf": 0.9951,
+"latency_s": 0.25517702102661133,
+"input_tokens": 172
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9008",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9907,
+"conf": 0.9907,
+"latency_s": 0.2828390598297119,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9009",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9946,
+"conf": 0.9946,
+"latency_s": 0.8159427642822266,
+"input_tokens": 172
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9010",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9842,
+"conf": 0.9842,
+"latency_s": 0.18591022491455078,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "read_preserve-9011",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9946,
+"conf": 0.9946,
+"latency_s": 0.21640825271606445,
+"input_tokens": 173
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9000",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9948,
+"conf": 0.9948,
+"latency_s": 0.35654282569885254,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9001",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9951,
+"conf": 0.9951,
+"latency_s": 0.2333822250366211,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9002",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9937,
+"conf": 0.9937,
+"latency_s": 0.22278618812561035,
+"input_tokens": 179
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9003",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9914,
+"conf": 0.9914,
+"latency_s": 0.23247718811035156,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9004",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9941,
+"conf": 0.9941,
+"latency_s": 0.2472681999206543,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9005",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9948,
+"conf": 0.9948,
+"latency_s": 0.48510289192199707,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9006",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9936,
+"conf": 0.9936,
+"latency_s": 0.28268909454345703,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9007",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9941,
+"conf": 0.9941,
+"latency_s": 0.41573190689086914,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9008",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9936,
+"conf": 0.9936,
+"latency_s": 0.21622180938720703,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9009",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9941,
+"conf": 0.9941,
+"latency_s": 0.1883862018585205,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9010",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9946,
+"conf": 0.9946,
+"latency_s": 0.21895217895507812,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "inspect_question-9011",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9929,
+"conf": 0.9929,
+"latency_s": 0.6727991104125977,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9000",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9888,
+"conf": 0.9888,
+"latency_s": 0.23874688148498535,
+"input_tokens": 180
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9001",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.4344470500946045,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9002",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9904,
+"conf": 0.9904,
+"latency_s": 0.48006701469421387,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9003",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.6334819793701172,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9004",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9886,
+"conf": 0.9886,
+"latency_s": 0.278566837310791,
+"input_tokens": 177
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9005",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.993,
+"conf": 0.993,
+"latency_s": 0.25691890716552734,
+"input_tokens": 181
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9006",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.993,
+"conf": 0.993,
+"latency_s": 0.37782812118530273,
+"input_tokens": 181
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9007",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.5108013153076172,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9008",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.6157021522521973,
+"input_tokens": 177
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9009",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9925,
+"conf": 0.9925,
+"latency_s": 0.2927980422973633,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9010",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9926,
+"conf": 0.9926,
+"latency_s": 0.2926037311553955,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "lookalike_readonly-9011",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9924,
+"conf": 0.9924,
+"latency_s": 1.0164899826049805,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.23484516143798828,
+"input_tokens": 206
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9924,
+"conf": 0.9924,
+"latency_s": 0.2501497268676758,
+"input_tokens": 198
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9927,
+"conf": 0.9927,
+"latency_s": 0.6303749084472656,
+"input_tokens": 206
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9925,
+"conf": 0.9925,
+"latency_s": 0.3641231060028076,
+"input_tokens": 207
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9927,
+"conf": 0.9927,
+"latency_s": 0.5725550651550293,
+"input_tokens": 210
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.8395438194274902,
+"input_tokens": 206
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9924,
+"conf": 0.9924,
+"latency_s": 0.3552510738372803,
+"input_tokens": 208
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9926,
+"conf": 0.9926,
+"latency_s": 0.2815589904785156,
+"input_tokens": 211
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.993,
+"conf": 0.993,
+"latency_s": 0.24760198593139648,
+"input_tokens": 201
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9928,
+"conf": 0.9928,
+"latency_s": 0.578726053237915,
+"input_tokens": 202
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9925,
+"conf": 0.9925,
+"latency_s": 0.48072004318237305,
+"input_tokens": 208
+},
+{
+"task": "T1_write_or_read",
+"id": "web_form-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.993,
+"conf": 0.993,
+"latency_s": 0.45404577255249023,
+"input_tokens": 207
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9902,
+"conf": 0.9902,
+"latency_s": 0.20345592498779297,
+"input_tokens": 203
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9859,
+"conf": 0.9859,
+"latency_s": 0.3791520595550537,
+"input_tokens": 202
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9883,
+"conf": 0.9883,
+"latency_s": 0.3802461624145508,
+"input_tokens": 198
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9814,
+"conf": 0.9814,
+"latency_s": 0.4124939441680908,
+"input_tokens": 190
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9887,
+"conf": 0.9887,
+"latency_s": 0.34972596168518066,
+"input_tokens": 200
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9857,
+"conf": 0.9857,
+"latency_s": 0.8664138317108154,
+"input_tokens": 194
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9898,
+"conf": 0.9898,
+"latency_s": 0.41514110565185547,
+"input_tokens": 203
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9844,
+"conf": 0.9844,
+"latency_s": 0.2254338264465332,
+"input_tokens": 202
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9839,
+"conf": 0.9839,
+"latency_s": 0.37039899826049805,
+"input_tokens": 189
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9851,
+"conf": 0.9851,
+"latency_s": 0.3902461528778076,
+"input_tokens": 204
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9886,
+"conf": 0.9886,
+"latency_s": 0.19959092140197754,
+"input_tokens": 193
+},
+{
+"task": "T1_write_or_read",
+"id": "web_invoice-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9835,
+"conf": 0.9835,
+"latency_s": 0.726999044418335,
+"input_tokens": 193
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.2046818733215332,
+"input_tokens": 186
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9001",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9914,
+"conf": 0.9914,
+"latency_s": 0.5695662498474121,
+"input_tokens": 189
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9925,
+"conf": 0.9925,
+"latency_s": 0.2563509941101074,
+"input_tokens": 187
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9003",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.5947389602661133,
+"input_tokens": 192
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9921,
+"conf": 0.9921,
+"latency_s": 0.476794958114624,
+"input_tokens": 190
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9005",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9919,
+"conf": 0.9919,
+"latency_s": 0.19614720344543457,
+"input_tokens": 189
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.7844581604003906,
+"input_tokens": 186
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9007",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9916,
+"conf": 0.9916,
+"latency_s": 0.2815439701080322,
+"input_tokens": 190
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9008",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.4706113338470459,
+"input_tokens": 186
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9904,
+"conf": 0.9904,
+"latency_s": 0.4615800380706787,
+"input_tokens": 183
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9010",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.2070631980895996,
+"input_tokens": 189
+},
+{
+"task": "T1_write_or_read",
+"id": "web_prefs-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9917,
+"conf": 0.9917,
+"latency_s": 0.34946203231811523,
+"input_tokens": 186
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9000",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.5568,
+"conf": 0.5568,
+"latency_s": 0.43454694747924805,
+"input_tokens": 196
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9001",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0481,
+"conf": 0.9519,
+"latency_s": 0.20328712463378906,
+"input_tokens": 206
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9002",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.2295,
+"conf": 0.7705,
+"latency_s": 0.23434114456176758,
+"input_tokens": 181
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9003",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.1379,
+"conf": 0.8621,
+"latency_s": 0.45046401023864746,
+"input_tokens": 196
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9004",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.023,
+"conf": 0.977,
+"latency_s": 0.4460580348968506,
+"input_tokens": 195
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9005",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0278,
+"conf": 0.9722,
+"latency_s": 0.23877286911010742,
+"input_tokens": 190
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9006",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0306,
+"conf": 0.9694,
+"latency_s": 0.4455528259277344,
+"input_tokens": 190
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9007",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0388,
+"conf": 0.9612,
+"latency_s": 0.45687198638916016,
+"input_tokens": 207
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9008",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.3727,
+"conf": 0.6273,
+"latency_s": 0.3901700973510742,
+"input_tokens": 205
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9009",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.7186,
+"conf": 0.7186,
+"latency_s": 0.2320268154144287,
+"input_tokens": 196
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9010",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0584,
+"conf": 0.9416,
+"latency_s": 0.4321458339691162,
+"input_tokens": 190
+},
+{
+"task": "T1_write_or_read",
+"id": "web_catalog-9011",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.5077,
+"conf": 0.5077,
+"latency_s": 0.4175231456756592,
+"input_tokens": 196
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9000",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9935,
+"conf": 0.9935,
+"latency_s": 0.32420992851257324,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9001",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.995,
+"conf": 0.995,
+"latency_s": 0.22542905807495117,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9002",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.993,
+"conf": 0.993,
+"latency_s": 0.7194392681121826,
+"input_tokens": 180
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9003",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9948,
+"conf": 0.9948,
+"latency_s": 0.373945951461792,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9004",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9941,
+"conf": 0.9941,
+"latency_s": 0.40285611152648926,
+"input_tokens": 179
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9005",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9874,
+"conf": 0.9874,
+"latency_s": 0.5473370552062988,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9006",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9947,
+"conf": 0.9947,
+"latency_s": 0.20933914184570312,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9007",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.995,
+"conf": 0.995,
+"latency_s": 0.9451229572296143,
+"input_tokens": 176
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9008",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9946,
+"conf": 0.9946,
+"latency_s": 0.20676469802856445,
+"input_tokens": 175
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9009",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.993,
+"conf": 0.993,
+"latency_s": 0.30036211013793945,
+"input_tokens": 180
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9010",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9939,
+"conf": 0.9939,
+"latency_s": 0.48880505561828613,
+"input_tokens": 178
+},
+{
+"task": "T1_write_or_read",
+"id": "web_lookup-9011",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.995,
+"conf": 0.995,
+"latency_s": 0.344221830368042,
+"input_tokens": 176
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9012",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9897,
+"conf": 0.9897,
+"latency_s": 1.1597909927368164,
+"input_tokens": 507
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9013",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9902,
+"conf": 0.9902,
+"latency_s": 0.29378724098205566,
+"input_tokens": 507
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9014",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9861,
+"conf": 0.9861,
+"latency_s": 1.3041012287139893,
+"input_tokens": 500
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9015",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9848,
+"conf": 0.9848,
+"latency_s": 0.19074010848999023,
+"input_tokens": 513
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9016",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9847,
+"conf": 0.9847,
+"latency_s": 0.2834789752960205,
+"input_tokens": 507
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9017",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9837,
+"conf": 0.9837,
+"latency_s": 0.49677586555480957,
+"input_tokens": 506
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9018",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9822,
+"conf": 0.9822,
+"latency_s": 0.42749977111816406,
+"input_tokens": 508
+},
+{
+"task": "T2_route",
+"id": "log_aggregation-9019",
+"pred": "log_aggregation",
+"gold": "log_aggregation",
+"ok": true,
+"p_gold": 0.9856,
+"conf": 0.9856,
+"latency_s": 0.3137040138244629,
+"input_tokens": 505
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9012",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.239821195602417,
+"input_tokens": 550
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9013",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9922,
+"conf": 0.9922,
+"latency_s": 0.2769467830657959,
+"input_tokens": 549
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9014",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.30971527099609375,
+"input_tokens": 550
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9015",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9908,
+"conf": 0.9908,
+"latency_s": 0.42270898818969727,
+"input_tokens": 550
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9016",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.37352919578552246,
+"input_tokens": 550
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9017",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9901,
+"conf": 0.9901,
+"latency_s": 0.508821964263916,
+"input_tokens": 549
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9018",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.3518519401550293,
+"input_tokens": 556
+},
+{
+"task": "T2_route",
+"id": "subset_selection-9019",
+"pred": "subset_selection",
+"gold": "subset_selection",
+"ok": true,
+"p_gold": 0.9931,
+"conf": 0.9931,
+"latency_s": 0.44497108459472656,
+"input_tokens": 556
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9012",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9878,
+"conf": 0.9878,
+"latency_s": 0.3100731372833252,
+"input_tokens": 539
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9013",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9872,
+"conf": 0.9872,
+"latency_s": 0.455319881439209,
+"input_tokens": 545
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9014",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9878,
+"conf": 0.9878,
+"latency_s": 0.7230768203735352,
+"input_tokens": 539
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9015",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9882,
+"conf": 0.9882,
+"latency_s": 0.45630717277526855,
+"input_tokens": 534
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9016",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9897,
+"conf": 0.9897,
+"latency_s": 0.3372340202331543,
+"input_tokens": 528
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9017",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9874,
+"conf": 0.9874,
+"latency_s": 0.7821779251098633,
+"input_tokens": 538
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9018",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9888,
+"conf": 0.9888,
+"latency_s": 0.28670692443847656,
+"input_tokens": 531
+},
+{
+"task": "T2_route",
+"id": "interval_merge-9019",
+"pred": "interval_merge",
+"gold": "interval_merge",
+"ok": true,
+"p_gold": 0.9882,
+"conf": 0.9882,
+"latency_s": 0.3527710437774658,
+"input_tokens": 540
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9012",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9829,
+"conf": 0.9829,
+"latency_s": 0.43713927268981934,
+"input_tokens": 577
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9013",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9811,
+"conf": 0.9811,
+"latency_s": 0.21477699279785156,
+"input_tokens": 578
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9014",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9806,
+"conf": 0.9806,
+"latency_s": 0.27774906158447266,
+"input_tokens": 566
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9015",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9839,
+"conf": 0.9839,
+"latency_s": 0.31648683547973633,
+"input_tokens": 570
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9016",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.981,
+"conf": 0.981,
+"latency_s": 0.3071138858795166,
+"input_tokens": 570
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9017",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9808,
+"conf": 0.9808,
+"latency_s": 0.19637799263000488,
+"input_tokens": 571
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9018",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9822,
+"conf": 0.9822,
+"latency_s": 0.5278580188751221,
+"input_tokens": 578
+},
+{
+"task": "T2_route",
+"id": "csv_transform-9019",
+"pred": "csv_transform",
+"gold": "csv_transform",
+"ok": true,
+"p_gold": 0.9788,
+"conf": 0.9788,
+"latency_s": 0.3187260627746582,
+"input_tokens": 571
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9012",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.992,
+"conf": 0.992,
+"latency_s": 0.4293057918548584,
+"input_tokens": 513
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9013",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9932,
+"conf": 0.9932,
+"latency_s": 0.3784370422363281,
+"input_tokens": 508
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9014",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9897,
+"conf": 0.9897,
+"latency_s": 0.46057772636413574,
+"input_tokens": 537
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9015",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9937,
+"conf": 0.9937,
+"latency_s": 0.2153918743133545,
+"input_tokens": 510
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9016",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9908,
+"conf": 0.9908,
+"latency_s": 0.6983680725097656,
+"input_tokens": 535
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9017",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9865,
+"conf": 0.9865,
+"latency_s": 0.35028600692749023,
+"input_tokens": 511
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9018",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9904,
+"conf": 0.9904,
+"latency_s": 0.3936502933502197,
+"input_tokens": 537
+},
+{
+"task": "T2_route",
+"id": "text_normalize-9019",
+"pred": "text_normalize",
+"gold": "text_normalize",
+"ok": true,
+"p_gold": 0.9922,
+"conf": 0.9922,
+"latency_s": 0.26304101943969727,
+"input_tokens": 508
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9012",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9736,
+"conf": 0.9736,
+"latency_s": 0.21285104751586914,
+"input_tokens": 593
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9013",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9753,
+"conf": 0.9753,
+"latency_s": 0.2555241584777832,
+"input_tokens": 585
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9014",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9766,
+"conf": 0.9766,
+"latency_s": 0.3921546936035156,
+"input_tokens": 587
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9015",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9763,
+"conf": 0.9763,
+"latency_s": 0.5052862167358398,
+"input_tokens": 584
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9016",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9769,
+"conf": 0.9769,
+"latency_s": 0.411013126373291,
+"input_tokens": 580
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9017",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.975,
+"conf": 0.975,
+"latency_s": 0.28028106689453125,
+"input_tokens": 584
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9018",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9732,
+"conf": 0.9732,
+"latency_s": 0.4150688648223877,
+"input_tokens": 581
+},
+{
+"task": "T2_route",
+"id": "config_migrate-9019",
+"pred": "config_migrate",
+"gold": "config_migrate",
+"ok": true,
+"p_gold": 0.9775,
+"conf": 0.9775,
+"latency_s": 0.6758620738983154,
+"input_tokens": 575
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9012",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.9436,
+"conf": 0.9436,
+"latency_s": 0.31384706497192383,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9013",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.8745,
+"conf": 0.8745,
+"latency_s": 0.6377761363983154,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9014",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.8091,
+"conf": 0.8091,
+"latency_s": 0.19369220733642578,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9015",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.8134,
+"conf": 0.8134,
+"latency_s": 0.40742969512939453,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9016",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.7045,
+"conf": 0.7045,
+"latency_s": 0.538348913192749,
+"input_tokens": 458
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9017",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.9174,
+"conf": 0.9174,
+"latency_s": 0.37484002113342285,
+"input_tokens": 459
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9018",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.8613,
+"conf": 0.8613,
+"latency_s": 0.25725698471069336,
+"input_tokens": 460
+},
+{
+"task": "T2_route",
+"id": "read_preserve-9019",
+"pred": "read_preserve",
+"gold": "read_preserve",
+"ok": true,
+"p_gold": 0.9573,
+"conf": 0.9573,
+"latency_s": 0.3298330307006836,
+"input_tokens": 460
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9012",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.9421,
+"conf": 0.9421,
+"latency_s": 0.6061460971832275,
+"input_tokens": 464
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9013",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.9584,
+"conf": 0.9584,
+"latency_s": 0.38202905654907227,
+"input_tokens": 465
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9014",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.9246,
+"conf": 0.9246,
+"latency_s": 0.21702790260314941,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9015",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.9616,
+"conf": 0.9616,
+"latency_s": 0.42226505279541016,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9016",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.9538,
+"conf": 0.9538,
+"latency_s": 0.2866201400756836,
+"input_tokens": 464
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9017",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.863,
+"conf": 0.863,
+"latency_s": 0.5574681758880615,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9018",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.9246,
+"conf": 0.9246,
+"latency_s": 0.3820641040802002,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "inspect_question-9019",
+"pred": "inspect_question",
+"gold": "inspect_question",
+"ok": true,
+"p_gold": 0.863,
+"conf": 0.863,
+"latency_s": 0.35510897636413574,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9012",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.8753,
+"conf": 0.8753,
+"latency_s": 0.42653799057006836,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9013",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.8781,
+"conf": 0.8781,
+"latency_s": 0.4460148811340332,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9014",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.696,
+"conf": 0.696,
+"latency_s": 0.40262579917907715,
+"input_tokens": 466
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9015",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.5987,
+"conf": 0.5987,
+"latency_s": 0.626579999923706,
+"input_tokens": 463
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9016",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.6391,
+"conf": 0.6391,
+"latency_s": 0.40499114990234375,
+"input_tokens": 463
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9017",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.5732,
+"conf": 0.5732,
+"latency_s": 0.22078680992126465,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9018",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.8838,
+"conf": 0.8838,
+"latency_s": 0.5740029811859131,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "lookalike_readonly-9019",
+"pred": "lookalike_readonly",
+"gold": "lookalike_readonly",
+"ok": true,
+"p_gold": 0.7886,
+"conf": 0.7886,
+"latency_s": 0.4555089473724365,
+"input_tokens": 465
+},
+{
+"task": "T2_route",
+"id": "web_form-9012",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9821,
+"conf": 0.9821,
+"latency_s": 0.20887112617492676,
+"input_tokens": 500
+},
+{
+"task": "T2_route",
+"id": "web_form-9013",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9825,
+"conf": 0.9825,
+"latency_s": 0.20511198043823242,
+"input_tokens": 489
+},
+{
+"task": "T2_route",
+"id": "web_form-9014",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9843,
+"conf": 0.9843,
+"latency_s": 0.28554487228393555,
+"input_tokens": 492
+},
+{
+"task": "T2_route",
+"id": "web_form-9015",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.982,
+"conf": 0.982,
+"latency_s": 0.36068296432495117,
+"input_tokens": 487
+},
+{
+"task": "T2_route",
+"id": "web_form-9016",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9832,
+"conf": 0.9832,
+"latency_s": 0.3680531978607178,
+"input_tokens": 493
+},
+{
+"task": "T2_route",
+"id": "web_form-9017",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9838,
+"conf": 0.9838,
+"latency_s": 0.6102120876312256,
+"input_tokens": 485
+},
+{
+"task": "T2_route",
+"id": "web_form-9018",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9828,
+"conf": 0.9828,
+"latency_s": 0.4419121742248535,
+"input_tokens": 485
+},
+{
+"task": "T2_route",
+"id": "web_form-9019",
+"pred": "web_form",
+"gold": "web_form",
+"ok": true,
+"p_gold": 0.9821,
+"conf": 0.9821,
+"latency_s": 0.20893311500549316,
+"input_tokens": 489
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9012",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9505,
+"conf": 0.9505,
+"latency_s": 0.40138912200927734,
+"input_tokens": 477
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9013",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9308,
+"conf": 0.9308,
+"latency_s": 0.22259187698364258,
+"input_tokens": 474
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9014",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9493,
+"conf": 0.9493,
+"latency_s": 0.19730401039123535,
+"input_tokens": 476
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9015",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9405,
+"conf": 0.9405,
+"latency_s": 0.3274502754211426,
+"input_tokens": 471
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9016",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9272,
+"conf": 0.9272,
+"latency_s": 0.4251248836517334,
+"input_tokens": 488
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9017",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9464,
+"conf": 0.9464,
+"latency_s": 0.4560999870300293,
+"input_tokens": 479
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9018",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.944,
+"conf": 0.944,
+"latency_s": 0.3857579231262207,
+"input_tokens": 479
+},
+{
+"task": "T2_route",
+"id": "web_invoice-9019",
+"pred": "web_invoice",
+"gold": "web_invoice",
+"ok": true,
+"p_gold": 0.9411,
+"conf": 0.9411,
+"latency_s": 0.4091777801513672,
+"input_tokens": 480
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9012",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.9165,
+"conf": 0.9165,
+"latency_s": 0.40943408012390137,
+"input_tokens": 475
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9013",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.9297,
+"conf": 0.9297,
+"latency_s": 0.20386195182800293,
+"input_tokens": 479
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9014",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.9268,
+"conf": 0.9268,
+"latency_s": 0.5270111560821533,
+"input_tokens": 476
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9015",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.9327,
+"conf": 0.9327,
+"latency_s": 0.7437100410461426,
+"input_tokens": 479
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9016",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.9298,
+"conf": 0.9298,
+"latency_s": 0.4055440425872803,
+"input_tokens": 473
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9017",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.93,
+"conf": 0.93,
+"latency_s": 0.35488080978393555,
+"input_tokens": 472
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9018",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.9316,
+"conf": 0.9316,
+"latency_s": 0.5062201023101807,
+"input_tokens": 470
+},
+{
+"task": "T2_route",
+"id": "web_prefs-9019",
+"pred": "web_prefs",
+"gold": "web_prefs",
+"ok": true,
+"p_gold": 0.929,
+"conf": 0.929,
+"latency_s": 0.3900279998779297,
+"input_tokens": 473
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9012",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9625,
+"conf": 0.9625,
+"latency_s": 0.831810712814331,
+"input_tokens": 482
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9013",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9704,
+"conf": 0.9704,
+"latency_s": 0.36303281784057617,
+"input_tokens": 476
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9014",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9499,
+"conf": 0.9499,
+"latency_s": 0.4562869071960449,
+"input_tokens": 473
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9015",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9752,
+"conf": 0.9752,
+"latency_s": 0.42319488525390625,
+"input_tokens": 467
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9016",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9539,
+"conf": 0.9539,
+"latency_s": 0.46154189109802246,
+"input_tokens": 482
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9017",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9775,
+"conf": 0.9775,
+"latency_s": 0.2496349811553955,
+"input_tokens": 467
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9018",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9566,
+"conf": 0.9566,
+"latency_s": 0.3584311008453369,
+"input_tokens": 490
+},
+{
+"task": "T2_route",
+"id": "web_catalog-9019",
+"pred": "web_catalog",
+"gold": "web_catalog",
+"ok": true,
+"p_gold": 0.9673,
+"conf": 0.9673,
+"latency_s": 0.19356679916381836,
+"input_tokens": 491
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9012",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.9047,
+"conf": 0.9047,
+"latency_s": 0.2801380157470703,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9013",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.9433,
+"conf": 0.9433,
+"latency_s": 0.42771100997924805,
+"input_tokens": 464
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9014",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.6953,
+"conf": 0.6953,
+"latency_s": 0.5186362266540527,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9015",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.9624,
+"conf": 0.9624,
+"latency_s": 0.5765261650085449,
+"input_tokens": 464
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9016",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.9111,
+"conf": 0.9111,
+"latency_s": 0.32352113723754883,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9017",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.6976,
+"conf": 0.6976,
+"latency_s": 0.35799121856689453,
+"input_tokens": 461
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9018",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.9239,
+"conf": 0.9239,
+"latency_s": 0.4624488353729248,
+"input_tokens": 462
+},
+{
+"task": "T2_route",
+"id": "web_lookup-9019",
+"pred": "web_lookup",
+"gold": "web_lookup",
+"ok": true,
+"p_gold": 0.9241,
+"conf": 0.9241,
+"latency_s": 0.20383381843566895,
+"input_tokens": 462
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9000",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.4458,
+"conf": 0.5542,
+"latency_s": 0.2550640106201172,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9001",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9778,
+"conf": 0.9778,
+"latency_s": 0.2859797477722168,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9002",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.5404,
+"conf": 0.5404,
+"latency_s": 0.3972039222717285,
+"input_tokens": 221
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9003",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.0978,
+"conf": 0.9022,
+"latency_s": 0.4032881259918213,
+"input_tokens": 232
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9004",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.5519,
+"conf": 0.5519,
+"latency_s": 0.23112225532531738,
+"input_tokens": 236
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9005",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9192,
+"conf": 0.9192,
+"latency_s": 0.7459766864776611,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9006",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9678,
+"conf": 0.9678,
+"latency_s": 0.378220796585083,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9007",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.0403,
+"conf": 0.9597,
+"latency_s": 0.5519800186157227,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9008",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.067,
+"conf": 0.933,
+"latency_s": 0.2467658519744873,
+"input_tokens": 226
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9009",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9693,
+"conf": 0.9693,
+"latency_s": 0.46761512756347656,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9010",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.3892,
+"conf": 0.6108,
+"latency_s": 0.44972801208496094,
+"input_tokens": 235
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9011",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.3043,
+"conf": 0.6957,
+"latency_s": 0.21105098724365234,
+"input_tokens": 232
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9012",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9627,
+"conf": 0.9627,
+"latency_s": 0.43918609619140625,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9013",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9829,
+"conf": 0.9829,
+"latency_s": 0.8497028350830078,
+"input_tokens": 233
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9014",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8355,
+"conf": 0.8355,
+"latency_s": 0.5262141227722168,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9015",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9871,
+"conf": 0.9871,
+"latency_s": 0.2543308734893799,
+"input_tokens": 239
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9016",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0203,
+"conf": 0.9797,
+"latency_s": 0.21681666374206543,
+"input_tokens": 227
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9017",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.6372,
+"conf": 0.6372,
+"latency_s": 0.24796319007873535,
+"input_tokens": 232
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9018",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0541,
+"conf": 0.9459,
+"latency_s": 0.36260485649108887,
+"input_tokens": 224
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9019",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9801,
+"conf": 0.9801,
+"latency_s": 0.3580198287963867,
+"input_tokens": 233
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9020",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.1246,
+"conf": 0.8754,
+"latency_s": 0.4867548942565918,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9021",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9578,
+"conf": 0.9578,
+"latency_s": 0.3479611873626709,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9022",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.167,
+"conf": 0.833,
+"latency_s": 0.23263216018676758,
+"input_tokens": 224
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9023",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9754,
+"conf": 0.9754,
+"latency_s": 0.4560539722442627,
+"input_tokens": 236
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9024",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8973,
+"conf": 0.8973,
+"latency_s": 0.25716209411621094,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9025",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9886,
+"conf": 0.9886,
+"latency_s": 0.17595815658569336,
+"input_tokens": 218
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9026",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.3763,
+"conf": 0.6236999999999999,
+"latency_s": 0.5774691104888916,
+"input_tokens": 242
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9027",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9836,
+"conf": 0.9836,
+"latency_s": 0.4960331916809082,
+"input_tokens": 221
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9028",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.7929,
+"conf": 0.7929,
+"latency_s": 0.19424796104431152,
+"input_tokens": 219
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9029",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.975,
+"conf": 0.975,
+"latency_s": 0.18434596061706543,
+"input_tokens": 238
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9030",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0355,
+"conf": 0.9645,
+"latency_s": 0.540585994720459,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9031",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9859,
+"conf": 0.9859,
+"latency_s": 0.9106259346008301,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9032",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9158,
+"conf": 0.9158,
+"latency_s": 0.3264293670654297,
+"input_tokens": 223
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9033",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9703,
+"conf": 0.9703,
+"latency_s": 0.45804476737976074,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9034",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.02,
+"conf": 0.98,
+"latency_s": 0.22060680389404297,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9035",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.12409999999999999,
+"conf": 0.8759,
+"latency_s": 0.7628870010375977,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9036",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.7989,
+"conf": 0.7989,
+"latency_s": 0.2570202350616455,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9037",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9757,
+"conf": 0.9757,
+"latency_s": 0.26648592948913574,
+"input_tokens": 216
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9038",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8872,
+"conf": 0.8872,
+"latency_s": 0.34606313705444336,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9039",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9469,
+"conf": 0.9469,
+"latency_s": 0.4008462429046631,
+"input_tokens": 241
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9040",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8343,
+"conf": 0.8343,
+"latency_s": 0.5525350570678711,
+"input_tokens": 238
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9041",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9882,
+"conf": 0.9882,
+"latency_s": 0.32518887519836426,
+"input_tokens": 226
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9042",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.052,
+"conf": 0.948,
+"latency_s": 0.27750682830810547,
+"input_tokens": 236
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9043",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.722,
+"conf": 0.722,
+"latency_s": 0.4258561134338379,
+"input_tokens": 233
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9044",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9018,
+"conf": 0.9018,
+"latency_s": 0.437363862991333,
+"input_tokens": 226
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9045",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.27880000000000005,
+"conf": 0.7212,
+"latency_s": 0.571505069732666,
+"input_tokens": 224
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9046",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9419,
+"conf": 0.9419,
+"latency_s": 0.21112799644470215,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9047",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.983,
+"conf": 0.983,
+"latency_s": 0.30219006538391113,
+"input_tokens": 235
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9048",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.1116,
+"conf": 0.8884,
+"latency_s": 0.25928616523742676,
+"input_tokens": 242
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9049",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9875,
+"conf": 0.9875,
+"latency_s": 0.40757203102111816,
+"input_tokens": 223
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9050",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0152,
+"conf": 0.9848,
+"latency_s": 0.22664403915405273,
+"input_tokens": 221
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9051",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.139,
+"conf": 0.861,
+"latency_s": 0.7409849166870117,
+"input_tokens": 231
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9052",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0922,
+"conf": 0.9077999999999999,
+"latency_s": 0.44884824752807617,
+"input_tokens": 221
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9053",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9574,
+"conf": 0.9574,
+"latency_s": 0.37804222106933594,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9054",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9589,
+"conf": 0.9589,
+"latency_s": 0.6556088924407959,
+"input_tokens": 219
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9055",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9838,
+"conf": 0.9838,
+"latency_s": 0.6725108623504639,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9056",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8925,
+"conf": 0.8925,
+"latency_s": 0.5940489768981934,
+"input_tokens": 229
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9057",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9852,
+"conf": 0.9852,
+"latency_s": 0.2089090347290039,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9058",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.777,
+"conf": 0.777,
+"latency_s": 0.33177804946899414,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9059",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.41869999999999996,
+"conf": 0.5813,
+"latency_s": 0.6468589305877686,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9060",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0183,
+"conf": 0.9817,
+"latency_s": 0.3094770908355713,
+"input_tokens": 221
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9061",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9781,
+"conf": 0.9781,
+"latency_s": 0.18953299522399902,
+"input_tokens": 226
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9062",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8299,
+"conf": 0.8299,
+"latency_s": 0.6685597896575928,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9063",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9697,
+"conf": 0.9697,
+"latency_s": 0.5387341976165771,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9064",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.4891,
+"conf": 0.5109,
+"latency_s": 0.3864130973815918,
+"input_tokens": 224
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9065",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.985,
+"conf": 0.985,
+"latency_s": 0.19922804832458496,
+"input_tokens": 237
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9066",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.8319,
+"conf": 0.8319,
+"latency_s": 0.35088205337524414,
+"input_tokens": 232
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9067",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.5597,
+"conf": 0.5597,
+"latency_s": 0.45204710960388184,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9068",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.6706,
+"conf": 0.6706,
+"latency_s": 0.44777798652648926,
+"input_tokens": 217
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9069",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.977,
+"conf": 0.977,
+"latency_s": 0.21016502380371094,
+"input_tokens": 232
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9070",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.2263,
+"conf": 0.7737,
+"latency_s": 0.20765113830566406,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9071",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9823,
+"conf": 0.9823,
+"latency_s": 0.28266000747680664,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9072",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0476,
+"conf": 0.9524,
+"latency_s": 0.30754518508911133,
+"input_tokens": 224
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9073",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.0736,
+"conf": 0.9264,
+"latency_s": 0.3431680202484131,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9074",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.7119,
+"conf": 0.7119,
+"latency_s": 0.37493371963500977,
+"input_tokens": 238
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9075",
+"pred": true,
+"gold": false,
+"ok": false,
+"p_gold": 0.3187,
+"conf": 0.6813,
+"latency_s": 0.2952589988708496,
+"input_tokens": 225
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9076",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.0853,
+"conf": 0.9147,
+"latency_s": 0.4582211971282959,
+"input_tokens": 220
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9077",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9887,
+"conf": 0.9887,
+"latency_s": 3.0400328636169434,
+"input_tokens": 230
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9078",
+"pred": false,
+"gold": true,
+"ok": false,
+"p_gold": 0.022,
+"conf": 0.978,
+"latency_s": 0.723686933517456,
+"input_tokens": 233
+},
+{
+"task": "T3_settings_check",
+"id": "web_prefs-9079",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.988,
+"conf": 0.988,
+"latency_s": 0.3756377696990967,
+"input_tokens": 233
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9000",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9793,
+"conf": 0.9793,
+"latency_s": 0.43131399154663086,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9001",
+"pred": "product",
+"gold": [
+"security",
+"product"
+],
+"ok": true,
+"p_gold": 0.9783,
+"conf": 0.9278,
+"latency_s": 0.22914910316467285,
+"input_tokens": 304
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9002",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9729,
+"conf": 0.9729,
+"latency_s": 0.20524072647094727,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9003",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.9827,
+"conf": 0.9827,
+"latency_s": 0.20194482803344727,
+"input_tokens": 307
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9004",
+"pred": "push",
+"gold": [
+"push"
+],
+"ok": true,
+"p_gold": 0.9725,
+"conf": 0.9725,
+"latency_s": 0.28128504753112793,
+"input_tokens": 334
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9005",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9043,
+"conf": 0.9043,
+"latency_s": 0.2962179183959961,
+"input_tokens": 304
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9006",
+"pred": "push",
+"gold": [
+"push"
+],
+"ok": true,
+"p_gold": 0.9849,
+"conf": 0.9849,
+"latency_s": 0.3379812240600586,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9007",
+"pred": "push",
+"gold": [
+"push"
+],
+"ok": true,
+"p_gold": 0.9822,
+"conf": 0.9822,
+"latency_s": 0.6294000148773193,
+"input_tokens": 306
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9008",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9506,
+"conf": 0.9506,
+"latency_s": 0.3639647960662842,
+"input_tokens": 302
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9009",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.987,
+"conf": 0.987,
+"latency_s": 0.8023810386657715,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9010",
+"pred": "sms",
+"gold": [
+"weekly",
+"sms",
+"push"
+],
+"ok": true,
+"p_gold": 0.9756,
+"conf": 0.9231,
+"latency_s": 0.3371870517730713,
+"input_tokens": 332
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9011",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9769,
+"conf": 0.9769,
+"latency_s": 0.19485974311828613,
+"input_tokens": 329
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9012",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9846,
+"conf": 0.9846,
+"latency_s": 0.4129819869995117,
+"input_tokens": 305
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9013",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9784,
+"conf": 0.9784,
+"latency_s": 0.3140099048614502,
+"input_tokens": 308
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9014",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9619,
+"conf": 0.9619,
+"latency_s": 0.20103883743286133,
+"input_tokens": 305
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9015",
+"pred": "product",
+"gold": [
+"product",
+"weekly",
+"push"
+],
+"ok": true,
+"p_gold": 0.9831000000000001,
+"conf": 0.9453,
+"latency_s": 0.20185303688049316,
+"input_tokens": 336
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9016",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.7585,
+"conf": 0.7585,
+"latency_s": 0.667341947555542,
+"input_tokens": 302
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9017",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.965,
+"conf": 0.965,
+"latency_s": 0.4107930660247803,
+"input_tokens": 329
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9018",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.943,
+"conf": 0.943,
+"latency_s": 0.5356278419494629,
+"input_tokens": 299
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9019",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9157,
+"conf": 0.9157,
+"latency_s": 0.5540153980255127,
+"input_tokens": 331
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9020",
+"pred": "product",
+"gold": [
+"product"
+],
+"ok": true,
+"p_gold": 0.9817,
+"conf": 0.9817,
+"latency_s": 0.19950079917907715,
+"input_tokens": 304
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9021",
+"pred": "security",
+"gold": [
+"security",
+"push"
+],
+"ok": true,
+"p_gold": 0.9788,
+"conf": 0.891,
+"latency_s": 0.20935297012329102,
+"input_tokens": 305
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9022",
+"pred": "push",
+"gold": [
+"push"
+],
+"ok": true,
+"p_gold": 0.9701,
+"conf": 0.9701,
+"latency_s": 0.29253101348876953,
+"input_tokens": 278
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9023",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.9699,
+"conf": 0.9699,
+"latency_s": 0.43501901626586914,
+"input_tokens": 333
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9024",
+"pred": "product",
+"gold": [
+"product",
+"security"
+],
+"ok": true,
+"p_gold": 0.9754999999999999,
+"conf": 0.8634,
+"latency_s": 0.2032618522644043,
+"input_tokens": 306
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9025",
+"pred": "product",
+"gold": [
+"weekly",
+"product"
+],
+"ok": true,
+"p_gold": 0.9828,
+"conf": 0.9272,
+"latency_s": 0.20737290382385254,
+"input_tokens": 271
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9026",
+"pred": "sms",
+"gold": [
+"sms"
+],
+"ok": true,
+"p_gold": 0.9764,
+"conf": 0.9764,
+"latency_s": 0.5327749252319336,
+"input_tokens": 340
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9027",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9607,
+"conf": 0.9607,
+"latency_s": 0.45146608352661133,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9028",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9698,
+"conf": 0.9698,
+"latency_s": 0.22455883026123047,
+"input_tokens": 272
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9029",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9612,
+"conf": 0.9612,
+"latency_s": 0.30114293098449707,
+"input_tokens": 336
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9030",
+"pred": "weekly",
+"gold": [
+"weekly"
+],
+"ok": true,
+"p_gold": 0.9753,
+"conf": 0.9753,
+"latency_s": 0.3260829448699951,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9031",
+"pred": "weekly",
+"gold": [
+"weekly"
+],
+"ok": true,
+"p_gold": 0.9872,
+"conf": 0.9872,
+"latency_s": 0.21137499809265137,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9032",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9858,
+"conf": 0.9858,
+"latency_s": 0.22895193099975586,
+"input_tokens": 277
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9033",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9536,
+"conf": 0.9536,
+"latency_s": 0.652336835861206,
+"input_tokens": 306
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9034",
+"pred": "product",
+"gold": [
+"weekly",
+"email",
+"product"
+],
+"ok": true,
+"p_gold": 0.9833000000000001,
+"conf": 0.8387,
+"latency_s": 0.20068097114562988,
+"input_tokens": 271
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9035",
+"pred": "sms",
+"gold": [
+"sms"
+],
+"ok": true,
+"p_gold": 0.9853,
+"conf": 0.9853,
+"latency_s": 0.39093708992004395,
+"input_tokens": 304
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9036",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9651,
+"conf": 0.9651,
+"latency_s": 0.27945899963378906,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9037",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9868,
+"conf": 0.9868,
+"latency_s": 0.5144369602203369,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9038",
+"pred": "push",
+"gold": [
+"push"
+],
+"ok": true,
+"p_gold": 0.9868,
+"conf": 0.9868,
+"latency_s": 0.21010684967041016,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9039",
+"pred": "product",
+"gold": [
+"product",
+"security"
+],
+"ok": true,
+"p_gold": 0.9819,
+"conf": 0.8736,
+"latency_s": 0.4084048271179199,
+"input_tokens": 338
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9040",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9665,
+"conf": 0.9665,
+"latency_s": 0.3356020450592041,
+"input_tokens": 335
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9041",
+"pred": "security",
+"gold": [
+"weekly",
+"security"
+],
+"ok": true,
+"p_gold": 0.9763,
+"conf": 0.8337,
+"latency_s": 0.20711874961853027,
+"input_tokens": 301
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9042",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9804,
+"conf": 0.9804,
+"latency_s": 0.5689070224761963,
+"input_tokens": 333
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9043",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9685,
+"conf": 0.9685,
+"latency_s": 0.40056490898132324,
+"input_tokens": 309
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9044",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.971,
+"conf": 0.971,
+"latency_s": 0.6111199855804443,
+"input_tokens": 302
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9045",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9698,
+"conf": 0.9698,
+"latency_s": 0.27007317543029785,
+"input_tokens": 299
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9046",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9703,
+"conf": 0.9703,
+"latency_s": 0.29801177978515625,
+"input_tokens": 304
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9047",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.8654,
+"conf": 0.8654,
+"latency_s": 0.6390962600708008,
+"input_tokens": 333
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9048",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9634,
+"conf": 0.9634,
+"latency_s": 0.2850661277770996,
+"input_tokens": 339
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9049",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9756,
+"conf": 0.9756,
+"latency_s": 0.30556273460388184,
+"input_tokens": 277
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9050",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.8706,
+"conf": 0.8706,
+"latency_s": 0.19268202781677246,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9051",
+"pred": "weekly",
+"gold": [
+"weekly"
+],
+"ok": true,
+"p_gold": 0.9811,
+"conf": 0.9811,
+"latency_s": 0.329390287399292,
+"input_tokens": 328
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9052",
+"pred": "product",
+"gold": [
+"product"
+],
+"ok": true,
+"p_gold": 0.9834,
+"conf": 0.9834,
+"latency_s": 0.2861948013305664,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9053",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.9847,
+"conf": 0.9847,
+"latency_s": 0.42667388916015625,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9054",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9796,
+"conf": 0.9796,
+"latency_s": 0.5523450374603271,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9055",
+"pred": "weekly",
+"gold": [
+"sms",
+"weekly",
+"security"
+],
+"ok": true,
+"p_gold": 0.9713999999999999,
+"conf": 0.7018,
+"latency_s": 0.35710716247558594,
+"input_tokens": 305
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9056",
+"pred": "security",
+"gold": [
+"sms",
+"security"
+],
+"ok": true,
+"p_gold": 0.9518,
+"conf": 0.7502,
+"latency_s": 0.3004570007324219,
+"input_tokens": 327
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9057",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.9476,
+"conf": 0.9476,
+"latency_s": 0.22309088706970215,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9058",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9767,
+"conf": 0.9767,
+"latency_s": 0.35518693923950195,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9059",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9207,
+"conf": 0.9207,
+"latency_s": 0.3702390193939209,
+"input_tokens": 306
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9060",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.7505,
+"conf": 0.7505,
+"latency_s": 0.5242390632629395,
+"input_tokens": 274
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9061",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.9534,
+"conf": 0.9534,
+"latency_s": 0.37026214599609375,
+"input_tokens": 302
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9062",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9606,
+"conf": 0.9606,
+"latency_s": 0.21427011489868164,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9063",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9289,
+"conf": 0.9289,
+"latency_s": 0.24509692192077637,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9064",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9169,
+"conf": 0.9169,
+"latency_s": 0.22060394287109375,
+"input_tokens": 277
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9065",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9713,
+"conf": 0.9713,
+"latency_s": 0.2806739807128906,
+"input_tokens": 334
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9066",
+"pred": "product",
+"gold": [
+"product"
+],
+"ok": true,
+"p_gold": 0.9819,
+"conf": 0.9819,
+"latency_s": 0.3218870162963867,
+"input_tokens": 308
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9067",
+"pred": "sms",
+"gold": [
+"email",
+"sms"
+],
+"ok": true,
+"p_gold": 0.9321,
+"conf": 0.768,
+"latency_s": 0.39583325386047363,
+"input_tokens": 327
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9068",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.955,
+"conf": 0.955,
+"latency_s": 0.2870211601257324,
+"input_tokens": 270
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9069",
+"pred": "product",
+"gold": [
+"product"
+],
+"ok": true,
+"p_gold": 0.9723,
+"conf": 0.9723,
+"latency_s": 0.42281484603881836,
+"input_tokens": 329
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9070",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9843,
+"conf": 0.9843,
+"latency_s": 0.2665519714355469,
+"input_tokens": 306
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9071",
+"pred": "weekly",
+"gold": [
+"weekly"
+],
+"ok": true,
+"p_gold": 0.9799,
+"conf": 0.9799,
+"latency_s": 0.47660017013549805,
+"input_tokens": 305
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9072",
+"pred": "security",
+"gold": [
+"security"
+],
+"ok": true,
+"p_gold": 0.9779,
+"conf": 0.9779,
+"latency_s": 0.20728588104248047,
+"input_tokens": 299
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9073",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9585,
+"conf": 0.9585,
+"latency_s": 0.2894768714904785,
+"input_tokens": 306
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9074",
+"pred": "weekly",
+"gold": [
+"weekly",
+"push"
+],
+"ok": true,
+"p_gold": 0.9811,
+"conf": 0.7312,
+"latency_s": 0.41400814056396484,
+"input_tokens": 335
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9075",
+"pred": "email",
+"gold": [
+"email"
+],
+"ok": true,
+"p_gold": 0.9563,
+"conf": 0.9563,
+"latency_s": 0.19777607917785645,
+"input_tokens": 300
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9076",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.9551,
+"conf": 0.9551,
+"latency_s": 0.35893917083740234,
+"input_tokens": 273
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9077",
+"pred": "push",
+"gold": [
+"push"
+],
+"ok": true,
+"p_gold": 0.9564,
+"conf": 0.9564,
+"latency_s": 0.31376004219055176,
+"input_tokens": 305
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9078",
+"pred": "save",
+"gold": [
+"save"
+],
+"ok": true,
+"p_gold": 0.7394,
+"conf": 0.7394,
+"latency_s": 0.3541438579559326,
+"input_tokens": 330
+},
+{
+"task": "T4_next_action",
+"id": "web_prefs-9079",
+"pred": "sms",
+"gold": [
+"email",
+"sms"
+],
+"ok": true,
+"p_gold": 0.9585999999999999,
+"conf": 0.5789,
+"latency_s": 0.24723410606384277,
+"input_tokens": 308
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9000-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9913,
+"conf": 0.9913,
+"latency_s": 0.21928191184997559,
+"input_tokens": 286
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9001-Monitoring",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9931,
+"conf": 0.9931,
+"latency_s": 0.21216797828674316,
+"input_tokens": 298
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9002-Licences",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9832,
+"conf": 0.9832,
+"latency_s": 0.34344983100891113,
+"input_tokens": 272
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9003-Backup",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9938,
+"conf": 0.9938,
+"latency_s": 0.23194527626037598,
+"input_tokens": 261
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9004-Storage",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9832,
+"conf": 0.9832,
+"latency_s": 0.30075502395629883,
+"input_tokens": 284
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9005-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9849,
+"conf": 0.9849,
+"latency_s": 0.35561704635620117,
+"input_tokens": 301
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9006-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9933,
+"conf": 0.9933,
+"latency_s": 0.2327899932861328,
+"input_tokens": 312
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9007-Compute",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.28653597831726074,
+"input_tokens": 274
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9008-Backup",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9913,
+"conf": 0.9913,
+"latency_s": 0.19833803176879883,
+"input_tokens": 297
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9009-Monitoring",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9901,
+"conf": 0.9901,
+"latency_s": 0.2187650203704834,
+"input_tokens": 300
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9010-Training",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9948,
+"conf": 0.9948,
+"latency_s": 0.392291784286499,
+"input_tokens": 278
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9011-Licences",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9942,
+"conf": 0.9942,
+"latency_s": 0.32353711128234863,
+"input_tokens": 290
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9012-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9896,
+"conf": 0.9896,
+"latency_s": 0.3873789310455322,
+"input_tokens": 262
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9013-Backup",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9944,
+"conf": 0.9944,
+"latency_s": 1.5090460777282715,
+"input_tokens": 260
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9014-Consulting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9908,
+"conf": 0.9908,
+"latency_s": 0.2721521854400635,
+"input_tokens": 287
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9015-Compute",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9868,
+"conf": 0.9868,
+"latency_s": 0.2430257797241211,
+"input_tokens": 280
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9016-Hosting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9894,
+"conf": 0.9894,
+"latency_s": 0.291701078414917,
+"input_tokens": 286
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9017-Audit",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9953,
+"conf": 0.9953,
+"latency_s": 0.2138822078704834,
+"input_tokens": 278
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9018-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9834,
+"conf": 0.9834,
+"latency_s": 1.0573911666870117,
+"input_tokens": 264
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9019-Licences",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.4841642379760742,
+"input_tokens": 267
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9020-Audit",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9893,
+"conf": 0.9893,
+"latency_s": 0.2547299861907959,
+"input_tokens": 270
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9021-Monitoring",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.23052215576171875,
+"input_tokens": 265
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9022-Hosting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9893,
+"conf": 0.9893,
+"latency_s": 0.20673727989196777,
+"input_tokens": 280
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9023-Backup",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9909,
+"conf": 0.9909,
+"latency_s": 0.28293490409851074,
+"input_tokens": 291
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9024-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.984,
+"conf": 0.984,
+"latency_s": 0.25231003761291504,
+"input_tokens": 273
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9025-Monitoring",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.23067998886108398,
+"input_tokens": 269
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9026-Consulting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9847,
+"conf": 0.9847,
+"latency_s": 0.4435689449310303,
+"input_tokens": 277
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9027-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.22893309593200684,
+"input_tokens": 261
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9028-Support",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9929,
+"conf": 0.9929,
+"latency_s": 0.2743849754333496,
+"input_tokens": 274
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9029-Audit",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9895,
+"conf": 0.9895,
+"latency_s": 0.21724605560302734,
+"input_tokens": 271
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9030-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9854,
+"conf": 0.9854,
+"latency_s": 0.37018799781799316,
+"input_tokens": 293
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9031-Backup",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9897,
+"conf": 0.9897,
+"latency_s": 1.2698888778686523,
+"input_tokens": 301
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9032-Audit",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.18622994422912598,
+"input_tokens": 255
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9033-Consulting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9912,
+"conf": 0.9912,
+"latency_s": 0.2973358631134033,
+"input_tokens": 290
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9034-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9915,
+"conf": 0.9915,
+"latency_s": 0.29438328742980957,
+"input_tokens": 293
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9035-Licences",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9725,
+"conf": 0.9725,
+"latency_s": 0.21898531913757324,
+"input_tokens": 300
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9036-Storage",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9891,
+"conf": 0.9891,
+"latency_s": 0.6315960884094238,
+"input_tokens": 289
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9037-Compute",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9932,
+"conf": 0.9932,
+"latency_s": 0.25218701362609863,
+"input_tokens": 293
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9038-Consulting",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9944,
+"conf": 0.9944,
+"latency_s": 0.42134785652160645,
+"input_tokens": 289
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9039-Monitoring",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9923,
+"conf": 0.9923,
+"latency_s": 0.24374914169311523,
+"input_tokens": 271
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9040-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9908,
+"conf": 0.9908,
+"latency_s": 0.1935122013092041,
+"input_tokens": 299
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9041-Hosting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9919,
+"conf": 0.9919,
+"latency_s": 0.213515043258667,
+"input_tokens": 282
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9042-Consulting",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.9946,
+"conf": 0.9946,
+"latency_s": 0.686431884765625,
+"input_tokens": 273
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9043-Licences",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9928,
+"conf": 0.9928,
+"latency_s": 0.40047192573547363,
+"input_tokens": 290
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9044-Hosting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9899,
+"conf": 0.9899,
+"latency_s": 0.26607418060302734,
+"input_tokens": 281
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9045-Audit",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9918,
+"conf": 0.9918,
+"latency_s": 0.28008413314819336,
+"input_tokens": 277
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9046-Compute",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9785,
+"conf": 0.9785,
+"latency_s": 0.3011820316314697,
+"input_tokens": 294
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9047-Consulting",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9833,
+"conf": 0.9833,
+"latency_s": 0.23762202262878418,
+"input_tokens": 292
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9048-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9891,
+"conf": 0.9891,
+"latency_s": 0.27986717224121094,
+"input_tokens": 285
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9049-Audit",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.32172584533691406,
+"input_tokens": 263
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9050-Licences",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9894,
+"conf": 0.9894,
+"latency_s": 0.32456398010253906,
+"input_tokens": 275
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9051-Backup",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9918,
+"conf": 0.9918,
+"latency_s": 0.20282602310180664,
+"input_tokens": 273
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9052-Compute",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9894,
+"conf": 0.9894,
+"latency_s": 0.32665514945983887,
+"input_tokens": 298
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9053-Audit",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9902,
+"conf": 0.9902,
+"latency_s": 0.2090139389038086,
+"input_tokens": 297
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9054-Training",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.995,
+"conf": 0.995,
+"latency_s": 0.19257497787475586,
+"input_tokens": 294
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9055-Licences",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.5364418029785156,
+"input_tokens": 277
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9056-Monitoring",
+"pred": false,
+"gold": false,
+"ok": true,
+"p_gold": 0.995,
+"conf": 0.995,
+"latency_s": 0.23499774932861328,
+"input_tokens": 302
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9057-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9894,
+"conf": 0.9894,
+"latency_s": 0.30809807777404785,
+"input_tokens": 286
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9058-Training",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9905,
+"conf": 0.9905,
+"latency_s": 0.23149585723876953,
+"input_tokens": 269
+},
+{
+"task": "T5_invoice_row_rule",
+"id": "web_invoice-9059-Support",
+"pred": true,
+"gold": true,
+"ok": true,
+"p_gold": 0.9898,
+"conf": 0.9898,
+"latency_s": 0.41790318489074707,
+"input_tokens": 301
+}
+]
