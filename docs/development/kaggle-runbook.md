@@ -38,6 +38,8 @@
 | 10 | 网页 Logs 页面不自动刷新，只看到前几分钟 | Kaggle 日志查看器的行为 | 刷新页面；各任务的详细日志只在输出里（`e1/<臂>-sN.log`），跑完才能看 |
 | 11 | Kaggle 没有 Docker | 免费笔记不支持 | `--skill-runner process`：技能在子进程里跑（虚拟机本身是一次性的），写入冻结 config，所有臂一致 |
 | 13 | 取消运行后，下次运行找不到预编译程序和教师缓存 | 笔记的输入是“本笔记最新一版的输出”；被取消的版本（如 v12）没有输出 | 启动前在右侧 Input 里确认挂的是最后一个**成功**版本（当前为 v11）的输出，必要时手动改选 |
+| 14 | v22（r3-smoke）：`ImportError: cannot import name 'BucketBatchError' from 'huggingface_hub.errors'` | 同一个 Python 进程先导入了旧的 huggingface_hub（下载量化模型），之后 `pip install -U transformers` 把它在磁盘上升级，再惰性导入时新旧模块混用 | 依赖新装包的步骤（全精度模型下载、版本检查）放到全新子进程里跑（`fresh_python`）；训练与转换本来就是子进程 |
+| 15 | 下载输出时 CLI 会逐个拉取几千个文件，很慢 | `kaggle kernels output` 下载整个输出目录 | 等 `e1-results.tar.gz` 大小稳定后结束 CLI，自己解包；**不要在压缩包缺失时 `rm -rf e1`**——那可能是唯一的输出 |
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复

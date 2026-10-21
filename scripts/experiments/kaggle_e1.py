@@ -563,12 +563,25 @@ SFT_DATA = ROOT / 'evidence' / 'distill' / 'sft.jsonl'
 LORA_REPLICATES = 3
 
 
+def fresh_python(code: str) -> str:
+    """Run code in a new interpreter (sees freshly installed packages) and return its stdout."""
+    done = subprocess.run([PY, '-c', code], cwd=ROOT, capture_output=True, text=True)
+    if done.returncode != 0:
+        log('fresh python failed', code=done.returncode, err=done.stderr[-800:])
+        raise SystemExit(1)
+    return done.stdout.strip()
+
+
 def lora_setup() -> dict:
     """Training stack + full-precision base weights + llama.cpp's LoRA→GGUF converter (same commit)."""
     sh([PY, '-m', 'pip', 'install', '-q', '-U', 'transformers', 'peft', 'accelerate'])
-    from huggingface_hub import snapshot_download
-    hf = Path(snapshot_download(HF_MODEL, revision=HF_REVISION, local_dir=str(TOOLS / 'hf-model'),
-                                allow_patterns=['*.json', '*.safetensors', '*.jinja', '*.txt', 'tokenizer*']))
+    # v22: the upgrade above replaces huggingface_hub on disk while this process still holds the old
+    # modules (imported by setup() for the GGUF download); a later lazy import then mixes versions
+    # (ImportError: BucketBatchError). Everything that needs the upgraded stack runs in a fresh process.
+    hf = Path(fresh_python(
+        'from huggingface_hub import snapshot_download\n'
+        f'print(snapshot_download({HF_MODEL!r}, revision={HF_REVISION!r}, local_dir={str(TOOLS / "hf-model")!r}, '
+        "allow_patterns=['*.json', '*.safetensors', '*.jinja', '*.txt', 'tokenizer*']))").splitlines()[-1])
     src = TOOLS / 'llama.cpp'
     if not (src / 'convert_lora_to_gguf.py').exists():
         shutil.rmtree(src / '.git', ignore_errors=True)
@@ -580,10 +593,10 @@ def lora_setup() -> dict:
                 shutil.move(str(f), dest)
         shutil.rmtree(src / 'tmp-src', ignore_errors=True)
     sh([PY, '-m', 'pip', 'install', '-q', str(src / 'gguf-py'), 'sentencepiece', 'protobuf'])
-    import torch
-    import transformers
-    info = {'hf_model': str(hf), 'transformers': transformers.__version__, 'torch': torch.__version__,
-            'converter': str(src / 'convert_lora_to_gguf.py')}
+    versions = json.loads(fresh_python('import json, torch, transformers, peft\n'
+                                       "print(json.dumps({'torch': torch.__version__, 'transformers': "
+                                       "transformers.__version__, 'peft': peft.__version__}))").splitlines()[-1])
+    info = {'hf_model': str(hf), **versions, 'converter': str(src / 'convert_lora_to_gguf.py')}
     log('lora setup done', **info)
     return info
 
