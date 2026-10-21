@@ -53,7 +53,7 @@
 !git clone -b dev --depth 1 https://github.com/lemon5227/Kage.git /content/Kage
 !cd /content/Kage && KAGE_WORK=/content/work KAGE_TOOLS=/content/tools KAGE_PHASE="r3-train smoke" python scripts/experiments/kaggle_e1.py
 ```
-先跑 `r3-train smoke`（最长 4 条样本、2 步，检查显存），通过后 `KAGE_PHASE=r3-train` 正式训练。产物 `/content/work/r3-adapter.tar.gz` 下载后用 Kaggle CLI 建数据集，在笔记本里 Add Input，再把 `kaggle_phase` 设为 `r3-eval`。计算单元只用于训练，不在 Colab 上调试。
+推荐用 `scripts/experiments/colab_r3.sh`（`fla smoke` → `train` → `status`；Colab 编辑器会自动补全括号，长命令容易被改坏）。A100 上装 `flash-linear-attention` 后线性注意力约快 5 倍，结果一致。先跑 `r3-train smoke`（最长 4 条样本、2 步，检查显存），通过后 `KAGE_PHASE=r3-train` 正式训练。产物 `/content/work/r3-adapter.tar.gz` 下载后用 Kaggle CLI 建数据集，在笔记本里 Add Input，再把 `kaggle_phase` 设为 `r3-eval`。计算单元只用于训练，不在 Colab 上调试。
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复
