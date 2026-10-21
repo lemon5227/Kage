@@ -1,0 +1,3932 @@
+[
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9000-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6459,
+"conf": 0.6459,
+"latency_s": 0.2605171203613281
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9000-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4539,
+"conf": 0.4539,
+"latency_s": 0.022181034088134766
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9000-weekly",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.5602,
+"conf": 0.5602,
+"latency_s": 0.02053093910217285
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9000-sms",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.515,
+"conf": 0.515,
+"latency_s": 0.020175933837890625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9001-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2997,
+"conf": 0.3921,
+"latency_s": 0.023331165313720703
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9001-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4888,
+"conf": 0.4888,
+"latency_s": 0.021823883056640625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9001-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3226,
+"conf": 0.3873,
+"latency_s": 0.020071029663085938
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9001-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2351,
+"conf": 0.3919,
+"latency_s": 0.020130157470703125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9001-email",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3266,
+"conf": 0.3487,
+"latency_s": 0.01998305320739746
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9002-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3532,
+"conf": 0.4796,
+"latency_s": 0.0244600772857666
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9002-email",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3546,
+"conf": 0.5094,
+"latency_s": 0.02027106285095215
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9002-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7271,
+"conf": 0.7271,
+"latency_s": 0.020198822021484375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9002-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1502,
+"conf": 0.5145,
+"latency_s": 0.02246403694152832
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9003-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3208,
+"conf": 0.387,
+"latency_s": 0.022584915161132812
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9003-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2837,
+"conf": 0.4539,
+"latency_s": 0.019945859909057617
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9003-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.348,
+"conf": 0.3848,
+"latency_s": 0.020460844039916992
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9003-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6345,
+"conf": 0.6345,
+"latency_s": 0.021686077117919922
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9003-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2621,
+"conf": 0.5117,
+"latency_s": 0.02050185203552246
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9004-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6541,
+"conf": 0.6541,
+"latency_s": 0.022490978240966797
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9004-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.1699,
+"conf": 0.7585,
+"latency_s": 0.022306203842163086
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9004-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.133,
+"conf": 0.4955,
+"latency_s": 0.020455121994018555
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9004-email",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0784,
+"conf": 0.7523,
+"latency_s": 0.0202791690826416
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9004-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2515,
+"conf": 0.6857,
+"latency_s": 0.020219087600708008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9004-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.567,
+"conf": 0.567,
+"latency_s": 0.020427942276000977
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9005-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.347,
+"conf": 0.5096,
+"latency_s": 0.020184993743896484
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9005-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2501,
+"conf": 0.4381,
+"latency_s": 0.020214080810546875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9005-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.639,
+"conf": 0.639,
+"latency_s": 0.01968526840209961
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9005-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3227,
+"conf": 0.4902,
+"latency_s": 0.019861936569213867
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9005-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2862,
+"conf": 0.4478,
+"latency_s": 0.02013707160949707
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9006-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2809,
+"conf": 0.6116,
+"latency_s": 0.01957392692565918
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9006-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6225,
+"conf": 0.6225,
+"latency_s": 0.020249128341674805
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9006-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4622,
+"conf": 0.4622,
+"latency_s": 0.021165132522583008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9006-security",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4619,
+"conf": 0.4619,
+"latency_s": 0.020121097564697266
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9007-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2569,
+"conf": 0.6373,
+"latency_s": 0.02068614959716797
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9007-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.653,
+"conf": 0.653,
+"latency_s": 0.020708799362182617
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9007-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6961,
+"conf": 0.6961,
+"latency_s": 0.02112889289855957
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9007-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1234,
+"conf": 0.6461,
+"latency_s": 0.020381927490234375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9007-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.1827,
+"conf": 0.6996,
+"latency_s": 0.021973133087158203
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9008-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1415,
+"conf": 0.5304,
+"latency_s": 0.020622968673706055
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9008-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1719,
+"conf": 0.4152,
+"latency_s": 0.020924806594848633
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9008-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1405,
+"conf": 0.4527,
+"latency_s": 0.02071690559387207
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9008-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.458,
+"conf": 0.458,
+"latency_s": 0.02133798599243164
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9008-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1889,
+"conf": 0.4272,
+"latency_s": 0.020682096481323242
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9009-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1925,
+"conf": 0.4519,
+"latency_s": 0.023631811141967773
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9009-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4269,
+"conf": 0.4269,
+"latency_s": 0.022209882736206055
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9009-email",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1776,
+"conf": 0.4994,
+"latency_s": 0.02027606964111328
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9009-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.159,
+"conf": 0.4638,
+"latency_s": 0.020252227783203125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9010-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2069,
+"conf": 0.5692,
+"latency_s": 0.020444154739379883
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9010-email",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2554,
+"conf": 0.5056,
+"latency_s": 0.021557092666625977
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9010-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2598,
+"conf": 0.4398,
+"latency_s": 0.019800186157226562
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9010-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6959,
+"conf": 0.6959,
+"latency_s": 0.01961517333984375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9010-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2581,
+"conf": 0.4917,
+"latency_s": 0.019861936569213867
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9010-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4186,
+"conf": 0.4186,
+"latency_s": 0.02107715606689453
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9011-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3483,
+"conf": 0.4246,
+"latency_s": 0.023524999618530273
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9011-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2952,
+"conf": 0.4118,
+"latency_s": 0.020448923110961914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9011-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5616,
+"conf": 0.5616,
+"latency_s": 0.020040035247802734
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9011-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2902,
+"conf": 0.4606,
+"latency_s": 0.021964073181152344
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9011-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3757,
+"conf": 0.4363,
+"latency_s": 0.019948959350585938
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9011-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2419,
+"conf": 0.5051,
+"latency_s": 0.020127058029174805
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9012-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.382,
+"conf": 0.4519,
+"latency_s": 0.022815942764282227
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9012-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2792,
+"conf": 0.6317,
+"latency_s": 0.021609067916870117
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9012-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6789,
+"conf": 0.6789,
+"latency_s": 0.020238876342773438
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9012-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3207,
+"conf": 0.5962,
+"latency_s": 0.022624969482421875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9012-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6542,
+"conf": 0.6542,
+"latency_s": 0.022328853607177734
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9013-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4392,
+"conf": 0.4392,
+"latency_s": 0.02239227294921875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9013-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5261,
+"conf": 0.5261,
+"latency_s": 0.020609140396118164
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9013-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.137,
+"conf": 0.5678,
+"latency_s": 0.022166013717651367
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9013-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.23,
+"conf": 0.5427,
+"latency_s": 0.020079851150512695
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9013-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4472,
+"conf": 0.4472,
+"latency_s": 0.020895957946777344
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9014-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1104,
+"conf": 0.5981,
+"latency_s": 0.02041029930114746
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9014-sms",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3751,
+"conf": 0.484,
+"latency_s": 0.02035212516784668
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9014-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5666,
+"conf": 0.5666,
+"latency_s": 0.021453142166137695
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9014-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5123,
+"conf": 0.5123,
+"latency_s": 0.02061915397644043
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9014-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2867,
+"conf": 0.5877,
+"latency_s": 0.01999807357788086
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9015-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1911,
+"conf": 0.6256,
+"latency_s": 0.02041482925415039
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9015-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.53,
+"conf": 0.53,
+"latency_s": 0.02151203155517578
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9015-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1859,
+"conf": 0.5932,
+"latency_s": 0.022491931915283203
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9015-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2663,
+"conf": 0.5589,
+"latency_s": 0.020721912384033203
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9015-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4063,
+"conf": 0.4843,
+"latency_s": 0.02053976058959961
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9015-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4936,
+"conf": 0.4936,
+"latency_s": 0.020390987396240234
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9016-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7259,
+"conf": 0.7259,
+"latency_s": 0.020876169204711914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9016-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2765,
+"conf": 0.6363,
+"latency_s": 0.023209095001220703
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9016-weekly",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1098,
+"conf": 0.61,
+"latency_s": 0.02688312530517578
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9016-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7134,
+"conf": 0.7134,
+"latency_s": 0.028805971145629883
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9016-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1416,
+"conf": 0.4568,
+"latency_s": 0.026155710220336914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9017-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2728,
+"conf": 0.4556,
+"latency_s": 0.02321004867553711
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9017-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6919,
+"conf": 0.6919,
+"latency_s": 0.020338058471679688
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9017-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3504,
+"conf": 0.4694,
+"latency_s": 0.01973104476928711
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9017-sms",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2912,
+"conf": 0.4518,
+"latency_s": 0.02017688751220703
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9017-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2617,
+"conf": 0.5518,
+"latency_s": 0.0204160213470459
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9017-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2352,
+"conf": 0.4969,
+"latency_s": 0.020006179809570312
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9018-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6717,
+"conf": 0.6717,
+"latency_s": 0.022762060165405273
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9018-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6905,
+"conf": 0.6905,
+"latency_s": 0.020033836364746094
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9018-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.699,
+"conf": 0.699,
+"latency_s": 0.020164966583251953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9018-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0838,
+"conf": 0.7625,
+"latency_s": 0.02027297019958496
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9018-product",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4058,
+"conf": 0.4876,
+"latency_s": 0.019916772842407227
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9019-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3968,
+"conf": 0.4938,
+"latency_s": 0.020788908004760742
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9019-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2714,
+"conf": 0.5568,
+"latency_s": 0.02045583724975586
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9019-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2205,
+"conf": 0.4787,
+"latency_s": 0.02182602882385254
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9019-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6422,
+"conf": 0.6422,
+"latency_s": 0.02052903175354004
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9019-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3335,
+"conf": 0.5409,
+"latency_s": 0.020599842071533203
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9019-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4191,
+"conf": 0.4191,
+"latency_s": 0.020541906356811523
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9020-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5957,
+"conf": 0.5957,
+"latency_s": 0.021118879318237305
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9020-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2848,
+"conf": 0.4446,
+"latency_s": 0.020717144012451172
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9020-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.263,
+"conf": 0.5095,
+"latency_s": 0.021154165267944336
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9020-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3444,
+"conf": 0.4364,
+"latency_s": 0.020704030990600586
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9020-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3609,
+"conf": 0.3817,
+"latency_s": 0.021294116973876953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9021-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5202,
+"conf": 0.5202,
+"latency_s": 0.021010875701904297
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9021-email",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3463,
+"conf": 0.5104,
+"latency_s": 0.02210521697998047
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9021-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1574,
+"conf": 0.5452,
+"latency_s": 0.02452874183654785
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9021-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2952,
+"conf": 0.5793,
+"latency_s": 0.023460865020751953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9021-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4046,
+"conf": 0.414,
+"latency_s": 0.023506879806518555
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9022-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2,
+"conf": 0.4266,
+"latency_s": 0.023013830184936523
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9022-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3065,
+"conf": 0.4927,
+"latency_s": 0.023708820343017578
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9022-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5909,
+"conf": 0.5909,
+"latency_s": 0.02504706382751465
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9022-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2809,
+"conf": 0.4625,
+"latency_s": 0.02276301383972168
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9023-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7391,
+"conf": 0.7391,
+"latency_s": 0.023543119430541992
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9023-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1325,
+"conf": 0.5272,
+"latency_s": 0.022363901138305664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9023-security",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2383,
+"conf": 0.6875,
+"latency_s": 0.02235579490661621
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9023-email",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0909,
+"conf": 0.7469,
+"latency_s": 0.023160934448242188
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9023-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7342,
+"conf": 0.7342,
+"latency_s": 0.023289918899536133
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9023-weekly",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1213,
+"conf": 0.5865,
+"latency_s": 0.023913860321044922
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9024-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5347,
+"conf": 0.5347,
+"latency_s": 0.022617101669311523
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9024-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.242,
+"conf": 0.5238,
+"latency_s": 0.022211790084838867
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9024-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2484,
+"conf": 0.5233,
+"latency_s": 0.02280879020690918
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9024-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6078,
+"conf": 0.6078,
+"latency_s": 0.021214962005615234
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9024-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6348,
+"conf": 0.6348,
+"latency_s": 0.022224903106689453
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9025-weekly",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4347,
+"conf": 0.4832,
+"latency_s": 0.022980690002441406
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9025-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6699,
+"conf": 0.6699,
+"latency_s": 0.021667003631591797
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9025-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6963,
+"conf": 0.6963,
+"latency_s": 0.0222320556640625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9025-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1071,
+"conf": 0.5946,
+"latency_s": 0.022068023681640625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9026-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6211,
+"conf": 0.6211,
+"latency_s": 0.02603006362915039
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9026-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1527,
+"conf": 0.4759,
+"latency_s": 0.02218794822692871
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9026-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.424,
+"conf": 0.4881,
+"latency_s": 0.0226287841796875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9026-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3346,
+"conf": 0.5553,
+"latency_s": 0.02185225486755371
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9026-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4582,
+"conf": 0.4582,
+"latency_s": 0.02135014533996582
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9026-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4699,
+"conf": 0.4699,
+"latency_s": 0.021427154541015625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9027-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.3681,
+"conf": 0.5554,
+"latency_s": 0.02163529396057129
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9027-weekly",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1191,
+"conf": 0.5557,
+"latency_s": 0.021211862564086914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9027-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4279,
+"conf": 0.4279,
+"latency_s": 0.022357940673828125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9027-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2505,
+"conf": 0.6591,
+"latency_s": 0.020805835723876953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9028-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2045,
+"conf": 0.6433,
+"latency_s": 0.021859169006347656
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9028-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7243,
+"conf": 0.7243,
+"latency_s": 0.021049022674560547
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9028-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6938,
+"conf": 0.6938,
+"latency_s": 0.021428346633911133
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9028-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.1809,
+"conf": 0.6859,
+"latency_s": 0.021355867385864258
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9029-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2786,
+"conf": 0.3784,
+"latency_s": 0.023648977279663086
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9029-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3248,
+"conf": 0.4311,
+"latency_s": 0.021949052810668945
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9029-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3431,
+"conf": 0.4094,
+"latency_s": 0.020944833755493164
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9029-email",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.3789,
+"conf": 0.3789,
+"latency_s": 0.020451068878173828
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9029-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3587,
+"conf": 0.3676,
+"latency_s": 0.020728111267089844
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9029-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5873,
+"conf": 0.5873,
+"latency_s": 0.023106098175048828
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9030-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5034,
+"conf": 0.5034,
+"latency_s": 0.02173590660095215
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9030-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1346,
+"conf": 0.477,
+"latency_s": 0.0209500789642334
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9030-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1847,
+"conf": 0.5167,
+"latency_s": 0.02079629898071289
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9030-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1891,
+"conf": 0.4287,
+"latency_s": 0.021294116973876953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9031-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5518,
+"conf": 0.5518,
+"latency_s": 0.02148294448852539
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9031-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2268,
+"conf": 0.5709,
+"latency_s": 0.021630048751831055
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9031-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5865,
+"conf": 0.5865,
+"latency_s": 0.022329092025756836
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9031-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2783,
+"conf": 0.5535,
+"latency_s": 0.021053075790405273
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9032-product",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4713,
+"conf": 0.4713,
+"latency_s": 0.022327184677124023
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9032-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4641,
+"conf": 0.4641,
+"latency_s": 0.021771907806396484
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9032-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.4259,
+"conf": 0.4509,
+"latency_s": 0.020595073699951172
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9032-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.363,
+"conf": 0.4966,
+"latency_s": 0.020681381225585938
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9033-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5863,
+"conf": 0.5863,
+"latency_s": 0.02143406867980957
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9033-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4728,
+"conf": 0.4728,
+"latency_s": 0.020655155181884766
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9033-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5555,
+"conf": 0.5555,
+"latency_s": 0.02039504051208496
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9033-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2334,
+"conf": 0.395,
+"latency_s": 0.02024221420288086
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9033-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2027,
+"conf": 0.4102,
+"latency_s": 0.02137923240661621
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9034-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6007,
+"conf": 0.6007,
+"latency_s": 0.02002406120300293
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9034-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1381,
+"conf": 0.5504,
+"latency_s": 0.0205078125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9034-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4953,
+"conf": 0.4953,
+"latency_s": 0.020527124404907227
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9034-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1582,
+"conf": 0.5756,
+"latency_s": 0.02049732208251953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9035-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2546,
+"conf": 0.5859,
+"latency_s": 0.021600961685180664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9035-email",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.24,
+"conf": 0.5955,
+"latency_s": 0.021683931350708008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9035-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2446,
+"conf": 0.5549,
+"latency_s": 0.02087092399597168
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9035-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6495,
+"conf": 0.6495,
+"latency_s": 0.020977020263671875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9035-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2611,
+"conf": 0.5576,
+"latency_s": 0.019849061965942383
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9036-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5217,
+"conf": 0.5217,
+"latency_s": 0.02045297622680664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9036-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1803,
+"conf": 0.5022,
+"latency_s": 0.02163410186767578
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9036-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1524,
+"conf": 0.5794,
+"latency_s": 0.02226710319519043
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9036-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5902,
+"conf": 0.5902,
+"latency_s": 0.02109694480895996
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9037-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3126,
+"conf": 0.431,
+"latency_s": 0.022769927978515625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9037-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1568,
+"conf": 0.7236,
+"latency_s": 0.0205838680267334
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9037-weekly",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2567,
+"conf": 0.5366,
+"latency_s": 0.021103858947753906
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9037-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.215,
+"conf": 0.6269,
+"latency_s": 0.019922971725463867
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9038-push",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.6019,
+"conf": 0.6019,
+"latency_s": 0.021331787109375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9038-email",
+"pred": "enable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3973,
+"conf": 0.4334,
+"latency_s": 0.02043604850769043
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9038-weekly",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.6364,
+"conf": 0.6364,
+"latency_s": 0.021757841110229492
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9038-security",
+"pred": "enable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2633,
+"conf": 0.6147,
+"latency_s": 0.020633697509765625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9039-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2884,
+"conf": 0.4025,
+"latency_s": 0.023635149002075195
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9039-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2945,
+"conf": 0.4747,
+"latency_s": 0.02205204963684082
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9039-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.325,
+"conf": 0.3769,
+"latency_s": 0.020164012908935547
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9039-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3773,
+"conf": 0.4545,
+"latency_s": 0.020946025848388672
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9039-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6247,
+"conf": 0.6247,
+"latency_s": 0.020263195037841797
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9039-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4119,
+"conf": 0.4119,
+"latency_s": 0.02115011215209961
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9040-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3078,
+"conf": 0.4141,
+"latency_s": 0.0204012393951416
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9040-sms",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3099,
+"conf": 0.4189,
+"latency_s": 0.02067708969116211
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9040-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5698,
+"conf": 0.5698,
+"latency_s": 0.02017998695373535
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9040-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.372,
+"conf": 0.49,
+"latency_s": 0.02063298225402832
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9040-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.3779,
+"conf": 0.3779,
+"latency_s": 0.020400285720825195
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9040-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2581,
+"conf": 0.4835,
+"latency_s": 0.020524978637695312
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9041-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1186,
+"conf": 0.5407,
+"latency_s": 0.020702123641967773
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9041-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.3222,
+"conf": 0.5511,
+"latency_s": 0.020975828170776367
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9041-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5322,
+"conf": 0.5322,
+"latency_s": 0.020961999893188477
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9041-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1682,
+"conf": 0.4279,
+"latency_s": 0.021417856216430664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9041-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1404,
+"conf": 0.5285,
+"latency_s": 0.020441055297851562
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9042-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1897,
+"conf": 0.4664,
+"latency_s": 0.02089667320251465
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9042-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5246,
+"conf": 0.5246,
+"latency_s": 0.02098822593688965
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9042-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5061,
+"conf": 0.5061,
+"latency_s": 0.020708084106445312
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9042-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3441,
+"conf": 0.4206,
+"latency_s": 0.020425796508789062
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9042-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1943,
+"conf": 0.4863,
+"latency_s": 0.020386934280395508
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9042-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4905,
+"conf": 0.4905,
+"latency_s": 0.02117919921875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9043-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3045,
+"conf": 0.4518,
+"latency_s": 0.02074408531188965
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9043-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5885,
+"conf": 0.5885,
+"latency_s": 0.02021002769470215
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9043-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2794,
+"conf": 0.4825,
+"latency_s": 0.020532846450805664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9043-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2475,
+"conf": 0.5324,
+"latency_s": 0.020598888397216797
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9043-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2952,
+"conf": 0.3727,
+"latency_s": 0.019997119903564453
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9044-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4945,
+"conf": 0.4945,
+"latency_s": 0.020478010177612305
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9044-email",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3373,
+"conf": 0.4608,
+"latency_s": 0.021052837371826172
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9044-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.4105,
+"conf": 0.4749,
+"latency_s": 0.02205204963684082
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9044-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6421,
+"conf": 0.6421,
+"latency_s": 0.020657777786254883
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9044-sms",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3634,
+"conf": 0.4449,
+"latency_s": 0.021008014678955078
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9045-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2784,
+"conf": 0.6409,
+"latency_s": 0.02081298828125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9045-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6557,
+"conf": 0.6557,
+"latency_s": 0.02138805389404297
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9045-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0891,
+"conf": 0.7374,
+"latency_s": 0.020650863647460938
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9045-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6585,
+"conf": 0.6585,
+"latency_s": 0.021058082580566406
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9045-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4851,
+"conf": 0.4851,
+"latency_s": 0.02127218246459961
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9046-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2747,
+"conf": 0.5478,
+"latency_s": 0.020216941833496094
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9046-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6501,
+"conf": 0.6501,
+"latency_s": 0.020771026611328125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9046-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.209,
+"conf": 0.6365,
+"latency_s": 0.020734786987304688
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9046-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6278,
+"conf": 0.6278,
+"latency_s": 0.021104097366333008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9046-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2237,
+"conf": 0.5603,
+"latency_s": 0.02121901512145996
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9047-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5248,
+"conf": 0.5248,
+"latency_s": 0.02130579948425293
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9047-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.127,
+"conf": 0.5072,
+"latency_s": 0.020455121994018555
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9047-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5868,
+"conf": 0.5868,
+"latency_s": 0.02143716812133789
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9047-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1133,
+"conf": 0.5826,
+"latency_s": 0.020514965057373047
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9047-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6345,
+"conf": 0.6345,
+"latency_s": 0.020579814910888672
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9047-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1539,
+"conf": 0.5509,
+"latency_s": 0.020041942596435547
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9048-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4698,
+"conf": 0.4698,
+"latency_s": 0.020252227783203125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9048-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.3942,
+"conf": 0.5051,
+"latency_s": 0.02201700210571289
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9048-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5036,
+"conf": 0.5036,
+"latency_s": 0.020570039749145508
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9048-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.123,
+"conf": 0.7006,
+"latency_s": 0.020505905151367188
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9048-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6766,
+"conf": 0.6766,
+"latency_s": 0.020714998245239258
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9048-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.4239,
+"conf": 0.4825,
+"latency_s": 0.021138906478881836
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9049-weekly",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2904,
+"conf": 0.592,
+"latency_s": 0.020097970962524414
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9049-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3795,
+"conf": 0.5355,
+"latency_s": 0.02131199836730957
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9049-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6309,
+"conf": 0.6309,
+"latency_s": 0.021147966384887695
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9049-product",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.5243,
+"conf": 0.5243,
+"latency_s": 0.020963191986083984
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9050-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4543,
+"conf": 0.4543,
+"latency_s": 0.020891904830932617
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9050-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1997,
+"conf": 0.5415,
+"latency_s": 0.0200650691986084
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9050-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5628,
+"conf": 0.5628,
+"latency_s": 0.020348310470581055
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9050-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4546,
+"conf": 0.4546,
+"latency_s": 0.021991968154907227
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9051-weekly",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.6745,
+"conf": 0.6745,
+"latency_s": 0.020309925079345703
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9051-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4967,
+"conf": 0.4967,
+"latency_s": 0.020053863525390625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9051-product",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.7921,
+"conf": 0.7921,
+"latency_s": 0.020463228225708008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9051-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5677,
+"conf": 0.5677,
+"latency_s": 0.022428274154663086
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9051-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5031,
+"conf": 0.5031,
+"latency_s": 0.020474910736083984
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9051-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5111,
+"conf": 0.5111,
+"latency_s": 0.019741058349609375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9052-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7065,
+"conf": 0.7065,
+"latency_s": 0.020432710647583008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9052-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.1553,
+"conf": 0.7743,
+"latency_s": 0.02180314064025879
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9052-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.1989,
+"conf": 0.7256,
+"latency_s": 0.020339012145996094
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9052-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1309,
+"conf": 0.5278,
+"latency_s": 0.02080988883972168
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9053-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7378,
+"conf": 0.7378,
+"latency_s": 0.02045273780822754
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9053-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6051,
+"conf": 0.6051,
+"latency_s": 0.022016048431396484
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9053-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7698,
+"conf": 0.7698,
+"latency_s": 0.020095109939575195
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9053-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2537,
+"conf": 0.5489,
+"latency_s": 0.02014899253845215
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9054-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6749,
+"conf": 0.6749,
+"latency_s": 0.020759105682373047
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9054-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7178,
+"conf": 0.7178,
+"latency_s": 0.022381067276000977
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9054-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6251,
+"conf": 0.6251,
+"latency_s": 0.021144866943359375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9054-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5615,
+"conf": 0.5615,
+"latency_s": 0.02165985107421875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9055-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3169,
+"conf": 0.423,
+"latency_s": 0.021719932556152344
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9055-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5258,
+"conf": 0.5258,
+"latency_s": 0.020229816436767578
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9055-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3188,
+"conf": 0.4588,
+"latency_s": 0.020451068878173828
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9055-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2701,
+"conf": 0.5049,
+"latency_s": 0.020787954330444336
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9055-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5247,
+"conf": 0.5247,
+"latency_s": 0.021654129028320312
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9056-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2197,
+"conf": 0.6974,
+"latency_s": 0.020730018615722656
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9056-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7087,
+"conf": 0.7087,
+"latency_s": 0.020524024963378906
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9056-security",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2774,
+"conf": 0.6484,
+"latency_s": 0.020015239715576172
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9056-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5673,
+"conf": 0.5673,
+"latency_s": 0.0223691463470459
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9056-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4764,
+"conf": 0.4764,
+"latency_s": 0.019878149032592773
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9056-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6535,
+"conf": 0.6535,
+"latency_s": 0.02063894271850586
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9057-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1294,
+"conf": 0.5403,
+"latency_s": 0.019639015197753906
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9057-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5503,
+"conf": 0.5503,
+"latency_s": 0.020337820053100586
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9057-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5349,
+"conf": 0.5349,
+"latency_s": 0.02156805992126465
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9057-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1746,
+"conf": 0.526,
+"latency_s": 0.019917011260986328
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9058-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5799,
+"conf": 0.5799,
+"latency_s": 0.02102804183959961
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9058-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5947,
+"conf": 0.5947,
+"latency_s": 0.021091938018798828
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9058-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6224,
+"conf": 0.6224,
+"latency_s": 0.022635221481323242
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9058-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5949,
+"conf": 0.5949,
+"latency_s": 0.021722078323364258
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9059-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.472,
+"conf": 0.472,
+"latency_s": 0.023443937301635742
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9059-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3928,
+"conf": 0.4732,
+"latency_s": 0.025667905807495117
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9059-email",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2145,
+"conf": 0.405,
+"latency_s": 0.025221824645996094
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9059-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2106,
+"conf": 0.5664,
+"latency_s": 0.023365020751953125
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9059-security",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.446,
+"conf": 0.4495,
+"latency_s": 0.021770954132080078
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9060-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2856,
+"conf": 0.6111,
+"latency_s": 0.022225141525268555
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9060-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1314,
+"conf": 0.6854,
+"latency_s": 0.019732952117919922
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9060-sms",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.4336,
+"conf": 0.4794,
+"latency_s": 0.02063465118408203
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9060-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5853,
+"conf": 0.5853,
+"latency_s": 0.02089095115661621
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9061-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.3082,
+"conf": 0.5547,
+"latency_s": 0.020764827728271484
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9061-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.3102,
+"conf": 0.5957,
+"latency_s": 0.020555973052978516
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9061-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3181,
+"conf": 0.5453,
+"latency_s": 0.020410776138305664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9061-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5487,
+"conf": 0.5487,
+"latency_s": 0.020475149154663086
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9061-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.4297,
+"conf": 0.4653,
+"latency_s": 0.021280765533447266
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9062-sms",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.3869,
+"conf": 0.3869,
+"latency_s": 0.020194053649902344
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9062-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2959,
+"conf": 0.5178,
+"latency_s": 0.020026683807373047
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9062-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6,
+"conf": 0.6,
+"latency_s": 0.020113229751586914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9062-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4578,
+"conf": 0.4578,
+"latency_s": 0.019999980926513672
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9063-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4595,
+"conf": 0.4595,
+"latency_s": 0.022053003311157227
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9063-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5843,
+"conf": 0.5843,
+"latency_s": 0.020207881927490234
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9063-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4901,
+"conf": 0.4901,
+"latency_s": 0.02017378807067871
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9063-email",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1592,
+"conf": 0.5078,
+"latency_s": 0.020247936248779297
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9064-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2403,
+"conf": 0.6045,
+"latency_s": 0.02136707305908203
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9064-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2043,
+"conf": 0.6219,
+"latency_s": 0.020055055618286133
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9064-push",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1384,
+"conf": 0.5546,
+"latency_s": 0.020339012145996094
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9064-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6613,
+"conf": 0.6613,
+"latency_s": 0.021029233932495117
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9065-sms",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4709,
+"conf": 0.4709,
+"latency_s": 0.020472049713134766
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9065-push",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.5567,
+"conf": 0.5567,
+"latency_s": 0.022472858428955078
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9065-product",
+"pred": "enable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3407,
+"conf": 0.3654,
+"latency_s": 0.02220010757446289
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9065-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.3982,
+"conf": 0.3982,
+"latency_s": 0.020960092544555664
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9065-email",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4668,
+"conf": 0.4668,
+"latency_s": 0.02178478240966797
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9065-security",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.6152,
+"conf": 0.6152,
+"latency_s": 0.020694971084594727
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9066-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5725,
+"conf": 0.5725,
+"latency_s": 0.021660804748535156
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9066-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.322,
+"conf": 0.534,
+"latency_s": 0.02226400375366211
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9066-push",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5713,
+"conf": 0.5713,
+"latency_s": 0.021142959594726562
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9066-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6515,
+"conf": 0.6515,
+"latency_s": 0.020920753479003906
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9066-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6205,
+"conf": 0.6205,
+"latency_s": 0.0204012393951416
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9067-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4945,
+"conf": 0.4945,
+"latency_s": 0.022090911865234375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9067-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6839,
+"conf": 0.6839,
+"latency_s": 0.020103931427001953
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9067-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7636,
+"conf": 0.7636,
+"latency_s": 0.020701885223388672
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9067-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2661,
+"conf": 0.6436,
+"latency_s": 0.01981210708618164
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9067-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6083,
+"conf": 0.6083,
+"latency_s": 0.02163982391357422
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9067-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0818,
+"conf": 0.7461,
+"latency_s": 0.020048856735229492
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9068-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5559,
+"conf": 0.5559,
+"latency_s": 0.02040719985961914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9068-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6832,
+"conf": 0.6832,
+"latency_s": 0.0207369327545166
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9068-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2296,
+"conf": 0.6974,
+"latency_s": 0.020550966262817383
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9068-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2343,
+"conf": 0.6981,
+"latency_s": 0.02144622802734375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9069-weekly",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.3653,
+"conf": 0.5349,
+"latency_s": 0.020298004150390625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9069-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5132,
+"conf": 0.5132,
+"latency_s": 0.020078182220458984
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9069-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.374,
+"conf": 0.545,
+"latency_s": 0.020450830459594727
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9069-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4878,
+"conf": 0.4878,
+"latency_s": 0.02126312255859375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9069-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.654,
+"conf": 0.654,
+"latency_s": 0.019968748092651367
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9069-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5415,
+"conf": 0.5415,
+"latency_s": 0.021541118621826172
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9070-product",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1036,
+"conf": 0.5837,
+"latency_s": 0.020439863204956055
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9070-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7065,
+"conf": 0.7065,
+"latency_s": 0.02141594886779785
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9070-weekly",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4589,
+"conf": 0.4602,
+"latency_s": 0.020574092864990234
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9070-push",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0684,
+"conf": 0.7478,
+"latency_s": 0.02220892906188965
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9070-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0836,
+"conf": 0.6987,
+"latency_s": 0.022346973419189453
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9071-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1568,
+"conf": 0.6392,
+"latency_s": 0.01972794532775879
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9071-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5392,
+"conf": 0.5392,
+"latency_s": 0.020288944244384766
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9071-weekly",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.6652,
+"conf": 0.6652,
+"latency_s": 0.020493030548095703
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9071-sms",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1881,
+"conf": 0.4517,
+"latency_s": 0.022632122039794922
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9071-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4673,
+"conf": 0.4673,
+"latency_s": 0.019390106201171875
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9072-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4701,
+"conf": 0.4701,
+"latency_s": 0.020611047744750977
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9072-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0926,
+"conf": 0.6983,
+"latency_s": 0.020412206649780273
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9072-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6577,
+"conf": 0.6577,
+"latency_s": 0.020444154739379883
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9072-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2795,
+"conf": 0.6266,
+"latency_s": 0.021384000778198242
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9072-weekly",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.568,
+"conf": 0.568,
+"latency_s": 0.02082371711730957
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9073-sms",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2236,
+"conf": 0.691,
+"latency_s": 0.020352840423583984
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9073-email",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6375,
+"conf": 0.6375,
+"latency_s": 0.020489931106567383
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9073-product",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4333,
+"conf": 0.4421,
+"latency_s": 0.020612716674804688
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9073-security",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0932,
+"conf": 0.6651,
+"latency_s": 0.019941091537475586
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9073-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2703,
+"conf": 0.6584,
+"latency_s": 0.020093202590942383
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9074-weekly",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4347,
+"conf": 0.4347,
+"latency_s": 0.020107746124267578
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9074-security",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4858,
+"conf": 0.4858,
+"latency_s": 0.022498130798339844
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9074-push",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4567,
+"conf": 0.4567,
+"latency_s": 0.020611047744750977
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9074-email",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4537,
+"conf": 0.4537,
+"latency_s": 0.020780086517333984
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9074-sms",
+"pred": "enable",
+"gold": "enable",
+"ok": true,
+"p_gold": 0.4509,
+"conf": 0.4509,
+"latency_s": 0.021132707595825195
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9074-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.613,
+"conf": 0.613,
+"latency_s": 0.022311925888061523
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9075-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7199,
+"conf": 0.7199,
+"latency_s": 0.020936965942382812
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9075-product",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2005,
+"conf": 0.6384,
+"latency_s": 0.02041792869567871
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9075-push",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.2101,
+"conf": 0.6778,
+"latency_s": 0.02026081085205078
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9075-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.7438,
+"conf": 0.7438,
+"latency_s": 0.021788835525512695
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9075-security",
+"pred": "disable",
+"gold": "unchanged",
+"ok": false,
+"p_gold": 0.1723,
+"conf": 0.6914,
+"latency_s": 0.020798921585083008
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9076-sms",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.4733,
+"conf": 0.4733,
+"latency_s": 0.020500898361206055
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9076-product",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5639,
+"conf": 0.5639,
+"latency_s": 0.021950960159301758
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9076-security",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5505,
+"conf": 0.5505,
+"latency_s": 0.020383834838867188
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9076-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.3154,
+"conf": 0.4221,
+"latency_s": 0.02054595947265625
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9077-product",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1116,
+"conf": 0.5106,
+"latency_s": 0.019787073135375977
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9077-email",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2399,
+"conf": 0.6704,
+"latency_s": 0.01991891860961914
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9077-security",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.6191,
+"conf": 0.6191,
+"latency_s": 0.02179694175720215
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9077-push",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2418,
+"conf": 0.6791,
+"latency_s": 0.02028203010559082
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9077-weekly",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.4501,
+"conf": 0.4696,
+"latency_s": 0.020253896713256836
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9078-weekly",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2828,
+"conf": 0.6255,
+"latency_s": 0.020900726318359375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9078-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7303,
+"conf": 0.7303,
+"latency_s": 0.02205801010131836
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9078-product",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.5106,
+"conf": 0.5106,
+"latency_s": 0.019959688186645508
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9078-email",
+"pred": "unchanged",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.0891,
+"conf": 0.7321,
+"latency_s": 0.020032167434692383
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9078-security",
+"pred": "unchanged",
+"gold": "disable",
+"ok": false,
+"p_gold": 0.2856,
+"conf": 0.635,
+"latency_s": 0.020148038864135742
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9078-sms",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.7129,
+"conf": 0.7129,
+"latency_s": 0.022175073623657227
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9079-security",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1702,
+"conf": 0.4465,
+"latency_s": 0.020579099655151367
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9079-push",
+"pred": "unchanged",
+"gold": "unchanged",
+"ok": true,
+"p_gold": 0.4339,
+"conf": 0.4339,
+"latency_s": 0.020626068115234375
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9079-weekly",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.2033,
+"conf": 0.5253,
+"latency_s": 0.021156787872314453
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9079-email",
+"pred": "disable",
+"gold": "disable",
+"ok": true,
+"p_gold": 0.5996,
+"conf": 0.5996,
+"latency_s": 0.022324085235595703
+},
+{
+"task": "T6_item_intent",
+"id": "web_prefs-9079-sms",
+"pred": "disable",
+"gold": "enable",
+"ok": false,
+"p_gold": 0.1444,
+"conf": 0.5176,
+"latency_s": 0.02106785774230957
+}
+]
