@@ -42,6 +42,8 @@
 | 15 | 下载输出时 CLI 会逐个拉取几千个文件，很慢 | `kaggle kernels output` 下载整个输出目录 | 等 `e1-results.tar.gz` 大小稳定后结束 CLI，自己解包；**不要在压缩包缺失时 `rm -rf e1`**——那可能是唯一的输出 |
 | 16 | v23：`NoMatchingPeftModuleError: Target modules .*language_model.* not found` | transformers 5 用因果 LM 加载 Agents-A1-4B，只载文本部分，层名是 `model.layers.N`（没有 `language_model`） | 目标正则不依赖前缀，只匹配 `layers.N.(self_attn|linear_attn|mlp)`；视觉层 `visual.blocks` 永不匹配 |
 | 17 | 本地复现：`convert_lora_to_gguf` 对 `linear_attn.out_proj` 抛 `NotImplementedError` | Qwen3.5 的 V 头数（32）≠ K 头数（16），转换器要重排 out_proj 的输入列，LoRA 的 A/B 无法这样重排 | `safe` 目标只留 `self_attn.o_proj` + MLP；**训练前先用随机假适配器在本地跑一次转换器**（不需要模型权重，只要 config.json），免得几小时训练后才失败 |
+| 18 | v24：`ImportError: Found an incompatible version of torchao. Found version 0.10.0` | Kaggle 预装 torchao 0.10，新 peft 包装任何 Linear 时都会检查它 | `lora_setup` 卸载 torchao（不用它）；并在加载 4B 模型前用小模型跑一次 `get_peft_model` 预检（`LORA_PREFLIGHT`） |
+| 19 | v24 日志：`skipped_too_long: 119`（上限 6144） | 全是 web_catalog 的后几步（最长 7758 token）；且冒烟只取前 4 条样本，碰不到峰值显存 | 损失只对回复部分算 logits（`logits_to_keep`，24.8 万词表下省几 GB；本地小模型核对与 HF 损失完全相等）；R3 上限 8192；冒烟改用最长的 4 条 |
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复

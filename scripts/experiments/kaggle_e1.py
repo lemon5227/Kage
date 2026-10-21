@@ -572,6 +572,34 @@ def fresh_python(code: str) -> str:
     return done.stdout.strip()
 
 
+LORA_PREFLIGHT = """
+import sys, torch
+from peft import LoraConfig, get_peft_model
+sys.path.insert(0, 'scripts/experiments')
+from lora_train import TARGETS
+class Mlp(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.down_proj = torch.nn.Linear(8, 8)
+class Layer(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mlp = Mlp()
+class Inner(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layers = torch.nn.ModuleList([Layer()])
+class Tiny(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.model = Inner()
+for name, pattern in TARGETS.items():
+    m = get_peft_model(Tiny(), LoraConfig(r=2, target_modules=pattern))
+    assert any('lora_A' in n for n, _ in m.named_parameters()), name
+print('ok')
+"""
+
+
 def lora_setup() -> dict:
     """Training stack + full-precision base weights + llama.cpp's LoRA→GGUF converter (same commit)."""
     sh([PY, '-m', 'pip', 'install', '-q', '-U', 'transformers', 'peft', 'accelerate'])
@@ -593,9 +621,16 @@ def lora_setup() -> dict:
                 shutil.move(str(f), dest)
         shutil.rmtree(src / 'tmp-src', ignore_errors=True)
     sh([PY, '-m', 'pip', 'install', '-q', str(src / 'gguf-py'), 'sentencepiece', 'protobuf'])
+    # v24: Kaggle ships torchao 0.10; peft 0.21 checks it while wrapping any Linear and raises
+    # ImportError (needs >0.16). We do not use torchao.
+    subprocess.run([PY, '-m', 'pip', 'uninstall', '-q', '-y', 'torchao'], capture_output=True)
     versions = json.loads(fresh_python('import json, torch, transformers, peft\n'
                                        "print(json.dumps({'torch': torch.__version__, 'transformers': "
                                        "transformers.__version__, 'peft': peft.__version__}))").splitlines()[-1])
+    # Wrap a tiny stand-in with the real target pattern before spending minutes loading the 4B model:
+    # catches peft dispatcher/import problems and a target regex that matches nothing.
+    fresh_python(LORA_PREFLIGHT)
+    log('lora preflight ok')
     info = {'hf_model': str(hf), **versions, 'converter': str(src / 'convert_lora_to_gguf.py')}
     log('lora setup done', **info)
     return info
@@ -623,6 +658,8 @@ def lora_eval_jobs(n: int = LORA_REPLICATES) -> list[tuple[str, list[str]]]:
 # ---------------------------------------------------------------- R3: LoRA-1 without guidance
 R2_DATA = ROOT / 'evidence' / 'reports' / 'r2' / 'sft-v21.jsonl.gz'
 R3_DATA_SCRIPT = 'scripts/experiments/r3_data.py'
+# v24: at 6144 tokens 119 of 360 web_catalog samples (its later steps) were dropped; the longest R2 sample is 7758.
+R3_MAX_TOKENS = 8192
 R3_RUNS = 3
 
 
@@ -812,7 +849,8 @@ def main(argv=None):
         linfo = lora_setup()
         if args.phase == 'r3-smoke':
             out = OUT / 'r3-smoke'
-            gguf = r3_adapter(linfo, data, out, ['--smoke', '--targets', 'safe', '--val', str(data / 'val.jsonl')])
+            gguf = r3_adapter(linfo, data, out, ['--smoke', '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS),
+                                                '--val', str(data / 'val.jsonl')])
             browser_setup()
             jobs = [
                 ('r3-smoke-file', ['scripts/experiments/stream_calibrate.py', '--root', str(out / 'file'),
@@ -828,8 +866,8 @@ def main(argv=None):
                 print(results.read_text() if results.exists() else '', flush=True)
         else:
             out = OUT / 'r3'
-            gguf = r3_adapter(linfo, data, out, ['--epochs', '2', '--rank', '16', '--lr', '1e-4',
-                                                '--targets', 'safe', '--val', str(data / 'val.jsonl')])
+            gguf = r3_adapter(linfo, data, out, ['--epochs', '2', '--rank', '16', '--lr', '1e-4', '--targets', 'safe',
+                                                '--max-tokens', str(R3_MAX_TOKENS), '--val', str(data / 'val.jsonl')])
             browser_setup()
             jobs = r3_eval_jobs(gguf)
             run_jobs(info, jobs, 'r3')

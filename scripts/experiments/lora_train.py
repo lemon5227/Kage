@@ -42,6 +42,17 @@ def load_examples(tok, path: Path, max_tokens: int) -> tuple[list, int]:
     return data, skipped
 
 
+def response_loss(model, ids: list, labels: list):
+    """Mean cross-entropy over the response tokens. The response is the tail of the sequence, so only its
+    logits are computed (`logits_to_keep`): with a 248k vocabulary, full-length fp32 logits alone take
+    several GB at 6-8k tokens. Same value as `model(input_ids, labels=labels).loss`."""
+    import torch
+    n = sum(label != -100 for label in labels)
+    x = torch.tensor([ids], device=model.device)
+    logits = model(input_ids=x, logits_to_keep=n + 1).logits[0, :-1].float()
+    return torch.nn.functional.cross_entropy(logits, torch.tensor(ids[-n:], device=model.device))
+
+
 def validation_loss(model, data: list) -> float:
     """Mean response-token loss over the val set (weighted by each example's response tokens)."""
     import torch
@@ -49,10 +60,8 @@ def validation_loss(model, data: list) -> float:
     model.eval()
     with torch.no_grad():
         for ids, labels, _ in data:
-            x = torch.tensor([ids], device='cuda')
-            y = torch.tensor([labels], device='cuda')
             with torch.autocast('cuda', dtype=torch.float16):
-                loss = model(input_ids=x, labels=y).loss
+                loss = response_loss(model, ids, labels)
             count = sum(label != -100 for label in labels)
             total += loss.item() * count
             tokens += count
@@ -144,7 +153,8 @@ def main(argv=None):
     if args.val and not val_data:
         raise SystemExit(f'--val {args.val} produced no usable examples')
     if args.smoke:
-        data = data[:4]
+        # the longest example first: a smoke run must hit the peak memory of the real run
+        data = sorted(data, key=lambda d: len(d[0]), reverse=True)[:4]
     print(json.dumps({'examples': len(data), 'skipped_too_long': skipped,
                       'max_len': max(len(d[0]) for d in data), 'sample_target': data[0][2][:300]}), flush=True)
 
@@ -186,10 +196,8 @@ def main(argv=None):
             order = list(range(len(data)))
             random.shuffle(order)
         ids, labels, _ = data[order.pop()]
-        x = torch.tensor([ids], device='cuda')
-        y = torch.tensor([labels], device='cuda')
         with torch.autocast('cuda', dtype=torch.float16):
-            loss = model(input_ids=x, labels=y).loss / args.accum
+            loss = response_loss(model, ids, labels) / args.accum
         scaler.scale(loss).backward()
         raw = loss.item() * args.accum
         losses.append(raw)
