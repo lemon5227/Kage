@@ -218,6 +218,47 @@ def test_general_check_scoring_is_case_and_markdown_insensitive():
     assert len(questions) == 30 and len({q['id'] for q in questions}) == 30
 
 
+def test_r3_train_only_packages_the_adapter_and_eval_finds_it(tmp_path, monkeypatch):
+    import tarfile
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'colab' / 'e1')
+    monkeypatch.setattr(kaggle_e1, 'WORK', tmp_path / 'colab')
+    data = tmp_path / 'data'
+    data.mkdir()
+    (data / 'data-stats.json').write_text('{}')
+    seen = {}
+
+    def fake_adapter(linfo, data_dir, out, extra):
+        seen['extra'] = extra
+        out.mkdir(parents=True, exist_ok=True)
+        (out / 'adapter.gguf').write_bytes(b'gguf')
+        (out / 'train-log.jsonl').write_text('{}')
+        return out / 'adapter.gguf'
+
+    monkeypatch.setattr(kaggle_e1, 'prepare_r3_data', lambda: data)
+    monkeypatch.setattr(kaggle_e1, 'lora_setup', lambda: {})
+    monkeypatch.setattr(kaggle_e1, 'r3_adapter', fake_adapter)
+    kaggle_e1.r3_train_only()
+    assert seen['extra'][:len(kaggle_e1.R3_TRAIN_ARGS)] == kaggle_e1.R3_TRAIN_ARGS and '--val' in seen['extra']
+    tarball = tmp_path / 'colab' / 'r3-adapter.tar.gz'
+    with tarfile.open(tarball) as tar:
+        assert {'r3-adapter/adapter.gguf', 'r3-adapter/data-stats.json'} <= set(tar.getnames())
+    # Kaggle side: the uploaded tarball is found under the input dir and unpacked
+    inp = tmp_path / 'input' / 'r3-adapter-v1'
+    inp.mkdir(parents=True)
+    tarball.rename(inp / 'r3-adapter.tar.gz')
+    monkeypatch.setattr(kaggle_e1, 'INPUT', tmp_path / 'input')
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'kaggle' / 'e1')
+    gguf = kaggle_e1.r3_input_adapter()
+    assert gguf.read_bytes() == b'gguf'
+
+
+def test_r3_eval_without_an_adapter_input_stops(tmp_path, monkeypatch):
+    monkeypatch.setattr(kaggle_e1, 'INPUT', tmp_path)
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
+    with pytest.raises(SystemExit):
+        kaggle_e1.r3_input_adapter()
+
+
 def test_r3_phases_are_available():
     parser = kaggle_e1.build_parser()
     assert parser.parse_args(['--phase', 'r3-smoke']).phase == 'r3-smoke'

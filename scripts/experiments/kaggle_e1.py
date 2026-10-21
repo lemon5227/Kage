@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WORK = Path(os.environ.get('KAGE_WORK', '/kaggle/working'))
 OUT = WORK / 'e1'
 TOOLS = Path(os.environ.get('KAGE_TOOLS', '/kaggle/tmp'))
+INPUT = Path(os.environ.get('KAGE_INPUT', '/kaggle/input'))
 MODEL_REPO = 'InternScience/Agents-A1-4B-Q4_K_M-GGUF'
 MODEL_REVISION = 'd92b02e27074b27542384f72bc0e72203c970f0f'
 MODEL_FILE = 'Agents-A1-4B-Q4_K_M.gguf'
@@ -689,6 +690,53 @@ def r3_adapter(linfo: dict, data: Path, out: Path, extra: list[str]) -> Path:
     return gguf
 
 
+R3_TRAIN_ARGS = ['--epochs', '2', '--rank', '16', '--lr', '1e-4', '--targets', 'safe', '--max-tokens', '8192']
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as f:
+        for block in iter(lambda: f.read(1 << 20), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def r3_train_only(smoke: bool = False) -> None:
+    """Colab A100 (KAGE_WORK / KAGE_TOOLS set): data -> LoRA -> GGUF -> WORK/r3-adapter.tar.gz. No eval, no
+    llama-server; the tarball becomes a Kaggle input for 'r3-eval'. 'r3-train smoke' trains 2 steps on the
+    four longest samples to check memory before spending compute units on the real run."""
+    data = prepare_r3_data()
+    linfo = lora_setup()
+    out = OUT / 'r3-train'
+    args = (['--smoke', '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS)] if smoke else R3_TRAIN_ARGS)
+    gguf = r3_adapter(linfo, data, out, args + ['--val', str(data / 'val.jsonl')])
+    shutil.copy(data / 'data-stats.json', out / 'data-stats.json')
+    tarball = WORK / ('r3-adapter-smoke.tar.gz' if smoke else 'r3-adapter.tar.gz')
+    with tarfile.open(tarball, 'w:gz') as tar:
+        tar.add(out, arcname='r3-adapter')
+    log('r3 adapter packaged', tarball=str(tarball), gguf_sha256=sha256(gguf), mb=round(tarball.stat().st_size / 2**20, 1))
+
+
+def r3_input_adapter() -> Path:
+    """The Colab-trained adapter from a Kaggle input dataset (r3-adapter/adapter.gguf, or the tarball)."""
+    for gguf in INPUT.glob('**/r3-adapter/adapter.gguf'):
+        break
+    else:
+        for tarball in INPUT.glob('**/r3-adapter.tar.gz'):
+            with tarfile.open(tarball) as tar:
+                tar.extractall(OUT, filter='data')
+            gguf = OUT / 'r3-adapter' / 'adapter.gguf'
+            break
+        else:
+            log('r3-eval: no r3-adapter input found; eval jobs not started')
+            raise SystemExit(1)
+    if not gguf.exists():
+        log('r3-eval: adapter.gguf missing', path=str(gguf))
+        raise SystemExit(1)
+    log('r3 adapter from input', path=str(gguf), sha256=sha256(gguf))
+    return gguf
+
+
 def r3_eval_jobs(adapter: Path, n: int = R3_RUNS) -> list[tuple[str, list[str], dict[str, str]]]:
     """A0 with and without the adapter, n runs each, on both frozen eval sets.
 
@@ -772,7 +820,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3-eval', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -787,7 +835,10 @@ def main(argv=None):
     # git push is enough to switch smoke -> full run (editing the web notebook is not needed).
     control = ROOT / 'scripts' / 'experiments' / 'kaggle_phase'
     only = None
-    if control.exists() and control.read_text().strip():
+    if os.environ.get('KAGE_PHASE'):                         # Colab: the cell sets the phase itself
+        args.phase, *only = os.environ['KAGE_PHASE'].split()
+        log('phase from KAGE_PHASE', phase=args.phase, only=only)
+    elif control.exists() and control.read_text().strip():
         args.phase, *only = control.read_text().split()      # e.g. "rerun A3-s1 A3-s2"
         log('phase from repository control file', phase=args.phase, only=only)
     if args.phase in ('e2', 'e2b'):
@@ -798,8 +849,11 @@ def main(argv=None):
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
                                  'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
-                                 'r3-smoke', 'r3')
-    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3')) if needs_setup
+                                 'r3-smoke', 'r3', 'r3-eval')
+    if args.phase == 'r3-train':
+        r3_train_only(smoke='smoke' in only)
+        return
+    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval')) if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
         browser_setup()
@@ -858,10 +912,15 @@ def main(argv=None):
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
         return
-    if args.phase in ('r3-smoke', 'r3'):
+    if args.phase in ('r3-smoke', 'r3', 'r3-eval'):
         # R3: LoRA-1 on guidance-free R2 samples, evaluated without skills, memory or lessons.
-        data = prepare_r3_data()            # fail fast before downloading/training
-        linfo = lora_setup()
+        # 'r3-eval' (10-21): the adapter was trained on a Colab A100 ('r3-train'; a T4 runs out of memory on
+        # the 7.7k-token web_catalog samples) and arrives as a Kaggle input dataset.
+        if args.phase == 'r3-eval':
+            gguf = r3_input_adapter()
+        else:
+            data = prepare_r3_data()            # fail fast before downloading/training
+            linfo = lora_setup()
         if args.phase == 'r3-smoke':
             out = OUT / 'r3-smoke'
             gguf = r3_adapter(linfo, data, out, ['--smoke', '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS),
@@ -881,8 +940,8 @@ def main(argv=None):
                 print(results.read_text() if results.exists() else '', flush=True)
         else:
             out = OUT / 'r3'
-            gguf = r3_adapter(linfo, data, out, ['--epochs', '2', '--rank', '16', '--lr', '1e-4', '--targets', 'safe',
-                                                '--max-tokens', str(R3_MAX_TOKENS), '--val', str(data / 'val.jsonl')])
+            if args.phase == 'r3':
+                gguf = r3_adapter(linfo, data, out, R3_TRAIN_ARGS + ['--val', str(data / 'val.jsonl')])
             browser_setup()
             jobs, general = r3_eval_jobs(gguf), r3_general_jobs(gguf)
             run_jobs(info, jobs + general, 'r3')

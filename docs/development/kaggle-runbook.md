@@ -44,6 +44,15 @@
 | 17 | 本地复现：`convert_lora_to_gguf` 对 `linear_attn.out_proj` 抛 `NotImplementedError` | Qwen3.5 的 V 头数（32）≠ K 头数（16），转换器要重排 out_proj 的输入列，LoRA 的 A/B 无法这样重排 | `safe` 目标只留 `self_attn.o_proj` + MLP；**训练前先用随机假适配器在本地跑一次转换器**（不需要模型权重，只要 config.json），免得几小时训练后才失败 |
 | 18 | v24：`ImportError: Found an incompatible version of torchao. Found version 0.10.0` | Kaggle 预装 torchao 0.10，新 peft 包装任何 Linear 时都会检查它 | `lora_setup` 卸载 torchao（不用它）；并在加载 4B 模型前用小模型跑一次 `get_peft_model` 预检（`LORA_PREFLIGHT`） |
 | 19 | v24 日志：`skipped_too_long: 119`（上限 6144） | 全是 web_catalog 的后几步（最长 7758 token）；且冒烟只取前 4 条样本，碰不到峰值显存 | 损失只对回复部分算 logits（`logits_to_keep`，24.8 万词表下省几 GB；本地小模型核对与 HF 损失完全相等）；R3 上限 8192；冒烟改用最长的 4 条 |
+| 20 | v25：训练最长样本（7758 token）时 `torch.OutOfMemoryError ... Tried to allocate 3.48 GiB`（SDPA） | head_dim 256 在 T4（sm75）上没有高效注意力内核，退回普通实现，注意力矩阵 16 头 × 7758² 放不下 | R3 训练改到 Colab A100（`KAGE_PHASE="r3-train"`，产出 `r3-adapter.tar.gz`），评测仍在 Kaggle（`r3-eval` 从输入数据集读适配器）；见下方 Colab 段 |
+
+## Colab A100 训练（10-21 起，用户的 Colab Pro 计算单元）
+
+```
+!git clone -b dev --depth 1 https://github.com/lemon5227/Kage.git /content/Kage
+!cd /content/Kage && KAGE_WORK=/content/work KAGE_TOOLS=/content/tools KAGE_PHASE="r3-train smoke" python scripts/experiments/kaggle_e1.py
+```
+先跑 `r3-train smoke`（最长 4 条样本、2 步，检查显存），通过后 `KAGE_PHASE=r3-train` 正式训练。产物 `/content/work/r3-adapter.tar.gz` 下载后用 Kaggle CLI 建数据集，在笔记本里 Add Input，再把 `kaggle_phase` 设为 `r3-eval`。计算单元只用于训练，不在 Colab 上调试。
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复
