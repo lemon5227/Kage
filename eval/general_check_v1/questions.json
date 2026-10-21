@@ -1,0 +1,214 @@
+[
+ {
+  "id": "arith-1",
+  "prompt": "What is 17 * 23? Reply with the number only.",
+  "accept": [
+   "391"
+  ]
+ },
+ {
+  "id": "arith-2",
+  "prompt": "What is 1000 - 387? Reply with the number only.",
+  "accept": [
+   "613"
+  ]
+ },
+ {
+  "id": "arith-3",
+  "prompt": "What is 144 divided by 12? Reply with the number only.",
+  "accept": [
+   "12"
+  ]
+ },
+ {
+  "id": "arith-4",
+  "prompt": "A shop sells pens at 3 for 2 dollars. How many dollars do 12 pens cost? Number only.",
+  "accept": [
+   "8"
+  ]
+ },
+ {
+  "id": "arith-5",
+  "prompt": "What is 15% of 240? Reply with the number only.",
+  "accept": [
+   "36"
+  ]
+ },
+ {
+  "id": "unit-1",
+  "prompt": "How many minutes are in 3.5 hours? Number only.",
+  "accept": [
+   "210"
+  ]
+ },
+ {
+  "id": "unit-2",
+  "prompt": "How many grams are in 2.5 kilograms? Number only.",
+  "accept": [
+   "2500"
+  ]
+ },
+ {
+  "id": "fact-1",
+  "prompt": "What is the capital of Japan? One word.",
+  "accept": [
+   "tokyo"
+  ]
+ },
+ {
+  "id": "fact-2",
+  "prompt": "What is the chemical symbol for gold? Symbol only.",
+  "accept": [
+   "au"
+  ]
+ },
+ {
+  "id": "fact-3",
+  "prompt": "How many days are in a leap year? Number only.",
+  "accept": [
+   "366"
+  ]
+ },
+ {
+  "id": "fact-4",
+  "prompt": "Which planet is known as the Red Planet? One word.",
+  "accept": [
+   "mars"
+  ]
+ },
+ {
+  "id": "text-1",
+  "prompt": "Reverse the word 'stream'. Reply with the reversed word only.",
+  "accept": [
+   "maerts"
+  ]
+ },
+ {
+  "id": "text-2",
+  "prompt": "Convert 'hello world' to upper case. Reply with the result only.",
+  "accept": [
+   "hello world"
+  ]
+ },
+ {
+  "id": "text-3",
+  "prompt": "How many vowels (a, e, i, o, u) are in the word 'education'? Number only.",
+  "accept": [
+   "5"
+  ]
+ },
+ {
+  "id": "text-4",
+  "prompt": "Sort these words alphabetically and reply as a comma-separated list: pear, apple, mango",
+  "accept": [
+   "apple, mango, pear",
+   "apple,mango,pear"
+  ]
+ },
+ {
+  "id": "json-1",
+  "prompt": "Return a JSON object with key \"name\" set to \"Ada\" and key \"age\" set to 36. Reply with JSON only.",
+  "accept": [
+   "\"name\": \"ada\"",
+   "\"name\":\"ada\""
+  ]
+ },
+ {
+  "id": "json-2",
+  "prompt": "From this JSON {\"items\": [3, 8, 5]} what is the largest item? Number only.",
+  "accept": [
+   "8"
+  ]
+ },
+ {
+  "id": "code-1",
+  "prompt": "In Python, what does len([1, 2, 3, 4]) return? Number only.",
+  "accept": [
+   "4"
+  ]
+ },
+ {
+  "id": "code-2",
+  "prompt": "In Python, what is the value of 7 // 2? Number only.",
+  "accept": [
+   "3"
+  ]
+ },
+ {
+  "id": "code-3",
+  "prompt": "In Python, what does 'a,b,c'.split(',') return? Reply with the Python list only.",
+  "accept": [
+   "['a', 'b', 'c']"
+  ]
+ },
+ {
+  "id": "code-4",
+  "prompt": "Write a one-line Python expression that sums the squares of 1..10. Expression only.",
+  "accept": [
+   "sum("
+  ]
+ },
+ {
+  "id": "logic-1",
+  "prompt": "If all bloops are razzies and all razzies are lazzies, are all bloops lazzies? Answer yes or no.",
+  "accept": [
+   "yes"
+  ]
+ },
+ {
+  "id": "logic-2",
+  "prompt": "Tom is taller than Ann. Ann is taller than Bo. Who is the shortest? Name only.",
+  "accept": [
+   "bo"
+  ]
+ },
+ {
+  "id": "follow-1",
+  "prompt": "Reply with exactly the word OK and nothing else.",
+  "accept": [
+   "ok"
+  ]
+ },
+ {
+  "id": "follow-2",
+  "prompt": "List the first three prime numbers separated by spaces.",
+  "accept": [
+   "2 3 5"
+  ]
+ },
+ {
+  "id": "zh-1",
+  "prompt": "1 公斤等于多少克？只回答数字。",
+  "accept": [
+   "1000"
+  ]
+ },
+ {
+  "id": "zh-2",
+  "prompt": "中国的首都是哪里？只回答城市名。",
+  "accept": [
+   "北京"
+  ]
+ },
+ {
+  "id": "zh-3",
+  "prompt": "把“机器学习”翻译成英文，只回答翻译。",
+  "accept": [
+   "machine learning"
+  ]
+ },
+ {
+  "id": "zh-4",
+  "prompt": "一周有几天？只回答数字。",
+  "accept": [
+   "7"
+  ]
+ },
+ {
+  "id": "date-1",
+  "prompt": "What day of the week comes two days after Friday? One word.",
+  "accept": [
+   "sunday"
+  ]
+ }
+]

@@ -723,6 +723,21 @@ def _latest_checkpoints(root: Path) -> list[dict]:
     return list(latest.values())
 
 
+def r3_general_jobs(adapter: Path) -> list[tuple[str, list[str], dict[str, str]]]:
+    """General-ability spot check (R3 acceptance: no regression outside the benchmark), L3 and A0 once each."""
+    return [(f'general-{arm}', ['scripts/experiments/general_check.py', '--root', str(OUT / 'r3' / 'general' / arm),
+                                '--port', str(18790 + i)], {'KAGE_LORA': str(adapter)} if arm == 'L3' else {})
+            for i, arm in enumerate(('L3', 'A0'))]
+
+
+def r3_general_summary(jobs: list[tuple]) -> dict:
+    out = {}
+    for name, argv, _ in jobs:
+        path = Path(argv[argv.index('--root') + 1]) / 'summary.json'
+        out[name.split('-', 1)[1]] = json.loads(path.read_text()) if path.exists() else {'status': 'missing'}
+    return out
+
+
 def r3_summary(jobs: list[tuple]) -> dict:
     """Per eval set and run: pass counts per family and negative misuse (a run with no file is 'missing')."""
     summary = {}
@@ -869,11 +884,12 @@ def main(argv=None):
             gguf = r3_adapter(linfo, data, out, ['--epochs', '2', '--rank', '16', '--lr', '1e-4', '--targets', 'safe',
                                                 '--max-tokens', str(R3_MAX_TOKENS), '--val', str(data / 'val.jsonl')])
             browser_setup()
-            jobs = r3_eval_jobs(gguf)
-            run_jobs(info, jobs, 'r3')
+            jobs, general = r3_eval_jobs(gguf), r3_general_jobs(gguf)
+            run_jobs(info, jobs + general, 'r3')
             summary = r3_summary(jobs)
+            summary['general'] = r3_general_summary(general)
             (out / 'summary.json').write_text(json.dumps(summary, indent=1))
-            log('r3 summary', passed={kind: {run: f"{row['passed']}/{row['total']}" for run, row in runs.items()}
+            log('r3 summary', passed={kind: {run: f"{row.get('passed')}/{row.get('total')}" for run, row in runs.items()}
                                       for kind, runs in summary.items()})
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json', '.safetensors'))

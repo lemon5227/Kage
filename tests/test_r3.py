@@ -198,6 +198,26 @@ def test_lora_targets_match_decoder_layers_under_both_loaders_and_never_vision(p
         assert not re.fullmatch(safe, name) and not re.fullmatch(full, name)
 
 
+def test_r3_general_jobs_carry_the_adapter_only_for_l3_and_summary_marks_missing(tmp_path):
+    adapter = tmp_path / 'adapter.gguf'
+    jobs = kaggle_e1.r3_general_jobs(adapter)
+    assert [name for name, _, _ in jobs] == ['general-L3', 'general-A0']
+    assert jobs[0][2] == {'KAGE_LORA': str(adapter)} and jobs[1][2] == {}
+    assert jobs[0][1][0] == 'scripts/experiments/general_check.py'
+    summary = kaggle_e1.r3_general_summary([('general-A0', ['--root', str(tmp_path / 'nope')], {})])
+    assert summary == {'A0': {'status': 'missing'}}
+
+
+def test_general_check_scoring_is_case_and_markdown_insensitive():
+    from scripts.experiments import general_check
+    import json
+    assert general_check.passes('The answer is **391**.', ['391'])
+    assert general_check.passes('`Tokyo`', ['tokyo'])
+    assert not general_check.passes('392', ['391'])
+    questions = json.loads(general_check.QUESTIONS.read_text())
+    assert len(questions) == 30 and len({q['id'] for q in questions}) == 30
+
+
 def test_r3_phases_are_available():
     parser = kaggle_e1.build_parser()
     assert parser.parse_args(['--phase', 'r3-smoke']).phase == 'r3-smoke'
