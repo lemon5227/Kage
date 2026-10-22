@@ -84,6 +84,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--targets', choices=sorted(TARGETS), default='full')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
+    p.add_argument('--save-optimizer', action='store_true',
+                   help='also save the AdamW state with the trainable parameter names (LESS warmup, R3c)')
     p.add_argument('--save-epochs', action='store_true',
                    help='also save the adapter after every completed epoch except the last (OUT-epochN)')
     p.add_argument('--dtype', choices=['auto', 'fp16', 'bf16'], default='auto',
@@ -240,6 +242,10 @@ def main(argv=None):
     peak_gpu_mb = torch.cuda.max_memory_allocated() // 2**20
     lora_b_max = max(float(p_.detach().abs().max()) for n_, p_ in model.named_parameters() if 'lora_B' in n_)
     model.save_pretrained(args.out)
+    if args.save_optimizer:
+        names = [n_ for n_, p_ in model.named_parameters() if p_.requires_grad]
+        torch.save({'names': names, 'state': opt.state_dict(), 'betas': opt.param_groups[0]['betas'],
+                    'eps': opt.param_groups[0]['eps']}, args.out / 'optimizer.pt')
     (args.out / 'train-config.json').write_text(json.dumps(
         vars(args) | {'data': str(args.data), 'out': str(args.out), 'val': str(args.val) if args.val else None,
                       'data_sha256': data_sha256, 'examples': len(data), 'skipped_too_long': skipped,

@@ -114,3 +114,49 @@ def test_lora_train_accepts_save_epochs():
     from scripts.experiments import lora_train
     args = lora_train.build_parser().parse_args(['--data', 'd', '--model', 'm', '--out', 'o', '--save-epochs'])
     assert args.save_epochs
+
+
+def test_less_diverse_top_respects_the_cluster_cap_and_score_order():
+    from scripts.experiments import less_select
+    scores = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4]
+    clusters = [0, 0, 0, 1, 1, 2]
+    # n=3 over 3 clusters -> cap ceil(2*3/3) = 2 per cluster
+    assert less_select.diverse_top(scores, clusters, 3, 3) == [0, 1, 3]
+
+
+def test_r3c_wires_warmup_selection_and_training(tmp_path, monkeypatch):
+    import gzip
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
+    (tmp_path / 'e1').mkdir()
+    pool = tmp_path / 'pool' / 'replay.jsonl'
+    pool.parent.mkdir()
+    pool.write_text(''.join(json.dumps({'family': 'replay_toucan', 'i': i}) + '\n' for i in range(100)))
+    control = tmp_path / 'control.jsonl.gz'
+    with gzip.open(control, 'wt') as f:
+        f.write(json.dumps(_r2_row('stream-v1-csv_transform-13000', 'plan')) + '\n')
+        f.write(json.dumps(_r2_row('stream-v1-csv_transform-13001', '')) + '\n')
+    monkeypatch.setattr(kaggle_e1, 'R2_CONTROL', control)
+    calls = []
+
+    def fake_sh(cmd, **kw):
+        calls.append(cmd)
+        if 'less_select.py' in cmd[1]:
+            out = Path(cmd[cmd.index('--out') + 1])
+            out.mkdir(parents=True)
+            (out / 'replay.jsonl').write_text('')
+            (out / 'replay-stats.json').write_text('{"selected": 0}')
+
+    from pathlib import Path
+    monkeypatch.setattr(kaggle_e1, 'sh', fake_sh)
+    monkeypatch.setattr(kaggle_e1, 'lora_setup', lambda: {'hf_model': 'hf', 'converter': 'c'})
+    monkeypatch.setattr(kaggle_e1, 'prepare_replay', lambda n, name: pool)
+    monkeypatch.setattr(kaggle_e1, 'prepare_r3_data', lambda extra, name: tmp_path / name)
+    trained = {}
+    monkeypatch.setattr(kaggle_e1, 'train_mix', lambda linfo, replay, tag, smoke: trained.update(replay=replay, tag=tag))
+    kaggle_e1.r3c_train_only()
+    warm = [c for c in calls if 'lora_train.py' in c[1]][0]
+    assert '--save-optimizer' in warm and len((tmp_path / 'e1' / 'r3c-warmup.jsonl').read_text().splitlines()) == 20
+    less = [c for c in calls if 'less_select.py' in c[1]][0]
+    assert any(a.startswith('own=') for a in less) and any(a.startswith('task=') for a in less)
+    assert len((tmp_path / 'e1' / 'r3c-own.jsonl').read_text().splitlines()) == 1   # reasonless control row dropped
+    assert trained['tag'] == 'r3c' and trained['replay'].name == 'replay.jsonl'

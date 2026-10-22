@@ -18,10 +18,12 @@ home ledger afterwards (see the worklog). Everything lands in /kaggle/working/e1
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
 from pathlib import Path
+import random
 import shutil
 import subprocess
 import sys
@@ -706,16 +708,16 @@ AGENTNET = ('xlangai/AgentNet', 'agentnet_win_mac_18k.jsonl')
 TOUCAN = ('Agent-Ark/Toucan-1.5M', 'SFT/train-00000-of-00003.parquet')
 
 
-def prepare_replay() -> Path:
+def prepare_replay(n: tuple[int, int] = (800, 600), name: str = 'replay') -> Path:
     """R3b replay rows (AgentNet GUI steps as text + Toucan tool calls), built where the training runs."""
     paths = fresh_python(
         'from huggingface_hub import hf_hub_download\n'
         f'print(hf_hub_download({AGENTNET[0]!r}, {AGENTNET[1]!r}, repo_type="dataset", local_dir={str(TOOLS / "replay-src")!r}))\n'
         f'print(hf_hub_download({TOUCAN[0]!r}, {TOUCAN[1]!r}, repo_type="dataset", local_dir={str(TOOLS / "replay-src")!r}))'
     ).splitlines()[-2:]
-    out = OUT / 'replay'
-    sh([PY, 'scripts/experiments/replay_data.py', '--agentnet', paths[0], '--toucan', paths[1], '--out', str(out)],
-       cwd=ROOT)
+    out = OUT / name
+    sh([PY, 'scripts/experiments/replay_data.py', '--agentnet', paths[0], '--toucan', paths[1], '--out', str(out),
+        '--agentnet-n', str(n[0]), '--toucan-n', str(n[1])], cwd=ROOT)
     stats = json.loads((out / 'replay-stats.json').read_text())
     log('replay ready', agentnet=stats['agentnet'], toucan=stats['toucan'])
     return out / 'replay.jsonl'
@@ -723,11 +725,47 @@ def prepare_replay() -> Path:
 
 def r3b_train_only(smoke: bool = False) -> None:
     """R3b on Colab: R2 + the base student's own unguided successes, reasoning-free tool calls removed, plus GUI /
-    tool-use replay; adapters after epoch 1 and 2 both converted (early-stopping candidates for the transfer check)."""
+    tool-use replay (random sample); adapters after epoch 1 and 2 both converted."""
     linfo = lora_setup()              # installs huggingface_hub/pandas used by prepare_replay
-    replay = prepare_replay()
-    data = prepare_r3_data(['--sft', str(R2_CONTROL), '--require-reasoning', '--replay', str(replay)], name='r3b-data')
-    out = OUT / 'r3b-train'
+    train_mix(linfo, prepare_replay(), 'r3b', smoke)
+
+
+def r3c_train_only(smoke: bool = False) -> None:
+    """R3c on Colab: as R3b, but the replay rows are chosen from a 10k pool by LESS gradient influence (towards the
+    base student's own reasoned successes and the R2 validation rows) with a diversity cap (less_select.py)."""
+    linfo = lora_setup()
+    pool = prepare_replay((300, 200) if smoke else (5000, 5000), name='replay-pool')
+    rows = [line for line in pool.read_text().splitlines() if line.strip()]
+    random.Random(0).shuffle(rows)
+    warm_data = OUT / 'r3c-warmup.jsonl'
+    warm_data.write_text('\n'.join(rows[:max(20, len(rows) // 20)]) + '\n')      # LESS: ~5% of the pool
+    warm = OUT / 'r3c-warmup'
+    sh([PY, 'scripts/experiments/lora_train.py', '--data', str(warm_data), '--model', linfo['hf_model'],
+        '--out', str(warm), '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS), '--epochs', '2',
+        '--save-optimizer'] + (['--smoke'] if smoke else []), cwd=ROOT, env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
+    base = prepare_r3_data(['--sft', str(R2_CONTROL), '--require-reasoning'], name='r3c-targets')
+    own = OUT / 'r3c-own.jsonl'
+    with gzip.open(R2_CONTROL, 'rt') as f:
+        own_rows = [line for line in f if line.strip() and not r3_reasonless(json.loads(line))]
+    own.write_text(''.join(own_rows))
+    selected = OUT / 'replay-less'
+    sh([PY, 'scripts/experiments/less_select.py', '--model', linfo['hf_model'], '--warmup', str(warm),
+        '--candidates', str(pool), '--target', f'own={own}', '--target', f'task={base / "val.jsonl"}',
+        '--n', '40' if smoke else '1400', '--out', str(selected)], cwd=ROOT,
+       env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
+    log('less selection', **json.loads((selected / 'replay-stats.json').read_text()))
+    train_mix(linfo, selected / 'replay.jsonl', 'r3c', smoke)
+
+
+def r3_reasonless(row: dict) -> bool:
+    target = row.get('target') or {}
+    return bool(target.get('tool_calls')) and not (target.get('content') or '').strip()
+
+
+def train_mix(linfo: dict, replay: Path, tag: str, smoke: bool) -> None:
+    data = prepare_r3_data(['--sft', str(R2_CONTROL), '--require-reasoning', '--replay', str(replay)],
+                           name=f'{tag}-data')
+    out = OUT / f'{tag}-train'
     args = (['--smoke', '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS)] if smoke
             else R3_TRAIN_ARGS + ['--save-epochs'])
     gguf = r3_adapter(linfo, data, out, args + ['--val', str(data / 'val.jsonl')])
@@ -736,10 +774,10 @@ def r3b_train_only(smoke: bool = False) -> None:
             str(out / f'{epoch_dir.name}.gguf'), '--outtype', 'f16'], cwd=ROOT)
     shutil.copy(data / 'data-stats.json', out / 'data-stats.json')
     shutil.copy(replay.with_name('replay-stats.json'), out / 'replay-stats.json')
-    tarball = WORK / ('r3b-adapter-smoke.tar.gz' if smoke else 'r3b-adapter.tar.gz')
+    tarball = WORK / (f'{tag}-adapter-smoke.tar.gz' if smoke else f'{tag}-adapter.tar.gz')
     with tarfile.open(tarball, 'w:gz') as tar:
-        tar.add(out, arcname='r3b-adapter')
-    log('r3b adapter packaged', tarball=str(tarball), gguf_sha256=sha256(gguf),
+        tar.add(out, arcname=f'{tag}-adapter')
+    log(f'{tag} adapter packaged', tarball=str(tarball), gguf_sha256=sha256(gguf),
         epochs=sorted(p.name for p in out.glob('adapter-epoch*.gguf')), mb=round(tarball.stat().st_size / 2**20, 1))
 
 
@@ -883,7 +921,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3-eval', 'r3-scale', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3-eval', 'r3-scale', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -918,6 +956,9 @@ def main(argv=None):
         return
     if args.phase == 'r3b-train':
         r3b_train_only(smoke='smoke' in (only or []))
+        return
+    if args.phase == 'r3c-train':
+        r3c_train_only(smoke='smoke' in (only or []))
         return
     info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale')) if needs_setup
             else json.loads((OUT / 'host.json').read_text()))

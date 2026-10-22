@@ -16,7 +16,7 @@ set -u
 [ -d /content/Kage ] || git clone -q -b dev --depth 1 https://github.com/lemon5227/Kage.git /content/Kage
 cd /content/Kage
 export KAGE_WORK=/content/work KAGE_TOOLS=/content/tools
-P=${R3PHASE:-r3-train}                 # R3PHASE=r3b-train for the R3b mix (replay + reasoning filter)
+P=${R3PHASE:-r3-train}                 # r3b-train: random replay mix; r3c-train: LESS-selected replay mix
 TAR=/content/work/${P%-train}-adapter.tar.gz
 KEY='^\{"step"|lora_b_max_abs|falling back|Error|failed|packaged'
 for action in "$@"; do
