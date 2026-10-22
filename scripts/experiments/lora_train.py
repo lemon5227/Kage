@@ -84,6 +84,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--targets', choices=sorted(TARGETS), default='full')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
+    p.add_argument('--checkpoint-every', type=int, default=0,
+                   help='save a resumable checkpoint (OUT-ckpt.pt) every N optimizer steps; an existing one is resumed')
     p.add_argument('--save-optimizer', action='store_true',
                    help='also save the AdamW state with the trainable parameter names (LESS warmup, R3c)')
     p.add_argument('--save-epochs', action='store_true',
@@ -197,6 +199,38 @@ def main(argv=None):
     def epoch_val() -> float | None:
         return validation_loss(model, val_data, dtype) if val_data else None
 
+    # Colab recycled the A100 mid-run twice (10-22); a checkpoint every N optimizer steps (on the user's Drive when
+    # KAGE_WORK points there) lets a reconnected runtime continue instead of starting over.
+    ckpt_path = args.out.parent / f'{args.out.name}-ckpt.pt'
+    trainable_named = [(n_, p_) for n_, p_ in model.named_parameters() if p_.requires_grad]
+
+    def save_checkpoint() -> None:
+        state = {'params': {n_: p_.detach().cpu() for n_, p_ in trainable_named}, 'opt': opt.state_dict(),
+                 'sched': sched.state_dict(), 'scaler': scaler.state_dict(), 'step': step, 'micro': micro,
+                 'epoch': epoch, 'logged_epoch': logged_epoch, 'order': order, 'epoch_losses': epoch_losses,
+                 'recent': recent, 'py_random': random.getstate(), 'torch_rng': torch.get_rng_state(),
+                 'cuda_rng': torch.cuda.get_rng_state(), 'steps_total': steps_total}
+        tmp = ckpt_path.with_suffix('.tmp')
+        torch.save(state, tmp)
+        tmp.replace(ckpt_path)
+
+    if args.checkpoint_every and ckpt_path.exists():
+        state = torch.load(ckpt_path, map_location='cpu', weights_only=False)
+        if state['steps_total'] != steps_total:
+            raise SystemExit(f'checkpoint {ckpt_path} is for {state["steps_total"]} steps, not {steps_total}')
+        with torch.no_grad():
+            for n_, p_ in trainable_named:
+                p_.copy_(state['params'][n_].to(p_.device))
+        opt.load_state_dict(state['opt'])
+        sched.load_state_dict(state['sched'])
+        scaler.load_state_dict(state['scaler'])
+        step, micro, epoch, logged_epoch = state['step'], state['micro'], state['epoch'], state['logged_epoch']
+        order, epoch_losses, recent = state['order'], state['epoch_losses'], state['recent']
+        random.setstate(state['py_random'])
+        torch.set_rng_state(state['torch_rng'])
+        torch.cuda.set_rng_state(state['cuda_rng'])
+        print(json.dumps({'resumed_from': str(ckpt_path), 'step': step, 'epoch': epoch}), flush=True)
+
     while step < steps_total:
         if not order:
             if epoch:
@@ -235,6 +269,8 @@ def main(argv=None):
                 train_log.append(loss_record(epoch, step, sum(recent) / len(recent)))
                 recent = []
             losses = []
+            if args.checkpoint_every and step % args.checkpoint_every == 0 and step < steps_total:
+                save_checkpoint()
     if train_log is not None and epoch > logged_epoch:
         train_log.append(loss_record(epoch, step, sum(epoch_losses) / len(epoch_losses), epoch_val()))
 
@@ -242,6 +278,8 @@ def main(argv=None):
     peak_gpu_mb = torch.cuda.max_memory_allocated() // 2**20
     lora_b_max = max(float(p_.detach().abs().max()) for n_, p_ in model.named_parameters() if 'lora_B' in n_)
     model.save_pretrained(args.out)
+    if ckpt_path.exists():
+        ckpt_path.unlink()                                 # finished: a rerun must not resume a stale checkpoint
     if args.save_optimizer:
         names = [n_ for n_, p_ in model.named_parameters() if p_.requires_grad]
         torch.save({'names': names, 'state': opt.state_dict(), 'betas': opt.param_groups[0]['betas'],

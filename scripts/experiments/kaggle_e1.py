@@ -641,8 +641,11 @@ def lora_setup() -> dict:
 
 def train_and_convert(linfo: dict, out: Path, extra: list[str], data: Path = SFT_DATA) -> Path:
     adapter = out / 'adapter'
-    sh([PY, 'scripts/experiments/lora_train.py', '--data', str(data), '--model', linfo['hf_model'],
-        '--out', str(adapter), *extra], cwd=ROOT, env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
+    if (adapter / 'train-config.json').exists():          # finished before a Colab disconnect: only convert
+        log('training already finished; converting only', adapter=str(adapter))
+    else:
+        sh([PY, 'scripts/experiments/lora_train.py', '--data', str(data), '--model', linfo['hf_model'],
+            '--out', str(adapter), *extra], cwd=ROOT, env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
     gguf = out / 'adapter.gguf'
     sh([PY, linfo['converter'], str(adapter), '--base', linfo['hf_model'], '--outfile', str(gguf),
         '--outtype', 'f16'], cwd=ROOT)
@@ -716,6 +719,8 @@ def prepare_replay(n: tuple[int, int] = (800, 600), name: str = 'replay') -> Pat
         f'print(hf_hub_download({TOUCAN[0]!r}, {TOUCAN[1]!r}, repo_type="dataset", local_dir={str(TOOLS / "replay-src")!r}))'
     ).splitlines()[-2:]
     out = OUT / name
+    if (out / 'replay.jsonl').exists() and (out / 'replay-stats.json').exists():
+        return out / 'replay.jsonl'
     sh([PY, 'scripts/experiments/replay_data.py', '--agentnet', paths[0], '--toucan', paths[1], '--out', str(out),
         '--agentnet-n', str(n[0]), '--toucan-n', str(n[1])], cwd=ROOT)
     stats = json.loads((out / 'replay-stats.json').read_text())
@@ -732,27 +737,32 @@ def r3b_train_only(smoke: bool = False) -> None:
 
 def r3c_train_only(smoke: bool = False) -> None:
     """R3c on Colab: as R3b, but the replay rows are chosen from a 10k pool by LESS gradient influence (towards the
-    base student's own reasoned successes and the R2 validation rows) with a diversity cap (less_select.py)."""
+    base student's own reasoned successes and the R2 validation rows) with a diversity cap (less_select.py).
+    Every finished step is kept under OUT and skipped on a rerun (Colab recycles runtimes; OUT is on Drive)."""
+    sfx = '-smoke' if smoke else ''
     linfo = lora_setup()
-    pool = prepare_replay((300, 200) if smoke else (5000, 5000), name='replay-pool')
+    pool = prepare_replay((300, 200) if smoke else (5000, 5000), name=f'replay-pool{sfx}')
     rows = [line for line in pool.read_text().splitlines() if line.strip()]
     random.Random(0).shuffle(rows)
-    warm_data = OUT / 'r3c-warmup.jsonl'
+    warm_data = OUT / f'r3c-warmup{sfx}.jsonl'
     warm_data.write_text('\n'.join(rows[:max(20, len(rows) // 20)]) + '\n')      # LESS: ~5% of the pool
-    warm = OUT / 'r3c-warmup'
-    sh([PY, 'scripts/experiments/lora_train.py', '--data', str(warm_data), '--model', linfo['hf_model'],
-        '--out', str(warm), '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS), '--epochs', '2',
-        '--save-optimizer'] + (['--smoke'] if smoke else []), cwd=ROOT, env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
+    warm = OUT / f'r3c-warmup{sfx}'
+    if not (warm / 'optimizer.pt').exists():
+        sh([PY, 'scripts/experiments/lora_train.py', '--data', str(warm_data), '--model', linfo['hf_model'],
+            '--out', str(warm), '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS), '--epochs', '2',
+            '--save-optimizer'] + (['--smoke'] if smoke else []), cwd=ROOT,
+           env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
     base = prepare_r3_data(['--sft', str(R2_CONTROL), '--require-reasoning'], name='r3c-targets')
     own = OUT / 'r3c-own.jsonl'
     with gzip.open(R2_CONTROL, 'rt') as f:
         own_rows = [line for line in f if line.strip() and not r3_reasonless(json.loads(line))]
     own.write_text(''.join(own_rows))
-    selected = OUT / 'replay-less'
-    sh([PY, 'scripts/experiments/less_select.py', '--model', linfo['hf_model'], '--warmup', str(warm),
-        '--candidates', str(pool), '--target', f'own={own}', '--target', f'task={base / "val.jsonl"}',
-        '--n', '40' if smoke else '1400', '--out', str(selected)], cwd=ROOT,
-       env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
+    selected = OUT / f'replay-less{sfx}'
+    if not (selected / 'replay-stats.json').exists():
+        sh([PY, 'scripts/experiments/less_select.py', '--model', linfo['hf_model'], '--warmup', str(warm),
+            '--candidates', str(pool), '--target', f'own={own}', '--target', f'task={base / "val.jsonl"}',
+            '--n', '40' if smoke else '1400', '--out', str(selected)], cwd=ROOT,
+           env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0'})
     log('less selection', **json.loads((selected / 'replay-stats.json').read_text()))
     train_mix(linfo, selected / 'replay.jsonl', 'r3c', smoke)
 
@@ -763,11 +773,12 @@ def r3_reasonless(row: dict) -> bool:
 
 
 def train_mix(linfo: dict, replay: Path, tag: str, smoke: bool) -> None:
+    sfx = '-smoke' if smoke else ''
     data = prepare_r3_data(['--sft', str(R2_CONTROL), '--require-reasoning', '--replay', str(replay)],
-                           name=f'{tag}-data')
-    out = OUT / f'{tag}-train'
+                           name=f'{tag}-data{sfx}')
+    out = OUT / f'{tag}-train{sfx}'
     args = (['--smoke', '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS)] if smoke
-            else R3_TRAIN_ARGS + ['--save-epochs'])
+            else R3_TRAIN_ARGS + ['--save-epochs', '--checkpoint-every', '25'])
     gguf = r3_adapter(linfo, data, out, args + ['--val', str(data / 'val.jsonl')])
     for epoch_dir in sorted(out.glob('adapter-epoch*')):
         sh([PY, linfo['converter'], str(epoch_dir), '--base', linfo['hf_model'], '--outfile',
