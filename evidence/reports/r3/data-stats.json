@@ -1,0 +1,58 @@
+{
+ "inputs": [
+  {
+   "path": "/content/Kage/evidence/reports/r2/sft-v21.jsonl.gz",
+   "sha256": "3480e072ab0fadcb7c6850ef87a03c09519932960f760c02715026eb8e8c1685",
+   "rows": 1900
+  }
+ ],
+ "cap": 600,
+ "val_frac": 0.1,
+ "cap_seed": 0,
+ "rows_in": 1900,
+ "dropped": {
+  "guidance_remnant": 0,
+  "duplicate": 0,
+  "cap": 0
+ },
+ "rows_out": {
+  "train": 1677,
+  "val": 223
+ },
+ "rows": {
+  "train": {
+   "csv_transform": 182,
+   "inspect_question": 12,
+   "interval_merge": 250,
+   "log_aggregation": 181,
+   "lookalike_readonly": 14,
+   "read_preserve": 13,
+   "subset_selection": 248,
+   "web_catalog": 360,
+   "web_invoice": 252,
+   "web_lookup": 7,
+   "web_prefs": 158
+  },
+  "val": {
+   "csv_transform": 27,
+   "inspect_question": 16,
+   "interval_merge": 25,
+   "log_aggregation": 25,
+   "lookalike_readonly": 16,
+   "read_preserve": 11,
+   "subset_selection": 23,
+   "web_catalog": 40,
+   "web_invoice": 20,
+   "web_lookup": 4,
+   "web_prefs": 16
+  }
+ },
+ "tasks": {
+  "train": 133,
+  "val": 18
+ },
+ "sha256": {
+  "train.jsonl": "70d0c4425f120846c77258014611fdb2c2987a5d00ebe4ae7f594a79d3af2190",
+  "val.jsonl": "d62db389151c10938dea32eb8986e97bf1ba00a13b7fcea14b5f7341cade810b"
+ }
+}

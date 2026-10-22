@@ -1,0 +1,486 @@
+{
+ "file": {
+  "L3-r1": {
+   "families": {
+    "subset_selection": {
+     "passed": 6,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 4,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 1,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 35,
+   "total": 48,
+   "status": "ok"
+  },
+  "L3-r2": {
+   "families": {
+    "subset_selection": {
+     "passed": 6,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 4,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 0,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 3,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 1
+   },
+   "passed": 33,
+   "total": 48,
+   "status": "ok"
+  },
+  "L3-r3": {
+   "families": {
+    "subset_selection": {
+     "passed": 6,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 5,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 3,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 0,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 3,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 1
+   },
+   "passed": 31,
+   "total": 48,
+   "status": "ok"
+  },
+  "A0-r1": {
+   "families": {
+    "subset_selection": {
+     "passed": 0,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 1,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 2,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 3,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 2,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 26,
+   "total": 48,
+   "status": "ok"
+  },
+  "A0-r2": {
+   "families": {
+    "subset_selection": {
+     "passed": 0,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 4,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 2,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 3,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 2,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 29,
+   "total": 48,
+   "status": "ok"
+  },
+  "A0-r3": {
+   "families": {
+    "subset_selection": {
+     "passed": 0,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 1,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 2,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 3,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 2,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 26,
+   "total": 48,
+   "status": "ok"
+  }
+ },
+ "web": {
+  "L3-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "L3-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "L3-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "A0-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 9,
+   "total": 30,
+   "status": "ok"
+  },
+  "A0-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 10,
+   "total": 30,
+   "status": "ok"
+  },
+  "A0-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 9,
+   "total": 30,
+   "status": "ok"
+  }
+ },
+ "general": {
+  "L3": {
+   "passed": 28,
+   "total": 30,
+   "lora": "/kaggle/input/datasets/lemon5227/kage-r3-adapter/r3-adapter/adapter.gguf"
+  },
+  "A0": {
+   "passed": 28,
+   "total": 30,
+   "lora": null
+  }
+ }
+}
