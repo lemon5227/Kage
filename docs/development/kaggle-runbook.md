@@ -46,6 +46,7 @@
 | 19 | v24 日志：`skipped_too_long: 119`（上限 6144） | 全是 web_catalog 的后几步（最长 7758 token）；且冒烟只取前 4 条样本，碰不到峰值显存 | 损失只对回复部分算 logits（`logits_to_keep`，24.8 万词表下省几 GB；本地小模型核对与 HF 损失完全相等）；R3 上限 8192；冒烟改用最长的 4 条 |
 | 20 | v25：训练最长样本（7758 token）时 `torch.OutOfMemoryError ... Tried to allocate 3.48 GiB`（SDPA） | head_dim 256 在 T4（sm75）上没有高效注意力内核，退回普通实现，注意力矩阵 16 头 × 7758² 放不下 | R3 训练改到 Colab A100（`KAGE_PHASE="r3-train"`，产出 `r3-adapter.tar.gz`），评测仍在 Kaggle（`r3-eval` 从输入数据集读适配器）；见下方 Colab 段 |
 | 21 | Colab 冒烟“成功”但适配器 `lora_B` 全为 0（训练/验证损失各轮完全相同） | fp16 下 GradScaler 遇到溢出会跳过这一步，冒烟只有 2 步，两步都被跳过；不报错 | 支持 bf16 的 GPU 自动用 bf16（不需要缩放器）；每步记录 grad_norm 与 scale；训练结束检查 `lora_B` 仍全为 0 就报错退出，绝不把空适配器交给评测 |
+| 22 | Colab：训练完成后运行时“因长时间无活动断开”，`/content` 清空，适配器丢失 | 训练在后台进程里，单元格空闲；Colab Pro 空闲约一小时后回收虚拟机 | 训练放前台单元格（`colab_r3.sh run`），同一单元格末尾 `files.download(...)`，训练一结束就落到本机 |
 
 ## Colab A100 训练（10-21 起，用户的 Colab Pro 计算单元）
 
