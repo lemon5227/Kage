@@ -771,6 +771,27 @@ def _latest_checkpoints(root: Path) -> list[dict]:
     return list(latest.values())
 
 
+R3_SCALES = (0.25, 0.5, 0.75)
+
+
+def r3_scale_jobs(adapter: Path, scales=R3_SCALES, n: int = R3_RUNS) -> list[tuple[str, list[str], dict[str, str]]]:
+    """Scaled-adapter runs (n each) plus one A0 and one full-scale anchor per eval set; names 'kind-arm-run'."""
+    script, jobs, port = 'scripts/experiments/stream_run.py', [], 18800
+    arms = [(f'L3x{sc}', {'KAGE_LORA': str(adapter), 'KAGE_LORA_SCALE': str(sc)}, n) for sc in scales]
+    arms += [('L3x1.0', {'KAGE_LORA': str(adapter)}, 1), ('A0', {}, 1)]
+    for kind, manifest in (('file', ROOT / 'eval' / 'stream_v1'), ('web', ROOT / 'eval' / 'stream_web_v1')):
+        for arm, env, runs in arms:
+            for index in range(1, runs + 1):
+                job_env = dict(env, **({'KAGE_CTX': BROWSER_CTX} if kind == 'web' else {}))
+                jobs.append((f'{kind}-{arm}-r{index}', [
+                    script, '--arm', 'A0', '--root', str(OUT / 'r3s' / kind / f'{arm}-r{index}'),
+                    '--eval-only', 'cp0', '--stream-manifest', str(manifest / 'stream-seed1.json'),
+                    '--eval-manifest', str(manifest / 'eval.json'), '--skill-runner', 'process',
+                    '--port', str(port)], job_env))
+                port += 1
+    return jobs
+
+
 def r3_general_jobs(adapter: Path) -> list[tuple[str, list[str], dict[str, str]]]:
     """General-ability spot check (R3 acceptance: no regression outside the benchmark), L3 and A0 once each."""
     return [(f'general-{arm}', ['scripts/experiments/general_check.py', '--root', str(OUT / 'r3' / 'general' / arm),
@@ -820,7 +841,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3-eval', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3-eval', 'r3-scale', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -849,11 +870,11 @@ def main(argv=None):
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
                                  'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
-                                 'r3-smoke', 'r3', 'r3-eval')
+                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale')
     if args.phase == 'r3-train':
         r3_train_only(smoke='smoke' in only)
         return
-    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval')) if needs_setup
+    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale')) if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
         browser_setup()
@@ -908,6 +929,22 @@ def main(argv=None):
             root = OUT / 'rsr' / name.removeprefix('rsr-')
             done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(root)], cwd=ROOT, capture_output=True, text=True)
             log('rsr build', job=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'r3-scale':
+        # R3b (10-22): the same adapter at several scales (base <-> adapter interpolation) to trade in-family
+        # gains against the transfer loss; A0 and scale 1.0 once each as same-session anchors.
+        gguf = r3_input_adapter()
+        browser_setup()
+        jobs = r3_scale_jobs(gguf)
+        run_jobs(info, jobs, 'r3-scale')
+        summary = r3_summary(jobs)
+        (OUT / 'r3s').mkdir(parents=True, exist_ok=True)
+        (OUT / 'r3s' / 'summary.json').write_text(json.dumps(summary, indent=1))
+        log('r3-scale summary', passed={kind: {run: f"{row.get('passed')}/{row.get('total')}" for run, row in runs.items()}
+                                        for kind, runs in summary.items()})
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))

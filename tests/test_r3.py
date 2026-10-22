@@ -259,6 +259,30 @@ def test_r3_eval_without_an_adapter_input_stops(tmp_path, monkeypatch):
         kaggle_e1.r3_input_adapter()
 
 
+def test_r3_scale_jobs_set_the_scale_only_on_scaled_arms_and_keep_anchors(tmp_path):
+    adapter = tmp_path / 'adapter.gguf'
+    jobs = kaggle_e1.r3_scale_jobs(adapter)
+    names = [name for name, _, _ in jobs]
+    assert len(jobs) == 2 * (3 * 3 + 2) and len({argv[-1] for _, argv, _ in jobs}) == len(jobs)
+    env = {name: e for name, _, e in jobs}
+    assert env['file-L3x0.5-r2'] == {'KAGE_LORA': str(adapter), 'KAGE_LORA_SCALE': '0.5'}
+    assert env['file-L3x1.0-r1'] == {'KAGE_LORA': str(adapter)}
+    assert env['file-A0-r1'] == {} and env['web-A0-r1']['KAGE_CTX'] == kaggle_e1.BROWSER_CTX
+    assert 'KAGE_LORA' not in env['web-A0-r1']
+    assert all(name.split('-', 2)[0] in ('file', 'web') for name in names)
+
+
+def test_lora_argv_uses_the_scaled_form_only_when_a_scale_is_set(monkeypatch):
+    from scripts.experiments import local_service
+    monkeypatch.setattr(local_service, 'LORA', '/x/a.gguf')
+    monkeypatch.setattr(local_service, 'LORA_SCALE', None)
+    assert local_service.lora_argv() == ['--lora', '/x/a.gguf']
+    monkeypatch.setattr(local_service, 'LORA_SCALE', '0.5')
+    assert local_service.lora_argv() == ['--lora-scaled', '/x/a.gguf:0.5']
+    monkeypatch.setattr(local_service, 'LORA', None)
+    assert local_service.lora_argv() == []
+
+
 def test_r3_phases_are_available():
     parser = kaggle_e1.build_parser()
     assert parser.parse_args(['--phase', 'r3-smoke']).phase == 'r3-smoke'
