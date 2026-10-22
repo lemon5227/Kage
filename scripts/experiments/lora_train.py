@@ -84,6 +84,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--targets', choices=sorted(TARGETS), default='full')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
+    p.add_argument('--save-epochs', action='store_true',
+                   help='also save the adapter after every completed epoch except the last (OUT-epochN)')
     p.add_argument('--dtype', choices=['auto', 'fp16', 'bf16'], default='auto',
                    help='auto: bf16 where supported (A100), else fp16 with a loss scaler (T4)')
     return p
@@ -199,6 +201,8 @@ def main(argv=None):
                 if train_log is not None:
                     train_log.append(loss_record(epoch, step, sum(epoch_losses) / len(epoch_losses), epoch_val()))
                 logged_epoch = epoch
+                if args.save_epochs:     # R3b: earlier epochs are early-stopping candidates for the transfer check
+                    model.save_pretrained(args.out.parent / f'{args.out.name}-epoch{epoch}')
             epoch += 1
             epoch_losses, recent = [], []
             order = list(range(len(data)))

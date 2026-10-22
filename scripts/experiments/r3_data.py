@@ -91,8 +91,15 @@ def family_counts(rows: list[dict]) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def reasonless_call(row: dict) -> bool:
+    """A tool call with no explanation before it. R3 (v26): such targets were 36% of R2 but the trained student
+    dropped its reasoning before every call and lost the transfer families; R3b can exclude them."""
+    target = row.get('target') or {}
+    return bool(target.get('tool_calls')) and not (target.get('content') or '').strip()
+
+
 def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.1,
-          seed: int = CAP_SEED) -> dict:
+          seed: int = CAP_SEED, require_reasoning: bool = False, replay: list[Path] = ()) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     rows, inputs = [], []
     for path in sft_paths:
@@ -104,10 +111,15 @@ def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.
         rows += loaded
 
     dropped = {'guidance_remnant': 0, 'duplicate': 0, 'cap': 0}
+    if require_reasoning:
+        dropped['no_reasoning'] = 0
     kept, seen = [], set()
     for row in rows:
         if has_guidance(row.get('messages')):
             dropped['guidance_remnant'] += 1
+            continue
+        if require_reasoning and reasonless_call(row):
+            dropped['no_reasoning'] += 1
             continue
         key = sample_key(row.get('messages'), row.get('target'))
         if key in seen:
@@ -146,6 +158,14 @@ def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.
         splits['val' if row['task_id'] in val_tasks else 'train'].append(row)
     for name in splits:
         splits[name].sort(key=lambda row: (row['family'], row['task_id'], int(row.get('attempt') or 0)))
+    # Replay rows (replay_data.py: other domains, no task ids, never eval data) go to train only.
+    replay_inputs = []
+    for path in replay:
+        loaded = read_rows(path)
+        if any(not str(row.get('family', '')).startswith('replay_') for row in loaded):
+            raise SystemExit(f'{path}: replay rows must have a replay_* family')
+        replay_inputs.append({'path': str(path), 'sha256': sha256_file(path), 'rows': len(loaded)})
+        splits['train'] += loaded
 
     for name, split_rows in splits.items():
         with (out / f'{name}.jsonl').open('w') as handle:
@@ -154,6 +174,8 @@ def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.
 
     stats = {
         'inputs': inputs,
+        'replay_inputs': replay_inputs,
+        'require_reasoning': require_reasoning,
         'cap': cap,
         'val_frac': val_frac,
         'cap_seed': seed,
@@ -161,7 +183,8 @@ def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.
         'dropped': dropped,
         'rows_out': {name: len(split_rows) for name, split_rows in splits.items()},
         'rows': {name: family_counts(split_rows) for name, split_rows in splits.items()},
-        'tasks': {name: len({row['task_id'] for row in split_rows}) for name, split_rows in splits.items()},
+        'tasks': {name: len({row['task_id'] for row in split_rows if 'task_id' in row})
+                  for name, split_rows in splits.items()},
         'sha256': {f'{name}.jsonl': sha256_file(out / f'{name}.jsonl') for name in splits},
     }
     (out / 'data-stats.json').write_text(json.dumps(stats, indent=1, ensure_ascii=False))
@@ -174,6 +197,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--cap', type=int, default=600, help='maximum rows kept per family')
     parser.add_argument('--val-frac', type=float, default=0.1)
+    parser.add_argument('--require-reasoning', action='store_true',
+                        help='drop tool-call targets with no explanation text (R3b)')
+    parser.add_argument('--replay', type=Path, action='append', default=[],
+                        help='replay rows (replay_data.py output), appended to train only')
     return parser
 
 
@@ -184,7 +211,8 @@ def main(argv=None) -> None:
         parser.error('--cap must be positive')
     if not 0.0 <= args.val_frac <= 1.0:
         parser.error('--val-frac must be between 0 and 1')
-    stats = build(args.sft, args.out, args.cap, args.val_frac)
+    stats = build(args.sft, args.out, args.cap, args.val_frac, require_reasoning=args.require_reasoning,
+                  replay=args.replay)
     print(json.dumps({key: stats[key] for key in ('rows_out', 'tasks', 'dropped')}, ensure_ascii=False), flush=True)
 
 
