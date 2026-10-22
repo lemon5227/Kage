@@ -557,6 +557,15 @@ class StreamLearner:
 
 
 # ---------------------------------------------------------------------- real wiring
+def browser_interface() -> dict:
+    """C4 interface arms from the environment (Kaggle sets them per job): KAGE_BROWSER_OBS=compact-v1|compact-v2,
+    KAGE_BROWSER_PACK=1 (student context packing), KAGE_BROWSER_STATE=1 (page_state table). Unset = the v1 protocol."""
+    import os
+    return {'observation_format': os.environ.get('KAGE_BROWSER_OBS', 'compact-v1'),
+            'pack_context': os.environ.get('KAGE_BROWSER_PACK') == '1',
+            'state_table': os.environ.get('KAGE_BROWSER_STATE') == '1'}
+
+
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,
                  max_model_calls=6, max_steps=5, max_tool_actions=12, timeout_s=150,
                  tool_max_tokens=1024, mode='plain', memory: MemoryStore | None = None, playbook=None,
@@ -606,7 +615,8 @@ def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runn
             shown[:] = lessons
         kwargs = dict(model_label='teacher' if cloud else 'student', provider_mode='cloud' if cloud else 'live',
                       max_model_calls=call_cap, agentic_loop_cls=browser_loop, max_loop_steps=min(step_cap, call_cap),
-                      settle_saves=True, extra_guidance=playbook.render(lessons) if lessons else '')
+                      settle_saves=True, extra_guidance=playbook.render(lessons) if lessons else '',
+                      **browser_interface())
         demonstration = memory.retrieve(task['instruction']) if mode == 'memory' else []
         chain = cls(model_factory(run_id), task, **kwargs)
         if demonstration:

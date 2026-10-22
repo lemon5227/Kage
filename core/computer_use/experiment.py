@@ -117,7 +117,7 @@ class BrowserChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,settle_saves=None,**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,settle_saves=None,pack_context=False,state_table=False,**kwargs):
         if observation_format not in {'compact-v1', 'compact-v2'}:
             raise ValueError('unsupported browser observation format')
         super().__init__(model_provider,**kwargs)
@@ -129,6 +129,11 @@ class BrowserChainProvider(KageChainProvider):
             raise ValueError('max_loop_steps must be a positive integer within max_model_calls')
         self.max_loop_steps=max_loop_steps
         self.observation_format=observation_format
+        # C4 interface arms (default off, so earlier protocols and cache identities are unchanged):
+        # pack_context keeps only the latest full DOM in the student's context (older ones archived),
+        # state_table adds page_state (every toggle on/off, every field value) to each observation.
+        self.pack_context=bool(pack_context)
+        self.state_table=bool(state_table)
         self.task_def=json.loads(json.dumps(task_def))
         self.external_completion=bool(external_completion)
         # Wait (<=1 s) for a clicked save to reach the page before checking; stream runs use it
@@ -144,12 +149,17 @@ class BrowserChainProvider(KageChainProvider):
                      for item in self.browser_skill_catalog.search('',limit=3)['skills']]
             soul+='\nBrowser reusable skill preview (descriptors only): '+json.dumps(preview,ensure_ascii=False,separators=(',',':'))
             soul+='\nIf a preview matches the goal, invoke skill_call with its digest and required arguments before manual actions; otherwise search.\n'
+        if self.state_table:
+            soul+='\npage_state in each observation lists every checkbox/radio as on/off and every text field with its current value; compare it with the goal before clicking and before saving.\n'
         if self.extra_guidance:
             soul+='\n'+self.extra_guidance
         return soul
 
+    def _interface(self):
+        return {key:True for key in ('pack_context','state_table') if getattr(self,key)}
+
     def cache_identity(self):
-        return {**super().cache_identity(),'browser_task':self.task_def,'external_completion':self.external_completion,
+        return {**super().cache_identity(),**self._interface(),'browser_task':self.task_def,'external_completion':self.external_completion,
                 'observation_format':self.observation_format,'primary_actor':self.primary_actor,
                 'max_loop_steps':self._primary_step_limit(),'settle_saves':self.settle_saves,
                 'browser_skill_digests':self.browser_skill_catalog.digests if self.browser_skill_catalog is not None else {},
@@ -158,7 +168,7 @@ class BrowserChainProvider(KageChainProvider):
                 'environment_sha256':hashlib.sha256(Path(__file__).with_name('task_environment.py').read_bytes()).hexdigest()}
 
     def metadata(self):
-        return {**super().metadata(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.settle_saves else 0,
+        return {**super().metadata(),**self._interface(),'external_completion':self.external_completion,'save_settle_timeout_s':1 if self.settle_saves else 0,
                 'observation_format':self.observation_format,'primary_actor':self.primary_actor,
                 'max_loop_steps':self._primary_step_limit(),'agentic_loop_max_steps':self._primary_step_limit(),
                 'tool_registry':'ToolRegistry(page-scoped browser and workflow tools)' if self.browser_skill_catalog is not None else 'ToolRegistry(page-scoped browser tools only)',
@@ -230,6 +240,9 @@ class BrowserChainProvider(KageChainProvider):
         return student
 
     def _actor_model(self,model,actor,workspace):
+        if self.pack_context:
+            from core.computer_use.context_pack import BrowserContextProvider
+            return BrowserContextProvider(model,workspace,trace_name='student-context-pack.jsonl')
         return model
 
     async def _run(self,task,step,history,workspace):
@@ -245,7 +258,7 @@ class BrowserChainProvider(KageChainProvider):
                     context=await browser.new_context()
                     page=await context.new_page();await page.goto(url,wait_until='domcontentloaded',timeout=10000)
                     atomic_json(workspace/'worker-processes.json',descendant_pids(os.getpid()))
-                    adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True,compact_format=self.observation_format)
+                    adapter=BrowserAdapter(page,trace_path=workspace/'browser.jsonl',compact_observations=True,compact_format=self.observation_format,state_table=self.state_table)
                     quota=BrowserPrimitiveQuota(16)
                     registry=ToolRegistry();adapter.register_tools(registry,quota=quota)
                     executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.settle_saves)

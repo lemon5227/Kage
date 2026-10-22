@@ -64,9 +64,23 @@ TARGET_DEFAULTS = {
 }
 
 
+def page_state(targets):
+    """C4: the page's control state in one place (from the full snapshot, so unchecked boxes are explicit):
+    every checkbox/radio as on/off and every text field with its current value."""
+    toggles, fields = [], []
+    for target in targets:
+        label = target.get('label') or target.get('name') or target['target_ref']
+        if target.get('input_type') in {'checkbox', 'radio'}:
+            toggles.append(f"{label}: {'on' if target.get('checked') else 'off'}")
+        elif 'fill' in (target.get('operations') or []):
+            fields.append(f"{label} = {json.dumps(target.get('value') or '', ensure_ascii=False)}")
+    return {'toggles': toggles, 'fields': fields}
+
+
 class BrowserAdapter:
     """One owned Page, one current observation; no global browser or selector API."""
-    def __init__(self, page, trace_path=None, *, compact_observations=False, compact_format='compact-v1'):
+    def __init__(self, page, trace_path=None, *, compact_observations=False, compact_format='compact-v1',
+                 state_table=False):
         if compact_format not in {'compact-v1', 'compact-v2'}:
             raise ValueError('unsupported compact observation format')
         self.page = page
@@ -75,6 +89,7 @@ class BrowserAdapter:
         self.current = None
         self.compact_observations = compact_observations
         self.compact_format = compact_format
+        self.state_table = state_table
         self._lock = asyncio.Lock()
 
     def _model_observation(self):
@@ -87,7 +102,10 @@ class BrowserAdapter:
                     or (self.compact_format == 'compact-v2' and key == 'checked'
                         and target.get('input_type') in {'checkbox', 'radio'})}
                    for target in self.current['targets']]
-        return {**self.current, 'targets': targets, 'observation_format': self.compact_format}
+        observation = {**self.current, 'targets': targets, 'observation_format': self.compact_format}
+        if self.state_table:
+            observation['page_state'] = page_state(self.current['targets'])
+        return observation
 
     def _record(self, phase, start, **data):
         row = {'phase':phase,'elapsed_ms':round((time.monotonic()-start)*1000,3),**data}

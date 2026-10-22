@@ -157,6 +157,9 @@ def main():
         config['eval_only'] = args.eval_only
     if args.skill_runner != 'docker':
         config['skill_runner'] = args.skill_runner
+    from core.evolution.stream import browser_interface
+    if browser_interface() != {'observation_format': 'compact-v1', 'pack_context': False, 'state_table': False}:
+        config['browser_interface'] = browser_interface()   # C4 arms; absent = the frozen v1 protocol
     if os.environ.get('KAGE_LORA'):              # P4-L3: the student runs with a LoRA adapter
         from local_service import file_hash
         config['student']['lora'] = {'path': os.environ['KAGE_LORA'], 'sha256': file_hash(os.environ['KAGE_LORA']),
