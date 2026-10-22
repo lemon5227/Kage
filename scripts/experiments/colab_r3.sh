@@ -10,8 +10,11 @@
 #   bash colab_r3.sh train         same in the background (only if the tab stays active)
 #   bash colab_r3.sh status        last progress lines of the real training
 set -u
+# Update the checkout BEFORE running: bash reads a script while executing it, so a `git pull` from inside this
+# file would run a mix of old and new lines (10-22: the Drive copy step silently did not run). Call it as
+#   !git -C /content/Kage pull -q; bash /content/Kage/scripts/experiments/colab_r3.sh run
 [ -d /content/Kage ] || git clone -q -b dev --depth 1 https://github.com/lemon5227/Kage.git /content/Kage
-cd /content/Kage && git pull -q
+cd /content/Kage
 export KAGE_WORK=/content/work KAGE_TOOLS=/content/tools
 KEY='^\{"step"|lora_b_max_abs|falling back|Error|failed|packaged'
 for action in "$@"; do
