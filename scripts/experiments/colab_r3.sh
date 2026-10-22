@@ -6,6 +6,7 @@
 #                                  a background job leaves the cell idle and Colab recycles the VM after
 #                                  ~1 h idle, losing /content (10-22: a finished adapter was lost that way).
 #                                  Put files.download('/content/work/r3-adapter.tar.gz') in the same cell.
+#                                  With Drive mounted at /content/drive it also copies to MyDrive/kage/.
 #   bash colab_r3.sh train         same in the background (only if the tab stays active)
 #   bash colab_r3.sh status        last progress lines of the real training
 set -u
@@ -19,7 +20,12 @@ for action in "$@"; do
     smoke) KAGE_PHASE="r3-train smoke" python scripts/experiments/kaggle_e1.py > /content/smoke.log 2>&1
            echo "exit $?"; grep -E "$KEY" /content/smoke.log ;;
     run) KAGE_PHASE=r3-train python scripts/experiments/kaggle_e1.py > /content/train.log 2>&1
-         echo "exit $?"; grep -E "$KEY|\"epoch\"" /content/train.log | tail -8 ;;
+         echo "exit $?"; grep -E "$KEY|\"epoch\"" /content/train.log | tail -8
+         # keep a copy on the user's Google Drive when it is mounted (survives a recycled VM)
+         if [ -d /content/drive/MyDrive ]; then
+           mkdir -p /content/drive/MyDrive/kage && cp /content/work/r3-adapter.tar.gz /content/train.log /content/drive/MyDrive/kage/ \
+             && echo "copied to Google Drive: MyDrive/kage/"
+         fi ;;
     train) nohup env KAGE_PHASE=r3-train python scripts/experiments/kaggle_e1.py > /content/train.log 2>&1 &
            echo "started pid $!" ;;
     status) grep -E "$KEY|\"epoch\"" /content/train.log | tail -6; nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv ;;
