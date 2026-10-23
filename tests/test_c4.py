@@ -55,3 +55,28 @@ def test_c4_jobs_cover_four_arms_three_runs_with_distinct_ports():
     assert env['web-V1-r1'] == {'KAGE_CTX': kaggle_e1.BROWSER_CTX}
     assert env['web-V2PKST-r3']['KAGE_BROWSER_STATE'] == '1' and env['web-V2-r2']['KAGE_BROWSER_OBS'] == 'compact-v2'
     assert all('eval/stream_web_v1/eval.json' in ' '.join(argv) for _, argv, _ in jobs)
+
+
+def test_adapter_eval_finds_final_and_epoch_adapters_and_builds_jobs(tmp_path, monkeypatch):
+    base = tmp_path / 'input' / 'datasets' / 'u' / 'kage-r3b-adapter' / 'r3b-adapter'
+    base.mkdir(parents=True)
+    (base / 'adapter.gguf').write_bytes(b'a')
+    (base / 'adapter-epoch1.gguf').write_bytes(b'b')
+    monkeypatch.setattr(kaggle_e1, 'INPUT', tmp_path / 'input')
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
+    adapters = kaggle_e1.input_adapters(['r3b'])
+    assert set(adapters) == {'r3b', 'r3be1'}
+    jobs, general = kaggle_e1.adapter_eval_jobs(adapters)
+    names = [name for name, _, _ in jobs]
+    assert len(jobs) == 2 * (3 + 3 + 1) and 'file-A0-r1' in names and 'web-r3be1-r3' in names
+    assert len({argv[-1] for _, argv, _ in jobs + general}) == len(jobs) + len(general)
+    assert [g[0] for g in general] == ['general-r3b']
+    env = {name: e for name, _, e in jobs}
+    assert env['file-A0-r1'] == {} and env['web-r3b-r1']['KAGE_LORA'].endswith('adapter.gguf')
+
+
+def test_adapter_eval_without_a_final_adapter_stops(tmp_path, monkeypatch):
+    monkeypatch.setattr(kaggle_e1, 'INPUT', tmp_path)
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
+    with pytest.raises(SystemExit):
+        kaggle_e1.input_adapters(['r3c'])

@@ -862,6 +862,40 @@ def _latest_checkpoints(root: Path) -> list[dict]:
     return list(latest.values())
 
 
+def input_adapters(tags: list[str]) -> dict[str, Path]:
+    """{arm: gguf} for each tag's final adapter ('<tag>') and epoch-1 adapter ('<tag>e1') in the input datasets."""
+    found = {}
+    for tag in tags:
+        for arm, name in ((tag, 'adapter.gguf'), (f'{tag}e1', 'adapter-epoch1.gguf')):
+            hits = sorted(INPUT.glob(f'**/{tag}-adapter/{name}'))
+            if hits:
+                found[arm] = hits[0]
+                log('input adapter', arm=arm, path=str(hits[0]), sha256=sha256(hits[0]))
+    if not any(arm in found for arm in tags):
+        log('adapter-eval: no final adapter found in the inputs', tags=tags)
+        raise SystemExit(1)
+    return found
+
+
+def adapter_eval_jobs(adapters: dict[str, Path], n: int = R3_RUNS):
+    """n runs per adapter per eval set + one A0 anchor per set; general check for each final adapter and A0."""
+    script, jobs, port = 'scripts/experiments/stream_run.py', [], 19000
+    arms = [(arm, {'KAGE_LORA': str(path)}, n) for arm, path in adapters.items()] + [('A0', {}, 1)]
+    for kind, manifest in (('file', ROOT / 'eval' / 'stream_v1'), ('web', ROOT / 'eval' / 'stream_web_v1')):
+        for arm, env, runs in arms:
+            for index in range(1, runs + 1):
+                jobs.append((f'{kind}-{arm}-r{index}', [
+                    script, '--arm', 'A0', '--root', str(OUT / 'ae' / kind / f'{arm}-r{index}'), '--eval-only', 'cp0',
+                    '--stream-manifest', str(manifest / 'stream-seed1.json'), '--eval-manifest', str(manifest / 'eval.json'),
+                    '--skill-runner', 'process', '--port', str(port)],
+                    dict(env, **({'KAGE_CTX': BROWSER_CTX} if kind == 'web' else {}))))
+                port += 1
+    general = [(f'general-{arm}', ['scripts/experiments/general_check.py', '--root', str(OUT / 'ae' / 'general' / arm),
+                                   '--port', str(19090 + i)], {'KAGE_LORA': str(path)})
+               for i, (arm, path) in enumerate(p for p in adapters.items() if not p[0].endswith('e1'))]
+    return jobs, general
+
+
 C4_ARMS = {                               # name -> interface environment (see core.evolution.stream.browser_interface)
     'V1': {},
     'V2': {'KAGE_BROWSER_OBS': 'compact-v2'},
@@ -953,7 +987,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3-eval', 'r3-scale', 'c4', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -982,7 +1016,7 @@ def main(argv=None):
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
                                  'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
-                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4')
+                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval')
     if args.phase == 'r3-train':
         r3_train_only(smoke='smoke' in (only or []))
         return
@@ -992,7 +1026,8 @@ def main(argv=None):
     if args.phase == 'r3c-train':
         r3c_train_only(smoke='smoke' in (only or []))
         return
-    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4'))
+    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4',
+                                                    'adapter-eval'))
             if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
@@ -1048,6 +1083,23 @@ def main(argv=None):
             root = OUT / 'rsr' / name.removeprefix('rsr-')
             done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(root)], cwd=ROOT, capture_output=True, text=True)
             log('rsr build', job=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'adapter-eval':
+        # R3b/R3c (10-23): Colab-trained adapters from input datasets, e.g. kaggle_phase "adapter-eval r3b r3c";
+        # final and epoch-1 adapter of each tag, 3 runs per eval set, one A0 anchor, general check per final adapter.
+        adapters = input_adapters(only or ['r3b'])
+        browser_setup()
+        jobs, general = adapter_eval_jobs(adapters)
+        run_jobs(info, jobs + general, 'adapter-eval')
+        summary = r3_summary(jobs)
+        summary['general'] = r3_general_summary(general)
+        (OUT / 'ae').mkdir(parents=True, exist_ok=True)
+        (OUT / 'ae' / 'summary.json').write_text(json.dumps(summary, indent=1))
+        log('adapter-eval summary', passed={kind: {run: f"{row.get('passed')}/{row.get('total')}" for run, row in runs.items()}
+                                            for kind, runs in summary.items()})
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
