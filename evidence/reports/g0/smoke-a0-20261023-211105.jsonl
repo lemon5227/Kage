@@ -1,0 +1,2 @@
+{"task_id": "calc_add", "family": "calculator", "run": 1, "arm": "a0", "agent": {"stop": "no_tool_call", "tool_calls": 3, "actions": 0, "steps": 4}, "check": {"passed": false, "display": "0", "previous_expression": "", "computed": false}, "cleanup": {"conversion_restored": true}, "seconds": 42.0}
+{"task_id": "set_icon_size", "family": "settings_read", "run": 1, "arm": "a0", "agent": {"stop": "answer", "tool_calls": 1, "actions": 0, "steps": 1}, "check": {"passed": true, "answer": "中", "truth": "中"}, "cleanup": {}, "seconds": 17.4}

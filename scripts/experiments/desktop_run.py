@@ -210,6 +210,7 @@ class Tools:
         try:
             if name == 'press':
                 ref = str(arguments.get('ref', ''))
+                ref = self.ax.resolve(ref) or ref
                 if self.task['family'] == 'settings_read':
                     item = next((i for i in self.ax._items if i.get('ref') == ref), {})
                     if not str(item.get('id', '')).startswith(self.task.get('press_ids') or '\0'):

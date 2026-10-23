@@ -179,9 +179,22 @@ class DesktopAX:
                 'menus': [list(m) for m in self.menus]}
 
     # --- actions -----------------------------------------------------------------------------------
+    def resolve(self, ref):
+        """A ref, or a control's id or unique label (the 4B student reached for `id=One` on its first G0 run)."""
+        if ref in self._handles:
+            return ref
+        for key in ('id', 'label'):
+            matches = [item['ref'] for item in self._items if item.get('ref') and item.get(key) == ref]
+            if len(matches) == 1:
+                return matches[0]
+        return None
+
     def _target(self, ref, operation):
-        if ref not in self._handles:
-            raise StaleRef(f'{ref} is not in the latest observation')
+        resolved = self.resolve(ref)
+        if resolved is None:
+            example = next((f"[{i['ref']}] for \"{i.get('label') or i.get('id')}\"" for i in self._items if i.get('ref')), '')
+            raise StaleRef(f'{ref} is not a ref in the latest observation; pass the bracketed ref, e.g. {example}')
+        ref = resolved
         element, role = self._handles[ref]
         if self._get(element, 'AXRole') != role:
             raise StaleRef(f'{ref} no longer exists; use the new observation')
