@@ -1,0 +1,23 @@
+{
+  "arm": "a0",
+  "runs": 3,
+  "tasks": [
+    "te_append",
+    "te_write",
+    "te_append2",
+    "te_write2"
+  ],
+  "manifest": "desktop-v1",
+  "lessons": {
+    "textedit": [
+      "Before editing a document's text, read its full current contents and preserve every character, including trailing whitespace and line breaks; never retype the content from memory.",
+      "Always ensure the document ends with a trailing newline when the required format specifies one, and verify the saved file content matches the expected format exactly before finishing.",
+      "Always ensure the document ends with a trailing newline after the final line before saving, since the checker requires each line to be newline-terminated."
+    ],
+    "calculator": [
+      "When an expression mixes addition and multiplication, press Equals after the addition to resolve that part before entering the multiplication, or otherwise ensure the grouping you intend is actually applied."
+    ]
+  },
+  "lesson_mode": "plan",
+  "interface": "v3"
+}

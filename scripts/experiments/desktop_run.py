@@ -46,12 +46,25 @@ TOOLS = {
     'activate': ('Bring the application to the front.', {}, []),
     'menu': ('Run an allowed menu command, e.g. menu="文件", item="保存".',
              {'menu': {'type': 'string'}, 'item': {'type': 'string'}}, ['menu', 'item']),
+    'replace_text': ('In a text field or text area, replace one exact piece of its current text (must occur exactly once) '
+                     'with new text; everything else is kept as it is.',
+                     {'ref': {'type': 'string'}, 'old': {'type': 'string'}, 'new': {'type': 'string'}}, ['ref', 'old', 'new']),
+    'append_text': ('Add text at the very end of a text field or text area; the existing text is kept as it is.',
+                    {'ref': {'type': 'string'}, 'text': {'type': 'string'}}, ['ref', 'text']),
+    'append_lines': ('Add lines at the end of a text area; each given line is written followed by a line break. '
+                     'The existing text is kept as it is.',
+                     {'ref': {'type': 'string'}, 'lines': {'type': 'array', 'items': {'type': 'string'}}}, ['ref', 'lines']),
+    'set_lines': ('Replace the whole text of a text area with the given lines; each line is written followed by a '
+                  'line break.', {'ref': {'type': 'string'}, 'lines': {'type': 'array', 'items': {'type': 'string'}}},
+                  ['ref', 'lines']),
     'observe': ('Observe the window again.', {}, []),
     'answer': ('Give the final answer to the question and end the task.', {'text': {'type': 'string'}}, ['text']),
     'done': ('End the task when it is complete.', {}, []),
 }
 FAMILY_TOOLS = {'calculator': ['press', 'observe', 'done'],
                 'textedit': ['fill', 'activate', 'menu', 'observe', 'done'],
+                'textedit-v3': ['fill', 'replace_text', 'append_text', 'activate', 'menu', 'observe', 'done'],
+                'textedit-v4': ['replace_text', 'append_lines', 'set_lines', 'activate', 'menu', 'observe', 'done'],
                 'settings_read': ['observe', 'answer']}
 ON = {'on', 'yes', 'true', 'enabled', '开', '开启', '打开', '是', '已开启'}
 OFF = {'off', 'no', 'false', 'disabled', '关', '关闭', '否', '未开启'}
@@ -196,7 +209,9 @@ class Tools:
 
     def __init__(self, ax, task):
         self.ax, self.task, self.final, self.actions = ax, task, None, 0
-        self.allowed = FAMILY_TOOLS[task['family']] + (['press'] if task.get('press_ids') else [])
+        suffix = f'-{INTERFACE}'
+        family = task['family'] + (suffix if task['family'] + suffix in FAMILY_TOOLS else '')
+        self.allowed = FAMILY_TOOLS[family] + (['press'] if task.get('press_ids') else [])
 
     def observation(self):
         observation = self.ax.snapshot()
@@ -220,6 +235,31 @@ class Tools:
                 self.ax.press(ref)
             elif name == 'fill':
                 self.ax.fill(str(arguments.get('ref', '')), arguments.get('text', ''))
+            elif name in ('replace_text', 'append_text', 'append_lines', 'set_lines'):
+                # Interface v3 (G0): edits that keep the rest of the text, so the student never retypes a document
+                # (v2: 7/9 TextEdit failures dropped the final newline or wrote a literal \\n while retyping).
+                ref = self.ax.resolve(str(arguments.get('ref', ''))) or str(arguments.get('ref', ''))
+                current = next((i.get('state') for i in self.ax._items if i.get('ref') == ref), None)
+                if not isinstance(current, str):
+                    return 'error: that ref is not a text field in the latest observation\n' + self.observation()
+                lines = arguments.get('lines')
+                if name in ('append_lines', 'set_lines') and not (isinstance(lines, list) and all(isinstance(x, str) for x in lines)):
+                    return 'error: lines must be a list of strings\n' + self.observation()
+                if name == 'append_lines':
+                    # Interface v4: line breaks are written by the program; the 4B student could not emit them
+                    # reliably in JSON arguments (v3: dropped final newlines, or a literal "\\n" from over-escaping).
+                    updated = (current if not current or current.endswith('\n') else current + '\n') + ''.join(x + '\n' for x in lines)
+                elif name == 'set_lines':
+                    updated = ''.join(x + '\n' for x in lines)
+                elif name == 'append_text':
+                    updated = current + str(arguments.get('text', ''))
+                else:
+                    old = str(arguments.get('old', ''))
+                    if not old or current.count(old) != 1:
+                        return (f'error: the old text occurs {current.count(old) if old else 0} times; it must occur exactly '
+                                'once\n' + self.observation())
+                    updated = current.replace(old, str(arguments.get('new', '')))
+                self.ax.fill(ref, updated)
             elif name == 'activate':
                 self.ax.activate()
             elif name == 'menu':
@@ -240,6 +280,7 @@ class Tools:
 
 
 LESSON_MODE = 'system'
+INTERFACE = 'v2'
 
 
 def system_prompt(task, lessons):
@@ -402,6 +443,8 @@ def main(argv=None):
     p.add_argument('--arm', choices=['oracle', 'a0', 'teach'], default='oracle')
     p.add_argument('--split', choices=['train', 'test', 'all'], default='train')
     p.add_argument('--lessons', type=Path, default=None)
+    p.add_argument('--interface', choices=['v2', 'v3', 'v4'], default='v2',
+                   help='TextEdit tools: v3 adds replace_text/append_text; v4 = replace_text + line-based append/set (no fill)')
     p.add_argument('--lesson-mode', choices=['system', 'plan', 'plan-only'], default='system')
     p.add_argument('--from', dest='source', type=Path, default=None, help='teach: the a0 results directory')
     p.add_argument('--runs', type=int, default=1)
@@ -415,13 +458,13 @@ def main(argv=None):
     if args.arm == 'teach':
         return teach(args.source, {t['task_id']: t for t in manifest['tasks']})
     lessons = json.loads(args.lessons.read_text()) if args.lessons else None
-    global LESSON_MODE
-    LESSON_MODE = args.lesson_mode
+    global LESSON_MODE, INTERFACE
+    LESSON_MODE, INTERFACE = args.lesson_mode, args.interface
     out = args.out or WORK / f"{args.arm}-{time.strftime('%Y%m%d-%H%M%S')}"
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / 'config.json', {'arm': args.arm, 'runs': args.runs, 'tasks': [t['task_id'] for t in tasks],
                                      'manifest': manifest['version'], 'lessons': lessons, 'lesson_mode': args.lesson_mode,
-                                     'interface': 'v2'})
+                                     'interface': args.interface})
     import contextlib
     service, model = contextlib.nullcontext(), None
     if args.arm == 'a0':

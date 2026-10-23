@@ -1,0 +1,16 @@
+{
+  "arm": "a0",
+  "runs": 3,
+  "tasks": [
+    "te_fix",
+    "te_append",
+    "te_write",
+    "te_fix2",
+    "te_append2",
+    "te_write2"
+  ],
+  "manifest": "desktop-v1",
+  "lessons": null,
+  "lesson_mode": "system",
+  "interface": "v3"
+}
