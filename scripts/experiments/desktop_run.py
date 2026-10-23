@@ -239,16 +239,34 @@ class Tools:
             return f'error: {type(exc).__name__}: {exc}\n' + self.observation()
 
 
+LESSON_MODE = 'system'
+
+
 def system_prompt(task, lessons):
     learned = (lessons or {}).get(task['family'], [])
-    if not learned:
+    if not learned or LESSON_MODE != 'system':
         return SYSTEM
     return SYSTEM + '\n\nLessons learned from earlier tasks in this app (follow them):\n' + '\n'.join(f'- {x}' for x in learned)
 
 
+def user_lessons(task, lessons):
+    """lesson-mode `plan`: lessons next to the task, and the student must say how each applies before acting
+    (in G0 the 4B student ignored the same lessons placed in the system prompt: 3/15 with and without)."""
+    if LESSON_MODE == 'plan-only':                     # control: the same planning request, no lessons
+        return ('\n\nBefore your first action, write a short plan for this task (for example the exact text or the '
+                'exact button order you will use). Then follow the plan.')
+    learned = (lessons or {}).get(task['family'], [])
+    if not learned or LESSON_MODE != 'plan':
+        return ''
+    return ('\n\nLessons from your earlier attempts at this kind of task:\n' + '\n'.join(f'- {x}' for x in learned)
+            + '\nBefore your first action, write a short plan that says how each lesson applies to this task '
+              '(for example the exact text or the exact button order you will use). Then follow the plan.')
+
+
 def run_agent(model, tools, task, trace, max_tokens=400, lessons=None):
     messages = [{'role': 'system', 'content': system_prompt(task, lessons)},
-                {'role': 'user', 'content': task['instruction'] + '\n\nCurrent observation:\n' + tools.observation()}]
+                {'role': 'user', 'content': task['instruction'] + user_lessons(task, lessons)
+                 + '\n\nCurrent observation:\n' + tools.observation()}]
     schemas = tool_schemas(tools.allowed)
     stop, calls, nudged = 'max_steps', 0, False
     for step in range(task['max_steps']):
@@ -384,6 +402,7 @@ def main(argv=None):
     p.add_argument('--arm', choices=['oracle', 'a0', 'teach'], default='oracle')
     p.add_argument('--split', choices=['train', 'test', 'all'], default='train')
     p.add_argument('--lessons', type=Path, default=None)
+    p.add_argument('--lesson-mode', choices=['system', 'plan', 'plan-only'], default='system')
     p.add_argument('--from', dest='source', type=Path, default=None, help='teach: the a0 results directory')
     p.add_argument('--runs', type=int, default=1)
     p.add_argument('--tasks', default='')
@@ -396,10 +415,13 @@ def main(argv=None):
     if args.arm == 'teach':
         return teach(args.source, {t['task_id']: t for t in manifest['tasks']})
     lessons = json.loads(args.lessons.read_text()) if args.lessons else None
+    global LESSON_MODE
+    LESSON_MODE = args.lesson_mode
     out = args.out or WORK / f"{args.arm}-{time.strftime('%Y%m%d-%H%M%S')}"
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / 'config.json', {'arm': args.arm, 'runs': args.runs, 'tasks': [t['task_id'] for t in tasks],
-                                     'manifest': manifest['version'], 'lessons': lessons, 'interface': 'v2'})
+                                     'manifest': manifest['version'], 'lessons': lessons, 'lesson_mode': args.lesson_mode,
+                                     'interface': 'v2'})
     import contextlib
     service, model = contextlib.nullcontext(), None
     if args.arm == 'a0':
