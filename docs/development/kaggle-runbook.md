@@ -57,6 +57,10 @@
 !cd /content/Kage && KAGE_WORK=/content/work KAGE_TOOLS=/content/tools KAGE_PHASE="r3-train smoke" python scripts/experiments/kaggle_e1.py
 ```
 推荐用 `scripts/experiments/colab_r3.sh`（`fla smoke` → `train` → `status`；Colab 编辑器会自动补全括号，长命令容易被改坏）。A100 上装 `flash-linear-attention` 后线性注意力约快 5 倍，结果一致。先跑 `r3-train smoke`（最长 4 条样本、2 步，检查显存），通过后 `KAGE_PHASE=r3-train` 正式训练。产物 `/content/work/r3-adapter.tar.gz` 下载后用 Kaggle CLI 建数据集，在笔记本里 Add Input，再把 `kaggle_phase` 设为 `r3-eval`。计算单元只用于训练，不在 Colab 上调试。
+- **挂载 Drive 用左侧“文件”面板的“装载 Google 云端硬盘”按钮，不在单元格里写 `drive.mount()`**（10-23）：代码挂载的授权只对当前虚拟机有效，每次新运行时都会弹独立的 Google 账号窗口（Claude 点不到，超时即 `mount failed`）；文件面板挂载是笔记本级授权（“直到访问权限被撤消为止”），以后连接自动挂载。
+- **判断训练是否结束看 Drive 上的产物和日志，不看 Colab 终端**：终端断线后画面停在旧行（10-23 显示第 521/813 步，实际 15:06 已训完并打包，15:08 的“断开”是单元格末尾的 `runtime.unassign()`）。误判后重跑同一单元格，会在已存在的分轮目录上转换 GGUF 时报错退出——不影响已有产物，但浪费一次挂载。
+- **单元格内容用 JS 写入**：`colab.global.notebook.cells[i].setText(...)`，避开编辑器自动补全括号/吞掉开头字符；`!` 开头的单元格输出比 `print(subprocess.run(...))` 好读。
+- **精简包**：解开 `<tag>-adapter.tar.gz`，去掉 `*.safetensors` 和 `adapter*/` 目录，把 `adapter/train-*.json*` 提到顶层再打包（约 100 MB：三个 GGUF + 统计/日志），Drive 网页下载（>100 MB 会弹“无法扫描病毒”，点仍然下载），`kaggle datasets create`。
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复
