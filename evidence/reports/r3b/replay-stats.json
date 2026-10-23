@@ -1,0 +1,21 @@
+{
+ "agentnet": {
+  "trajectories": 17625,
+  "skipped_incomplete": 3884,
+  "steps_rejected": 38382,
+  "candidates": 27480,
+  "kept": 800
+ },
+ "toucan": {
+  "records": 39763,
+  "no_reasoned_call": 1147,
+  "unparsable": 80,
+  "candidates": 38536,
+  "kept": 600
+ },
+ "sha256": "fa374cbcdd9eb6e74671766f5f06c9c906832768d9247e9523d76bc73ec8c1ef",
+ "sources": {
+  "agentnet": "agentnet_win_mac_18k.jsonl",
+  "toucan": "train-00000-of-00003.parquet"
+ }
+}
