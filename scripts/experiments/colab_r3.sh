@@ -8,6 +8,11 @@
 #                                  With Drive mounted, everything is under MyDrive/kage/work and a rerun resumes.
 #   bash colab_r3.sh train         same in the background (only if the tab stays active)
 #   bash colab_r3.sh status        last progress lines of the real training
+# Compute units are billed while a runtime is attached, idle or not (A100 about 5.3 CU/h). End every training cell
+# with `from google.colab import runtime; runtime.unassign()` so the runtime is released the moment the work is done
+# (a bash subprocess cannot do it: unassign needs the notebook kernel).  Example cell:
+#   import subprocess; subprocess.run('R3PHASE=r3d-train bash /content/Kage/scripts/experiments/colab_r3.sh run', shell=True)
+#   from google.colab import runtime; runtime.unassign()
 set -u
 # Update the checkout BEFORE running: bash reads a script while executing it, so a `git pull` from inside this
 # file would run a mix of old and new lines (10-22: the Drive copy step silently did not run). Call it as
