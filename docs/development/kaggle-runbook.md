@@ -52,6 +52,8 @@
 
 ## Colab A100 训练（10-21 起，用户的 Colab Pro 计算单元）
 
+> **2026-10-24：用户的 Colab Pro 会员已退款，A100 不再可用。** 以下内容保留作记录；之后的训练只能在 Kaggle T4（约 7k token 以内的样本）或其它平台上做。训练产物（R3b–R3e 适配器）已在 Kaggle 私有数据集。
+
 ```
 !git clone -b dev --depth 1 https://github.com/lemon5227/Kage.git /content/Kage
 !cd /content/Kage && KAGE_WORK=/content/work KAGE_TOOLS=/content/tools KAGE_PHASE="r3-train smoke" python scripts/experiments/kaggle_e1.py
