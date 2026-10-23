@@ -99,7 +99,7 @@ def test_r3b_train_packages_final_and_epoch_adapters(tmp_path, monkeypatch):
 
     monkeypatch.setattr(kaggle_e1, 'lora_setup', lambda: {'converter': 'conv.py', 'hf_model': 'hf'})
     monkeypatch.setattr(kaggle_e1, 'prepare_replay', lambda: replay)
-    monkeypatch.setattr(kaggle_e1, 'prepare_r3_data', lambda extra, name: (seen.update(data_extra=extra), data)[1])
+    monkeypatch.setattr(kaggle_e1, 'prepare_r3_data', lambda extra, name, sft=None: (seen.update(data_extra=extra), data)[1])
     monkeypatch.setattr(kaggle_e1, 'r3_adapter', fake_adapter)
     monkeypatch.setattr(kaggle_e1, 'sh', fake_sh)
     kaggle_e1.r3b_train_only()
@@ -150,7 +150,7 @@ def test_r3c_wires_warmup_selection_and_training(tmp_path, monkeypatch):
     monkeypatch.setattr(kaggle_e1, 'sh', fake_sh)
     monkeypatch.setattr(kaggle_e1, 'lora_setup', lambda: {'hf_model': 'hf', 'converter': 'c'})
     monkeypatch.setattr(kaggle_e1, 'prepare_replay', lambda n, name: pool)
-    monkeypatch.setattr(kaggle_e1, 'prepare_r3_data', lambda extra, name: tmp_path / name)
+    monkeypatch.setattr(kaggle_e1, 'prepare_r3_data', lambda extra, name, sft=None: tmp_path / name)
     trained = {}
     monkeypatch.setattr(kaggle_e1, 'train_mix', lambda linfo, replay, tag, smoke: trained.update(replay=replay, tag=tag))
     kaggle_e1.r3c_train_only()
@@ -160,3 +160,31 @@ def test_r3c_wires_warmup_selection_and_training(tmp_path, monkeypatch):
     assert any(a.startswith('own=') for a in less) and any(a.startswith('task=') for a in less)
     assert len((tmp_path / 'e1' / 'r3c-own.jsonl').read_text().splitlines()) == 1   # reasonless control row dropped
     assert trained['tag'] == 'r3c' and trained['replay'].name == 'replay.jsonl'
+
+
+def test_r3d_uses_rationalized_data_and_prefers_the_less_replay(tmp_path, monkeypatch):
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
+    less = tmp_path / 'e1' / 'replay-less' / 'replay.jsonl'
+    less.parent.mkdir(parents=True)
+    less.write_text('')
+    seen = {}
+    monkeypatch.setattr(kaggle_e1, 'lora_setup', lambda: {})
+    monkeypatch.setattr(kaggle_e1, 'prepare_replay', lambda *a, **k: (_ for _ in ()).throw(AssertionError('random')))
+    monkeypatch.setattr(kaggle_e1, 'train_mix', lambda linfo, replay, tag, smoke, sft=None, control=None:
+                        seen.update(replay=replay, tag=tag, sft=sft, control=control))
+    kaggle_e1.r3d_train_only()
+    assert seen['replay'] == less and seen['tag'] == 'r3d'
+    assert seen['sft'].name == 'sft-v21-rationalized.jsonl.gz' and 'control' in seen['control'].name
+
+
+def test_rationale_filter_rejects_hint_talk_and_empty_text():
+    from scripts.experiments import rationalize
+    assert rationalize.acceptable('No matching skill was found, so I will write the implementation directly.')
+    assert not rationalize.acceptable('Following the lesson from earlier tasks, I will click Save.')
+    assert not rationalize.acceptable('')
+    row = {'messages': [{'role': 'system', 'content': 's'}, {'role': 'user', 'content': 'Fix x.py'}],
+           'target': {'role': 'assistant', 'content': '', 'tool_calls': [
+               {'type': 'function', 'function': {'name': 'read_file', 'arguments': {'path': 'x.py'}}}]}}
+    assert rationalize.reasonless(row)
+    msgs = rationalize.prompt_messages(row)
+    assert 'Fix x.py' in msgs[1]['content'] and 'read_file' in msgs[1]['content']

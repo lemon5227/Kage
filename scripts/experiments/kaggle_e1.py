@@ -669,11 +669,11 @@ R3_MAX_TOKENS = 8192
 R3_RUNS = 3
 
 
-def prepare_r3_data(extra: list[str] = (), name: str = 'r3-data') -> Path:
+def prepare_r3_data(extra: list[str] = (), name: str = 'r3-data', sft: Path | None = None) -> Path:
     """Validate the R2 samples and split them into train/val (refuses transfer families and eval seeds)."""
     data = OUT / name
     try:
-        sh([PY, R3_DATA_SCRIPT, '--sft', str(R2_DATA), '--out', str(data), *extra], cwd=ROOT)
+        sh([PY, R3_DATA_SCRIPT, '--sft', str(sft or R2_DATA), '--out', str(data), *extra], cwd=ROOT)
     except subprocess.CalledProcessError as exc:
         log('r3 data build failed', code=exc.returncode)
         raise SystemExit(1)
@@ -772,10 +772,26 @@ def r3_reasonless(row: dict) -> bool:
     return bool(target.get('tool_calls')) and not (target.get('content') or '').strip()
 
 
-def train_mix(linfo: dict, replay: Path, tag: str, smoke: bool) -> None:
+R3D_DATA = ROOT / 'evidence' / 'reports' / 'r3d'
+
+
+def r3d_train_only(smoke: bool = False) -> None:
+    """R3d on Colab: every R2 step kept, reasoning-free targets given a teacher-written rationale
+    (rationalize.py; the call itself unchanged), plus replay — the LESS selection from R3c when it exists on the
+    shared Drive work dir, otherwise the random R3b replay."""
+    linfo = lora_setup()
+    less = OUT / 'replay-less' / 'replay.jsonl'
+    replay = less if less.exists() else prepare_replay()
+    log('r3d replay', source=str(replay))
+    train_mix(linfo, replay, 'r3d', smoke, sft=R3D_DATA / 'sft-v21-rationalized.jsonl.gz',
+              control=R3D_DATA / 'sft-v21-control-rationalized.jsonl.gz')
+
+
+def train_mix(linfo: dict, replay: Path, tag: str, smoke: bool, sft: Path | None = None,
+              control: Path | None = None) -> None:
     sfx = '-smoke' if smoke else ''
-    data = prepare_r3_data(['--sft', str(R2_CONTROL), '--require-reasoning', '--replay', str(replay)],
-                           name=f'{tag}-data{sfx}')
+    data = prepare_r3_data(['--sft', str(control or R2_CONTROL), '--require-reasoning', '--replay', str(replay)],
+                           name=f'{tag}-data{sfx}', sft=sft)
     out = OUT / f'{tag}-train{sfx}'
     args = (['--smoke', '--targets', 'safe', '--max-tokens', str(R3_MAX_TOKENS)] if smoke
             else R3_TRAIN_ARGS + ['--save-epochs', '--checkpoint-every', '25'])
@@ -987,7 +1003,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1025,6 +1041,9 @@ def main(argv=None):
         return
     if args.phase == 'r3c-train':
         r3c_train_only(smoke='smoke' in (only or []))
+        return
+    if args.phase == 'r3d-train':
+        r3d_train_only(smoke='smoke' in (only or []))
         return
     info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4',
                                                     'adapter-eval'))
