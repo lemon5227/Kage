@@ -1,0 +1,559 @@
+{
+ "file": {
+  "r3d-r1": {
+   "families": {
+    "subset_selection": {
+     "passed": 5,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 3,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 1,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 33,
+   "total": 48,
+   "status": "ok"
+  },
+  "r3d-r2": {
+   "families": {
+    "subset_selection": {
+     "passed": 6,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 3,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 1,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 1,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 35,
+   "total": 48,
+   "status": "ok"
+  },
+  "r3d-r3": {
+   "families": {
+    "subset_selection": {
+     "passed": 5,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 4,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 3,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 36,
+   "total": 48,
+   "status": "ok"
+  },
+  "r3de1-r1": {
+   "families": {
+    "subset_selection": {
+     "passed": 4,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 5,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 2,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 35,
+   "total": 48,
+   "status": "ok"
+  },
+  "r3de1-r2": {
+   "families": {
+    "subset_selection": {
+     "passed": 4,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 5,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 5,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 2,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 34,
+   "total": 48,
+   "status": "ok"
+  },
+  "r3de1-r3": {
+   "families": {
+    "subset_selection": {
+     "passed": 4,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 6,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 4,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 6,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 0,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 1,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 33,
+   "total": 48,
+   "status": "ok"
+  },
+  "A0-r1": {
+   "families": {
+    "subset_selection": {
+     "passed": 0,
+     "total": 6
+    },
+    "interval_merge": {
+     "passed": 5,
+     "total": 6
+    },
+    "log_aggregation": {
+     "passed": 0,
+     "total": 6
+    },
+    "csv_transform": {
+     "passed": 1,
+     "total": 6
+    },
+    "text_normalize": {
+     "passed": 3,
+     "total": 6
+    },
+    "config_migrate": {
+     "passed": 2,
+     "total": 6
+    },
+    "read_preserve": {
+     "passed": 4,
+     "total": 4
+    },
+    "inspect_question": {
+     "passed": 4,
+     "total": 4
+    },
+    "lookalike_readonly": {
+     "passed": 4,
+     "total": 4
+    }
+   },
+   "negative_misuse": {
+    "read_preserve": 0,
+    "inspect_question": 0,
+    "lookalike_readonly": 0
+   },
+   "passed": 23,
+   "total": 48,
+   "status": "ok"
+  }
+ },
+ "web": {
+  "r3d-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 14,
+   "total": 30,
+   "status": "ok"
+  },
+  "r3d-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "r3d-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 11,
+   "total": 30,
+   "status": "ok"
+  },
+  "r3de1-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 5,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 16,
+   "total": 30,
+   "status": "ok"
+  },
+  "r3de1-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "r3de1-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 15,
+   "total": 30,
+   "status": "ok"
+  },
+  "A0-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 9,
+   "total": 30,
+   "status": "ok"
+  }
+ },
+ "general": {
+  "r3d": {
+   "passed": 27,
+   "total": 30,
+   "lora": "/kaggle/input/datasets/lemon5227/kage-r3d-adapter/r3d-adapter/adapter.gguf"
+  }
+ }
+}

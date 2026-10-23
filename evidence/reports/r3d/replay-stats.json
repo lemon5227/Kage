@@ -1,0 +1,26 @@
+{
+ "method": "LESS (Adam-direction candidates, gradient targets, count-sketch 8192 dims) + cluster cap",
+ "candidates": 10000,
+ "scored": 9963,
+ "selected": 879,
+ "clusters": 40,
+ "by_source_pool": {
+  "agentnet": 5000,
+  "toucan": 4963
+ },
+ "by_source_selected": {
+  "agentnet": 123,
+  "toucan": 756
+ },
+ "score_selected_mean": 0.006336116697639227,
+ "score_all_mean": 0.0025007005315274,
+ "per_target_mean_selected": {
+  "own": 0.005718231201171875,
+  "task": 0.005013130605220795
+ },
+ "per_target_mean_all": {
+  "own": 0.0019109704298898578,
+  "task": 0.001796493073925376
+ },
+ "seconds": 5815
+}
