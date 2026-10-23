@@ -559,11 +559,18 @@ class StreamLearner:
 # ---------------------------------------------------------------------- real wiring
 def browser_interface() -> dict:
     """C4 interface arms from the environment (Kaggle sets them per job): KAGE_BROWSER_OBS=compact-v1|compact-v2,
-    KAGE_BROWSER_PACK=1 (student context packing), KAGE_BROWSER_STATE=1 (page_state table). Unset = the v1 protocol."""
+    KAGE_BROWSER_PACK=1 (student context packing; =text also keeps text lines that only archived pages showed),
+    KAGE_BROWSER_STATE=1 (page_state table), KAGE_BROWSER_CHECK=<goals json> (pre-save checker, C4 round 2).
+    Unset = the v1 protocol; round-2 keys appear only when set, so round-1 configs are unchanged."""
     import os
-    return {'observation_format': os.environ.get('KAGE_BROWSER_OBS', 'compact-v1'),
-            'pack_context': os.environ.get('KAGE_BROWSER_PACK') == '1',
-            'state_table': os.environ.get('KAGE_BROWSER_STATE') == '1'}
+    interface = {'observation_format': os.environ.get('KAGE_BROWSER_OBS', 'compact-v1'),
+                 'pack_context': os.environ.get('KAGE_BROWSER_PACK') in ('1', 'text'),
+                 'state_table': os.environ.get('KAGE_BROWSER_STATE') == '1'}
+    if os.environ.get('KAGE_BROWSER_PACK') == 'text':
+        interface['pack_keep_text'] = True
+    if os.environ.get('KAGE_BROWSER_CHECK'):
+        interface['checker_goals'] = os.environ['KAGE_BROWSER_CHECK']
+    return interface
 
 
 def chain_runner(journal, budget, workspaces: Path, model_factory, *, skill_runner=None, cloud=False,

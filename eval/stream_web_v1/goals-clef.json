@@ -1,0 +1,86 @@
+{
+ "model": "clef",
+ "source": "eval/stream_web_v1/eval.json",
+ "goals": {
+  "stream-v1-web_prefs-11000": {
+   "Product news": "off",
+   "Weekly digest": "off",
+   "Push alerts": "unchanged",
+   "SMS notifications": "unchanged",
+   "Security alerts": "off",
+   "Email notifications": "on"
+  },
+  "stream-v1-web_prefs-11001": {
+   "Security alerts": "off",
+   "SMS notifications": "off",
+   "Weekly digest": "on",
+   "Push alerts": "off",
+   "Product news": "on",
+   "Email notifications": "unchanged"
+  },
+  "stream-v1-web_prefs-11002": {
+   "Security alerts": "off",
+   "Weekly digest": "off",
+   "Push alerts": "off",
+   "SMS notifications": "unchanged",
+   "Email notifications": "on"
+  },
+  "stream-v1-web_prefs-11003": {
+   "Email notifications": "unchanged",
+   "Product news": "on",
+   "SMS notifications": "unchanged",
+   "Weekly digest": "on",
+   "Security alerts": "on",
+   "Push alerts": "unchanged"
+  },
+  "stream-v1-web_prefs-11004": {
+   "Product news": "on",
+   "Weekly digest": "on",
+   "Security alerts": "off",
+   "Push alerts": "off",
+   "SMS notifications": "off"
+  },
+  "stream-v1-web_prefs-11005": {
+   "SMS notifications": "unchanged",
+   "Product news": "on",
+   "Email notifications": "unchanged",
+   "Security alerts": "off",
+   "Push alerts": "on"
+  },
+  "stream-v1-web_catalog-11000": {
+   "Design only": "on"
+  },
+  "stream-v1-web_catalog-11001": {
+   "Design only": "on"
+  },
+  "stream-v1-web_catalog-11002": {
+   "Business only": "on"
+  },
+  "stream-v1-web_catalog-11003": {
+   "Budget only": "on"
+  },
+  "stream-v1-web_catalog-11004": {
+   "Budget only": "on"
+  },
+  "stream-v1-web_catalog-11005": {
+   "Family only": "on"
+  },
+  "stream-v1-web_lookup-11500": {
+   "Design only": "unchanged"
+  },
+  "stream-v1-web_lookup-11502": {
+   "Design only": "unchanged"
+  },
+  "stream-v1-web_lookup-11504": {
+   "SMS notifications": "unchanged",
+   "Push alerts": "unchanged",
+   "Email notifications": "unchanged",
+   "Weekly digest": "unchanged",
+   "Security alerts": "unchanged",
+   "Product news": "unchanged"
+  },
+  "stream-v1-web_lookup-11505": {
+   "Family only": "unchanged"
+  }
+ }
+}

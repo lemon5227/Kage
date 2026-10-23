@@ -4,6 +4,7 @@ from dataclasses import asdict
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
@@ -14,7 +15,7 @@ from core.computer_use.skills import BrowserSkillCatalog,BrowserPrimitiveQuota
 from core.computer_use.task_environment import browser_task_server,checkpoint,atomic_json,unconfirmed_checkpoint
 from core.evolution.agent_provider import KageChainProvider,ExperimentIdentityStore,HistorySession,run_sync
 from core.prompt_builder import PromptBuilder
-from core.tool_executor import ToolExecutor
+from core.tool_executor import ToolExecutor,ToolResult
 from core.tool_registry import ToolRegistry
 from core.model_provider import ModelProvider,ModelCallLimitExceeded
 from core.evolution.runner import Evaluator
@@ -49,6 +50,52 @@ class CompletionGate(ModelProvider):
             self.completed=True
             raise ModelCallLimitExceeded('external task check passed; no further model request')
         return self.model.generate(**kwargs)
+
+
+SAVE_LABEL=re.compile(r'^\s*(save|apply|submit|confirm)\b',re.I)
+
+
+class PreSaveChecker:
+    """C4 round 2: before a click on a Save/Apply/Submit control, compare every checkbox on the page with the
+    request's per-item goals (on / off / unchanged-from-the-first-observation). If any is wrong, the click is not
+    dispatched and the student is told which items to fix. At most `max_blocks` refusals per run, so a disagreement
+    can never trap the student. Goals come from Clef's per-item extraction (48/48 correct on the frozen eval set)."""
+    def __init__(self,goals,adapter,workspace,max_blocks=2):
+        self.goals,self.adapter,self.workspace,self.max_blocks=goals,adapter,Path(workspace),max_blocks
+        self.initial=None;self.blocks=0
+
+    def _toggles(self):
+        current=self.adapter.current or {}
+        return {(t.get('label') or t.get('name') or ''):bool(t.get('checked'))
+                for t in current.get('targets',[]) if t.get('input_type') in {'checkbox','radio'}}
+
+    def review(self,name,arguments):
+        toggles=self._toggles()
+        if self.initial is None and toggles:
+            self.initial=dict(toggles)
+        if name!='browser_act' or (arguments or {}).get('operation')!='click' or self.blocks>=self.max_blocks:
+            return None
+        target=next((t for t in (self.adapter.current or {}).get('targets',[])
+                     if t.get('target_ref')==arguments.get('target_ref')),None)
+        text=(target or {}).get('label') or (target or {}).get('text') or (target or {}).get('name') or ''
+        if not target or not SAVE_LABEL.match(str(text)):
+            return None
+        wrong=[]
+        for label,goal in self.goals.items():
+            if label not in toggles:continue
+            want=(self.initial or {}).get(label,toggles[label]) if goal=='unchanged' else goal=='on'
+            if toggles[label]!=want:
+                wrong.append(f"{label} is {'on' if toggles[label] else 'off'} but should be {'on' if want else 'off'}")
+        entry={'target':text,'wrong':wrong,'blocked':bool(wrong)}
+        with (self.workspace/'checker.jsonl').open('a') as stream:
+            stream.write(json.dumps(entry,ensure_ascii=False)+'\n')
+        if not wrong:return None
+        self.blocks+=1
+        message=('Checker: not saved yet. Before "'+str(text)+'", fix these items: '+'; '.join(wrong)
+                 +'. Then click "'+str(text)+'" again.')
+        return ToolResult(name,False,json.dumps({'success':False,'error':'CheckerRejected','message':message,
+                          'outcome':'rejected','action_applied':False},ensure_ascii=False),
+                          error_type='CheckerRejected',error_message=message,outcome='rejected')
 
 
 class CheckpointExecutor(ToolExecutor):
@@ -98,7 +145,9 @@ class CheckpointExecutor(ToolExecutor):
         return unconfirmed('SaveReadbackTimeout: one-second settlement window exhausted')
 
     async def execute(self,name,arguments,require_confirmation=None):
-        result=await super().execute(name,arguments,require_confirmation)
+        checker=getattr(self,'checker',None)
+        blocked=checker.review(name,arguments) if checker is not None else None
+        result=blocked or await super().execute(name,arguments,require_confirmation)
         self.entries.append({**asdict(result),"arguments":arguments,"actor":self.actor,
                              **(getattr(self,'skill_context',None) or {})})
         with (self.workspace/"actor-tools.jsonl").open("a") as stream:
@@ -117,7 +166,7 @@ class BrowserChainProvider(KageChainProvider):
     RESERVATION_INPUT_CAP=48_000
     RESERVATION_OUTPUT_CAP=2_000
 
-    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,settle_saves=None,pack_context=False,state_table=False,**kwargs):
+    def __init__(self,model_provider,task_def,*,external_completion=False,browser_skill_bundle=None,observation_format='compact-v1',max_loop_steps=None,settle_saves=None,pack_context=False,state_table=False,pack_keep_text=False,checker_goals=None,**kwargs):
         if observation_format not in {'compact-v1', 'compact-v2'}:
             raise ValueError('unsupported browser observation format')
         super().__init__(model_provider,**kwargs)
@@ -134,6 +183,13 @@ class BrowserChainProvider(KageChainProvider):
         # state_table adds page_state (every toggle on/off, every field value) to each observation.
         self.pack_context=bool(pack_context)
         self.state_table=bool(state_table)
+        # C4 round 2: archived pages keep their no-longer-shown text; a pre-save checker compares the page's toggles
+        # with per-item goals extracted by Clef from the instruction (cached file; scripts/experiments/c4_goals.py).
+        self.pack_keep_text=bool(pack_keep_text)
+        self.checker_goals_path=checker_goals
+        self.checker_goals=None
+        if checker_goals:
+            self.checker_goals=json.loads(Path(checker_goals).read_text())['goals'].get(task_def['task_id'])
         self.task_def=json.loads(json.dumps(task_def))
         self.external_completion=bool(external_completion)
         # Wait (<=1 s) for a clicked save to reach the page before checking; stream runs use it
@@ -156,7 +212,10 @@ class BrowserChainProvider(KageChainProvider):
         return soul
 
     def _interface(self):
-        return {key:True for key in ('pack_context','state_table') if getattr(self,key)}
+        interface={key:True for key in ('pack_context','state_table','pack_keep_text') if getattr(self,key)}
+        if self.checker_goals_path:
+            interface['checker_goals']=Path(self.checker_goals_path).name
+        return interface
 
     def cache_identity(self):
         return {**super().cache_identity(),**self._interface(),'browser_task':self.task_def,'external_completion':self.external_completion,
@@ -242,7 +301,7 @@ class BrowserChainProvider(KageChainProvider):
     def _actor_model(self,model,actor,workspace):
         if self.pack_context:
             from core.computer_use.context_pack import BrowserContextProvider
-            return BrowserContextProvider(model,workspace,trace_name='student-context-pack.jsonl')
+            return BrowserContextProvider(model,workspace,trace_name='student-context-pack.jsonl',keep_text=self.pack_keep_text)
         return model
 
     async def _run(self,task,step,history,workspace):
@@ -263,6 +322,8 @@ class BrowserChainProvider(KageChainProvider):
                     registry=ToolRegistry();adapter.register_tools(registry,quota=quota)
                     executor=CheckpointExecutor(registry,workspace,page,url,settle_saves=self.settle_saves)
                     executor.browser_quota=quota
+                    if self.checker_goals:
+                        executor.checker=PreSaveChecker(self.checker_goals,adapter,workspace)
                     if self.browser_skill_catalog is not None:
                         self.browser_skill_catalog.register_tools(registry,adapter,executor,workspace,quota)
                     student=await self._run_actor(task,step,workspace,adapter,registry,executor,self._model,self.primary_actor,self._experiment_soul(),history=history)

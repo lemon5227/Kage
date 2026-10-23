@@ -19,7 +19,13 @@ def _archive(value,workspace):
     return {'path':str(relative),'sha256':digest}
 
 
-def pack_browser_messages(messages,workspace):
+def _lines(obs):
+    return [line.strip() for line in str(obs.get('text') or '').splitlines() if line.strip()]
+
+
+def pack_browser_messages(messages,workspace,keep_text=False):
+    """keep_text (C4 round 2): an archived page keeps the text lines the latest page no longer shows (capped), so
+    details the student expanded earlier (hotel ratings) survive packing; round 1 lost them (web_catalog 7 -> 4/18)."""
     workspace=Path(workspace)
     packed=copy.deepcopy(messages)
     source=_archive(messages,workspace)
@@ -38,8 +44,13 @@ def pack_browser_messages(messages,workspace):
             if not isinstance(obs,dict) or obs.get('source')!='dom' or not obs.get('observation_id') or 'targets' not in obs: continue
         except (ValueError,AttributeError): continue
         observed.append((index,initial,prefix,payload,obs))
+    latest=set(_lines(observed[-1][4])) if observed else set()
     for index,initial,prefix,payload,obs in observed[:-1]:
         reference=_archive(obs,workspace)
+        if keep_text:
+            gone=[line for line in dict.fromkeys(_lines(obs)) if line not in latest]
+            text='\n'.join(gone)[:1200]
+            if text: reference={**reference,'text_no_longer_shown':text}
         if initial:
             content=prefix+'Archived initial browser observation (use latest full DOM):\n'+json.dumps(reference,separators=(',',':'))
         else:
@@ -55,12 +66,13 @@ def pack_browser_messages(messages,workspace):
 
 
 class BrowserContextProvider(ModelProvider):
-    def __init__(self,model,workspace,*,trace_name='teacher-context-pack.jsonl'):
+    def __init__(self,model,workspace,*,trace_name='teacher-context-pack.jsonl',keep_text=False):
         self.model,self.workspace=model,Path(workspace)
         self.trace_name=trace_name
+        self.keep_text=keep_text
 
     def generate(self,messages,**kwargs):
-        packed,stats=pack_browser_messages(messages,self.workspace)
+        packed,stats=pack_browser_messages(messages,self.workspace,keep_text=self.keep_text)
         with (self.workspace/self.trace_name).open('a') as stream:
             stream.write(json.dumps(stats)+'\n')
         return self.model.generate(messages=packed,**kwargs)

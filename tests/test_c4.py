@@ -80,3 +80,65 @@ def test_adapter_eval_without_a_final_adapter_stops(tmp_path, monkeypatch):
     monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
     with pytest.raises(SystemExit):
         kaggle_e1.input_adapters(['r3c'])
+
+
+# --- C4 round 2 -------------------------------------------------------------------------------------------
+def test_round2_interface_keys_only_appear_when_set(monkeypatch):
+    for key in ('KAGE_BROWSER_OBS', 'KAGE_BROWSER_PACK', 'KAGE_BROWSER_STATE', 'KAGE_BROWSER_CHECK'):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv('KAGE_BROWSER_PACK', 'text')
+    monkeypatch.setenv('KAGE_BROWSER_CHECK', '/x/goals-clef.json')
+    interface = browser_interface()
+    assert interface['pack_context'] and interface['pack_keep_text'] and interface['checker_goals'] == '/x/goals-clef.json'
+
+
+def _dom(obs_id, text):
+    return {'source': 'dom', 'observation_id': obs_id, 'targets': [], 'text': text}
+
+
+def test_packing_keeps_text_only_archived_pages_showed(tmp_path):
+    import json
+    from core.computer_use.context_pack import INITIAL, pack_browser_messages
+    messages = [{'role': 'user', 'content': 'Task\n' + INITIAL + json.dumps(_dom('a', 'Hotels\nOld Mill rating 4.5'))},
+                {'role': 'tool', 'content': '[Tool: browser_act] ' + json.dumps({'success': True,
+                                                                                  'observation': _dom('b', 'Hotels\nSky Rooms')})}]
+    plain, _ = pack_browser_messages(messages, tmp_path)
+    kept, _ = pack_browser_messages(messages, tmp_path, keep_text=True)
+    assert 'Old Mill rating 4.5' not in plain[0]['content']
+    assert 'Old Mill rating 4.5' in kept[0]['content'] and 'text_no_longer_shown' in kept[0]['content']
+    assert 'Sky Rooms' in kept[1]['content']                                      # the latest page stays whole
+
+
+class _Adapter:
+    def __init__(self, toggles):
+        self.current = {'targets': [{'target_ref': f'e{i}', 'label': label, 'input_type': 'checkbox', 'checked': on}
+                                    for i, (label, on) in enumerate(toggles.items())]
+                        + [{'target_ref': 'save', 'label': 'Save', 'input_type': 'submit'}]}
+
+
+def test_pre_save_checker_blocks_wrong_items_at_most_twice(tmp_path):
+    from core.computer_use.experiment import PreSaveChecker
+    adapter = _Adapter({'Email': False, 'Weekly': True, 'Push': True})
+    checker = PreSaveChecker({'Email': 'on', 'Weekly': 'off', 'Push': 'unchanged'}, adapter, tmp_path)
+    click = {'operation': 'click', 'target_ref': 'save'}
+    assert checker.review('browser_act', {'operation': 'click', 'target_ref': 'e0'}) is None   # not a save control
+    blocked = checker.review('browser_act', click)
+    assert blocked and 'Email is off but should be on' in blocked.result and 'Weekly' in blocked.result
+    assert 'Push' not in blocked.result                                   # unchanged and still as first observed
+    adapter.current['targets'][0]['checked'] = True
+    adapter.current['targets'][1]['checked'] = False
+    assert checker.review('browser_act', click) is None                   # now correct: the click goes through
+    adapter.current['targets'][2]['checked'] = False                      # Push changed: wrong again
+    assert checker.review('browser_act', click) is not None
+    assert checker.review('browser_act', click) is None                   # third time: never trap the student
+
+
+def test_c4b_jobs_add_an_adapter_arm():
+    arms = dict(kaggle_e1.C4B_ARMS)
+    arms['R3EV2PKTSTCK'] = {**arms['V2PKTSTCK'], 'KAGE_LORA': '/in/r3e-adapter/adapter.gguf'}
+    jobs = kaggle_e1.c4_jobs(arms=arms, root='c4b', port=19300)
+    assert len(jobs) == 12 and len({argv[-1] for _, argv, _ in jobs}) == 12
+    env = {name: e for name, _, e in jobs}
+    assert env['web-V2PKTSTCK-r2']['KAGE_BROWSER_CHECK'].endswith('goals-clef.json')
+    assert env['web-R3EV2PKTSTCK-r1']['KAGE_LORA'].endswith('adapter.gguf')
+    assert 'c4b' in jobs[0][1][jobs[0][1].index('--root') + 1]

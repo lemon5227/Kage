@@ -928,13 +928,25 @@ C4_ARMS = {                               # name -> interface environment (see c
 }
 
 
-def c4_jobs(n: int = R3_RUNS) -> list[tuple[str, list[str], dict[str, str]]]:
-    """A0 on the frozen web eval set under each C4 interface arm, n runs each; names 'web-ARM-rI'."""
-    script, manifest, jobs, port = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_web_v1', [], 18900
-    for arm, env in C4_ARMS.items():
+# C4 round 2 (10-24): the round-1 default (V2PKST) re-run as the v2 baseline; packing that keeps the text lines an
+# archived page showed (hotel details); the Clef-goal pre-save checker; and an adapter under the full interface.
+C4B_ARMS = {
+    'V2PKST': C4_ARMS['V2PKST'],
+    'V2PKTST': {'KAGE_BROWSER_OBS': 'compact-v2', 'KAGE_BROWSER_PACK': 'text', 'KAGE_BROWSER_STATE': '1'},
+    'V2PKTSTCK': {'KAGE_BROWSER_OBS': 'compact-v2', 'KAGE_BROWSER_PACK': 'text', 'KAGE_BROWSER_STATE': '1',
+                  'KAGE_BROWSER_CHECK': str(ROOT / 'eval' / 'stream_web_v1' / 'goals-clef.json')},
+}
+
+
+def c4_jobs(n: int = R3_RUNS, arms: dict | None = None, root: str = 'c4',
+            port: int = 18900) -> list[tuple[str, list[str], dict[str, str]]]:
+    """The frozen web eval set under each interface arm, n runs each; names 'web-ARM-rI'. An arm env may carry
+    KAGE_LORA (an adapter on top of the student); otherwise it is the plain A0 student."""
+    script, manifest, jobs = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_web_v1', []
+    for arm, env in (arms or C4_ARMS).items():
         for index in range(1, n + 1):
             jobs.append((f'web-{arm}-r{index}', [
-                script, '--arm', 'A0', '--root', str(OUT / 'c4' / f'{arm}-r{index}'), '--eval-only', 'cp0',
+                script, '--arm', 'A0', '--root', str(OUT / root / f'{arm}-r{index}'), '--eval-only', 'cp0',
                 '--stream-manifest', str(manifest / 'stream-seed1.json'), '--eval-manifest', str(manifest / 'eval.json'),
                 '--skill-runner', 'process', '--port', str(port)], {**env, 'KAGE_CTX': BROWSER_CTX}))
             port += 1
@@ -1011,7 +1023,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1040,7 +1052,7 @@ def main(argv=None):
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
                                  'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
-                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval')
+                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval')
     if args.phase == 'r3-train':
         r3_train_only(smoke='smoke' in (only or []))
         return
@@ -1056,7 +1068,7 @@ def main(argv=None):
     if args.phase == 'r3e-train':
         r3e_train_only(smoke='smoke' in (only or []))
         return
-    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4',
+    info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b',
                                                     'adapter-eval'))
             if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
@@ -1143,6 +1155,22 @@ def main(argv=None):
         (OUT / 'c4').mkdir(parents=True, exist_ok=True)
         (OUT / 'c4' / 'summary.json').write_text(json.dumps(summary, indent=1))
         log('c4 summary', passed={run: f"{row.get('passed')}/{row.get('total')}" for run, row in summary['web'].items()})
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'c4b':
+        # C4 round 2 (10-24); "c4b r3e" adds that adapter under the full round-2 interface.
+        arms = dict(C4B_ARMS)
+        for tag in only or []:
+            arms[f'{tag.upper()}V2PKTSTCK'] = {**C4B_ARMS['V2PKTSTCK'], 'KAGE_LORA': str(input_adapters([tag])[tag])}
+        browser_setup()
+        jobs = c4_jobs(arms=arms, root='c4b', port=19300)
+        run_jobs(info, jobs, 'c4b')
+        summary = r3_summary(jobs)
+        (OUT / 'c4b').mkdir(parents=True, exist_ok=True)
+        (OUT / 'c4b' / 'summary.json').write_text(json.dumps(summary, indent=1))
+        log('c4b summary', passed={run: f"{row.get('passed')}/{row.get('total')}" for run, row in summary['web'].items()})
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
