@@ -775,6 +775,14 @@ def r3_reasonless(row: dict) -> bool:
 R3D_DATA = ROOT / 'evidence' / 'reports' / 'r3d'
 
 
+def r3e_train_only(smoke: bool = False) -> None:
+    """R3e: rationalized R2 + own samples (as R3d) with the RANDOM replay of R3b — R3c showed the LESS-selected
+    replay (aligned with our own tasks) does not protect transfer, the random one does."""
+    linfo = lora_setup()
+    train_mix(linfo, prepare_replay(), 'r3e', smoke, sft=R3D_DATA / 'sft-v21-rationalized.jsonl.gz',
+              control=R3D_DATA / 'sft-v21-control-rationalized.jsonl.gz')
+
+
 def r3d_train_only(smoke: bool = False) -> None:
     """R3d on Colab: every R2 step kept, reasoning-free targets given a teacher-written rationale
     (rationalize.py; the call itself unchanged), plus replay — the LESS selection from R3c when it exists on the
@@ -1003,7 +1011,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3-eval', 'r3-scale', 'c4', 'adapter-eval', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1044,6 +1052,9 @@ def main(argv=None):
         return
     if args.phase == 'r3d-train':
         r3d_train_only(smoke='smoke' in (only or []))
+        return
+    if args.phase == 'r3e-train':
+        r3e_train_only(smoke='smoke' in (only or []))
         return
     info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4',
                                                     'adapter-eval'))
