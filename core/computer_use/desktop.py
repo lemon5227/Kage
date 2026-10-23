@@ -18,6 +18,7 @@ they matter and relaxes the rest:
 """
 from __future__ import annotations
 
+import re
 import time
 
 STATE_ROLES = {'AXCheckBox', 'AXRadioButton', 'AXPopUpButton', 'AXMenuButton', 'AXSlider', 'AXComboBox'}
@@ -183,6 +184,9 @@ class DesktopAX:
         """A ref, or a control's id or unique label (the 4B student reached for `id=One` on its first G0 run)."""
         if ref in self._handles:
             return ref
+        bracketed = re.match(r'\s*\[?(e\d+)\]', str(ref))      # the whole line: '[e12] button "外观" id=…'
+        if bracketed and bracketed.group(1) in self._handles:
+            return bracketed.group(1)
         for key in ('id', 'label'):
             matches = [item['ref'] for item in self._items if item.get('ref') and item.get(key) == ref]
             if len(matches) == 1:

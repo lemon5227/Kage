@@ -1,7 +1,9 @@
 """G0: run the desktop-v1 tasks (eval/desktop_v1) on this Mac through the Accessibility API.
 
   python desktop_run.py --arm oracle                      # scripted solutions: checks setup/checkers/tools, no model
-  python desktop_run.py --arm a0 --runs 3 [--tasks calc_add,te_fix]   # the frozen student via a local llama-server
+  python desktop_run.py --arm a0 --runs 3 [--tasks calc_add,te_fix] [--split train]   # the frozen student (local llama-server)
+  python desktop_run.py --arm teach --from <a0 results dir>            # teacher writes one lesson per failed task -> lessons.json
+  python desktop_run.py --arm a0 --split test --lessons <lessons.json>  # the student with the lessons, on unseen variants
 
 Each run: trusted setup (open the app/page, reset Calculator, write the dedicated file) -> the agent acts only
 through the task's tools -> a trusted checker reads the app or the file itself -> cleanup restores what setup
@@ -237,11 +239,18 @@ class Tools:
             return f'error: {type(exc).__name__}: {exc}\n' + self.observation()
 
 
-def run_agent(model, tools, task, trace, max_tokens=400):
-    messages = [{'role': 'system', 'content': SYSTEM},
+def system_prompt(task, lessons):
+    learned = (lessons or {}).get(task['family'], [])
+    if not learned:
+        return SYSTEM
+    return SYSTEM + '\n\nLessons learned from earlier tasks in this app (follow them):\n' + '\n'.join(f'- {x}' for x in learned)
+
+
+def run_agent(model, tools, task, trace, max_tokens=400, lessons=None):
+    messages = [{'role': 'system', 'content': system_prompt(task, lessons)},
                 {'role': 'user', 'content': task['instruction'] + '\n\nCurrent observation:\n' + tools.observation()}]
     schemas = tool_schemas(tools.allowed)
-    stop, calls = 'max_steps', 0
+    stop, calls, nudged = 'max_steps', 0, False
     for step in range(task['max_steps']):
         response = model.generate(messages=messages, tools=schemas, max_tokens=max_tokens, temperature=0.7)
         trace.write(json.dumps({'step': step, 'request_messages': len(messages), 'text': response.text,
@@ -251,8 +260,15 @@ def run_agent(model, tools, task, trace, max_tokens=400):
             stop = 'model_error'
             break
         if not response.tool_calls:
-            stop = 'no_tool_call'
-            break
+            if nudged:
+                stop = 'no_tool_call'
+                break
+            # Interface v2: one reminder (the student once wrote "Answer: 中" as plain text instead of calling answer).
+            nudged = True
+            finish = 'answer(text)' if 'answer' in tools.allowed else 'done()'
+            messages += [{'role': 'assistant', 'content': response.text or ''},
+                         {'role': 'user', 'content': f'Reply only through the tools. If you are finished, call {finish}.'}]
+            continue
         call = response.tool_calls[0]                              # one action per turn
         calls += 1
         call_id = f'call_{calls}'
@@ -310,20 +326,80 @@ def oracle(tools, task):
     return {'stop': 'oracle', 'actions': tools.actions}
 
 
+TEACHER_CONFIG = Path('~/.config/kage/teachers/deepseek.json').expanduser()
+TEACH_PROMPT = (
+    'A small assistant model operates a macOS application through accessibility tools (press a control, fill a text '
+    'field, run a menu command). It failed the task below. You see the task, the actions it took with their results, '
+    'and what a trusted checker found. Write ONE general lesson for this application: one or two imperative '
+    'sentences that would prevent the same mistake on other tasks of the same kind. Do not mention this task\'s '
+    'specific numbers, words or file names, and do not give the answer. Reply with the lesson only.')
+
+
+def teach(source, tasks):
+    """One lesson per failed train task (its first failing run), written by the teacher through the global ledger."""
+    from core.evolution.teacher_budget import global_teacher_budget, remaining_usd
+    from core.model_provider import OpenAICompatibleProvider
+    cloud = json.loads(TEACHER_CONFIG.read_text())['model']['cloud_api']
+    model = OpenAICompatibleProvider(api_key=cloud['api_key'], model_name=cloud['model_name'],
+                                     base_url=cloud['base_url'], timeout_sec=60, thinking=False)
+    budget = global_teacher_budget()
+    start = remaining_usd(budget)
+    records = [json.loads(line) for line in (source / 'results.jsonl').read_text().splitlines()]
+    lessons, log, seen = {}, [], set()
+    for record in records:
+        task = tasks[record['task_id']]
+        if record['check'].get('passed') or record['task_id'] in seen or task['family'] == 'settings_read':
+            continue                       # settings failures were interface problems (fixed in v2), not knowledge
+        seen.add(record['task_id'])
+        actions = []
+        for line in (source / f"{record['task_id']}-r{record['run']}" / 'trace.jsonl').read_text().splitlines():
+            step = json.loads(line)
+            if 'tool' in step:
+                status = step['result'].split('\n', 1)[0]
+                actions.append(f"{step['tool']}({json.dumps(step['arguments'], ensure_ascii=False)}) -> {status}")
+        found = {k: v for k, v in record['check'].items() if k != 'passed'}
+        expected = task['expected']
+        message = (f"Task: {task['instruction']}\n\nActions:\n" + '\n'.join(actions) +
+                   f"\n\nChecker: expected {json.dumps(expected, ensure_ascii=False)}, found {json.dumps(found, ensure_ascii=False)}")
+        reservation = budget.reserve(3000, 200, call_type='g0_lesson', run_id=f"g0-{record['task_id']}")
+        response = None
+        try:
+            response = model.generate(messages=[{'role': 'system', 'content': TEACH_PROMPT},
+                                                {'role': 'user', 'content': message}], max_tokens=200, temperature=0.0)
+        finally:
+            budget.settle(reservation, getattr(response, 'usage', None))
+        lesson = (response.text or '').strip() if response and not response.error else ''
+        log.append({'task_id': record['task_id'], 'family': task['family'], 'prompt': message, 'lesson': lesson})
+        if lesson:
+            lessons.setdefault(task['family'], []).append(lesson)
+    write_json(source / 'lessons.json', lessons)
+    write_json(source / 'teach-log.json', {'entries': log, 'spent_usd': round(start - remaining_usd(budget), 4),
+                                           'ledger_remaining_usd': round(remaining_usd(budget), 4)})
+    print(json.dumps(lessons, ensure_ascii=False, indent=1))
+    print(source / 'lessons.json')
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('--arm', choices=['oracle', 'a0'], default='oracle')
+    p.add_argument('--arm', choices=['oracle', 'a0', 'teach'], default='oracle')
+    p.add_argument('--split', choices=['train', 'test', 'all'], default='train')
+    p.add_argument('--lessons', type=Path, default=None)
+    p.add_argument('--from', dest='source', type=Path, default=None, help='teach: the a0 results directory')
     p.add_argument('--runs', type=int, default=1)
     p.add_argument('--tasks', default='')
     p.add_argument('--port', type=int, default=8091)
     p.add_argument('--out', type=Path, default=None)
     args = p.parse_args(argv)
     manifest = json.loads(MANIFEST.read_text())
-    tasks = [t for t in manifest['tasks'] if not args.tasks or t['task_id'] in args.tasks.split(',')]
+    tasks = [t for t in manifest['tasks'] if (not args.tasks or t['task_id'] in args.tasks.split(','))
+             and (args.tasks or args.split == 'all' or t.get('split', 'train') == args.split)]
+    if args.arm == 'teach':
+        return teach(args.source, {t['task_id']: t for t in manifest['tasks']})
+    lessons = json.loads(args.lessons.read_text()) if args.lessons else None
     out = args.out or WORK / f"{args.arm}-{time.strftime('%Y%m%d-%H%M%S')}"
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / 'config.json', {'arm': args.arm, 'runs': args.runs, 'tasks': [t['task_id'] for t in tasks],
-                                     'manifest': manifest['version']})
+                                     'manifest': manifest['version'], 'lessons': lessons, 'interface': 'v2'})
     import contextlib
     service, model = contextlib.nullcontext(), None
     if args.arm == 'a0':
@@ -344,7 +420,7 @@ def main(argv=None):
                     ax = environment.setup()
                     tools = Tools(ax, task)
                     with (run_dir / 'trace.jsonl').open('w', encoding='utf-8') as trace:
-                        record['agent'] = oracle(tools, task) if args.arm == 'oracle' else run_agent(model, tools, task, trace)
+                        record['agent'] = oracle(tools, task) if args.arm == 'oracle' else run_agent(model, tools, task, trace, lessons=lessons)
                     record['check'] = environment.check(tools.final)
                 except Exception as exc:
                     record['error'] = f'{type(exc).__name__}: {exc}'

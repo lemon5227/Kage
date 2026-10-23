@@ -1,0 +1,30 @@
+{
+  "entries": [
+    {
+      "task_id": "te_fix",
+      "family": "textedit",
+      "prompt": "Task: The TextEdit document notes-fix.txt has a typo: \"Tuesdya\" should be \"Tuesday\". Fix it, keep everything else exactly the same, and save the document.\n\nActions:\nfill({\"ref\": \"First Text View\", \"text\": \"Meeting at 3pm on Tuesday.\\nBring the slides.\"}) -> ok\nmenu({\"menu\": \"文件\", \"item\": \"保存\"}) -> error: menu command 文件 > 保存 is disabled (the app is in the background; its menus only work after desktop_activate)\nactivate({}) -> ok\nmenu({\"menu\": \"文件\", \"item\": \"保存\"}) -> ok\ndone({}) -> task ended\n\nChecker: expected \"Meeting at 3pm on Tuesday.\\nBring the slides.\\n\", found {\"disk\": \"Meeting at 3pm on Tuesday.\\nBring the slides.\"}",
+      "lesson": "Before editing a document's text, read its full current contents and preserve every character, including trailing whitespace and line breaks; never retype the content from memory."
+    },
+    {
+      "task_id": "te_append",
+      "family": "textedit",
+      "prompt": "Task: In the TextEdit document shopping.txt, add a new last line \"- milk\" to the shopping list (same format as the other items, ending with a newline), and save the document.\n\nActions:\nfill({\"ref\": \"First Text View\", \"text\": \"Shopping list:\\n- eggs\\n- bread\\n- milk\"}) -> ok\nmenu({\"menu\": \"文件\", \"item\": \"保存\"}) -> ok\ndone({}) -> task ended\n\nChecker: expected \"Shopping list:\\n- eggs\\n- bread\\n- milk\\n\", found {\"disk\": \"Shopping list:\\n- eggs\\n- bread\\n- milk\"}",
+      "lesson": "Always ensure the document ends with a trailing newline when the required format specifies one, and verify the saved file content matches the expected format exactly before finishing."
+    },
+    {
+      "task_id": "calc_chain",
+      "family": "calculator",
+      "prompt": "Task: Use the Calculator app to compute (15 + 27) × 3. Leave the result on Calculator's display.\n\nActions:\npress({\"ref\": \"One\"}) -> ok\npress({\"ref\": \"Five\"}) -> ok\npress({\"ref\": \"Add\"}) -> ok\npress({\"ref\": \"Two\"}) -> ok\npress({\"ref\": \"Seven\"}) -> ok\npress({\"ref\": \"Multiply\"}) -> ok\npress({\"ref\": \"Three\"}) -> ok\npress({\"ref\": \"Equals\"}) -> ok\ndone({}) -> task ended\n\nChecker: expected \"126\", found {\"display\": \"96\", \"previous_expression\": \"15 + 27 × 3\", \"computed\": true}",
+      "lesson": "When an expression mixes addition and multiplication, press Equals after the addition to resolve that part before entering the multiplication, or otherwise ensure the grouping you intend is actually applied."
+    },
+    {
+      "task_id": "te_write",
+      "family": "textedit",
+      "prompt": "Task: The TextEdit document reply.txt is empty. Write exactly these two lines into it (each line ends with a newline):\nThanks, received.\nI will reply by Friday.\nThen save the document.\n\nActions:\nfill({\"ref\": \"First Text View\", \"text\": \"Thanks, received.\\nI will reply by Friday.\"}) -> ok\nmenu({\"menu\": \"文件\", \"item\": \"保存\"}) -> ok\ndone({}) -> task ended\n\nChecker: expected \"Thanks, received.\\nI will reply by Friday.\\n\", found {\"disk\": \"Thanks, received.\\nI will reply by Friday.\"}",
+      "lesson": "Always ensure the document ends with a trailing newline after the final line before saving, since the checker requires each line to be newline-terminated."
+    }
+  ],
+  "spent_usd": 0.0005,
+  "ledger_remaining_usd": 2.2191
+}

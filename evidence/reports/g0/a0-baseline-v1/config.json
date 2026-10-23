@@ -1,0 +1,17 @@
+{
+  "arm": "a0",
+  "runs": 3,
+  "tasks": [
+    "calc_add",
+    "calc_mul",
+    "calc_div",
+    "calc_chain",
+    "te_fix",
+    "te_append",
+    "te_write",
+    "set_icon_size",
+    "set_scrollbars",
+    "set_nav_tint"
+  ],
+  "manifest": "desktop-v1"
+}
