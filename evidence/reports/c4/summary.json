@@ -1,0 +1,364 @@
+{
+ "web": {
+  "V1-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 9,
+   "total": 30,
+   "status": "ok"
+  },
+  "V1-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 3,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 10,
+   "total": 30,
+   "status": "ok"
+  },
+  "V1-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 10,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 5,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 15,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 5,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 14,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 12,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2PK-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 4,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 11,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2PK-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 5,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 12,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2PK-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 5,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2PKST-r1": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 6,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 2,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 14,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2PKST-r2": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 6,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 13,
+   "total": 30,
+   "status": "ok"
+  },
+  "V2PKST-r3": {
+   "families": {
+    "web_invoice": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_prefs": {
+     "passed": 5,
+     "total": 6
+    },
+    "web_catalog": {
+     "passed": 1,
+     "total": 6
+    },
+    "web_form": {
+     "passed": 0,
+     "total": 6
+    },
+    "web_lookup": {
+     "passed": 6,
+     "total": 6
+    }
+   },
+   "negative_misuse": {
+    "web_lookup": 0
+   },
+   "passed": 12,
+   "total": 30,
+   "status": "ok"
+  }
+ }
+}
