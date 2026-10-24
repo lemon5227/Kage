@@ -1,0 +1,5 @@
+{
+  "calculator": [
+    "When the expression contains a grouped subexpression, fully evaluate that group first — enter it, press Equals so the display holds its result — and only then apply the remaining operation to that result. Don't chain every operator and operand in one continuous left-to-right sequence, since the calculator will apply its own precedence instead of your grouping."
+  ]
+}

@@ -111,6 +111,7 @@ def texts(observation):
 class Calculator:
     def __init__(self, task, run_dir):
         self.task, self.ax, self.restore_conversion = task, DesktopAX('com.apple.calculator'), False
+        self.restore_history = False
 
     def setup(self):
         subprocess.run(['open', '-g', '-a', 'Calculator'], check=True, timeout=10)
@@ -120,6 +121,12 @@ class Calculator:
             self.ax.press_menu_unchecked('显示', '转换')
             if not wait_for(lambda: 'UnitsSwapButton' not in ids(self.ax.snapshot())):
                 raise RuntimeError('could not leave Calculator conversion mode')
+        # The history sidebar lists earlier expressions and results (answers) and pushes the keypad out of the
+        # observation; a student opened it once in the D8 demo. Close it for the task, reopen it in cleanup.
+        if self.ax.menu_item('显示', '隐藏历史记录') is not None:
+            self.restore_history = True
+            self.ax.press_menu_unchecked('显示', '隐藏历史记录')
+            wait_for(lambda: self.ax.menu_item('显示', '显示历史记录') is not None)
         self.ax.press(ids(self.ax.snapshot())['AllClear']['ref'])
         return self.ax
 
@@ -132,7 +139,14 @@ class Calculator:
         return {'passed': ok, 'display': display, 'previous_expression': previous, 'computed': computed}
 
     def cleanup(self):
+        if self.restore_history and self.ax.menu_item('显示', '显示历史记录') is not None:
+            self.ax.press_menu_unchecked('显示', '显示历史记录')
         if self.restore_conversion:
+            if not wait_for(lambda: self.ax.snapshot(), timeout=1):     # Calculator was quit during the task
+                subprocess.run(['open', '-g', '-a', 'Calculator'], check=True, timeout=10)
+                wait_for(lambda: self.ax.snapshot())
+            if 'UnitsSwapButton' in ids(self.ax.snapshot()):           # quit and relaunched in the user's mode
+                return {'conversion_restored': True, 'relaunched': True}
             self.ax.press_menu_unchecked('显示', '转换')
             wait_for(lambda: 'UnitsSwapButton' in ids(self.ax.snapshot()))
         return {'conversion_restored': self.restore_conversion}
@@ -325,8 +339,10 @@ def run_agent(model, tools, task, trace, max_tokens=400, lessons=None):
             # Interface v2: one reminder (the student once wrote "Answer: 中" as plain text instead of calling answer).
             nudged = True
             finish = 'answer(text)' if 'answer' in tools.allowed else 'done()'
+            # In plan mode the student sometimes writes the plan and stops; tell it to start executing.
+            start = 'Your plan is written; now carry out its first step by calling a tool. ' if calls == 0 else ''
             messages += [{'role': 'assistant', 'content': response.text or ''},
-                         {'role': 'user', 'content': f'Reply only through the tools. If you are finished, call {finish}.'}]
+                         {'role': 'user', 'content': f'{start}Reply only through the tools. If you are finished, call {finish}.'}]
             continue
         call = response.tool_calls[0]                              # one action per turn
         calls += 1
@@ -386,12 +402,14 @@ def oracle(tools, task):
 
 
 TEACHER_CONFIG = Path('~/.config/kage/teachers/deepseek.json').expanduser()
+TEACH_THINKING = False      # True: the teacher reasons before writing the lesson (D8 demo: fewer lessons about absent controls)
 TEACH_PROMPT = (
     'A small assistant model operates a macOS application through accessibility tools (press a control, fill a text '
     'field, run a menu command). It failed the task below. You see the task, the actions it took with their results, '
     'and what a trusted checker found. Write ONE general lesson for this application: one or two imperative '
     'sentences that would prevent the same mistake on other tasks of the same kind. Do not mention this task\'s '
-    'specific numbers, words or file names, and do not give the answer. Reply with the lesson only.')
+    'specific numbers, words or file names, and do not give the answer. The lesson may only use controls that '
+    'appear in the application window shown; never assume a control that is not listed. Reply with the lesson only.')
 
 
 def teach(source, tasks):
@@ -400,7 +418,7 @@ def teach(source, tasks):
     from core.model_provider import OpenAICompatibleProvider
     cloud = json.loads(TEACHER_CONFIG.read_text())['model']['cloud_api']
     model = OpenAICompatibleProvider(api_key=cloud['api_key'], model_name=cloud['model_name'],
-                                     base_url=cloud['base_url'], timeout_sec=60, thinking=False)
+                                     base_url=cloud['base_url'], timeout_sec=120, thinking=TEACH_THINKING)
     budget = global_teacher_budget()
     start = remaining_usd(budget)
     records = [json.loads(line) for line in (source / 'results.jsonl').read_text().splitlines()]
@@ -417,14 +435,20 @@ def teach(source, tasks):
                 status = step['result'].split('\n', 1)[0]
                 actions.append(f"{step['tool']}({json.dumps(step['arguments'], ensure_ascii=False)}) -> {status}")
         found = {k: v for k, v in record['check'].items() if k != 'passed'}
+        # The teacher sees the controls the app offers (the first full observation), so a lesson never relies on
+        # a control that does not exist (a demo lesson once suggested parentheses; basic Calculator has none).
+        trace_lines = (source / f"{record['task_id']}-r{record['run']}" / 'trace.jsonl').read_text().splitlines()
+        first_observation = next((json.loads(l)['result'].split('\n', 1)[1] for l in trace_lines
+                                  if 'tool' in json.loads(l) and '\n' in json.loads(l)['result']), '')
         expected = task['expected']
-        message = (f"Task: {task['instruction']}\n\nActions:\n" + '\n'.join(actions) +
+        message = (f"Task: {task['instruction']}\n\nThe application window (controls the assistant can use):\n"
+                   f"{first_observation[:2500]}\n\nActions:\n" + '\n'.join(actions) +
                    f"\n\nChecker: expected {json.dumps(expected, ensure_ascii=False)}, found {json.dumps(found, ensure_ascii=False)}")
-        reservation = budget.reserve(3000, 200, call_type='g0_lesson', run_id=f"g0-{record['task_id']}")
+        reservation = budget.reserve(4000, 2000 if TEACH_THINKING else 200, call_type='g0_lesson', run_id=f"g0-{record['task_id']}")
         response = None
         try:
             response = model.generate(messages=[{'role': 'system', 'content': TEACH_PROMPT},
-                                                {'role': 'user', 'content': message}], max_tokens=200, temperature=0.0)
+                                                {'role': 'user', 'content': message}], max_tokens=2000 if TEACH_THINKING else 200, temperature=0.0)
         finally:
             budget.settle(reservation, getattr(response, 'usage', None))
         lesson = (response.text or '').strip() if response and not response.error else ''
