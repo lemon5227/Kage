@@ -273,3 +273,61 @@ def fs_apply(ops: list[dict], workspace_dir: str = "~/.kage") -> str:
         entry_id = undo.append({"type": "fs_apply", "ops": applied})
         return json.dumps({"success": True, "applied": len(applied), "undo_id": entry_id}, ensure_ascii=False)
     return json.dumps({"success": False, "error": "NoOpsApplied", "message": "没有可执行的操作"}, ensure_ascii=False)
+
+
+# --- D0: line-safe document edits (the G0 interface lesson) ---------------------------------------------
+# The 4B student cannot reliably retype a whole document inside a JSON string: in G0 it dropped final line
+# breaks or wrote a literal "\n" (TextEdit 4/18 with whole-text writes, 17/18 with these operations). These
+# tools read, replace one exact piece, or append lines; line breaks are written by the program, and every
+# change goes through fs_write so it is undoable.
+_DOC_MAX_BYTES = 200_000
+
+
+def _doc_text(path: str) -> tuple[str, str | None, str]:
+    p, err = _validate_path(path)
+    if err:
+        return p, err, ""
+    if not os.path.isfile(p):
+        return p, f"未找到文件: {p}", ""
+    if os.path.getsize(p) > _DOC_MAX_BYTES:
+        return p, "文件太大（> 200 KB），请用其它方式处理", ""
+    try:
+        with open(p, encoding="utf-8") as f:
+            return p, None, f.read()
+    except UnicodeDecodeError:
+        return p, "不是 UTF-8 文本文件（如 .rtf/.docx），不能按文本编辑", ""
+
+
+def doc_read(path: str) -> str:
+    """Read a UTF-8 text document (≤ 200 KB)."""
+    p, err, text = _doc_text(path)
+    if err:
+        return json.dumps({"success": False, "error": "DocUnavailable", "message": err}, ensure_ascii=False)
+    return json.dumps({"success": True, "path": p, "text": text, "lines": text.count("\n")}, ensure_ascii=False)
+
+
+def doc_replace(path: str, old: str, new: str, workspace_dir: str = "~/.kage") -> str:
+    """Replace one exact piece of a text document (it must occur exactly once); the rest is kept as it is."""
+    p, err, text = _doc_text(path)
+    if err:
+        return json.dumps({"success": False, "error": "DocUnavailable", "message": err}, ensure_ascii=False)
+    old = str(old or "")
+    count = text.count(old) if old else 0
+    if count != 1:
+        return json.dumps({"success": False, "error": "NotUnique",
+                           "message": f"要替换的原文出现了 {count} 次，必须恰好 1 次；请先 doc_read 再给出更长的原文"},
+                          ensure_ascii=False)
+    result = json.loads(fs_write(p, text.replace(old, str(new or "")), workspace_dir=workspace_dir))
+    return json.dumps({**result, "replaced": True}, ensure_ascii=False)
+
+
+def doc_append_lines(path: str, lines: list, workspace_dir: str = "~/.kage") -> str:
+    """Append lines at the end of a text document; each line is followed by a line break."""
+    if not isinstance(lines, list) or not all(isinstance(x, str) for x in lines):
+        return json.dumps({"success": False, "error": "InvalidInput", "message": "lines 必须是字符串列表"}, ensure_ascii=False)
+    p, err, text = _doc_text(path)
+    if err:
+        return json.dumps({"success": False, "error": "DocUnavailable", "message": err}, ensure_ascii=False)
+    prefix = text if not text or text.endswith("\n") else text + "\n"
+    result = json.loads(fs_write(p, prefix + "".join(x + "\n" for x in lines), workspace_dir=workspace_dir))
+    return json.dumps({**result, "appended_lines": len(lines)}, ensure_ascii=False)

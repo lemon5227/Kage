@@ -528,6 +528,37 @@ def create_default_registry(memory_system=None) -> ToolRegistry:
         safety_level="SAFE",
     ))
 
+    from core.tools.file_ops import doc_append_lines, doc_read, doc_replace
+    registry.register(ToolDefinition(
+        name="doc_read",
+        description="读取一个文本文档（UTF-8，≤200KB）的全文。改文档前先读。",
+        parameters={"type": "object", "properties": {"path": {"type": "string", "description": "文件路径"}},
+                    "required": ["path"]},
+        handler=doc_read,
+        safety_level="SAFE",
+    ))
+    registry.register(ToolDefinition(
+        name="doc_replace",
+        description="把文本文档里的一段原文（必须恰好出现一次）换成新文字，其余内容原样保留（可撤销）。改错字、改一句话用它，不要整篇重写。",
+        parameters={"type": "object", "properties": {
+            "path": {"type": "string", "description": "文件路径"},
+            "old": {"type": "string", "description": "要替换的原文（恰好出现一次）"},
+            "new": {"type": "string", "description": "新文字"}},
+            "required": ["path", "old", "new"]},
+        handler=doc_replace,
+        safety_level="SAFE",
+    ))
+    registry.register(ToolDefinition(
+        name="doc_append_lines",
+        description="在文本文档末尾追加若干行（每行自动换行，原内容保留，可撤销）。",
+        parameters={"type": "object", "properties": {
+            "path": {"type": "string", "description": "文件路径"},
+            "lines": {"type": "array", "items": {"type": "string"}, "description": "要追加的行（不要自己写换行符）"}},
+            "required": ["path", "lines"]},
+        handler=doc_append_lines,
+        safety_level="SAFE",
+    ))
+
     registry.register(ToolDefinition(
         name="fs_trash",
         description="将文件/文件夹移入废纸篓（可恢复）。这是删除类操作。",

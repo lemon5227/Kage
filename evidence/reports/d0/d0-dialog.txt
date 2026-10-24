@@ -1,0 +1,20 @@
+你> 帮我把 TextEdit 里打开的 meeting-notes.txt 中的错字 Tuesdya 改成 Tuesday
+Kage> 已把 `Tuesdya` 改为 `Tuesday`。
+你> 在我打开的 shopping.txt 最后加一行 - milk
+Kage> 已添加 `- milk`。
+你> 我打开的 todo.txt 里今天有哪些待办？
+Kage> 今天待办： - reply to Ann - book dentist - send report
+你> 把 todo.txt 里的 book dentist 改成 book dentist (Friday)
+Kage> 已修改。
+你> 打开的 letter.txt 里收件人叫什么名字？
+Kage> 收件人是：Mr. Zhang
+你> 在 letter.txt 末尾加两行署名：Best regards, 和 Wenbo
+Kage> 已添加。
+你> 会议纪要 meeting-notes.txt 里的会议是几点？
+Kage> 会议时间是：15:00
+你> 把 meeting-notes.txt 里的 3pm 改成 4pm
+Kage> 已修改。
+你> shopping.txt 现在一共列了几样东西？
+Kage> 共列了3样东西。
+你> 把 todo.txt 里 reply to Ann 那一行删掉
+Kage> 已删除。

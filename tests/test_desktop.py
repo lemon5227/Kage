@@ -64,9 +64,9 @@ def test_app_desktop_tools_register_and_detect_corrections(tmp_path):
     registry = ToolRegistry()
     service = DesktopService(model_provider=None, root=tmp_path)
     register_desktop_tools(registry, service)
-    assert registry.has_tool('desktop_task') and registry.has_tool('desktop_learn')
+    assert registry.has_tool('desktop_task') and registry.has_tool('desktop_learn') and registry.has_tool('open_documents')
     description = registry._tools['desktop_task'].description
-    assert 'Never use it for plain arithmetic' in description
+    assert description.startswith('Last resort') and 'Never use it for arithmetic' in description
     assert is_correction('不对，应该是 126') and is_correction('That is wrong') and not is_correction('帮我改一下文档')
     assert not service.recent()                                  # nothing ran yet: a "不对" is ordinary chat
     assert service.learn('不对')['success'] is False
@@ -77,3 +77,23 @@ def test_arithmetic_alone_does_not_surface_desktop_tools():
     from core.tool_visibility import select
     assert 'desktop_task' not in select('帮我算一下 (15 + 27) × 3', 'chat').names
     assert 'desktop_task' in select('系统设置里边栏图标大小是多少', 'chat').names
+
+
+def test_doc_tools_edit_by_piece_and_line_and_are_undoable(tmp_path):
+    import json
+    from core.tools.file_ops import doc_append_lines, doc_read, doc_replace
+    doc = tmp_path / 'notes.txt'
+    doc.write_text('Meeting on Tuesdya.\nBring slides.\n')
+    work = str(tmp_path / 'ws')
+    assert json.loads(doc_read(str(doc)))['text'].startswith('Meeting')
+    assert json.loads(doc_replace(str(doc), 'Tuesdya', 'Tuesday', workspace_dir=work))['success']
+    assert json.loads(doc_append_lines(str(doc), ['- buy milk'], workspace_dir=work))['success']
+    assert doc.read_text() == 'Meeting on Tuesday.\nBring slides.\n- buy milk\n'
+    assert json.loads(doc_replace(str(doc), 'e', 'x', workspace_dir=work))['error'] == 'NotUnique'
+    assert json.loads(doc_append_lines(str(doc), 'not a list', workspace_dir=work))['error'] == 'InvalidInput'
+
+
+def test_doc_task_surfaces_the_locate_then_edit_tools():
+    from core.tool_visibility import select
+    names = select('把 TextEdit 里打开的会议纪要文档的错字改掉', 'command').names
+    assert {'open_documents', 'doc_read', 'doc_replace'} <= set(names)

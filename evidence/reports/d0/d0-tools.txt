@@ -1,0 +1,13 @@
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/meeting-notes.txt"} ok
+doc_replace {"path": "/Users/wenbo/.kage/desktop/demo/meeting-notes.txt", "old": "Team meeti ok
+doc_append_lines {"path": "/Users/wenbo/.kage/desktop/demo/shopping.txt", "lines": ["- milk"]} ok
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/todo.txt"} ok
+doc_replace {"path": "/Users/wenbo/.kage/desktop/demo/todo.txt", "old": "book dentist", "new ok
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/letter.txt"} ok
+doc_append_lines {"path": "/Users/wenbo/.kage/desktop/demo/letter.txt", "lines": ["Best regards", ok
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/meeting-notes.txt"} ok
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/meeting-notes.txt"} ok
+doc_replace {"path": "/Users/wenbo/.kage/desktop/demo/meeting-notes.txt", "old": "Team meeti ok
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/shopping.txt"} ok
+doc_read {"path": "/Users/wenbo/.kage/desktop/demo/todo.txt"} ok
+doc_replace {"path": "/Users/wenbo/.kage/desktop/demo/todo.txt", "old": "To do today:\n- rep ok

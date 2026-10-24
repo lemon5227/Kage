@@ -51,6 +51,54 @@ def _ids(ax):
     return {item.get('id'): item for item in ax.snapshot()['items'] if item.get('ref')}
 
 
+def open_documents(max_apps: int = 40) -> list[dict]:
+    """Documents open in running apps, with their real file paths (AXDocument of each window). Read-only.
+
+    D0 (CLI first): the app's job is only to *locate* the file; editing then goes through the file tools. In the
+    first app test the conversation model invented `/Users/yourname/Documents/...` four times instead."""
+    import ApplicationServices as ax
+    import AppKit
+    from urllib.parse import unquote, urlparse
+    if not ax.AXIsProcessTrusted():
+        raise DesktopError('Accessibility permission is not granted to this process')
+    found = []
+    apps = [a for a in AppKit.NSWorkspace.sharedWorkspace().runningApplications() if a.activationPolicy() == 0]
+    for app in apps[:max_apps]:
+        element = ax.AXUIElementCreateApplication(app.processIdentifier())
+        ax.AXUIElementSetMessagingTimeout(element, 0.5)
+        error, windows = ax.AXUIElementCopyAttributeValue(element, 'AXWindows', None)
+        for window in (windows or [])[:20] if not error else []:
+            error, url = ax.AXUIElementCopyAttributeValue(window, 'AXDocument', None)
+            if error or not url or not str(url).startswith('file://'):
+                continue
+            title = ax.AXUIElementCopyAttributeValue(window, 'AXTitle', None)[1]
+            found.append({'app': str(app.localizedName()), 'window': str(title or ''),
+                          'path': unquote(urlparse(str(url)).path)})
+    return found
+
+
+def document_hint(text: str) -> str:
+    """D0: for a request about a named or open document, the server resolves the real paths itself and puts them
+    next to the request (the model then only has to pick doc_read / doc_replace / doc_append_lines). In the first
+    10-request app test the 4B model ignored open_documents and invented paths; an explicit path is the same kind
+    of fix as C4's explicit checkbox state."""
+    from core.tool_visibility import is_document_request
+    if not is_document_request(text):
+        return ''
+    try:
+        documents = open_documents()
+    except Exception:
+        return ''
+    lowered = str(text).lower()
+    named = [d for d in documents if Path(d['path']).name.lower() in lowered or Path(d['path']).stem.lower() in lowered]
+    shown = named or documents
+    if not shown:
+        return '\n[系统：没有找到已打开的文档；如果用户说了文件名，用 fs_search 找到真实路径，不要猜路径。]'
+    listing = '；'.join(f"{Path(d['path']).name}（{d['app']}）→ {d['path']}" for d in shown[:8])
+    return (f'\n[系统：已打开的文档 {listing}。读用 doc_read，改一段用 doc_replace，在末尾加行用 doc_append_lines，'
+            '都用这个完整路径；删除一行就是把那一行连同换行替换成空。做完要以工具结果为准，不要声称没做的事。]')
+
+
 def load_lessons() -> dict:
     try:
         return json.loads(LESSONS.read_text())
@@ -219,20 +267,30 @@ def is_correction(text: str) -> bool:
 
 def register_desktop_tools(registry, service: DesktopService) -> None:
     from core.tool_registry import ToolDefinition
+
+    def _open_documents():
+        try:
+            return json.dumps({'success': True, 'documents': open_documents()}, ensure_ascii=False)
+        except Exception as exc:
+            return json.dumps({'success': False, 'error': f'{type(exc).__name__}: {exc}'}, ensure_ascii=False)
+    registry.register(ToolDefinition(
+        name='open_documents',
+        description=('List the documents currently open in apps (TextEdit, Preview, Pages, editors…) with their real '
+                     'file paths. Use it before reading or editing a document the user refers to by name or as '
+                     '"the open document"; then use doc_read / doc_replace / doc_append_lines on that path. Never '
+                     'guess a path.'),
+        parameters={'type': 'object', 'properties': {}},
+        handler=_open_documents, safety_level='SAFE'))
     registry.register(ToolDefinition(
         name='desktop_task',
-        description=('Operate inside a macOS app through its accessibility controls, ONLY when the user asks you to '
-                     'use that app or the information exists only in its window: textedit (edit an open document; '
-                     'give its name or path as document), settings (read a System Settings value, read-only), or '
-                     'calculator (only if the user explicitly wants the Calculator app). Never use it for plain '
-                     'arithmetic or anything you can answer or do directly. Returns what the app shows afterwards.'),
+        description=('Last resort: read a value shown in System Settings (read-only) through accessibility controls, '
+                     'when no command can read it. For documents use open_documents + doc_read / doc_replace / '
+                     'doc_append_lines. Never use it for arithmetic or anything you can do directly.'),
         parameters={'type': 'object', 'properties': {
-            'app': {'type': 'string', 'enum': ['calculator', 'textedit', 'settings']},
-            'instruction': {'type': 'string'},
-            'document': {'type': 'string', 'description': 'TextEdit only: document name or path', 'default': ''}},
+            'app': {'type': 'string', 'enum': ['settings']},
+            'instruction': {'type': 'string'}},
             'required': ['app', 'instruction']},
-        handler=lambda app, instruction, document='': json.dumps(service.run(app, instruction, document),
-                                                                 ensure_ascii=False),
+        handler=lambda app, instruction: json.dumps(service.run(app, instruction), ensure_ascii=False),
         safety_level='SAFE'))
     registry.register(ToolDefinition(
         name='desktop_learn',

@@ -47,9 +47,13 @@ SYSTEM_CTRL_KEYWORDS = frozenset((
 ))
 SKILL_KEYWORDS = frozenset(("skill", "技能", "流程", "模板", "复用", "沉淀"))
 REMINDER_KEYWORDS = frozenset(("提醒", "生日", "纪念日", "记得", "别忘", "截止", "deadline", "remind"))
+# D0: a request about a named or open document. Only the document tools are offered (in the first app test
+# the 4B model ran `open -a TextEdit /Users/yourname/...` with invented paths instead of reading the file).
+DOC_FILE_PATTERN = r"[\w\-\u4e00-\u9fff]+\.(?:txt|md|markdown|csv|json|log|py|yaml|yml)\b"
+DOC_TOOLS = frozenset({"open_documents", "doc_read", "doc_replace", "doc_append_lines", "fs_search", "fs_undo_last"})
 # G0 in the app: Calculator / TextEdit / read-only System Settings through accessibility, and the user's correction.
 DESKTOP_KEYWORDS = frozenset((
-    "计算器", "calculator", "textedit", "文本编辑", "系统设置", "设置里", "设置中",
+    "textedit", "文本编辑", "系统设置", "设置里", "设置中", "文档", "打开的", "备忘", "笔记",
     "不对", "错了", "应该是",
 ))
 
@@ -85,7 +89,7 @@ BASE: frozenset[str] = CORE | LOCAL_SKILL_TOOLS | frozenset({
 
 # Tools the server registers after startup because they bind live state (not in
 # create_default_registry), so the phantom-name audit must not expect them there.
-SERVER_SLOTS: frozenset[str] = frozenset({"remember_date", "desktop_task", "desktop_learn"})
+SERVER_SLOTS: frozenset[str] = frozenset({"remember_date", "desktop_task", "desktop_learn", "open_documents"})
 # Prefix of self-learned skill tools adopted with the user's consent (ToolRegistry.register_custom).
 ADOPTED_PREFIX = "custom_"
 
@@ -93,7 +97,7 @@ ADOPTED_PREFIX = "custom_"
 GROUPS: dict[str, frozenset[str]] = {
     "web": frozenset({"tinyfish_search", "tavily_search", "search_and_open", "fetch_content"}),
     "browse": frozenset({"open_url", "open_website", "open_app"}),
-    "files": frozenset({"fs_move", "fs_rename", "fs_write", "fs_trash"}),
+    "files": frozenset({"fs_move", "fs_rename", "fs_write", "fs_trash", "doc_read", "doc_replace", "doc_append_lines"}),
     "system": frozenset({
         "system_capabilities", "take_screenshot",
         "shortcuts_list", "shortcuts_run", "shortcuts_view",
@@ -104,7 +108,8 @@ GROUPS: dict[str, frozenset[str]] = {
     # Registered by the server (needs the live MemoryProfile), feeds proactive reminders.
     "reminders": frozenset({"remember_date"}),
     # Registered by the server on macOS (core.computer_use.desktop_service).
-    "desktop": frozenset({"desktop_task", "desktop_learn"}),
+    "desktop": frozenset({"open_documents", "doc_read", "doc_replace", "doc_append_lines",
+                          "desktop_task", "desktop_learn"}),
 }
 
 # Command route: the action surface (system/file/browse plus search, which the old
@@ -176,6 +181,12 @@ def _route_groups(route: str, text: str, groups: dict[str, frozenset[str]]) -> s
     return chosen
 
 
+def is_document_request(text: str) -> bool:
+    import re
+    text = str(text or "").lower()
+    return bool(re.search(DOC_FILE_PATTERN, text)) or ("打开的" in text and ("文档" in text or "文件" in text))
+
+
 def select(
     user_input: str,
     route: str,
@@ -217,6 +228,10 @@ def select(
             # Fail-open: never let a missing classification hide a capability.
             unclassified = tuple(sorted(unknown))
             names |= set(unclassified)
+
+    if is_document_request(text):
+        names = (names & (set(CORE) | set(DOC_TOOLS))) | (set(DOC_TOOLS) & (set(registered) if registered else set(DOC_TOOLS)))
+        names -= {"web_fetch", "search", "smart_search", "web_search"}
 
     # Weather answers inline: never hand the model a browser for it.
     if "天气" in text:

@@ -1,0 +1,17 @@
+[meeting-notes]
+Team meeting on Tuesday at 4pm.
+Agenda: budget, hiring.
+[shopping]
+Shopping list:
+- eggs
+- bread
+- milk
+[todo]
+To do today:
+- book dentist (Friday)
+- send report
+[letter]
+Dear Mr. Zhang,
+Thank you for the invitation. I will attend.
+Best regards
+Wenbo

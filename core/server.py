@@ -1779,6 +1779,14 @@ class KageServer:
                 # 2. Thinking Phase
                 await self.send_state("THINKING")
 
+                # D0: requests about a named/open document get the real paths next to them (CLI-first editing).
+                if getattr(self, "desktop_service", None) is not None:
+                    from core.computer_use.desktop_service import document_hint
+                    hint = await asyncio.to_thread(document_hint, str(user_input or ""))
+                    if hint:
+                        user_input = str(user_input or "") + hint
+                        self._log_server_event("desktop.document_hint", chars=len(hint))
+
                 # Unified agentic loop (model -> tools -> observe -> model)
                 turn_key = str(self._active_turn_id or f"turn-{uuid4().hex[:8]}")
                 self.trajectories.begin(turn_key, str(user_input or ""))
