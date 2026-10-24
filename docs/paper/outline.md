@@ -1,5 +1,7 @@
 # 论文提纲（边做边写，2026-10-18 起）
 
+> **10-24：初稿 v0.1 已写成 [`draft.md`](draft.md)**，标题改为 *Interface First, Then Teach, Then Consolidate*，主线：采纳缺口 → 先排除接口（C4、G0）→ 让学生把规则落到本题（G0）→ 巩固的提升与遗忘来自同一批样本（R3–R3e）。下表保留作 10-20 时的证据对照。
+
 **工作标题**：*Learning Without Retraining Is Not Enough: Self-Evolution of a 4B Computer-Use Agent Under a Four-Dollar Teacher Budget*
 （备选：*Retrieved but Not Followed: Consolidating Teacher Guidance into a Small Local Agent*）
 
