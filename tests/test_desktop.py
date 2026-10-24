@@ -56,3 +56,24 @@ def test_settings_switch_answer_matching():
     assert not reader.check({'answer': 'off'})['passed']
     assert not reader.check({'answer': 'on or off, not sure'})['passed']
     assert not reader.check(None)['passed']
+
+
+def test_app_desktop_tools_register_and_detect_corrections(tmp_path):
+    from core.computer_use.desktop_service import DesktopService, is_correction, register_desktop_tools
+    from core.tool_registry import ToolRegistry
+    registry = ToolRegistry()
+    service = DesktopService(model_provider=None, root=tmp_path)
+    register_desktop_tools(registry, service)
+    assert registry.has_tool('desktop_task') and registry.has_tool('desktop_learn')
+    description = registry._tools['desktop_task'].description
+    assert 'Never use it for plain arithmetic' in description
+    assert is_correction('不对，应该是 126') and is_correction('That is wrong') and not is_correction('帮我改一下文档')
+    assert not service.recent()                                  # nothing ran yet: a "不对" is ordinary chat
+    assert service.learn('不对')['success'] is False
+    assert 'unsupported app' in service.run('photoshop', 'x')['error']
+
+
+def test_arithmetic_alone_does_not_surface_desktop_tools():
+    from core.tool_visibility import select
+    assert 'desktop_task' not in select('帮我算一下 (15 + 27) × 3', 'chat').names
+    assert 'desktop_task' in select('系统设置里边栏图标大小是多少', 'chat').names

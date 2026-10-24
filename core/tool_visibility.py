@@ -47,6 +47,11 @@ SYSTEM_CTRL_KEYWORDS = frozenset((
 ))
 SKILL_KEYWORDS = frozenset(("skill", "技能", "流程", "模板", "复用", "沉淀"))
 REMINDER_KEYWORDS = frozenset(("提醒", "生日", "纪念日", "记得", "别忘", "截止", "deadline", "remind"))
+# G0 in the app: Calculator / TextEdit / read-only System Settings through accessibility, and the user's correction.
+DESKTOP_KEYWORDS = frozenset((
+    "计算器", "calculator", "textedit", "文本编辑", "系统设置", "设置里", "设置中",
+    "不对", "错了", "应该是",
+))
 
 # ---------------------------------------------------------------------------
 # CORE: present on every route. Kept small — it is paid for on every request.
@@ -80,7 +85,7 @@ BASE: frozenset[str] = CORE | LOCAL_SKILL_TOOLS | frozenset({
 
 # Tools the server registers after startup because they bind live state (not in
 # create_default_registry), so the phantom-name audit must not expect them there.
-SERVER_SLOTS: frozenset[str] = frozenset({"remember_date"})
+SERVER_SLOTS: frozenset[str] = frozenset({"remember_date", "desktop_task", "desktop_learn"})
 # Prefix of self-learned skill tools adopted with the user's consent (ToolRegistry.register_custom).
 ADOPTED_PREFIX = "custom_"
 
@@ -97,7 +102,9 @@ GROUPS: dict[str, frozenset[str]] = {
         "skills_find_remote", "skills_list", "skills_install", "proactive_agent",
     }),
     # Registered by the server (needs the live MemoryProfile), feeds proactive reminders.
-    "reminders": SERVER_SLOTS,
+    "reminders": frozenset({"remember_date"}),
+    # Registered by the server on macOS (core.computer_use.desktop_service).
+    "desktop": frozenset({"desktop_task", "desktop_learn"}),
 }
 
 # Command route: the action surface (system/file/browse plus search, which the old
@@ -146,6 +153,7 @@ def _route_groups(route: str, text: str, groups: dict[str, frozenset[str]]) -> s
     is_system = any(k in text for k in SYSTEM_CTRL_KEYWORDS)
     is_skill = any(k in text for k in SKILL_KEYWORDS)
     is_reminder = any(k in text for k in REMINDER_KEYWORDS)
+    is_desktop = any(k in text for k in DESKTOP_KEYWORDS)
 
     if route == "command":
         # Commands act on the machine: browsing is always in scope; the rest is
@@ -163,6 +171,8 @@ def _route_groups(route: str, text: str, groups: dict[str, frozenset[str]]) -> s
         chosen |= groups["skills"]
     if is_reminder:
         chosen |= groups["reminders"]
+    if is_desktop:
+        chosen |= groups["desktop"]
     return chosen
 
 

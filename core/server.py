@@ -729,6 +729,15 @@ class KageServer:
             safety_level="SAFE",
         ))
 
+        # --- macOS apps through accessibility (G0): desktop_task / desktop_learn ---
+        if sys.platform == "darwin":
+            try:
+                from core.computer_use.desktop_service import DesktopService, register_desktop_tools
+                self.desktop_service = DesktopService(self.model_provider)
+                register_desktop_tools(self.tool_registry, self.desktop_service)
+            except Exception:
+                logger.warning("Desktop tools unavailable", exc_info=True)
+
         # --- Agentic Loop ---
         self.agentic_loop = AgenticLoop(
             model_provider=self.model_provider,
@@ -1750,6 +1759,22 @@ class KageServer:
                         continue
                     if pending_result.preserve_pending:
                         pass
+
+                # Correction right after a desktop task: the teacher turns it into a lesson for that app (G0).
+                desktop = getattr(self, "desktop_service", None)
+                if desktop is not None and desktop.recent():
+                    from core.computer_use.desktop_service import is_correction
+                    if is_correction(user_input):
+                        await self.send_state("THINKING")
+                        learned = await asyncio.to_thread(desktop.learn, str(user_input or ""))
+                        self._log_server_event("desktop.lesson", success=bool(learned.get("success")),
+                                               cost_usd=learned.get("cost_usd"))
+                        reply = (f"明白了，我记下了这条经验，下次在{learned['app']}里会照着做：{learned['lesson']}"
+                                 if learned.get("success") else f"这次没能记下经验：{learned.get('error')}")
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="desktop_lesson", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
 
                 # 2. Thinking Phase
                 await self.send_state("THINKING")
