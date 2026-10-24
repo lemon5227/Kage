@@ -1,0 +1,40 @@
+你> 打开微信
+Kage> 已打开微信。
+你> 帮我打开飞书
+Kage> 已打开飞书。
+你> 启动一下 VS Code
+Kage> 已打开Visual Studio Code。
+你> 打开浏览器
+Kage> 已打开Google Chrome。
+你> 开一下谷歌浏览器
+Kage> 已打开Google Chrome。
+你> 打开备忘录
+Kage> 已打开备忘录。
+你> 打开提醒事项
+Kage> 已打开提醒事项。
+你> 帮我把日历打开
+Kage> 已打开日历。
+你> 打开邮件
+Kage> 已打开邮件。
+你> 打开系统设置
+Kage> 已打开系统设置。
+你> 打开终端
+Kage> 已打开终端。
+你> 打开活动监视器
+Kage> 已打开活动监视器。
+你> 打开 QQ
+Kage> 已打开QQ。
+你> 打开访达
+Kage> 已打开访达。
+你> 打开照片
+Kage> 已打开照片。
+你> open Safari
+Kage> 已打开Safari浏览器。
+你> launch Cursor
+Kage> 已打开Cursor。
+你> 打开微信app
+Kage> 已打开微信。
+你> 打开 UU 远程
+Kage> 已打开UU远程。
+你> 打开 Photoshop
+Kage> 没有找到叫“Photoshop”的应用，是不是：Photo Booth？

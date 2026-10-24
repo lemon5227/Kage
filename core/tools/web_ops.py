@@ -318,16 +318,21 @@ def open_url(url: str) -> str:
 
 
 def open_app(app_name: str) -> str:
-    """Open an application by name."""
+    """Open an application by what the user calls it (D1: 微信 -> WeChat.app, 飞书 -> Lark.app, vscode, …).
+
+    The old version ran `open -a <name>` unchecked and reported success even when no app had that name."""
     name = str(app_name or "").strip()
     if not name:
         # Without this check, `open -a ""` was issued and reported as success.
         return err("InvalidArgument", "应用名不能为空")
     try:
-        subprocess.run(["open", "-a", name], check=False)
-        return ok(opened=name)
+        from core.tools.app_index import open_app as resolve_and_open
+        result = resolve_and_open(name)
     except Exception as e:
         return err("OpenFailed", str(e))
+    if not result.get("success"):
+        return err(result.get("error", "OpenFailed"), result.get("message", ""))
+    return ok(**{k: v for k, v in result.items() if k != "success"})
 
 
 def open_website(site: str) -> str:
