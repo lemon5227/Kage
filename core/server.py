@@ -729,6 +729,12 @@ class KageServer:
             safety_level="SAFE",
         ))
 
+        # --- Usage log (10-25): every turn, its outcome, and how the user did what Kage failed ---
+        from core.activity_log import ActivityLog
+        self.activity_log = ActivityLog()
+        self._turn_tools: list = []
+        self._turn_reply: tuple[str, str] = ("", "")
+
         # --- macOS apps through accessibility (G0): desktop_task / desktop_learn ---
         if sys.platform == "darwin":
             try:
@@ -787,6 +793,12 @@ class KageServer:
         heartbeat_cfg = cfg.get("heartbeat", {})
         heartbeat_interval = heartbeat_cfg.get("interval_minutes", 30)
         heartbeat_enabled = heartbeat_cfg.get("enabled", True)
+        # D2: daily schedule brief (default 12:30); a 10-minute heartbeat keeps it at most 10 minutes late.
+        from core.calendar_brief import DailyBriefSource
+        brief_cfg = cfg.get("daily_brief", {}) if isinstance(cfg.get("daily_brief", {}), dict) else {}
+        daily_brief = DailyBriefSource(brief_cfg) if sys.platform == "darwin" else None
+        if daily_brief is not None and daily_brief.enabled:
+            heartbeat_interval = min(int(heartbeat_interval), 10)
         self.heartbeat = Heartbeat(
             tool_executor=self.tool_executor,
             session_manager=self.session_manager,
@@ -794,7 +806,8 @@ class KageServer:
             on_notifications=self._deliver_proactive_notifications,
             proactive_config=heartbeat_cfg,
             sources=[ImportantDateSource(lambda: memory_profile), self.evolution_scheduler,
-                     NoticeSource(NoticeStore(self._notices_path)), self.practice_scheduler],
+                     NoticeSource(NoticeStore(self._notices_path)), self.practice_scheduler,
+                     *([daily_brief] if daily_brief is not None else [])],
         )
         self._heartbeat_enabled = heartbeat_enabled
         # action.type -> async handler(action); filled by proactive triggers that offer a follow-up.
@@ -970,6 +983,14 @@ class KageServer:
         }
         payload.update(fields)
         self._log_server_event("turn.done", **payload)
+        activity = getattr(self, "activity_log", None)
+        request, reply = getattr(self, "_turn_reply", ("", ""))
+        if activity is not None and request:
+            try:
+                activity.record(request=request, reply=reply, path=path, tools=getattr(self, "_turn_tools", []))
+            except Exception:
+                logger.warning("activity log failed", exc_info=True)
+        self._turn_tools, self._turn_reply = [], ("", "")
 
     def _record_turn_completed(self, user_input: str, assistant_response: str) -> None:
         """Record completed turn to both in-memory and file-backed session state."""
@@ -977,6 +998,7 @@ class KageServer:
         a = str(assistant_response or "").strip()
         if not u or not a:
             return
+        self._turn_reply = (u, a)
         if hasattr(self, "session") and self.session is not None:
             try:
                 self.session.add_turn("user", u)
@@ -1703,6 +1725,39 @@ class KageServer:
                     except Exception:
                         pass
 
+                # Usage log: "看看今天的使用日志", and "我是这样做的：…" right after a failed turn.
+                if self.activity_log is not None:
+                    from core.activity_log import wants_log
+                    if wants_log(user_input):
+                        reply = self.activity_log.summary()
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="activity_log", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+                    attached = self.activity_log.attach_user_method(str(user_input or ""))
+                    if attached is not None:
+                        reply = f"记下了：下次遇到“{attached['request'][:30]}”这类事，我照你的做法来。"
+                        try:   # recalled by memory search on similar requests later
+                            self.memory.add_memory(content=f"之前没做成“{attached['request']}”，用户的做法：{user_input}",
+                                                   importance=3, emotion=current_emotion_str, type="how_to")
+                        except Exception:
+                            logger.warning("saving the user's method to memory failed", exc_info=True)
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="desktop_lesson", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+
+                # D2 fast path: "今天/明天有什么日程" is read from the calendar, not guessed by the model.
+                if sys.platform == "darwin":
+                    from core.calendar_brief import answer as calendar_answer
+                    reply = await asyncio.to_thread(calendar_answer, str(user_input or ""))
+                    if reply:
+                        await self.send_state("THINKING")
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="calendar_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+
                 # D1 fast path: "打开微信" / "把日历打开" / "open Safari" — resolve and open without the model
                 # (the 4B model answered "已打开…" with no tool call for 5 of 9 such requests).
                 try:
@@ -1832,6 +1887,13 @@ class KageServer:
                         logger.warning("Trajectory record failed", exc_info=True)
                 final_speech = loop_result.final_text
                 executed_tools = bool(loop_result.tool_calls_executed)
+                self._turn_tools = list(loop_result.tool_calls_executed or [])
+                try:
+                    from core.activity_log import FAILURE_FOLLOW_UP, classify
+                    if classify("agentic_loop", str(final_speech or ""), self._turn_tools)[0] == "failed":
+                        final_speech = f"{final_speech}\n{FAILURE_FOLLOW_UP}"
+                except Exception:
+                    pass
                 if record is not None and record.get("kind") == "task":
                     # Ask for a one-click verdict on task turns (the training label for later learning).
                     await self.send_message("turn_review", {"turn_id": record["id"],

@@ -1,2 +1,3 @@
 # Optional DOM browser adapter; install browser binary separately.
 playwright==1.63.0
+pyobjc-framework-EventKit>=12.1   # D2: calendar/reminders (read-only daily briefing)

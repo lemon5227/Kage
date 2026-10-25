@@ -1,4 +1,5 @@
 {
+  "daily_brief": {"enabled": true, "time": "12:30"},
     "model": {
         "path": "InternScience/Agents-A1-4B-Q4_K_M-GGUF",
         "preferred_model": "local",

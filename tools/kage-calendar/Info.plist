@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>com.kage.calendar-helper</string>
+  <key>CFBundleName</key><string>Kage Calendar</string>
+  <key>CFBundleExecutable</key><string>kage-calendar</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>LSUIElement</key><true/>
+  <key>NSCalendarsFullAccessUsageDescription</key><string>Kage 读取你的日历，用于每天中午的日程提醒（只读；仅测试时会新建并删除一个“Kage 测试”日历）。</string>
+  <key>NSRemindersFullAccessUsageDescription</key><string>Kage 读取未完成的提醒事项，放进每天的日程提醒（只读）。</string>
+</dict></plist>
