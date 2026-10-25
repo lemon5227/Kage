@@ -33,7 +33,7 @@ def classify(path: str, reply: str, tools: list[dict]) -> tuple[str, str]:
         return 'learned', ''
     if path == 'open_app_fastpath':
         return ('ok', '') if reply.startswith('已打开') else ('failed', reply[:120])
-    if path == 'opencli_site':
+    if path in ('opencli_site', 'opencli_clef'):
         return ('failed', reply[:120]) if re.search(r'登录|出错|失败|没有拿到|无法', reply) else ('ok', '')
     if path == 'wechat_send':
         if reply.startswith('已发给'):

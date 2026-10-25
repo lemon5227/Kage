@@ -1620,7 +1620,10 @@ class KageServer:
                         await self.send_state("THINKING")
                         await self.mouth_speak(resumed, current_emotion_str)
                         self._record_turn_completed(user_input, resumed)
-                        self._log_turn_done(path="opencli_site", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        from core.tools.opencli_tool import LAST_DECISION
+                        # who chose the command: the decision model (Clef) or the local model's own loop
+                        site_path = "opencli_clef" if LAST_DECISION.get("by") == "clef" else "opencli_site"
+                        self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
                 if site_request and not self.session.has_pending_action():
                     await self.send_state("THINKING")
@@ -1631,7 +1634,10 @@ class KageServer:
                     if reply:
                         await self.mouth_speak(reply, current_emotion_str)
                         self._record_turn_completed(user_input, reply)
-                        self._log_turn_done(path="opencli_site", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        from core.tools.opencli_tool import LAST_DECISION
+                        # who chose the command: the decision model (Clef) or the local model's own loop
+                        site_path = "opencli_clef" if LAST_DECISION.get("by") == "clef" else "opencli_site"
+                        self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
 
                 # High-confidence video lookup fast path: preserve user phrase and

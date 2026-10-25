@@ -1,0 +1,13 @@
+✗ 知乎热榜前三是什么 | hot 0.98 list False 0.8 n 3 q None 0.98 0.289s
+✓ 在知乎搜一下大模型 Agent | search 0.97 list True 0.61 n 5 q 大模型 Agent 0.99 0.223s
+✗ 知乎上关于考研的热门问题有哪些 | search 0.83 list False 0.78 n 5 q 考研 0.98 0.209s
+✓ B站热门视频前五是什么 | hot 0.96 list True 0.77 n 5 q None 0.99 0.724s
+✓ B站排行榜第一名是哪个视频 | ranking 0.94 list True 0.62 n 1 q None 0.91 0.818s
+✓ 在B站搜一下 AI Agent 教程 | search 0.96 list True 0.88 n 5 q AI Agent 教程 1.0 0.217s
+✗ 微博热搜 | hot 0.97 list True 0.95 n 10 q None 0.0 0.347s
+✓ 知乎现在大家都在讨论啥 | hot 0.88 list True 0.76 n 5 q None 0.96 0.353s
+✗ b站有没有讲 transformer 的视频 | search 0.96 list True 0.61 n 5 q None 0.7 0.248s
+✓ 微博上最火的三条是啥 | hot 0.95 list True 0.89 n 3 q None 0.98 0.213s
+✓ 知乎热榜第一条讲的是什么，帮我总结一下 | hot 0.94 list False 0.96 n 1 q None 0.99 0.415s
+✓ B站热门里哪个视频播放量最高 | hot 0.93 list False 0.87 n 1 q None 0.98 0.461s
+8 / 12

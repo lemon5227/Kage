@@ -143,6 +143,13 @@ def _block_desktop_side_effects(request, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_cloud_decision_model(monkeypatch):
+    """The hosted decision model (Clef) costs ledger money and needs the network: never call it from tests."""
+    from core import decision_model
+    monkeypatch.setattr(decision_model, "available", lambda: False)
+
+
+@pytest.fixture(autouse=True)
 def _ensure_event_loop():
     """Ensure a usable default event loop exists for each test.
 

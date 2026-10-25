@@ -1,0 +1,11 @@
+✓ 快 哔哩哔哩今天什么视频最火 | hot 0.93 list True 0.82 n 1 q None 0.96 0.229s
+✗ 快 知乎上有人讨论 Rust 吗，搜一下 | search 0.95 list True 0.93 n 5 q 有人讨论 Rust 0.95 0.347s
+✓ 快 给我列一下微博热搜前十 | hot 0.98 list True 0.97 n 10 q None 0.93 0.402s
+✓ 快 B站上找找猫咪视频 | search 0.94 list True 0.96 n 5 q 猫咪 0.99 0.381s
+✓ 模型 知乎热榜里有没有跟AI相关的 | hot 0.87 list False 0.91 n 5 q None 0.83 0.247s
+✗ 模型 微博热搜第一是什么事 | hot 0.97 list False 0.75 n 1 q None 0.98 0.497s
+✗ 快 在知乎搜“考研数学怎么复习” | search 0.96 list True 0.97 n 5 q “考研数学怎么复习” 1.0 0.448s
+✓ 模型 B站热门视频里哪个最适合学英语 | hot 0.8 list False 0.9 n 1 q None 0.8 0.464s
+✓ 快 知乎热榜 | hot 0.97 list True 0.98 n 5 q None 0.0 0.348s
+✓ 快 帮我在微博搜一下世界赛 | search 0.97 list True 0.97 n 5 q 世界赛 0.98 0.681s
+7 / 10 fast 7

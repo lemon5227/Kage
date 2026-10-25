@@ -175,10 +175,148 @@ SITE_SYSTEM = ('你是 Kage，用户的电脑助手。用户问的是某个网�
                '登录），不要编造。')
 
 
+TITLE_FIELDS = ('title', 'name', 'word', 'keyword', 'question', 'desc', 'text')
+METRIC_FIELDS = ('heat', 'hot', 'hot_value', 'score', 'play', 'views', 'view', 'likes', 'votes', 'answers')
+AUTHOR_FIELDS = ('author', 'owner', 'up', 'user')
+COUNTS = {'1': '只要第一名 / 一条', '3': '前三条', '5': '没说数量，或前五条', '10': '前十条或更多'}
+CONFIDENT = 0.8
+STOP_WORDS = re.compile(r'(请|帮我|给我|关于|有没有讲|有没有|讲|介绍|相关|在|去|到|上面?|里面?|一下|看看|搜一搜|搜索|搜|查一下|查查|查|找一下|找找|找|'
+                        r'有哪些|有什么|是什么|是哪些|是哪个|都有啥|吗|呢|的?热门|热榜|热搜|内容|视频|问题|帖子|笔记|[？?。！!，,])')
+
+
+DISPLAY = {'bilibili': 'B站'}
+
+
+def display_name(site: str) -> str:
+    return DISPLAY.get(site) or next((k for k, v in SITES.items() if v == site and not k.isascii()), site)
+
+
+def _rows_text(rows: list, with_author: bool) -> list[str]:
+    lines = []
+    for i, row in enumerate(rows, 1):
+        if not isinstance(row, dict):
+            lines.append(f'{i}. {row}')
+            continue
+        title = re.sub(r'</?em>', '', next((str(row[f]) for f in TITLE_FIELDS if row.get(f)), ''))
+        if not title:
+            continue
+        metric = next((f'{row[f]}' for f in METRIC_FIELDS if row.get(f) not in (None, '')), '')
+        author = re.sub(r'</?em>', '', next((str(row[f]) for f in AUTHOR_FIELDS if row.get(f)), '')) if with_author else ''
+        lines.append(f'{i}. {title}' + (f'（{metric}）' if metric else '') + (f' — {author}' if author else ''))
+    return lines
+
+
+def query_candidates(text: str) -> list[str]:
+    """Possible search terms cut from the user's words (the decision model picks one; it cannot write text)."""
+    text = re.sub('|'.join(re.escape(k) for k in ROUTED), ' ', str(text or ''), flags=re.I)
+    found = [m for m in re.findall(r'[“"「](.+?)[”"」]', text)]          # quoted words are the search term
+    about = re.search(r'关于\s*(.+?)\s*的', text)
+    if about:
+        found.append(about.group(1))
+    after = re.search(r'(?:搜一下|搜一搜|搜索|搜|查一下|查|找一下|找)\s*[：:]?\s*(.+)$', text)
+    if after:
+        found.append(STOP_WORDS.sub(' ', after.group(1)))
+    found.append(STOP_WORDS.sub(' ', text))
+    out = []
+    for q in found:
+        q = re.sub(r'\s+', ' ', q).strip(' 的“”"「」')
+        if q and q not in out and len(q) <= 30:
+            out.append(q)
+    return out
+
+
+def decide(text: str, site: str, reads: dict) -> dict | None:
+    """Ask the decision model which read command fits, whether a plain list answers the request, how many rows,
+    and (for a search) which search term. None when it is unavailable."""
+    from core import decision_model
+    if not decision_model.available():
+        return None
+    commands = {name: (c['description'] or name)[:60] for name, c in reads.items()
+                if name not in NOT_FOR_READ_TOOL and name not in ('whoami', 'me')}
+    commands['none'] = '以上命令都不合适'
+    questions = {
+        'command': {'type': 'choice', 'question': f'要满足这个请求，应该运行网站 {site} 的哪个只读命令？',
+                    'criteria': commands},
+        # asked as a concrete item, not "is a list enough?" (whole-request judgements were Clef's weak spot: 0.64)
+        'needs_reading': {'type': 'noul', 'question': '用户是否要求对条目做总结、解释、比较、挑出最高/最低，或按某个条件筛选？'},
+        'count': {'type': 'choice', 'question': '用户想看几条？', 'criteria': COUNTS},
+    }
+    queries = query_candidates(text)
+    if queries:
+        questions['query'] = {'type': 'choice', 'question': '如果要搜索，最合适的搜索词是哪个？',
+                              'criteria': {**{f'q{i}': q for i, q in enumerate(queries)}, 'none': '都不合适'}}
+    try:
+        answers = decision_model.ask(f'用户对桌面助手说：{text}', questions, run_id='site-route')
+    except decision_model.DecisionUnavailable:
+        return None
+    query = answers.get('query', (None, 0.0, {}))
+    return {'command': answers['command'][0], 'command_conf': answers['command'][1],
+            'list_only': not answers['needs_reading'][0], 'list_conf': answers['needs_reading'][1],
+            'count': int(answers['count'][0] or 5),
+            'query': queries[int(query[0][1:])] if query[0] and query[0] != 'none' else None, 'query_conf': query[1],
+            'latency_s': answers['_latency_s']}
+
+
+LAST_DECISION: dict = {}      # for the usage log / tests: what decided the last site request
+
+
+def quick_answer(text: str) -> str | None:
+    """Site requests the decision model is sure about: it picks the command (and search term, row count), the
+    program runs it and lists the rows. Replaces the local model's command choice (~4 s) and retelling (~6 s);
+    14 s → ~5 s for "知乎热榜前三" (10-25). None: not confident, or the request needs reading the content →
+    the local model's loop handles it. (A regex version tried first got 2 of 7 phrasings wrong.)"""
+    LAST_DECISION.clear()
+    site = site_of(text)
+    if site is None:
+        return None
+    try:
+        reads = {c['name']: c for c in catalog(site) if c['access'] == 'read'}
+    except Exception:
+        return None
+    decision = decide(str(text), site, reads)
+    if decision is None:
+        return None
+    LAST_DECISION.update(decision, site=site, by='clef')
+    command = decision['command']
+    if (command not in reads or decision['command_conf'] < CONFIDENT or not decision['list_only']
+            or decision['list_conf'] < CONFIDENT):
+        LAST_DECISION['by'] = 'local-model'
+        return None
+    args, head = {'limit': max(decision['count'], 1)}, ''
+    if reads[command]['positionals']:
+        if not decision['query'] or decision['query_conf'] < CONFIDENT:
+            LAST_DECISION['by'] = 'local-model'
+            return None
+        args[reads[command]['positionals'][0]] = decision['query']
+        head = f'“{decision["query"]}”'
+    result = json.loads(opencli_read(site, command, args))
+    if not result.get('success'):
+        if result.get('error') in ('AUTH_REQUIRED', 'EmptyResult'):
+            return open_login(site, text)
+        LAST_DECISION['by'] = 'local-model'
+        return None
+    rows = result['data'] if isinstance(result['data'], list) else [result['data']]
+    lines = _rows_text(rows[:decision['count']], with_author=bool(head))
+    if not lines:
+        return None
+    name = display_name(site)
+    if head:
+        title = f'{name}搜索{head}的前 {len(lines)} 条：'
+    else:
+        what = re.split(r'[\s(（,，]', reads[command]['description'] or '')[0][:16]
+        if not what or what.isascii():
+            what = {'hot': '热门', 'ranking': '排行榜', 'feed': '推荐', 'latest': '最新'}.get(command, command)
+        title = f'{what if what.startswith(name) else name + what}前 {len(lines)} 条：'
+    return title + '\n' + '\n'.join(lines)
+
+
 def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
     """A small dedicated loop for "B站热门 / 知乎热榜 / 小红书搜…": one tool (opencli_read), the site's command list,
     the local model. Runs before Kage's older video/search heuristics, which grabbed these requests in the first
     end-to-end test (a YouTube search, a web search answering "知乎热榜" with Zhihu's own homepage blurb)."""
+    quick = quick_answer(text)
+    if quick:
+        return quick
     hint = site_hint(text)
     if not hint:
         return None
@@ -218,7 +356,7 @@ def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
 def open_login(site: str, text: str) -> str:
     """Open the site's login page in Chrome and remember the request until the user says they are logged in."""
     url = LOGIN_URLS.get(site, f'https://www.{site}.com')
-    name = next((k for k, v in SITES.items() if v == site and not k.isascii()), site)
+    name = display_name(site)
     again = _pending.get('site') == site and _pending.get('text') == str(text)
     try:
         subprocess.run(['open', '-a', 'Google Chrome', url], check=True, timeout=10)
