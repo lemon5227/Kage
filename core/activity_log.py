@@ -18,7 +18,7 @@ import re
 import threading
 
 ROOT = Path('~/.kage/activity').expanduser()
-CLAIM = re.compile(r'(已|已经)(打开|修改|改好|添加|加好|删除|删掉|保存|发送|设置|完成|创建)')
+CLAIM = re.compile(r'(已|已经)(打开|修改|改好|添加|加好|删除|删掉|保存|发送|发给|发出|设置|完成|创建)')
 USER_METHOD = re.compile(r'(我是这样做的|我是这么做的|我自己|我手动|我最后|我后来|我是用|我用的是|我改成)')
 SHOW_LOG = re.compile(r'(看看|查看|给我看|总结).{0,6}(使用)?日志|今天(我)?(都)?(用你)?干了(啥|什么)')
 FOLLOW_UP_WINDOW_S = 2 * 3600

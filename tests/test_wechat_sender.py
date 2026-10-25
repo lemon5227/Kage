@@ -20,7 +20,7 @@ def test_confirm_first_except_allowlist(monkeypatch):
     reply = ws.answer('给张三发个微信：明天开会')
     assert '说“确认”发送' in reply and len(sent) == 2                          # nothing sent yet
     assert ws.answer('取消') == '好，不发了。' and len(sent) == 2
-    assert ws.answer('确认') is None                                            # nothing pending any more
+    assert ws.answer('确认').startswith('现在没有等你确认')                      # nothing pending any more
     ws.answer('给张三发个微信：明天开会')
     assert ws.answer('确认').startswith('已发给') and sent[-1] == ('张三', '明天开会')
 
@@ -42,3 +42,16 @@ def test_unknown_name_suggests_similar(monkeypatch):
     assert ws.answer('发给 wenbo2').startswith('好，改成发给“wenbo2”')
     assert ws.answer('确认') == '已发给 wenbo2：hi'
     assert '名字是不是说错了' in ws.answer('微信给查无此人发：hi') and len(sent) == 1
+
+
+def test_bare_confirm_after_wechat_turn_is_not_left_to_the_model(monkeypatch):
+    monkeypatch.setattr(ws, 'lookup', lambda to: (False, []))
+    ws._pending.clear()
+    assert '名字是不是说错了' in ws.answer('微信给查无此人发：hi')
+    assert ws.answer('确认') == '现在没有等你确认的微信消息，什么都没发。'
+    ws._last_reply['time'] = 0
+    assert ws.answer('确认') is None                      # long after: not ours
+
+
+def test_unverified_send_claim_is_flagged():
+    assert activity_log.classify('agentic_loop', '已发给 Wenbo yan：x', [])[0] == 'unverified'

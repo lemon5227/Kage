@@ -24,6 +24,7 @@ ASK = re.compile(r'(?:用|在)?微信(?:上|里)?(?:给|跟|和)\s*(?P<to>[^，,
 CONFIRM = re.compile(r'^(确认|确定|发吧|发送|可以发|好的?发|对)[。.!！]?$')
 CANCEL = re.compile(r'^(取消|不发了|算了|别发)[。.!！]?$')
 _pending: dict = {}
+_last_reply = {'time': 0.0}      # a bare "确认" right after a WeChat turn must not fall through to the model
 
 
 def _osa(script: str) -> str:
@@ -56,6 +57,28 @@ def _count(lines: list[str], text: str) -> int:
     return sum(key in re.sub(r'\W', '', _norm(line)) for line in lines)
 
 
+def _front() -> None:
+    """Bring WeChat's main window up and to the front. `open -a` also reopens a closed main window, which
+    `activate` does not: with the window closed the search popup never appears and every name looked unknown
+    (demo recording, 10-25)."""
+    import Quartz
+    subprocess.run(['open', '-a', 'WeChat'], check=False, timeout=10)
+    for _ in range(20):
+        time.sleep(0.25)
+        for w in Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID):
+            if (w.get('kCGWindowOwnerName', '') in ('WeChat', '微信') and w.get('kCGWindowLayer') == 0
+                    and w.get('kCGWindowBounds', {}).get('Width', 0) >= 500):
+                time.sleep(0.3)
+                return
+    raise RuntimeError('微信主窗口没有显示出来（可能还在登录页）')
+
+
+def _close_search() -> None:
+    """Escape only while the search popup is open: an extra Escape closes WeChat's main window."""
+    if _popup() is not None:
+        _keys('key code 53')
+
+
 def _main_window() -> int:
     windows = [w for w in wechat_reader.wechat_windows() if w['width'] >= 500]
     if not windows:
@@ -72,7 +95,9 @@ def _read_pane() -> tuple[str, list[str]]:
         image.unlink(missing_ok=True)
     pane = [b for b in boxes if b['x'] > width * 0.3]
     top = [b for b in pane if b['y'] < height * 0.06]
-    title = ' '.join(b['text'] for b in sorted(top, key=lambda b: b['x']) if b['text'].strip() not in ('•••', '...'))
+    # single-glyph boxes are title-bar icons (a narrow window adds a back arrow, read as "く")
+    words = [b for b in sorted(top, key=lambda b: b['x']) if b['text'].strip() not in ('•••', '...')]
+    title = ' '.join(b['text'] for b in (words if len(words) == 1 else [w for w in words if len(w['text'].strip()) > 1]))
     messages = [b['text'] for b in pane if height * 0.06 < b['y'] < height * 0.78]
     return title.strip(), messages
 
@@ -135,7 +160,7 @@ def _similar(to: str) -> list[str]:
     for query in queries:
         _, rows = _search(query)
         names += [r['text'].strip() for r in rows]
-    _keys('key code 53')
+    _close_search()
     scored = {n: difflib.SequenceMatcher(None, _norm(to), _norm(n)).ratio() for n in names}
     return [n for n, score in sorted(scored.items(), key=lambda kv: -kv[1]) if score >= 0.4][:3]
 
@@ -146,10 +171,9 @@ def lookup(to: str) -> tuple[bool, list[str]]:
     import difflib
     saved = _clipboard()
     try:
-        _osa('tell application "WeChat" to activate')
-        time.sleep(0.6)
+        _front()
         _, rows = _search(to)
-        _keys('key code 53')
+        _close_search()
         if any(_norm(r['text']) == _norm(to) for r in rows):
             return True, []
         names = [r['text'].strip() for r in rows
@@ -180,13 +204,11 @@ def send(to: str, text: str) -> str:
     """Open the chat with `to`, check its title, send `text`, check it appears. Returns a reply for the user."""
     saved = _clipboard()
     try:
-        _osa('tell application "WeChat" to activate')
-        time.sleep(0.6)
-        _main_window()
+        _front()
         popup, rows = _search(to)
         exact = [r for r in rows if _norm(r['text']) == _norm(to)]
         if popup is None or not exact:
-            _keys('key code 53')
+            _close_search()
             return f'没有发送：微信搜索里没找到名字正好是“{to}”的联系人或群。'
         hit = exact[0]
         _click(popup['x'] + (hit['x'] + hit['w'] / 2) / popup['scale'],
@@ -194,7 +216,7 @@ def send(to: str, text: str) -> str:
         time.sleep(1.2)
         title, before = _read_pane()
         if _norm(title) != _norm(to):
-            _keys('key code 53')                      # Escape: leave the search, type nothing
+            _close_search()                      # Escape: leave the search, type nothing
             return f'没有发送：搜索“{to}”打开的是“{title or '（没认出）'}”，和收件人对不上。'
         _set_clipboard(text)
         _keys('keystroke "v" using command down', 'delay 0.4', 'key code 36')
@@ -223,6 +245,7 @@ def answer(text: str) -> str | None:
     """Fast path: "微信给X发：…" (send now if X is pre-approved, else ask), then "确认"/"取消"."""
     text = str(text or '').strip()
     if _pending and time.time() - _pending['time'] < 300:
+        _last_reply['time'] = time.time()
         if CONFIRM.match(text):
             pending = dict(_pending)
             _pending.clear()
@@ -235,9 +258,13 @@ def answer(text: str) -> str | None:
         if CANCEL.match(text):
             _pending.clear()
             return '好，不发了。'
+    if (CONFIRM.match(text) or CANCEL.match(text)) and time.time() - _last_reply['time'] < 300:
+        # the 4B model answered such a "确认" with an invented "已发给 …" (demo recording, 10-25)
+        return '现在没有等你确认的微信消息，什么都没发。'
     request = parse(text)
     if request is None:
         return None
+    _last_reply['time'] = time.time()
     to, body = request
     try:
         exists, similar = lookup(to)
