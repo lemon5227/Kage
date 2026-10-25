@@ -61,7 +61,8 @@ def classify_realtime_task(user_input: str) -> RealtimeTaskClass:
     from core.activity_log import wants_log
     from core.calendar_brief import ASK as SCHEDULE_ASK
     from core.mail_reader import ASK as MAIL_ASK, PICK as MAIL_PICK
-    if MAIL_ASK.search(text) or MAIL_PICK.search(text) or SCHEDULE_ASK.search(text) or wants_log(text):
+    from core.wechat_reader import ASK as WECHAT_ASK
+    if MAIL_ASK.search(text) or MAIL_PICK.search(text) or SCHEDULE_ASK.search(text) or wants_log(text) or WECHAT_ASK.search(text):
         return RealtimeTaskClass(lane="realtime", reason="desktop_fastpath", can_background=False)
 
     if any(k in text for k in ("整理桌面", "整理下载", "批量", "归类", "总结", "分析")):

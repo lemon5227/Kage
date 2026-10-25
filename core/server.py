@@ -1806,6 +1806,17 @@ class KageServer:
                         self._log_turn_done(path="mail_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
 
+                # D4a fast path: WeChat unread chats from a screenshot + on-device OCR (WeChat has no accessibility tree).
+                if sys.platform == "darwin":
+                    from core import wechat_reader
+                    reply = await asyncio.to_thread(wechat_reader.answer, str(user_input or ""))
+                    if reply:
+                        await self.send_state("THINKING")
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="wechat_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+
                 # D1 fast path: "打开微信" / "把日历打开" / "open Safari" — resolve and open without the model
                 # (the 4B model answered "已打开…" with no tool call for 5 of 9 such requests).
                 try:

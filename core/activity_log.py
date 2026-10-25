@@ -35,6 +35,8 @@ def classify(path: str, reply: str, tools: list[dict]) -> tuple[str, str]:
         return ('ok', '') if reply.startswith('已打开') else ('failed', reply[:120])
     if path == 'opencli_site':
         return ('failed', reply[:120]) if re.search(r'登录|出错|失败|没有拿到|无法', reply) else ('ok', '')
+    if path == 'wechat_fastpath':
+        return ('failed', reply[:120]) if reply.startswith(('没能读取', '没认出')) else ('ok', '')
     if path in ('mail_fastpath', 'calendar_fastpath'):
         return ('failed', reply[:120]) if reply.startswith(('没能读取', '这封邮件已经找不到')) else ('ok', '')
     failed = [t for t in tools if not t.get('success')]

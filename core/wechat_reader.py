@@ -70,12 +70,15 @@ def red_badge(image: Path, x0: float, y0: float, x1: float, y1: float) -> bool:
     width, height = Quartz.CGImageGetWidth(cg), Quartz.CGImageGetHeight(cg)
     data = Quartz.CGDataProviderCopyData(Quartz.CGImageGetDataProvider(cg))
     per_row, bpp = Quartz.CGImageGetBytesPerRow(cg), Quartz.CGImageGetBitsPerPixel(cg) // 8
+    # screencapture PNGs are RGBA (alpha last); a first-alpha layout would shift the channels by one.
+    first = 1 if Quartz.CGImageGetAlphaInfo(cg) in (Quartz.kCGImageAlphaPremultipliedFirst, Quartz.kCGImageAlphaFirst,
+                                                     Quartz.kCGImageAlphaNoneSkipFirst) else 0
     reds = 0
     for y in range(max(0, int(y0)), min(height, int(y1)), 2):
         for x in range(max(0, int(x0)), min(width, int(x1)), 2):
             i = y * per_row + x * bpp
-            b, g, r = data[i], data[i + 1], data[i + 2]       # BGRA on Apple silicon screenshots
-            if r > 200 and g < 90 and b < 90:
+            r, g, b = data[i + first], data[i + first + 1], data[i + first + 2]
+            if r > 200 and g < 130 and b < 130 and r - g > 100:     # WeChat's badge red is about (231, 94, 88)
                 reds += 1
                 if reds >= 6:
                     return True
@@ -102,12 +105,38 @@ def chat_list(image: Path) -> list[dict]:
         preview = ' '.join(b['text'] for b in sorted(below, key=lambda b: b['x'])).strip()
         # Badge: on the avatar's top-right corner, left of the name.
         avatar_right = name_box['x'] - 4
-        unread = red_badge(image, avatar_right - name_box['h'] * 1.6, t['y'] - name_box['h'] * 0.9,
-                           avatar_right + 2, t['y'] + name_box['h'] * 0.6)
-        count = re.match(r'^\[(\d+)条\]', preview)
+        region = (avatar_right - name_box['h'] * 1.6, t['y'] - name_box['h'] * 0.9, avatar_right + 2, t['y'] + name_box['h'] * 0.6)
+        unread = red_badge(image, *region)
+        digits = [b for b in boxes if b['text'].strip().isdigit() and region[0] - 5 <= b['x'] <= region[2]
+                  and region[1] - 5 <= b['y'] <= region[3]]
+        muted_count = re.match(r'^\[(\d+)条\]', preview)
+        count = int(digits[0]['text']) if unread and digits else (int(muted_count.group(1)) if muted_count else None)
         rows.append({'name': name, 'preview': preview, 'time': t['text'].strip(), 'unread': unread,
-                     'unread_count': int(count.group(1)) if count else None})
+                     'unread_count': count})
     return rows
+
+
+ASK = re.compile(r'(微信|wechat).{0,8}(未读|消息|谁找我|有人找|新消息)|(未读|新)(的)?(微信)(消息)?', re.I)
+
+
+def answer(text: str) -> str | None:
+    """Reply to "微信有什么未读消息" from a screenshot of the WeChat window (None: not such a question)."""
+    if not ASK.search(str(text or '')):
+        return None
+    try:
+        rows = read_chat_list()
+    except Exception as exc:
+        return f'没能读取微信：{exc}'
+    unread = [r for r in rows if r['unread']]
+    if not rows:
+        return '没认出微信的会话列表（窗口可能被缩小了）。'
+    if not unread:
+        return f'微信当前列表里的 {len(rows)} 个会话都没有未读。'
+    lines = [f'微信有 {len(unread)} 个会话有未读（只看当前屏）：']
+    for r in unread:
+        count = f"{r['unread_count']} 条" if r['unread_count'] else '有新消息'
+        lines.append(f"· {r['name']}（{r['time']}，{count}）：{r['preview'][:40]}")
+    return '\n'.join(lines)
 
 
 def read_chat_list() -> list[dict]:
