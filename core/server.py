@@ -1610,6 +1610,18 @@ class KageServer:
                     site_request = bool(SITE_PATTERN.search(str(user_input or ""))) and not is_document_request(str(user_input or ""))
                 except Exception:
                     site_request = False
+                if not site_request:
+                    try:
+                        from core.tools.opencli_tool import resume_after_login
+                        resumed = await asyncio.to_thread(resume_after_login, self.model_provider, str(user_input or ""))
+                    except Exception:
+                        resumed = None
+                    if resumed:
+                        await self.send_state("THINKING")
+                        await self.mouth_speak(resumed, current_emotion_str)
+                        self._record_turn_completed(user_input, resumed)
+                        self._log_turn_done(path="opencli_site", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
                 if site_request and not self.session.has_pending_action():
                     await self.send_state("THINKING")
                     try:

@@ -24,6 +24,14 @@ SITES = {  # what people say -> OpenCLI site
     'hacker news': 'hackernews', 'hackernews': 'hackernews', 'reddit': 'reddit', 'github': 'github',
 }
 MAX_ROWS, MAX_FIELD = 10, 300
+# Login pages Kage opens when a site needs the user to sign in (user request 10-25). Kage never types or stores
+# passwords: Chrome's own password manager fills saved ones, otherwise the user types them.
+LOGIN_URLS = {'zhihu': 'https://www.zhihu.com/signin', 'xiaohongshu': 'https://www.xiaohongshu.com',
+              'bilibili': 'https://passport.bilibili.com/login', 'weibo': 'https://weibo.com/login.php',
+              'douyin': 'https://www.douyin.com', 'weread': 'https://weread.qq.com', 'xianyu': 'https://www.goofish.com',
+              '12306': 'https://kyfw.12306.cn/otn/resources/login.html', '1point3acres': 'https://www.1point3acres.com/bbs/'}
+RESUME = re.compile(r'^(我)?(已经)?(登录|登陆)(好|完)?(了)?[。.!！]?$|^(好了|登好了|登录好了|登陆好了)[。.!！]?$')
+_pending: dict = {}           # {'site', 'text', 'time'}: a request waiting for the user to log in
 # "read" in OpenCLI means "does not change the account"; these still act on the machine or need a session flow.
 NOT_FOR_READ_TOOL = {'download', 'login', 'whoami'}
 
@@ -179,6 +187,7 @@ def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
                 'site': {'type': 'string'}, 'command': {'type': 'string'}, 'args': {'type': 'object'}},
                 'required': ['site', 'command']}}}
     messages = [{'role': 'system', 'content': SITE_SYSTEM}, {'role': 'user', 'content': str(text) + hint}]
+    login_site = None
     for step in range(max_steps):
         response = model.generate(messages=messages, tools=[tool], max_tokens=600, temperature=0.3)
         calls = list(getattr(response, 'tool_calls', None) or [])
@@ -186,14 +195,54 @@ def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
             return str(getattr(response, 'text', '') or '').strip() or None
         call = calls[0]
         result = opencli_read(**{k: v for k, v in (call.get('arguments') or {}).items() if k in ('site', 'command', 'args')})
+        try:
+            parsed = json.loads(result)
+        except ValueError:
+            parsed = {}
+        if parsed.get('error') in ('AUTH_REQUIRED', 'EmptyResult'):
+            login_site = SITES.get(str((call.get('arguments') or {}).get('site', '')).lower(),
+                                   str((call.get('arguments') or {}).get('site', '')).lower())
+            break
         call_id = f'call_{step}'
         messages += [{'role': 'assistant', 'content': getattr(response, 'text', '') or '',
                       'tool_calls': [{'id': call_id, 'type': 'function', 'function': {
                           'name': 'opencli_read', 'arguments': json.dumps(call.get('arguments') or {}, ensure_ascii=False)}}]},
                      {'role': 'tool', 'tool_call_id': call_id, 'content': result[:6000]}]
+    if login_site:
+        return open_login(login_site, text)
     final = model.generate(messages=messages + [{'role': 'user', 'content': '根据上面的结果直接回答。'}], max_tokens=600,
                            temperature=0.3)
     return str(getattr(final, 'text', '') or '').strip() or None
+
+
+def open_login(site: str, text: str) -> str:
+    """Open the site's login page in Chrome and remember the request until the user says they are logged in."""
+    url = LOGIN_URLS.get(site, f'https://www.{site}.com')
+    name = next((k for k, v in SITES.items() if v == site and not k.isascii()), site)
+    again = _pending.get('site') == site and _pending.get('text') == str(text)
+    try:
+        subprocess.run(['open', '-a', 'Google Chrome', url], check=True, timeout=10)
+    except Exception as exc:
+        return f'{site} 需要先登录，但没能打开登录页（{exc}）。请在 Chrome 里打开 {url} 登录。'
+    _pending.clear()
+    _pending.update({'site': site, 'text': str(text), 'time': time.time()})
+    if again:
+        return f'{name} 看起来还是没登录（Chrome 里的登录页已重新打开）。登录成功后再跟我说“登录好了”。'
+    return (f'{name} 还没登录，我已经在 Chrome 里打开了登录页（{url}）。Chrome 存过密码会自动填好，没存过请你自己输入；'
+            '登录好了跟我说“登录好了”，我接着查。')
+
+
+def resume_after_login(model, text: str) -> str | None:
+    """"登录好了" within 15 minutes of a login prompt: run the remembered request again."""
+    if not RESUME.match(str(text or '').strip()) or not _pending or time.time() - _pending['time'] > 900:
+        return None
+    pending = dict(_pending)
+    reply = answer_with_site(model, pending['text'])      # still not logged in: open_login re-arms _pending
+    if _pending.get('time') == pending['time']:
+        _pending.clear()
+    if not reply or '看起来还是没登录' in reply:
+        return reply
+    return f"好的，接着查“{pending['text']}”：\n{reply}"
 
 
 def register(registry) -> None:
