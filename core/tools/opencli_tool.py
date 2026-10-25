@@ -147,14 +147,36 @@ def _cache_load() -> dict:
         return {}
 
 
-def _cache_store(key: str, data) -> None:
-    cache = {k: v for k, v in _cache_load().items() if time.time() - v['time'] < max(RESULT_TTL_S.values())}
-    cache[key] = {'time': time.time(), 'data': data}
+RESULT_CACHE_MAX = 200        # entries; beyond it the least recently used go first (expired ones always go)
+
+
+def _cache_save(cache: dict) -> None:
     try:
         RESULT_CACHE.parent.mkdir(parents=True, exist_ok=True)
         RESULT_CACHE.write_text(json.dumps(cache, ensure_ascii=False))
     except OSError:
         pass
+
+
+def _cache_store(key: str, data) -> None:
+    """Expiry first (lists go stale), then LRU when over RESULT_CACHE_MAX (many distinct searches)."""
+    now = time.time()
+    cache = {k: v for k, v in _cache_load().items() if now - v['time'] < max(RESULT_TTL_S.values())}
+    cache[key] = {'time': now, 'used': now, 'data': data}
+    if len(cache) > RESULT_CACHE_MAX:
+        keep = sorted(cache, key=lambda k: cache[k].get('used', cache[k]['time']), reverse=True)[:RESULT_CACHE_MAX]
+        cache = {k: cache[k] for k in keep}
+    _cache_save(cache)
+
+
+def _cache_get(key: str, ttl: float):
+    cache = _cache_load()
+    hit = cache.get(key)
+    if not hit or time.time() - hit['time'] >= ttl:
+        return None
+    hit['used'] = time.time()                 # recency for LRU, not freshness: 'time' stays the fetch time
+    _cache_save(cache)
+    return hit
 
 
 def opencli_read(site: str, command: str, args: dict | None = None, fresh: bool = False) -> str:
@@ -176,8 +198,8 @@ def opencli_read(site: str, command: str, args: dict | None = None, fresh: bool 
     argv = _argv(site, spec, args)
     key = ' '.join(argv)
     if ttl and not fresh:
-        hit = _cache_load().get(key)
-        if hit and time.time() - hit['time'] < ttl:
+        hit = _cache_get(key, ttl)
+        if hit:
             return json.dumps({'success': True, 'site': site, 'command': command, 'data': hit['data'],
                                'cached_age_s': int(time.time() - hit['time'])}, ensure_ascii=False)
     result = _run(argv)

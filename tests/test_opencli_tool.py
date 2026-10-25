@@ -145,3 +145,14 @@ def test_public_lists_are_cached_and_refreshable(monkeypatch, tmp_path):
     oc.opencli_read('zhihu', 'feed')
     oc.opencli_read('zhihu', 'feed')
     assert len(runs) == 4                                                   # account-specific: never cached
+
+
+def test_cache_evicts_least_recently_used(monkeypatch):
+    monkeypatch.setattr(oc, 'RESULT_CACHE_MAX', 2)
+    clock = iter(range(1000, 2000))
+    monkeypatch.setattr(oc.time, 'time', lambda: next(clock))
+    oc._cache_store('a', 1)
+    oc._cache_store('b', 2)
+    assert oc._cache_get('a', 300)['data'] == 1        # 'a' used again: now 'b' is least recently used
+    oc._cache_store('c', 3)
+    assert set(oc._cache_load()) == {'a', 'c'}
