@@ -1612,8 +1612,9 @@ class KageServer:
                     site_request = False
                 if not site_request:
                     try:
-                        from core.tools.opencli_tool import resume_after_login
-                        resumed = await asyncio.to_thread(resume_after_login, self.model_provider, str(user_input or ""))
+                        from core.tools.opencli_tool import refresh_last, resume_after_login
+                        resumed = (await asyncio.to_thread(refresh_last, str(user_input or ""))
+                                   or await asyncio.to_thread(resume_after_login, self.model_provider, str(user_input or "")))
                     except Exception:
                         resumed = None
                     if resumed:

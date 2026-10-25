@@ -11,6 +11,14 @@ CATALOG = [
 ]
 
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _private_result_cache(monkeypatch, tmp_path):
+    monkeypatch.setattr(oc, 'RESULT_CACHE', tmp_path / 'opencli-results.json')   # never the user's real cache
+
+
 def test_argv_positionals_options_and_default_limit():
     assert oc._argv('bilibili', CATALOG[1], {'query': 'Agent 教程', 'type': 'video'}) == \
         ['bilibili', 'search', 'Agent 教程', '--type', 'video', '--limit', '10']
@@ -25,7 +33,7 @@ def test_read_tool_refuses_writes_and_downloads(monkeypatch):
     assert json.loads(oc.opencli_read('bilibili', 'download', {'bvid': 'BV1'}))['error'] == 'WriteCommand'
     assert json.loads(oc.opencli_read('bilibili', 'nope'))['error'] == 'UnknownCommand'
     ok = json.loads(oc.opencli_read('哔哩哔哩', 'hot', {'limit': 2}))
-    assert ok['success'] and len(ok['data'][0]['title']) == oc.MAX_FIELD + 1 and calls == [['bilibili', 'hot', '--limit', '2']]
+    assert ok['success'] and len(ok['data'][0]['title']) == oc.MAX_FIELD + 1 and calls == [['bilibili', 'hot', '--limit', str(oc.MAX_ROWS)]]   # lists cached at full length
 
 
 def test_routing_words():
@@ -96,7 +104,7 @@ def test_confident_decision_lists_rows_without_the_model(monkeypatch):
     _fake_decision(monkeypatch, {'command': ('hot', 0.98, {}), 'needs_reading': (False, 0.95, {}),
                                  'count': ('3', 0.9, {}), 'query': ('none', 0.9, {})})
     calls = []
-    monkeypatch.setattr(oc, 'opencli_read', lambda site, command, args=None: calls.append((command, args)) or json.dumps(
+    monkeypatch.setattr(oc, 'opencli_read', lambda site, command, args=None, **kw: calls.append((command, args)) or json.dumps(
         {'success': True, 'data': [{'title': f't{i}', 'heat': f'{i} 万热度'} for i in range(10)]}))
     reply = oc.quick_answer('知乎热榜前三是什么')
     assert calls == [('hot', {'limit': 3})] and reply.startswith('知乎热榜前 3 条') and '3. t2（2 万热度）' in reply
@@ -107,7 +115,7 @@ def test_search_uses_the_chosen_term(monkeypatch):
     _fake_decision(monkeypatch, {'command': ('search', 0.97, {}), 'needs_reading': (False, 0.95, {}),
                                  'count': ('5', 0.9, {}), 'query': ('q0', 0.99, {})})
     calls = []
-    monkeypatch.setattr(oc, 'opencli_read', lambda site, command, args=None: calls.append(args) or json.dumps(
+    monkeypatch.setattr(oc, 'opencli_read', lambda site, command, args=None, **kw: calls.append(args) or json.dumps(
         {'success': True, 'data': [{'title': '<em>大模型</em> Agent 入门', 'votes': 9, 'author': 'a'}]}))
     reply = oc.quick_answer('在知乎搜一下大模型 Agent')
     assert calls == [{'limit': 5, 'query': '大模型 Agent'}] and '1. 大模型 Agent 入门（9） — a' in reply
@@ -121,3 +129,19 @@ def test_unsure_or_reading_requests_go_to_the_local_model(monkeypatch):
     _fake_decision(monkeypatch, {'command': ('hot', 0.6, {}), 'needs_reading': (False, 0.9, {}),
                                  'count': ('5', 0.9, {}), 'query': ('none', 0.9, {})})
     assert oc.quick_answer('知乎现在大家在聊啥') is None
+
+
+def test_public_lists_are_cached_and_refreshable(monkeypatch, tmp_path):
+    monkeypatch.setattr(oc, 'RESULT_CACHE', tmp_path / 'r.json')
+    monkeypatch.setattr(oc, '_lookup', lambda site, command: {'name': command, 'access': 'read', 'positionals': [],
+                                                              'options': ['limit']})
+    runs = []
+    monkeypatch.setattr(oc, '_run', lambda argv, **kw: runs.append(argv) or {'ok': True, 'data': [{'title': 'x'}]})
+    first = json.loads(oc.opencli_read('zhihu', 'hot', {'limit': 3}))
+    second = json.loads(oc.opencli_read('zhihu', 'hot', {'limit': 5}))     # same entry: rows fetched at MAX_ROWS
+    assert len(runs) == 1 and runs[0][-1] == str(oc.MAX_ROWS) and 'cached_age_s' in second and 'cached_age_s' not in first
+    oc.opencli_read('zhihu', 'hot', fresh=True)
+    assert len(runs) == 2
+    oc.opencli_read('zhihu', 'feed')
+    oc.opencli_read('zhihu', 'feed')
+    assert len(runs) == 4                                                   # account-specific: never cached

@@ -132,7 +132,32 @@ def _lookup(site: str, command: str) -> dict | None:
     return next((c for c in catalog(site) if c['name'] == str(command).strip()), None)
 
 
-def opencli_read(site: str, command: str, args: dict | None = None) -> str:
+# Public lists change slowly: reuse a result for a few minutes instead of driving Chrome again (~4 s each).
+# Account-specific reads (feed, notifications, profile…) are never cached. Rows are fetched at MAX_ROWS so
+# "前三" and "前五" share one entry.
+RESULT_TTL_S = {'hot': 300, 'ranking': 300, 'trending': 300, 'latest': 300, 'news': 300, 'search': 1800}
+RESULT_CACHE = Path('~/.kage/cache/opencli-results.json').expanduser()
+REFRESH = re.compile(r'刷新|最新的|重新(获取|查|看)')
+
+
+def _cache_load() -> dict:
+    try:
+        return json.loads(RESULT_CACHE.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def _cache_store(key: str, data) -> None:
+    cache = {k: v for k, v in _cache_load().items() if time.time() - v['time'] < max(RESULT_TTL_S.values())}
+    cache[key] = {'time': time.time(), 'data': data}
+    try:
+        RESULT_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        RESULT_CACHE.write_text(json.dumps(cache, ensure_ascii=False))
+    except OSError:
+        pass
+
+
+def opencli_read(site: str, command: str, args: dict | None = None, fresh: bool = False) -> str:
     site = SITES.get(str(site).lower(), str(site).lower())
     try:
         spec = _lookup(site, command)
@@ -145,7 +170,17 @@ def opencli_read(site: str, command: str, args: dict | None = None) -> str:
         return json.dumps({'success': False, 'error': 'WriteCommand',
                            'message': f'{site} {command} 会改动你的账号（{spec["access"]}），要用 opencli_write 并经用户确认'},
                           ensure_ascii=False)
-    result = _run(_argv(site, spec, args))
+    ttl = RESULT_TTL_S.get(spec['name'], 0)
+    if ttl:
+        args = {**(args or {}), 'limit': MAX_ROWS}
+    argv = _argv(site, spec, args)
+    key = ' '.join(argv)
+    if ttl and not fresh:
+        hit = _cache_load().get(key)
+        if hit and time.time() - hit['time'] < ttl:
+            return json.dumps({'success': True, 'site': site, 'command': command, 'data': hit['data'],
+                               'cached_age_s': int(time.time() - hit['time'])}, ensure_ascii=False)
+    result = _run(argv)
     if not result.get('ok'):
         error = result.get('error') or {}
         message = error.get('message', '')
@@ -156,7 +191,10 @@ def opencli_read(site: str, command: str, args: dict | None = None) -> str:
     if data in (None, [], {}):              # anonymous sessions often get an empty page instead of an error
         return json.dumps({'success': False, 'error': 'EmptyResult',
                            'message': f'没有拿到数据；如果你还没在 Chrome 里登录 {site}，请先登录再试'}, ensure_ascii=False)
-    return json.dumps({'success': True, 'site': site, 'command': command, 'data': _trim(data)}, ensure_ascii=False)
+    data = _trim(data)
+    if ttl:
+        _cache_store(key, data)
+    return json.dumps({'success': True, 'site': site, 'command': command, 'data': data}, ensure_ascii=False)
 
 
 def opencli_write(site: str, command: str, args: dict | None = None) -> str:
@@ -289,12 +327,13 @@ def quick_answer(text: str) -> str | None:
             return None
         args[reads[command]['positionals'][0]] = decision['query']
         head = f'“{decision["query"]}”'
-    result = json.loads(opencli_read(site, command, args))
+    result = json.loads(opencli_read(site, command, args, fresh=bool(REFRESH.search(str(text)))))
     if not result.get('success'):
         if result.get('error') in ('AUTH_REQUIRED', 'EmptyResult'):
             return open_login(site, text)
         LAST_DECISION['by'] = 'local-model'
         return None
+    _last_site_request.update(text=str(text).removesuffix('（刷新）'), time=time.time())
     rows = result['data'] if isinstance(result['data'], list) else [result['data']]
     lines = _rows_text(rows[:decision['count']], with_author=bool(head))
     if not lines:
@@ -307,7 +346,21 @@ def quick_answer(text: str) -> str | None:
         if not what or what.isascii():
             what = {'hot': '热门', 'ranking': '排行榜', 'feed': '推荐', 'latest': '最新'}.get(command, command)
         title = f'{what if what.startswith(name) else name + what}前 {len(lines)} 条：'
-    return title + '\n' + '\n'.join(lines)
+    age = result.get('cached_age_s')
+    note = f'\n（{max(age // 60, 1)} 分钟前取的，说“刷新”重新获取）' if age and age >= 30 else ''
+    return title + '\n' + '\n'.join(lines) + note
+
+
+_last_site_request: dict = {}
+
+
+def refresh_last(text: str) -> str | None:
+    """"刷新" right after a site answer (within 30 min): fetch the same request again, skipping the cache."""
+    if not re.fullmatch(r'\s*(刷新|刷新一下|再刷新一下|重新获取)[。.!！]?\s*', str(text or '')) or not _last_site_request:
+        return None
+    if time.time() - _last_site_request['time'] > 1800:
+        return None
+    return quick_answer(_last_site_request['text'] + '（刷新）')
 
 
 def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
