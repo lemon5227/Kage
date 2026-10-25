@@ -20,9 +20,9 @@
 
 ## Latest (October 2026)
 
-- **Browser tasks join the benchmark.** Four seeded browser families plus a read-only negative, calibrated over four rounds and frozen as Kage-Stream-Web. On them, demonstration memory is always *retrieved* but rarely *followed* by the 4B student: a [new failure mode](#browser-tasks-retrieved-but-not-followed) that motivates the next stage.
-- **Learning in everyday use.** The desktop app now records each task locally (👍/👎 per task), offers a teacher redo after a 👎, reuses verified experience on similar requests, and practises on teacher-made variants when idle. Raw usage data never leaves the machine; only redacted exports may be used for training.
-- **Next: consolidation.** Turning guided successes into weights (runbook-guided fresh execution → verified → guidance removed → LoRA), in the spirit of the concurrent [Terminal-RSI](https://arxiv.org/abs/2610.22192) work but on a 4B model and a few-dollar budget. A paper is in preparation ([outline](docs/paper/outline.md)).
+- **A daily desktop assistant, command line first.** Kage now opens apps by what you call them (微信, 飞书, vscode — 20/20), reads and edits the documents open in your apps through their real file paths (11/11, edits limited to the files a request names), sends a 12:30 schedule brief from Calendar and Reminders, lists and summarizes unread Mail with the local model (10/10 summaries factually correct), and reads websites through [OpenCLI](https://github.com/jackwener/opencli) in your logged-in Chrome. A local usage log records every request, what Kage did and whether it worked; after a failure it asks how you did it and keeps that method. ([D-phase evidence](evidence/reports/d0/analysis.md))
+- **Interface first, then teach, then consolidate.** One observation field took a web settings task from 1/18 to 17/18; line-based edit tools took macOS TextEdit tasks from 4/18 to 17/18; teacher rules were ignored in the system prompt (3/15) but adopted when the student had to plan how each applies (10/15). LoRA consolidation lifted learned file tasks from 30/72 to 65/72 but cost held-out code writing (15/36 → 1/36): across five ablations, gain and forgetting come from the same samples. [Paper draft](docs/paper/draft.md)
+- **Native macOS tasks through the Accessibility API.** Calculator, TextEdit and read-only System Settings: 19/30 → 41/45 with the improved interface and grounded lessons, plus a live "fail → teacher lesson → solve an unseen task" demo ([script](docs/report/demo-g0.md)).
 
 ## Toward a self-evolving personal Agent
 
@@ -208,12 +208,13 @@ See [configuration details](docs/project-guide.en.md#models-and-cloud-configurat
 
 - ✅ <strong>P0–P3, P5:</strong> benchmark, learning arms, relevance gate, proactive help, background evolution, technical report, demo.
 - ✅ <strong>A · Learning in everyday use:</strong> notices, 👍/👎, local trajectory store with redacted export, teacher redo, experience reuse, idle practice.
-- ✅ <strong>C1–C2 · Browser families:</strong> seeded families, four calibration rounds, frozen Kage-Stream-Web, learning run.
-- ⏳ <strong>C3 · Teacher-written rules:</strong> rule only vs demonstration + rule on the same frozen tasks.
-- ⏳ <strong>R · Consolidation:</strong> R1 leak screen → R2 runbook-guided fresh execution (≈2000 verified samples) → R3 LoRA accepted only if it beats the raw student without guidance → R4 one recursive round.
-- ⏳ <strong>Paper</strong> ([outline](docs/paper/outline.md)): what a 4B local agent can and cannot learn on a few-dollar teacher budget.
+- ✅ <strong>C · Browser families and interfaces:</strong> frozen Kage-Stream-Web; teacher rules (invoices 0/24 → 14/24); interface ablations (settings 1/18 → 18/18).
+- ✅ <strong>R · Consolidation:</strong> guided re-execution → LoRA (A100); five ablations of replay and rationalization (R3–R3e).
+- ✅ <strong>G0 · macOS apps:</strong> accessibility driver, desktop-v1 tasks with trusted checkers, grounded lessons, live demo.
+- ✅ <strong>Paper draft v0.1</strong> ([draft](docs/paper/draft.md)).
+- ⏳ <strong>D · Daily desktop assistant</strong> ([task card](docs/plans/cards/D-desktop.md)): open apps ✅, open documents ✅, schedule brief ✅, mail ✅, websites via OpenCLI ✅ (Bilibili; Zhihu/Xiaohongshu after login), WeChat by screenshot + on-device OCR (in progress), demo video and arXiv.
 
-<strong>How this project is built:</strong> Claude Code plans experiments, writes task cards and reviews every diff and result; well-specified implementation is delegated to a DeepSeek-V4.1-Flash executor running as an isolated Claude Code process ([deepseek-agent](https://github.com/lemon5227/deepseek-agent)); experiments run on Kaggle's free T4 GPUs under a US$4 teacher ledger. Every step is in the [work log](docs/worklog/2026-10-claude.md).
+<strong>How this project is built:</strong> Claude Code plans experiments, writes task cards and reviews every diff and result; well-specified implementation is delegated to a DeepSeek-V4.1-Flash executor running as an isolated Claude Code process ([deepseek-agent](https://github.com/lemon5227/deepseek-agent)); experiments ran on Kaggle's free T4 GPUs and a Colab A100 under a US$4 teacher ledger (US$1.78 spent). Every step is in the [work log](docs/worklog/2026-10-claude.md).
 
 [Roadmap and current status (start here)](roadmap.md) · [Task book](docs/plans/tasks-2026-10-14.md) · [Design: self-evolving, proactive agent](docs/plans/self-evolving-proactive-agent-2026-10-14.md) · [Kaggle runbook](docs/development/kaggle-runbook.md)
 
