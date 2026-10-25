@@ -33,7 +33,6 @@ def spy(monkeypatch):
 
 @pytest.mark.parametrize("call,argv", [
     (lambda: web_ops.open_url("https://kage.local/docs"), ["open", "https://kage.local/docs"]),
-    (lambda: web_ops.open_app("Calculator"), ["open", "-a", "Calculator"]),
     (lambda: shortcuts_ops.shortcuts_create("MyShortcut"), ["open", "-a", "Shortcuts"]),
 ])
 def test_launch_is_single_argv_list(spy, call, argv):
@@ -42,6 +41,19 @@ def test_launch_is_single_argv_list(spy, call, argv):
 
     assert out["success"] is True
     assert spy == [argv]
+
+
+def test_open_app_launches_resolved_bundle(monkeypatch):
+    """open_app resolves the name to an installed .app first (D1) and launches that path as one argv list."""
+    from types import SimpleNamespace
+    from core.tools import app_index
+    recorded: list[list[str]] = []
+    monkeypatch.setattr(app_index.subprocess, "run",
+                        lambda cmd, **kw: recorded.append(list(cmd)) or SimpleNamespace(returncode=0, stderr=""))
+    out = json.loads(web_ops.open_app("Calculator"))
+
+    assert out["success"] is True
+    assert len(recorded) == 1 and recorded[0][0] == "open" and recorded[0][1].endswith("Calculator.app")
 
 
 @pytest.mark.parametrize("call", [

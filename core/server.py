@@ -1819,8 +1819,16 @@ class KageServer:
                         continue
 
                 # D4a fast path: WeChat unread chats from a screenshot + on-device OCR (WeChat has no accessibility tree).
+                # D4b goes first: "微信给X发消息：…" would also match the reader's question pattern.
                 if sys.platform == "darwin":
-                    from core import wechat_reader
+                    from core import wechat_reader, wechat_sender
+                    reply = await asyncio.to_thread(wechat_sender.answer, str(user_input or ""))
+                    if reply:
+                        await self.send_state("THINKING")
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="wechat_send", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
                     reply = await asyncio.to_thread(wechat_reader.answer, str(user_input or ""))
                     if reply:
                         await self.send_state("THINKING")
