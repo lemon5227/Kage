@@ -33,6 +33,8 @@ def classify(path: str, reply: str, tools: list[dict]) -> tuple[str, str]:
         return 'learned', ''
     if path == 'open_app_fastpath':
         return ('ok', '') if reply.startswith('已打开') else ('failed', reply[:120])
+    if path in ('mail_fastpath', 'calendar_fastpath'):
+        return ('failed', reply[:120]) if reply.startswith(('没能读取', '这封邮件已经找不到')) else ('ok', '')
     failed = [t for t in tools if not t.get('success')]
     succeeded = [t for t in tools if t.get('success')]
     if tools and not succeeded:

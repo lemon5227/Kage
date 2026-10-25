@@ -1761,6 +1761,23 @@ class KageServer:
                         self._log_turn_done(path="calendar_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                         continue
 
+                # D3 fast path: unread mail list / "读第 N 封" / "总结第 N 封" (summary by the local model only).
+                if sys.platform == "darwin":
+                    from core import mail_reader
+                    model = self.model_provider
+                    def _summarize(prompt: str) -> str:
+                        response = model.generate(messages=[{"role": "user", "content": prompt}], max_tokens=300, temperature=0.3)
+                        return str(getattr(response, "text", "") or "").strip() or "（没能生成总结）"
+                    reply = await asyncio.to_thread(mail_reader.answer, str(user_input or ""))
+                    if reply is None:
+                        reply = await asyncio.to_thread(mail_reader.answer_pick, str(user_input or ""), _summarize)
+                    if reply:
+                        await self.send_state("THINKING")
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="mail_fastpath", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+
                 # D1 fast path: "打开微信" / "把日历打开" / "open Safari" — resolve and open without the model
                 # (the 4B model answered "已打开…" with no tool call for 5 of 9 such requests).
                 try:

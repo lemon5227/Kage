@@ -118,6 +118,21 @@ def answer(text: str, now: datetime.datetime | None = None) -> str | None:
         return f'没能读取日历：{exc}'
 
 
+def _mail_line() -> str:
+    """D3: unread mail in the daily brief (count + newest three subjects); empty if Mail cannot be read."""
+    try:
+        from core import mail_reader
+        total = mail_reader.unread_count()
+        if not total:
+            return '\n没有未读邮件。'
+        rows = mail_reader.unread(3)
+        return (f'\n未读邮件 {total} 封，最新：' +
+                '；'.join(f"{mail_reader.sender_name(r['sender'])}「{r['subject'][:30]}」" for r in rows)
+                + '（说“看看新邮件”查看）')
+    except Exception:
+        return ''
+
+
 class DailyBriefSource:
     """Heartbeat source: one brief per day at `daily_brief.time` (config; default 12:30)."""
 
@@ -137,6 +152,7 @@ class DailyBriefSource:
             events = await asyncio.to_thread(events_on, local.date())
             reminders = await asyncio.to_thread(open_reminders)
             content = render(local.date(), events, reminders, local, greeting='中午好！' if 11 <= self.at.hour < 14 else '')
+            content += await asyncio.to_thread(_mail_line)
         except Exception as exc:
             content = f'今天的日程提醒没能读取日历：{exc}'
         note = make_notification(f'daily_brief:{local.date().isoformat()}', content, type_='daily_brief', now=now)

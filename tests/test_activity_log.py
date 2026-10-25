@@ -27,3 +27,11 @@ def test_failure_then_user_method_is_attached_and_rendered(tmp_path):
 
 def test_show_log_requests():
     assert wants_log('看看今天的使用日志') and wants_log('今天我都干了啥') and not wants_log('打开日历')
+
+
+def test_fastpath_statuses_and_lane():
+    from core.realtime_lane import classify_realtime_task
+    assert classify('mail_fastpath', '未读邮件 3 封', [])[0] == 'ok'
+    assert classify('calendar_fastpath', '没能读取日历：x', [])[0] == 'failed'
+    assert classify_realtime_task('总结第 1 封').lane == 'realtime'          # not sent to the background lane
+    assert classify_realtime_task('帮我总结一下这篇论文的方法').lane == 'background'

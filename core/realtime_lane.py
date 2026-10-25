@@ -53,6 +53,13 @@ def classify_realtime_task(user_input: str) -> RealtimeTaskClass:
     if isinstance(call, dict) and call.get("name") and confidence >= 0.5:
         return RealtimeTaskClass(lane="realtime", reason="command_fastpath", can_background=False)
 
+    # D-phase server fast paths (mail, schedule, usage log) answer at once: "总结第 1 封" is not a long task.
+    from core.activity_log import wants_log
+    from core.calendar_brief import ASK as SCHEDULE_ASK
+    from core.mail_reader import ASK as MAIL_ASK, PICK as MAIL_PICK
+    if MAIL_ASK.search(text) or MAIL_PICK.search(text) or SCHEDULE_ASK.search(text) or wants_log(text):
+        return RealtimeTaskClass(lane="realtime", reason="desktop_fastpath", can_background=False)
+
     if any(k in text for k in ("整理桌面", "整理下载", "批量", "归类", "总结", "分析")):
         return RealtimeTaskClass(lane="background", reason="multi_step_or_long_task", can_background=True)
 
