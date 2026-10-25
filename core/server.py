@@ -1478,6 +1478,11 @@ class KageServer:
                 except Exception:
                     route_hint = "chat"
                 realtime_task = classify_realtime_task(str(user_input))
+                # D7: one decision-model call (~0.3 s) says which kind of request this is; started now so it
+                # overlaps the checks below. None when the decision model is unavailable (patterns decide then).
+                from core import desktop_router as intent_router
+                routed_text = str(user_input or "")
+                route_future = intent_router.start(routed_text)
                 self._log_server_event("route.hint", route=route_hint, text_len=len(str(user_input or "")))
                 self._log_server_event("realtime.classify", lane=realtime_task.lane, reason=realtime_task.reason)
 
@@ -1513,6 +1518,22 @@ class KageServer:
                         except Exception:
                             pass
                         self._log_server_event("correction.generic_applied", corrected=user_input)
+
+                if str(user_input or "") != routed_text:           # corrected above: classify the corrected words
+                    route_future = intent_router.start(str(user_input or ""))
+                desktop_route = await asyncio.wrap_future(route_future)
+                from core.config import get_config as _get_config
+                from core.desktop_intents import DESKTOP_INTENTS
+                routed_intent = None
+                if desktop_route is not None:
+                    confident = desktop_route["confidence"] >= float(_get_config("decision_model.intent_confidence", 0.8))
+                    # unsure -> the general local-model loop, not the patterns (eval/intent_v1, dev run 1)
+                    routed_intent = desktop_route["intent"] if confident else "other"
+                    self._log_server_event("intent.routed", intent=desktop_route["intent"],
+                                           confidence=round(desktop_route["confidence"], 3),
+                                           latency_s=desktop_route["latency_s"])
+                if routed_intent in DESKTOP_INTENTS and realtime_task.lane == "background":
+                    realtime_task = type(realtime_task)(lane="realtime", reason="desktop_intent", can_background=False)
 
                 if realtime_task.lane == "background":
                     job = self.background_lane.submit(
@@ -1604,12 +1625,77 @@ class KageServer:
                     self._log_turn_done(path="command_medium_confirm", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                     continue
 
+                # D4b follow-ups ("确认" / "取消" / "发给 X") belong to the previous turn, not to a new intent.
+                if sys.platform == "darwin" and not self.session.has_pending_action():
+                    from core import wechat_sender as _wechat_sender
+                    follow = await asyncio.to_thread(_wechat_sender.follow_up, str(user_input or ""))
+                    if follow:
+                        await self.send_state("THINKING")
+                        await self.mouth_speak(follow, current_emotion_str)
+                        self._record_turn_completed(user_input, follow)
+                        self._log_turn_done(path="wechat_send", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+
+                # D7: the routed desktop request runs its handler directly (calendar, mail, WeChat, apps, sites,
+                # usage log). With a route, the pattern-based blocks further down are skipped.
+                skip_desktop_patterns = routed_intent is not None
+                if routed_intent in DESKTOP_INTENTS and not self.session.has_pending_action():
+                    from core.desktop_intents import handle as _handle_desktop
+                    from core.tools.opencli_tool import site_timings as _site_timings
+
+                    def _remember_method(attached: dict, _text=str(user_input or ""), _emotion=current_emotion_str) -> None:
+                        try:   # recalled by memory search on similar requests later
+                            self.memory.add_memory(content=f"之前没做成“{attached['request']}”，用户的做法：{_text}",
+                                                   importance=3, emotion=_emotion, type="how_to")
+                        except Exception:
+                            logger.warning("saving the user's method to memory failed", exc_info=True)
+                    await self.send_state("THINKING")
+                    try:
+                        handled = await asyncio.to_thread(_handle_desktop, desktop_route, str(user_input or ""),
+                                                          model=self.model_provider, activity_log=self.activity_log,
+                                                          on_method=_remember_method)
+                    except Exception as exc:
+                        logger.warning("desktop intent %s failed", routed_intent, exc_info=True)
+                        handled = (f"这件事没做成：{exc}", f"{routed_intent}_error")
+                    if handled:
+                        reply, desktop_path = handled
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        timings = {"intent_ms": int(desktop_route["latency_s"] * 1000), "intent": routed_intent}
+                        if routed_intent == "website":
+                            timings.update(_site_timings())
+                        self._log_turn_done(path=desktop_path, route=route_hint, elapsed_ms=_turn_elapsed_ms(),
+                                            timings=timings)
+                        continue
+
+                # D7: chat and knowledge questions need no tools: one generation with Kage's persona and history.
+                # Through the tool loop "B站是哪一年成立的" took 16 s, searched memory and answered "查不到".
+                if routed_intent == "chat" and not self.session.has_pending_action():
+                    await self.send_state("THINKING")
+                    try:
+                        from core.desktop_intents import chat_messages as _chat_messages
+                        chat_response = await asyncio.to_thread(
+                            self.model_provider.generate,
+                            messages=_chat_messages(str(user_input or ""), self.session.get_history() or []),
+                            tools=None, max_tokens=400)
+                        chat_reply = str(getattr(chat_response, "text", "") or "").strip()
+                    except Exception:
+                        logger.warning("direct chat failed; using the tool loop", exc_info=True)
+                        chat_reply = ""
+                    if chat_reply:
+                        await self.mouth_speak(chat_reply, current_emotion_str)
+                        self._record_turn_completed(user_input, chat_reply)
+                        self._log_turn_done(path="chat_direct", route=route_hint, elapsed_ms=_turn_elapsed_ms(),
+                                            timings={"intent_ms": int(desktop_route["latency_s"] * 1000), "intent": "chat"})
+                        continue
+
                 # D5: a request naming a website OpenCLI covers runs its own small loop (one read tool, the site's
                 # commands) before the older video/search heuristics, which grabbed these requests.
                 try:
                     from core.tools.opencli_tool import SITE_PATTERN, answer_with_site
                     from core.tool_visibility import is_document_request
-                    site_request = bool(SITE_PATTERN.search(str(user_input or ""))) and not is_document_request(str(user_input or ""))
+                    site_request = (not skip_desktop_patterns and bool(SITE_PATTERN.search(str(user_input or "")))
+                                    and not is_document_request(str(user_input or "")))
                 except Exception:
                     site_request = False
                 if not site_request:
@@ -1626,7 +1712,7 @@ class KageServer:
                         from core.tools.opencli_tool import LAST_DECISION
                         # who chose the command: the decision model (Clef) or the local model's own loop
                         from core.tools.opencli_tool import site_timings
-                        site_path = "opencli_clef" if LAST_DECISION.get("by") == "clef" else "opencli_site"
+                        site_path = "opencli_clef" if str(LAST_DECISION.get("by", "")).startswith("clef") else "opencli_site"
                         self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms(),
                                             timings=site_timings())
                         continue
@@ -1642,7 +1728,7 @@ class KageServer:
                         from core.tools.opencli_tool import LAST_DECISION
                         # who chose the command: the decision model (Clef) or the local model's own loop
                         from core.tools.opencli_tool import site_timings
-                        site_path = "opencli_clef" if LAST_DECISION.get("by") == "clef" else "opencli_site"
+                        site_path = "opencli_clef" if str(LAST_DECISION.get("by", "")).startswith("clef") else "opencli_site"
                         self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms(),
                                             timings=site_timings())
                         continue
@@ -1760,7 +1846,8 @@ class KageServer:
                             continue
 
                 # Weather fast path: deterministic weather fetch without multi-turn LLM loop.
-                if self._weather_fastpath_enabled and "天气" in str(user_input) and not any(k in str(user_input) for k in ("打开", "浏览器", "网页", "网站")):
+                weather_request = routed_intent == "weather" or (routed_intent is None and "天气" in str(user_input))
+                if self._weather_fastpath_enabled and weather_request and not any(k in str(user_input) for k in ("打开", "浏览器", "网页", "网站")):
                     try:
                         await self.send_state("THINKING")
                         reply = await weather_fastpath(
@@ -1782,7 +1869,7 @@ class KageServer:
                         pass
 
                 # Usage log: "看看今天的使用日志", and "我是这样做的：…" right after a failed turn.
-                if self.activity_log is not None:
+                if self.activity_log is not None and not skip_desktop_patterns:
                     from core.activity_log import wants_log
                     if wants_log(user_input):
                         reply = self.activity_log.summary()
@@ -1804,7 +1891,7 @@ class KageServer:
                         continue
 
                 # D2 fast path: "今天/明天有什么日程" is read from the calendar, not guessed by the model.
-                if sys.platform == "darwin":
+                if sys.platform == "darwin" and not skip_desktop_patterns:
                     from core.calendar_brief import answer as calendar_answer
                     reply = await asyncio.to_thread(calendar_answer, str(user_input or ""))
                     if reply:
@@ -1815,7 +1902,7 @@ class KageServer:
                         continue
 
                 # D3 fast path: unread mail list / "读第 N 封" / "总结第 N 封" (summary by the local model only).
-                if sys.platform == "darwin":
+                if sys.platform == "darwin" and not skip_desktop_patterns:
                     from core import mail_reader
                     model = self.model_provider
                     def _summarize(prompt: str) -> str:
@@ -1833,7 +1920,7 @@ class KageServer:
 
                 # D4a fast path: WeChat unread chats from a screenshot + on-device OCR (WeChat has no accessibility tree).
                 # D4b goes first: "微信给X发消息：…" would also match the reader's question pattern.
-                if sys.platform == "darwin":
+                if sys.platform == "darwin" and not skip_desktop_patterns:
                     from core import wechat_reader, wechat_sender
                     reply = await asyncio.to_thread(wechat_sender.answer, str(user_input or ""))
                     if reply:
@@ -1854,7 +1941,8 @@ class KageServer:
                 # (the 4B model answered "已打开…" with no tool call for 5 of 9 such requests).
                 try:
                     from core.tools.app_index import open_app_reply
-                    reply = await asyncio.to_thread(open_app_reply, str(user_input or ""))
+                    reply = (await asyncio.to_thread(open_app_reply, str(user_input or ""))
+                             if not skip_desktop_patterns else None)
                 except Exception:
                     logger.warning("open-app fast path failed", exc_info=True)
                     reply = None

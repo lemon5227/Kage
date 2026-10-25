@@ -112,9 +112,10 @@ class ActivityLog:
                 return entry if age <= max_age_s and not entry.get('user_method') else None
         return None
 
-    def attach_user_method(self, text: str) -> dict | None:
-        """The user explains how they did a task Kage failed: attach it to that entry and keep it as a method."""
-        if not USER_METHOD.search(str(text or '')):
+    def attach_user_method(self, text: str, *, routed: bool = False) -> dict | None:
+        """The user explains how they did a task Kage failed: attach it to that entry and keep it as a method.
+        routed: the intent router already said so (no need for the phrase patterns)."""
+        if not routed and not USER_METHOD.search(str(text or '')):
             return None
         target = self.last_failure()
         if target is None:

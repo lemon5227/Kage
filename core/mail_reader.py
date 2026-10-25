@@ -111,6 +111,24 @@ def list_text(rows: list[dict], total: int) -> str:
 
 
 PICK = re.compile(r'(读|看|打开|总结|概括)(一下)?\s*第\s*(\d+)\s*封')
+NUMBER = re.compile(r'第\s*(\d+|[一二两三四五六七八九十]+)\s*封')
+CN_NUM = {'一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10}
+
+
+def message_number(text: str) -> int | None:
+    """"第3封" / "第三封" / "第十二封" -> N (None if no number is given)."""
+    match = NUMBER.search(str(text or ''))
+    if not match:
+        return 1 if re.search(r'最新(的)?(那|一)?封|最近(的)?(那|一)?封', str(text or '')) else None
+    raw = match.group(1)
+    if raw.isdigit():
+        return int(raw)
+    if raw.startswith('十'):
+        return 10 + CN_NUM.get(raw[1:], 0)
+    if '十' in raw:
+        tens, _, ones = raw.partition('十')
+        return CN_NUM[tens] * 10 + CN_NUM.get(ones, 0)
+    return CN_NUM.get(raw)
 SUMMARY_PROMPT = ('用中文简要总结这封邮件（3 句以内）：谁发的、要点、需要我做什么（没有就说“无需处理”）。'
                   '只根据邮件内容，不要编造。')
 _last_listed: list[dict] = []
@@ -121,6 +139,22 @@ def pick(text: str) -> tuple[str, int] | None:
     return (('summary' if match.group(1) in ('总结', '概括') else 'read'), int(match.group(3))) if match else None
 
 
+def pick_reply(n: int | None, mode: str, summarize) -> str:
+    """Read or summarize message N of the last list (the router decided it is such a request)."""
+    if n is None:
+        return '要看第几封？说“读第 N 封”或“总结第 N 封”。'
+    return _pick(mode, n, summarize)
+
+
+def list_reply() -> str:
+    try:
+        rows = unread(10)
+        _last_listed[:] = rows
+        return list_text(rows, unread_count())
+    except Exception as exc:
+        return f'没能读取邮件：{exc}'
+
+
 def answer_pick(text: str, summarize) -> str | None:
     """Reply to "读第 N 封 / 总结第 N 封" (N from the last list shown). summarize(prompt) -> str uses the
     local model, so the message never leaves the Mac."""
@@ -128,6 +162,10 @@ def answer_pick(text: str, summarize) -> str | None:
     if choice is None:
         return None
     mode, n = choice
+    return _pick(mode, n, summarize)
+
+
+def _pick(mode: str, n: int, summarize) -> str:
     rows = _last_listed or unread(10)
     if not 1 <= n <= len(rows):
         return f'只有 {len(rows)} 封可选，请说第 1 到 {len(rows)} 封。'

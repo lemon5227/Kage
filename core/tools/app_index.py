@@ -160,11 +160,31 @@ def parse_open_request(text: str) -> str | None:
     return None
 
 
-def open_app_reply(text: str) -> str | None:
+def find_in_text(text: str, index: list[dict] | None = None) -> str | None:
+    """The installed app named anywhere in a sentence ("我要用 Xcode", "开一下飞书"): the longest name or alias
+    that occurs in it (Latin names as whole words). Used once the intent router has said "open an app"."""
+    index = index if index is not None else load_index()
+    low = normalize(text)
+    words = set(re.findall(r'[a-z0-9.+#-]+', low))
+    best = ''
+    for app in index:
+        for name in app['names']:
+            if len(name) < 2 or len(name) <= len(best):
+                continue
+            # Latin names as whole words; "xcode" also names "Xcode-beta" (first word of a hyphenated name)
+            head = re.split(r'[-\s]', name)[0]
+            hit = ((name in words or (' ' in name and name in low) or (len(head) >= 3 and head in words))
+                   if name.isascii() else name in low)
+            if hit:
+                best = name
+    return best or None
+
+
+def open_app_reply(text: str, *, routed: bool = False) -> str | None:
     """The spoken reply for a fast-path open request (None: not one — let the model handle it)."""
-    name = parse_open_request(text)
+    name = parse_open_request(text) or (find_in_text(text) if routed else None)
     if name is None:
-        return None
+        return '没听出要打开哪个应用，能再说一下名字吗？' if routed else None
     status, apps = resolve(name)
     if status == 'missing' and not apps:
         return None                         # not an installed app ("打开灯"?): the model decides

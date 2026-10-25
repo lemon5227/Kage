@@ -12,6 +12,7 @@ Policy: every send needs the user's "确认" except recipients in SEND_WITHOUT_A
 """
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import threading
@@ -318,17 +319,51 @@ def _send(to: str, text: str) -> str:
     return f'已在和 {title} 的聊天里按了发送，但截图里没认出这条消息，请看一眼微信确认。'
 
 
+# Phrasings with an explicit boundary between recipient and message; anything else is extracted by the local
+# model once the intent router has said "send a WeChat message" (and the recipient is then checked in WeChat).
+EXTRA = [
+    re.compile(r'(?:帮我)?发(?:个|条)?微信给\s*(?P<to>[^，,：:]{1,20}?)\s*[：:，,]\s*(?P<text>.+)$'),
+    re.compile(r'^(?:帮我)?(?:跟|和|给)\s*(?P<to>[^，,：:说]{1,20}?)\s*说(?:一声|一下)?\s*[：:，,]?\s*(?P<text>.+)$'),
+]
+
+
 def parse(text: str) -> tuple[str, str] | None:
-    match = ASK.search(str(text or '').strip())
-    if not match:
+    text = str(text or '').strip()
+    match = ASK.search(text)
+    if match:
+        to = (match.group('to') or match.group('to2') or '').strip()
+        body = (match.group('text') or match.group('text2') or '').strip().strip('“”"')
+        body = re.sub(r'^说(?:一声|一下)?\s*[：:，,]?\s*', '', body)       # "给张三发个微信说我晚点到"
+        return (to, body) if to and body else None
+    for pattern in EXTRA:
+        match = pattern.search(text)
+        if match and match.group('to').strip() and match.group('text').strip():
+            return match.group('to').strip(), match.group('text').strip().strip('“”"')
+    return None
+
+
+EXTRACT_PROMPT = ('从下面这句话里找出微信消息的收件人和要发送的内容。只输出 JSON：{"to": "收件人", "text": "内容"}。'
+                  '收件人必须原样出现在句子里；内容不要加引号或称呼。\n句子：')
+
+
+def extract(model, text: str) -> tuple[str, str] | None:
+    """Recipient and message from free phrasing ("微信通知王五下午三点在会议室见"), by the local model; the
+    recipient must occur verbatim in the sentence (no invented names)."""
+    try:
+        response = model.generate(messages=[{'role': 'user', 'content': EXTRACT_PROMPT + str(text)}],
+                                  max_tokens=80, temperature=0)
+        raw = str(getattr(response, 'text', '') or '')
+        data = json.loads(raw[raw.index('{'):raw.rindex('}') + 1])
+    except Exception:
         return None
-    to = (match.group('to') or match.group('to2') or '').strip()
-    body = (match.group('text') or match.group('text2') or '').strip().strip('“”"')
-    return (to, body) if to and body else None
+    to, body = str(data.get('to') or '').strip(), str(data.get('text') or '').strip().strip('“”"')
+    if not to or not body or _norm(to) not in _norm(text):
+        return None
+    return to, body
 
 
-def answer(text: str) -> str | None:
-    """Fast path: "微信给X发：…" (send now if X is pre-approved, else ask), then "确认"/"取消"."""
+def follow_up(text: str) -> str | None:
+    """"确认" / "取消" / "发给 X" after a send prompt — handled before intent routing (they are not new requests)."""
     text = str(text or '').strip()
     if _pending and time.time() - _pending['time'] < 300:
         _last_reply['time'] = time.time()
@@ -347,11 +382,12 @@ def answer(text: str) -> str | None:
     if (CONFIRM.match(text) or CANCEL.match(text)) and time.time() - _last_reply['time'] < 300:
         # the 4B model answered such a "确认" with an invented "已发给 …" (demo recording, 10-25)
         return '现在没有等你确认的微信消息，什么都没发。'
-    request = parse(text)
-    if request is None:
-        return None
+    return None
+
+
+def request(to: str, body: str) -> str:
+    """Check the recipient in WeChat, then send (pre-approved recipients) or ask for "确认"."""
     _last_reply['time'] = time.time()
-    to, body = request
     try:
         exists, similar = lookup(to)
     except Exception as exc:
@@ -363,3 +399,20 @@ def answer(text: str) -> str | None:
     _pending.clear()
     _pending.update({'to': to, 'text': body, 'time': time.time()})
     return f'要用微信发给“{to}”：{body}\n说“确认”发送，说“取消”不发。'
+
+
+def answer_routed(text: str, model) -> str:
+    """The intent router said this is a WeChat send: get recipient and message, then `request`."""
+    found = parse(text) or extract(model, text)
+    if found is None:
+        return '要发给谁、发什么？可以说“微信给张三发：明天开会”。'
+    return request(*found)
+
+
+def answer(text: str) -> str | None:
+    """Pattern-only path (used when the decision model is unavailable): follow-ups, then "微信给X发：…"."""
+    reply = follow_up(text)
+    if reply is not None:
+        return reply
+    found = parse(text)
+    return request(*found) if found else None

@@ -279,7 +279,7 @@ def opencli_write(site: str, command: str, args: dict | None = None) -> str:
 
 
 SITE_SYSTEM = ('你是 Kage，用户的电脑助手。用户问的是某个网站上的内容。先调用 opencli_read 拿到真实数据，再用中文简洁回答'
-               '（列表最多 5 条，带上标题和作者等关键信息）。搜索词用用户原话。工具失败时如实说明原因（例如需要先在 Chrome '
+               '（最多五行；列表最多 5 条，只写标题和关键数字，不要加粗、不要复述全部条目）。搜索词用用户原话。工具失败时如实说明原因（例如需要先在 Chrome '
                '登录），不要编造。')
 
 
@@ -368,11 +368,17 @@ def decide(text: str, site: str, reads: dict) -> dict | None:
 LAST_DECISION: dict = {}      # for the usage log / tests: what decided the last site request
 
 
-def quick_answer(text: str) -> str | None:
+BRIEF_PROMPT = ('下面是从{site}取到的条目。请根据它们回答用户的问题，最多三句话，不要逐条复述，不要编造条目里没有的内容。'
+                '\n用户：{text}\n条目：\n{rows}')
+
+
+def quick_answer(text: str, model=None) -> str | None:
     """Site requests the decision model is sure about: it picks the command (and search term, row count), the
     program runs it and lists the rows. Replaces the local model's command choice (~4 s) and retelling (~6 s);
-    14 s → ~5 s for "知乎热榜前三" (10-25). None: not confident, or the request needs reading the content →
-    the local model's loop handles it. (A regex version tried first got 2 of 7 phrasings wrong.)"""
+    14 s → ~5 s for "知乎热榜前三" (10-25). When the request needs reading the rows ("大家在聊什么",
+    "哪个播放量最高") and a model is given, the rows go to it with a three-sentence limit instead of the full tool
+    loop (27 s → a few seconds; the loop re-chose the command and retold all ten rows). None: not confident →
+    the local model's loop. (A regex version tried first got 2 of 7 phrasings wrong.)"""
     LAST_DECISION.clear()
     site = site_of(text)
     if site is None:
@@ -387,8 +393,13 @@ def quick_answer(text: str) -> str | None:
     LAST_DECISION.update(decision, site=site, by='clef')
     command = decision['command']
     confident = setting('decision_confidence', CONFIDENT)
-    if (command not in reads or decision['command_conf'] < confident or not decision['list_only']
-            or decision['list_conf'] < confident):
+    reading = not decision['list_only'] or decision['list_conf'] < confident
+    if decision['command_conf'] < confident:
+        # Unsure which command: still run Clef's best guess, but let the local model read the rows and answer
+        # (it says so when they do not fit). Choosing the command itself cost the 4B model ~4 s and the full loop
+        # ~18 s for "知乎上大家在聊什么" (Clef 0.65 on `hot`, 10-26).
+        reading = True
+    if command not in reads or (reading and model is None):
         LAST_DECISION['by'] = 'local-model'
         return None
     args, head = {'limit': max(decision['count'], 1)}, ''
@@ -406,6 +417,13 @@ def quick_answer(text: str) -> str | None:
         return None
     _last_site_request.update(text=str(text).removesuffix('（刷新）'), time=time.time())
     rows = result['data'] if isinstance(result['data'], list) else [result['data']]
+    if reading:
+        LAST_DECISION['by'] = 'clef+local-model' if decision['command_conf'] >= confident else 'clef(unsure)+local-model'
+        listing = '\n'.join(_rows_text(rows[:MAX_ROWS], with_author=False))
+        response = model.generate(messages=[{'role': 'user', 'content': BRIEF_PROMPT.format(
+            site=display_name(site), text=text, rows=listing)}], max_tokens=200, temperature=0.3)
+        brief = str(getattr(response, 'text', '') or '').strip()
+        return brief or None
     lines = _rows_text(rows[:decision['count']], with_author=bool(head))
     if not lines:
         return None
@@ -450,7 +468,7 @@ def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
     """A small dedicated loop for "B站热门 / 知乎热榜 / 小红书搜…": one tool (opencli_read), the site's command list,
     the local model. Runs before Kage's older video/search heuristics, which grabbed these requests in the first
     end-to-end test (a YouTube search, a web search answering "知乎热榜" with Zhihu's own homepage blurb)."""
-    quick = quick_answer(text)
+    quick = quick_answer(text, model)
     if quick:
         return quick
     hint = site_hint(text)
@@ -463,7 +481,9 @@ def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
     messages = [{'role': 'system', 'content': SITE_SYSTEM}, {'role': 'user', 'content': str(text) + hint}]
     login_site = None
     for step in range(max_steps):
-        response = model.generate(messages=messages, tools=[tool], max_tokens=600, temperature=0.3)
+        # after a tool result the reply is usually the answer: keep it short (10 rows retold = 353 tokens ≈ 14 s)
+        response = model.generate(messages=messages, tools=[tool], max_tokens=600 if step == 0 else 250,
+                                  temperature=0.3)
         calls = list(getattr(response, 'tool_calls', None) or [])
         if not calls:
             return str(getattr(response, 'text', '') or '').strip() or None
@@ -484,7 +504,9 @@ def answer_with_site(model, text: str, max_steps: int = 3) -> str | None:
                      {'role': 'tool', 'tool_call_id': call_id, 'content': result[:6000]}]
     if login_site:
         return open_login(login_site, text)
-    final = model.generate(messages=messages + [{'role': 'user', 'content': '根据上面的结果直接回答。'}], max_tokens=600,
+    # brief on purpose: retelling all ten rows cost 391 tokens ≈ 15 s of generation on the 4B model (10-26)
+    final = model.generate(messages=messages + [{'role': 'user', 'content': '根据上面的结果简短回答，最多五行，不要逐条复述全部条目。'}],
+                           max_tokens=250,
                            temperature=0.3)
     return str(getattr(final, 'text', '') or '').strip() or None
 

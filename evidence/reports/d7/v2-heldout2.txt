@@ -1,0 +1,19 @@
+legacy    16/30 = 0.53
+clef      30/30 = 1.00
+combined  28/30 = 0.93
+day (calendar rows): clef 2/3  legacy 3/3
+latency median 0.29s  max 0.64s; below threshold: 2
+  后天下午我有空吗                       gold=calendar      legacy=other         clef=calendar(0.965) -> calendar
+  邮件有啥新的                         gold=mail_list     legacy=other         clef=mail_list(0.982) -> mail_list
+  第二封邮件说了啥                       gold=mail_pick     legacy=other         clef=mail_pick(0.937) -> mail_pick
+  把最新那封邮件念给我听                    gold=mail_pick     legacy=other         clef=mail_pick(0.796) -> other
+  帮我开个备忘录                        gold=open_app      legacy=other         clef=open_app(0.703) -> other
+  今天都用你做了点啥                      gold=usage_log     legacy=other         clef=usage_log(0.97) -> usage_log
+  上海今天多少度                        gold=weather       legacy=other         clef=weather(0.992) -> weather
+  外面冷不冷                          gold=weather       legacy=other         clef=weather(0.983) -> weather
+  你是谁                            gold=chat          legacy=other         clef=chat(0.971) -> chat
+  Python 的列表和元组有什么区别             gold=chat          legacy=other         clef=chat(0.988) -> chat
+  帮我想个周报的标题                      gold=chat          legacy=other         clef=chat(0.983) -> chat
+  地球到月球有多远                       gold=chat          legacy=other         clef=chat(0.982) -> chat
+  晚安                             gold=chat          legacy=other         clef=chat(0.926) -> chat
+  微信支付和支付宝哪个手续费低                 gold=chat          legacy=other         clef=chat(0.931) -> chat

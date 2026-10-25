@@ -1,0 +1,30 @@
+{"text": "后天之前我有啥会要开", "intent": "calendar", "day": "tomorrow"}
+{"text": "今天日历上都排了什么", "intent": "calendar", "day": "today"}
+{"text": "明儿个忙不忙", "intent": "calendar", "day": "tomorrow"}
+{"text": "提醒事项里还有啥", "intent": "calendar", "day": "today"}
+{"text": "收件箱有新信吗", "intent": "mail_list"}
+{"text": "最近有谁给我发邮件", "intent": "mail_list"}
+{"text": "邮件列表里第4封帮我概括一下", "intent": "mail_pick"}
+{"text": "打开第一封看看", "intent": "mail_pick"}
+{"text": "微信上有没有新消息", "intent": "wechat_unread"}
+{"text": "看下微信有没有人@我", "intent": "wechat_unread"}
+{"text": "跟Wenbo yan说一声我到家了", "intent": "wechat_send"}
+{"text": "微信通知王五下午三点在会议室见", "intent": "wechat_send"}
+{"text": "帮我发微信给文件传输助手：买牛奶", "intent": "wechat_send"}
+{"text": "开一下飞书", "intent": "open_app"}
+{"text": "把终端打开", "intent": "open_app"}
+{"text": "我要用 Xcode", "intent": "open_app"}
+{"text": "知乎上大家在聊什么", "intent": "website"}
+{"text": "B站有没有讲 transformer 的视频", "intent": "website"}
+{"text": "微博上最火的三条是啥", "intent": "website"}
+{"text": "你今天帮我做过哪些事", "intent": "usage_log"}
+{"text": "刚才那个我自己搞定了，方法是重启了一下蓝牙", "intent": "user_method"}
+{"text": "早上好", "intent": "chat"}
+{"text": "邮件和微信哪个更适合正式沟通", "intent": "chat"}
+{"text": "帮我总结一下这篇文章", "intent": "other"}
+{"text": "飞书和钉钉有什么区别", "intent": "chat"}
+{"text": "明天会下雨吗", "intent": "weather"}
+{"text": "音量调到一半", "intent": "other"}
+{"text": "B站是哪一年成立的", "intent": "chat"}
+{"text": "帮我把这个文档里的错别字改了", "intent": "other"}
+{"text": "推荐几本机器学习的书", "intent": "chat"}

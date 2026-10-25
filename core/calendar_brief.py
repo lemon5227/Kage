@@ -105,6 +105,16 @@ def render(day: datetime.date, events: list[dict], reminders: list[dict] | None,
     return '\n'.join(lines)
 
 
+def reply_for(day_word: str, now: datetime.datetime | None = None) -> str:
+    """Schedule for 'today' / 'tomorrow' (the intent router already decided this is a schedule question)."""
+    now = now or datetime.datetime.now().astimezone()
+    day = now.date() + datetime.timedelta(days=1 if day_word == 'tomorrow' else 0)
+    try:
+        return render(day, events_on(day), open_reminders() if day == now.date() else None, now)
+    except Exception as exc:
+        return f'没能读取日历：{exc}'
+
+
 def answer(text: str, now: datetime.datetime | None = None) -> str | None:
     """Reply to "今天/明天有什么日程" (None: not such a question)."""
     match = ASK.search(str(text or ''))

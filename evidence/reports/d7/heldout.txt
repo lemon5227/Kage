@@ -1,0 +1,20 @@
+legacy    15/30 = 0.50
+clef      30/30 = 1.00
+combined  30/30 = 1.00
+day (calendar rows): clef 4/4  legacy 3/4
+latency median 0.33s  max 0.67s; below threshold: 2
+  后天之前我有啥会要开                     gold=calendar      legacy=other         clef=calendar(0.984) -> calendar
+  今天日历上都排了什么                     gold=calendar      legacy=other         clef=calendar(0.977) -> calendar
+  明儿个忙不忙                         gold=calendar      legacy=other         clef=calendar(0.913) -> calendar
+  提醒事项里还有啥                       gold=calendar      legacy=other         clef=calendar(0.982) -> calendar
+  收件箱有新信吗                        gold=mail_list     legacy=other         clef=mail_list(0.984) -> mail_list
+  邮件列表里第4封帮我概括一下                 gold=mail_pick     legacy=other         clef=mail_pick(0.983) -> mail_pick
+  打开第一封看看                        gold=mail_pick     legacy=open_app      clef=mail_pick(0.945) -> mail_pick
+  看下微信有没有人@我                     gold=wechat_unread legacy=other         clef=wechat_unread(0.973) -> wechat_unread
+  跟Wenbo yan说一声我到家了              gold=wechat_send   legacy=other         clef=wechat_send(0.97) -> wechat_send
+  微信通知王五下午三点在会议室见                gold=wechat_send   legacy=other         clef=wechat_send(0.982) -> wechat_send
+  帮我发微信给文件传输助手：买牛奶               gold=wechat_send   legacy=other         clef=wechat_send(0.985) -> wechat_send
+  我要用 Xcode                      gold=open_app      legacy=other         clef=open_app(0.988) -> open_app
+  你今天帮我做过哪些事                     gold=usage_log     legacy=other         clef=usage_log(0.987) -> usage_log
+  明天会下雨吗                         gold=other         legacy=calendar      clef=other(0.964) -> other
+  B站是哪一年成立的                      gold=other         legacy=website       clef=other(0.925) -> other

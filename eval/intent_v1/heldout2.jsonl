@@ -1,0 +1,30 @@
+{"text": "后天下午我有空吗", "intent": "calendar", "day": "today"}
+{"text": "今天的会都几点", "intent": "calendar", "day": "today"}
+{"text": "明天日程排满了吗", "intent": "calendar", "day": "tomorrow"}
+{"text": "邮件有啥新的", "intent": "mail_list"}
+{"text": "第二封邮件说了啥", "intent": "mail_pick"}
+{"text": "把最新那封邮件念给我听", "intent": "mail_pick"}
+{"text": "微信有人找我没", "intent": "wechat_unread"}
+{"text": "微信群里有新消息吗", "intent": "wechat_unread"}
+{"text": "微信跟文件传输助手说今晚加班", "intent": "wechat_send"}
+{"text": "给Wenbo yan发微信：周末去爬山吗", "intent": "wechat_send"}
+{"text": "启动一下计算器", "intent": "open_app"}
+{"text": "帮我开个备忘录", "intent": "open_app"}
+{"text": "B站最近什么视频火", "intent": "website"}
+{"text": "微博上在吵什么", "intent": "website"}
+{"text": "知乎搜一下怎么学 Rust", "intent": "website"}
+{"text": "今天都用你做了点啥", "intent": "usage_log"}
+{"text": "那个我自己弄好了，是在终端里重装了一下", "intent": "user_method"}
+{"text": "上海今天多少度", "intent": "weather"}
+{"text": "这周末天气适合出去玩吗", "intent": "weather"}
+{"text": "外面冷不冷", "intent": "weather"}
+{"text": "你是谁", "intent": "chat"}
+{"text": "Python 的列表和元组有什么区别", "intent": "chat"}
+{"text": "帮我想个周报的标题", "intent": "chat"}
+{"text": "地球到月球有多远", "intent": "chat"}
+{"text": "晚安", "intent": "chat"}
+{"text": "微信支付和支付宝哪个手续费低", "intent": "chat"}
+{"text": "把亮度调到最高", "intent": "other"}
+{"text": "把下载文件夹里的图片移到桌面", "intent": "other"}
+{"text": "帮我搜一下最新的苹果发布会新闻", "intent": "other"}
+{"text": "播放周杰伦的晴天", "intent": "other"}

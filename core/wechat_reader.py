@@ -123,6 +123,11 @@ def answer(text: str) -> str | None:
     """Reply to "微信有什么未读消息" from a screenshot of the WeChat window (None: not such a question)."""
     if not ASK.search(str(text or '')):
         return None
+    return unread_reply()
+
+
+def unread_reply() -> str:
+    """Unread chats on the current screen of the WeChat window."""
     try:
         rows = read_chat_list()
     except Exception as exc:
