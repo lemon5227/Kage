@@ -1,6 +1,6 @@
 # Interface First, Then Teach, Then Consolidate: Self-Evolution of a 4B Local Computer-Use Agent on a Four-Dollar Teacher Budget
 
-*Draft v0.1, 2026-10-24. Every number is taken from a file under `evidence/` (cited in brackets). Concurrent
+*Draft v0.2, 2026-10-25 (§6.5 added). Every number is taken from a file under `evidence/` (cited in brackets). Concurrent
 work (Terminal-RSI, Harness²) is discussed in §7. Statistical tests are two-sided Fisher exact tests over task
 runs unless stated; small samples are marked as directional.*
 
@@ -198,6 +198,28 @@ What the five versions show:
 Implications we did not test (compute ended with this study): self-distilled replay of the raw student's own
 correct code on other tasks, keeping write-then-verify steps in training trajectories, and gating the adapter
 by task family at deployment.
+
+## 6.5 From benchmark to daily use
+
+We then put the student behind the user's own requests on their Mac (calendar, mail, open documents, apps,
+websites) and logged every turn. The same pattern held, in a sharper form: the model is reliable when the
+program hands it the information and the narrow tool surface the request needs, and unreliable otherwise
+[`evidence/reports/d0`–`d5`].
+
+| Request type | Model chooses among ~25 tools | Program supplies information / acts directly |
+|---|---|---|
+| Edit an open document | invents paths (`/Users/yourname/…`), ≈2/10 | server attaches the real path (read from the window's accessibility attribute), doc tools only: **11/11** |
+| Open an app ("微信", "vscode") | 5 of 9 replies claim "opened" with no tool call | resolver over localized app names + server fast path: **20/20** |
+| Today's schedule | — | small helper app with its own permission text (Python is denied silently; AppleScript does not expand recurring events): **5/5** test events, one brief per day |
+| Unread mail / summarize message *N* | — | Mail scripting (read-only) + local summary: **10/10** summaries without factual errors |
+| Website content | old video/search heuristics answer instead | dedicated loop with one read-only OpenCLI tool and the site's commands: **3/3** on Bilibili |
+
+**A near-miss.** Asked to edit a file that did not exist, the server fell back to listing every open document; the
+model then ran three replacements on the user's real source file in another editor (each replaced a line with
+itself, so the content was unchanged). The fix is least privilege rather than instructions: each turn may write
+only the files the request names and that exist, never a substitute, and no-op edits are rejected
+(re-test 11/11, the real file untouched). A per-turn usage log marks "claimed done without any tool call" as its
+own status, which is how the false "opened" replies were caught.
 
 ## 7. Related and concurrent work
 
