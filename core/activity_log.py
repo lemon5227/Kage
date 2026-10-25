@@ -38,7 +38,7 @@ def classify(path: str, reply: str, tools: list[dict]) -> tuple[str, str]:
     if path == 'wechat_send':
         if reply.startswith('已发给'):
             return 'ok', ''
-        if reply.startswith('要用微信发给') or reply.startswith('好，不发了'):
+        if reply.startswith(('要用微信发给', '好，不发了', '好，改成发给')) or '你是不是想发给' in reply:
             return 'chat', ''
         return 'failed', reply[:120]
     if path == 'wechat_fastpath':
@@ -68,9 +68,19 @@ class ActivityLog:
     def entries(self, day: datetime.date | None = None) -> list[dict]:
         path = self.root / f'{(day or datetime.date.today()):%Y-%m-%d}.jsonl'
         try:
-            return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            text = path.read_text(encoding='utf-8')
         except OSError:
             return []
+        rows = []
+        # split on '\n' only: str.splitlines() also breaks on U+2028 and \x1c-\x1e, which json.dumps(ensure_ascii=False)
+        # leaves unescaped (a WeChat preview / mail field carried one and broke the whole day's log, 10-25).
+        for line in text.split('\n'):
+            if line.strip():
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    continue
+        return rows
 
     def record(self, *, request: str, reply: str, path: str, tools: list[dict] | None = None) -> dict:
         now = datetime.datetime.now()
@@ -78,7 +88,8 @@ class ActivityLog:
                   'error_type': t.get('error_type'), 'error_message': str(t.get('error_message') or '')[:200]}
                  for t in (tools or [])]
         status, reason = classify(path, reply, tools)
-        entry = {'id': f'{now:%H%M%S%f}', 'time': now.isoformat(timespec='seconds'), 'request': str(request or '')[:500],
+        request = str(request or '').split('\n[系统：')[0]          # the user's words, not the hints the server appended
+        entry = {'id': f'{now:%H%M%S%f}', 'time': now.isoformat(timespec='seconds'), 'request': request[:500],
                  'path': path, 'tools': tools, 'reply': str(reply or '')[:500], 'status': status, 'reason': reason}
         with self._lock:
             self.root.mkdir(parents=True, exist_ok=True)

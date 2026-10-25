@@ -50,8 +50,10 @@ def _norm(text: str) -> str:
 
 
 def _count(lines: list[str], text: str) -> int:
-    key = re.sub(r'[，,。.!！?？]', '', _norm(text))[:12]
-    return sum(key in re.sub(r'[，,。.!！?？]', '', _norm(line)) for line in lines)
+    """Bubbles containing the start of `text`, letters/digits/CJK only: OCR renders dashes and quotes in its own
+    way ("——" was read differently and a delivered message was reported as missing)."""
+    key = re.sub(r'\W', '', _norm(text))[:8]
+    return sum(key in re.sub(r'\W', '', _norm(line)) for line in lines)
 
 
 def _main_window() -> int:
