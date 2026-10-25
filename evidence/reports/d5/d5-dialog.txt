@@ -1,0 +1,10 @@
+你> B站现在热门视频前五是什么
+Kage> B站热门视频前五如下： 1. **《影视飓风员工，开什么车？》** 作者：极速拍档 播放量：3,359,246 弹幕数：24,194 2. **《人性、欲望与奇观，自驾拉斯维加斯，现实夜之城什么样？》** 作者：超Carry的柴西 播放量：4,335,399 弹幕数：6,368 3. **《人工耳蜗里的声音，到底是什么样的？》** 作者：亿点点不一样 播放量：5,049,051 弹幕数：3,797 4. **《吴站长携天津站男团激情演唱《Uptown Funk》》** 作者：整活Tv 播放量：412,578 弹幕数：617 5. **《“非洲优等生”成功密码是什么？天降猛男的得与失【东非05丨卢旺达】》** 作者：小王Albert 播放量：1,758,359 弹幕数：2,868
+你> 在B站搜一下 AI Agent 教程
+Kage> 在B站搜索“AI Agent 教程”的结果如下： 1. **2026版LangChain教程，langchain快速入门，Agent智能体rag项目实战** 作者：尚硅谷 播放量：252万+ 视频链接：https://www.bilibili.com/video/BV1rv7A6oEeP 2. **【极致中配+原声】CMU2026秋 11-768: AI Agents 【更新中】** 作者：常青藤名校课 播放量：5.9万+ 视频链接：https://www.bilibili.com/video/BV1a6Yx62EH4 3. **AI Agent 开发实战（Eino框架）** 作者：七米老师 播放量：6066 视频链接：https://www.bilibili.com/video/BV1a6Yx62EH4 4. **2026全网最新AI Agent教程！手把手搭建专属智能体，大模型应用学完简历加分！** 作者：LLM大模型 播放量：325 视频链接：https://www.bilibili.com/video/BV1Rcnb6oEFj 5. **从 LLM 到 Agent Skill，一期视频带你打通底层逻辑！** 作者：马克的技术工作坊 播放量：215万+ 视频链接：https://www.bilibili.com/video/BV1E7wtzaEdq 6. **【Re:从零开始的AI学习】第一季总集篇｜从入门到用好 AI** 作者：卡普迪姆 播放量：97万+ 视频链接：https://www.bilibili.com/video/BV1VZWc6dECG 7. **【吴恩达】2026年公认最好的【Agent智能体】教程！大模型入门到进阶，一套全解决！** 作者：吴恩达Agent 播放量：10.8万+ 视频链接：https://www.bilibili.com/video/BV1AJen6SEVQ 8. **【全748集】目前B站最全最细的AI Agent开发零基础教程，2026最新版** 作者：AI大模型码农 播放量：130万+ 视频链接：https://www.bilibili.com/video/BV1xwVr6FEh4 9. **Agent开发工程师训练营** 作者：西瓜讲大模型 播放量：1.1万+ 视频链接：
+你> B站排行榜第一名是哪个视频
+Kage> B站排行榜第一名是： - **标题**：《绝区零》先导演示丨挽昼 - **作者**：绝区零 - **得分**：5007170 - **链接**：https://www.bilibili.com/video/BV1U3n46GEzY
+你> 知乎热榜有什么
+Kage> 抱歉，获取知乎热榜数据失败。这通常是因为需要先在 Chrome 浏览器中登录知乎账号才能访问相关数据。 请尝试： 1. 打开 Chrome 浏览器 2. 登录你的知乎账号 3. 再次尝试查询 或者，如果你有其他网站或内容想要查询，请告诉我。
+你> 小红书上搜一下咖啡店推荐
+Kage> 抱歉，无法直接获取小红书的数据。需要先使用 Chrome 浏览器登录小红书网站（https://www.xiaohongshu.com），然后才能进行搜索和查询。

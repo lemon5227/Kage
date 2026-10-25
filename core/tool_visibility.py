@@ -50,6 +50,9 @@ REMINDER_KEYWORDS = frozenset(("提醒", "生日", "纪念日", "记得", "别�
 # D0: a request about a named or open document. Only the document tools are offered (in the first app test
 # the 4B model ran `open -a TextEdit /Users/yourname/...` with invented paths instead of reading the file).
 DOC_FILE_PATTERN = r"[\w\-\u4e00-\u9fff]+\.(?:txt|md|markdown|csv|json|log|py|yaml|yml)\b"
+# D5: requests naming a website OpenCLI covers see only the OpenCLI tools (plus CORE); the server attaches the
+# site's read commands to the request.
+SITE_TOOLS = frozenset({"opencli_read", "opencli_write"})
 DOC_TOOLS = frozenset({"open_documents", "doc_read", "doc_replace", "doc_append_lines", "fs_search", "fs_undo_last"})
 # G0 in the app: Calculator / TextEdit / read-only System Settings through accessibility, and the user's correction.
 DESKTOP_KEYWORDS = frozenset((
@@ -89,7 +92,8 @@ BASE: frozenset[str] = CORE | LOCAL_SKILL_TOOLS | frozenset({
 
 # Tools the server registers after startup because they bind live state (not in
 # create_default_registry), so the phantom-name audit must not expect them there.
-SERVER_SLOTS: frozenset[str] = frozenset({"remember_date", "desktop_task", "desktop_learn", "open_documents"})
+SERVER_SLOTS: frozenset[str] = frozenset({"remember_date", "desktop_task", "desktop_learn", "open_documents",
+                                         "opencli_read", "opencli_write"})
 # Prefix of self-learned skill tools adopted with the user's consent (ToolRegistry.register_custom).
 ADOPTED_PREFIX = "custom_"
 
@@ -108,6 +112,7 @@ GROUPS: dict[str, frozenset[str]] = {
     # Registered by the server (needs the live MemoryProfile), feeds proactive reminders.
     "reminders": frozenset({"remember_date"}),
     # Registered by the server on macOS (core.computer_use.desktop_service).
+    "sites": SITE_TOOLS,
     "desktop": frozenset({"open_documents", "doc_read", "doc_replace", "doc_append_lines",
                           "desktop_task", "desktop_learn"}),
 }
@@ -228,6 +233,11 @@ def select(
             # Fail-open: never let a missing classification hide a capability.
             unclassified = tuple(sorted(unknown))
             names |= set(unclassified)
+
+    from core.tools.opencli_tool import SITE_PATTERN
+    if SITE_PATTERN.search(text) and not is_document_request(text):
+        names = (names & set(CORE)) | (set(SITE_TOOLS) & (set(registered) if registered else set(SITE_TOOLS)))
+        names -= {"web_fetch", "search", "smart_search", "web_search"}
 
     if is_document_request(text):
         names = (names & (set(CORE) | set(DOC_TOOLS))) | (set(DOC_TOOLS) & (set(registered) if registered else set(DOC_TOOLS)))

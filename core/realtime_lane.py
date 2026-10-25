@@ -46,6 +46,10 @@ def classify_realtime_task(user_input: str) -> RealtimeTaskClass:
     if "天气" in text and not any(k in text for k in ("打开", "浏览器", "网页", "网站")):
         return RealtimeTaskClass(lane="realtime", reason="weather_fastpath", can_background=False)
 
+    from core.tools.opencli_tool import SITE_PATTERN
+    if SITE_PATTERN.search(text):          # D5: a named site goes to OpenCLI, not the YouTube/Bilibili search fast path
+        return RealtimeTaskClass(lane="agent", reason="opencli_site", can_background=False)
+
     if "视频" in text or any(k in low for k in ("youtube", "youtuber", "video", "bilibili")):
         return RealtimeTaskClass(lane="realtime", reason="video_fastpath", can_background=False)
 

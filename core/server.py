@@ -738,6 +738,14 @@ class KageServer:
         from core.tools.file_ops import set_doc_scope
         set_doc_scope([])
 
+        # --- Websites through OpenCLI (D5): read commands, writes only after the user confirms ---
+        try:
+            from core.tools import opencli_tool
+            opencli_tool.binary()
+            opencli_tool.register(self.tool_registry)
+        except Exception:
+            logger.info("OpenCLI not available; website tools not registered")
+
         # --- macOS apps through accessibility (G0): desktop_task / desktop_learn ---
         if sys.platform == "darwin":
             try:
@@ -1594,6 +1602,26 @@ class KageServer:
                     self._log_turn_done(path="command_medium_confirm", route=route_hint, elapsed_ms=_turn_elapsed_ms())
                     continue
 
+                # D5: a request naming a website OpenCLI covers runs its own small loop (one read tool, the site's
+                # commands) before the older video/search heuristics, which grabbed these requests.
+                try:
+                    from core.tools.opencli_tool import SITE_PATTERN, answer_with_site
+                    from core.tool_visibility import is_document_request
+                    site_request = bool(SITE_PATTERN.search(str(user_input or ""))) and not is_document_request(str(user_input or ""))
+                except Exception:
+                    site_request = False
+                if site_request and not self.session.has_pending_action():
+                    await self.send_state("THINKING")
+                    try:
+                        reply = await asyncio.to_thread(answer_with_site, self.model_provider, str(user_input or ""))
+                    except Exception as exc:
+                        reply = f"读取网站内容时出错：{exc}"
+                    if reply:
+                        await self.mouth_speak(reply, current_emotion_str)
+                        self._record_turn_completed(user_input, reply)
+                        self._log_turn_done(path="opencli_site", route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        continue
+
                 # High-confidence video lookup fast path: preserve user phrase and
                 # execute deterministic search without multi-turn model planning.
                 if is_video_intent(str(user_input)):
@@ -1868,6 +1896,16 @@ class KageServer:
 
                 # 2. Thinking Phase
                 await self.send_state("THINKING")
+
+                # D5: a request naming a website gets that site's read commands next to it.
+                try:
+                    from core.tools.opencli_tool import site_hint
+                    site_text = await asyncio.to_thread(site_hint, str(user_input or ""))
+                except Exception:
+                    site_text = ""
+                if site_text:
+                    user_input = str(user_input or "") + site_text
+                    self._log_server_event("opencli.site_hint", chars=len(site_text))
 
                 # D0: requests about a named/open document get the real paths next to them (CLI-first editing).
                 if getattr(self, "desktop_service", None) is not None:
