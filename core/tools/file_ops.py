@@ -281,6 +281,22 @@ def fs_apply(ops: list[dict], workspace_dir: str = "~/.kage") -> str:
 # tools read, replace one exact piece, or append lines; line breaks are written by the program, and every
 # change goes through fs_write so it is undoable.
 _DOC_MAX_BYTES = 200_000
+# Files this turn may edit (set by the server per turn from what the user named; None = no restriction, e.g.
+# tests and experiments). 10-25: given an unknown file name, the model was handed every open document and ran
+# doc_replace three times on the user's real code file in VS Code (no-op replacements, content unchanged).
+_DOC_SCOPE: set[str] | None = None
+
+
+def set_doc_scope(paths) -> None:
+    global _DOC_SCOPE
+    _DOC_SCOPE = None if paths is None else {os.path.realpath(os.path.expanduser(p)) for p in paths}
+
+
+def _out_of_scope(path: str) -> str | None:
+    if _DOC_SCOPE is None or os.path.realpath(path) in _DOC_SCOPE:
+        return None
+    return ("这个文件不在本次请求涉及的范围内，不能修改；"
+            + ("可以修改的文件：" + "、".join(sorted(_DOC_SCOPE)) if _DOC_SCOPE else "请先问用户要改哪个文件"))
 
 
 def _doc_text(path: str) -> tuple[str, str | None, str]:
@@ -311,7 +327,12 @@ def doc_replace(path: str, old: str, new: str, workspace_dir: str = "~/.kage") -
     p, err, text = _doc_text(path)
     if err:
         return json.dumps({"success": False, "error": "DocUnavailable", "message": err}, ensure_ascii=False)
+    blocked = _out_of_scope(p)
+    if blocked:
+        return json.dumps({"success": False, "error": "OutOfScope", "message": blocked}, ensure_ascii=False)
     old = str(old or "")
+    if old == str(new or ""):
+        return json.dumps({"success": False, "error": "NoChange", "message": "新旧文字相同，什么也没改"}, ensure_ascii=False)
     count = text.count(old) if old else 0
     if count != 1:
         return json.dumps({"success": False, "error": "NotUnique",
@@ -328,6 +349,9 @@ def doc_append_lines(path: str, lines: list, workspace_dir: str = "~/.kage") -> 
     p, err, text = _doc_text(path)
     if err:
         return json.dumps({"success": False, "error": "DocUnavailable", "message": err}, ensure_ascii=False)
+    blocked = _out_of_scope(p)
+    if blocked:
+        return json.dumps({"success": False, "error": "OutOfScope", "message": blocked}, ensure_ascii=False)
     prefix = text if not text or text.endswith("\n") else text + "\n"
     result = json.loads(fs_write(p, prefix + "".join(x + "\n" for x in lines), workspace_dir=workspace_dir))
     return json.dumps({**result, "appended_lines": len(lines)}, ensure_ascii=False)

@@ -97,3 +97,32 @@ def test_doc_task_surfaces_the_locate_then_edit_tools():
     from core.tool_visibility import select
     names = select('把 TextEdit 里打开的会议纪要文档的错字改掉', 'command').names
     assert {'open_documents', 'doc_read', 'doc_replace'} <= set(names)
+
+
+def test_doc_scope_blocks_unnamed_files_and_noop_edits(tmp_path):
+    import json
+    from core.tools import file_ops
+    named, other = tmp_path / 'todo.txt', tmp_path / 'code.py'
+    named.write_text('a\n')
+    other.write_text('import os\n')
+    work = str(tmp_path / 'ws')
+    try:
+        file_ops.set_doc_scope([str(named)])
+        assert json.loads(file_ops.doc_replace(str(other), 'import os', 'import sys', workspace_dir=work))['error'] == 'OutOfScope'
+        assert json.loads(file_ops.doc_append_lines(str(other), ['x'], workspace_dir=work))['error'] == 'OutOfScope'
+        assert json.loads(file_ops.doc_replace(str(named), 'a', 'a', workspace_dir=work))['error'] == 'NoChange'
+        assert json.loads(file_ops.doc_replace(str(named), 'a', 'b', workspace_dir=work))['success']
+        file_ops.set_doc_scope([])
+        assert json.loads(file_ops.doc_replace(str(named), 'b', 'c', workspace_dir=work))['error'] == 'OutOfScope'
+    finally:
+        file_ops.set_doc_scope(None)
+    assert other.read_text() == 'import os\n' and named.read_text() == 'b\n'
+
+
+def test_named_but_missing_file_never_offers_other_documents(monkeypatch):
+    from core.computer_use import desktop_service as ds
+    monkeypatch.setattr(ds, 'open_documents', lambda: [{'app': 'Code', 'window': 'x', 'path': '/Users/u/real/code.py'}])
+    hint = ds.document_hint('把 nofile.txt 里的 A 改成 B')
+    assert '没有找到用户说的文件 nofile.txt' in hint and 'code.py' not in hint
+    assert ds.document_scope('把 nofile.txt 里的 A 改成 B') == ([], ['nofile.txt'])
+    assert ds.document_scope('把 code.py 里的 A 改成 B')[0] == ['/Users/u/real/code.py']

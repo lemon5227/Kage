@@ -734,6 +734,9 @@ class KageServer:
         self.activity_log = ActivityLog()
         self._turn_tools: list = []
         self._turn_reply: tuple[str, str] = ("", "")
+        # In the app, document edits are allowed only on files a request names (set per turn; empty otherwise).
+        from core.tools.file_ops import set_doc_scope
+        set_doc_scope([])
 
         # --- macOS apps through accessibility (G0): desktop_task / desktop_learn ---
         if sys.platform == "darwin":
@@ -1852,10 +1855,22 @@ class KageServer:
                 # D0: requests about a named/open document get the real paths next to them (CLI-first editing).
                 if getattr(self, "desktop_service", None) is not None:
                     from core.computer_use.desktop_service import document_hint
+                    from core.computer_use.desktop_service import document_scope
+                    from core.tools.file_ops import set_doc_scope
                     hint = await asyncio.to_thread(document_hint, str(user_input or ""))
+                    # Only files this request names (or the open documents it refers to) may be edited this turn.
+                    scope, _missing = await asyncio.to_thread(document_scope, str(user_input or ""))
+                    if not scope and "打开的" in str(user_input or ""):
+                        try:
+                            from core.computer_use.desktop_service import open_documents
+                            docs = await asyncio.to_thread(open_documents)
+                            scope = [d["path"] for d in docs] if len(docs) == 1 else []
+                        except Exception:
+                            scope = []
+                    set_doc_scope(scope)
                     if hint:
                         user_input = str(user_input or "") + hint
-                        self._log_server_event("desktop.document_hint", chars=len(hint))
+                        self._log_server_event("desktop.document_hint", chars=len(hint), scope=len(scope))
 
                 # Unified agentic loop (model -> tools -> observe -> model)
                 turn_key = str(self._active_turn_id or f"turn-{uuid4().hex[:8]}")
@@ -1878,6 +1893,8 @@ class KageServer:
                         experience=experience,
                     )
                 finally:
+                    from core.tools.file_ops import set_doc_scope
+                    set_doc_scope([])
                     record = None
                     try:
                         record = self.trajectories.finish(

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import subprocess
 import time
 
@@ -77,6 +78,30 @@ def open_documents(max_apps: int = 40) -> list[dict]:
     return found
 
 
+NAMED_FILE = re.compile(r'(~?/[^\s，。,]+|[\w\-\u4e00-\u9fff]+\.(?:txt|md|markdown|csv|json|log|py|yaml|yml))', re.I)
+
+
+def document_scope(text: str) -> tuple[list[str], list[str]]:
+    """(paths this request may edit, names the user gave that matched nothing). A named file counts only if it
+    exists as given (absolute/~ path) or matches an open document; nothing else is ever in scope."""
+    names = NAMED_FILE.findall(str(text or ''))
+    try:
+        documents = open_documents()
+    except Exception:
+        documents = []
+    paths, missing = [], []
+    for name in names:
+        if '/' in name:
+            path = Path(name).expanduser()
+            (paths.append(str(path)) if path.is_file() else missing.append(name))
+            continue
+        hits = [d['path'] for d in documents if Path(d['path']).name.lower() == name.lower()]
+        paths += hits
+        if not hits:
+            missing.append(name)
+    return sorted(set(paths)), missing
+
+
 def document_hint(text: str) -> str:
     """D0: for a request about a named or open document, the server resolves the real paths itself and puts them
     next to the request (the model then only has to pick doc_read / doc_replace / doc_append_lines). In the first
@@ -89,11 +114,15 @@ def document_hint(text: str) -> str:
         documents = open_documents()
     except Exception:
         return ''
+    scope, missing = document_scope(text)
+    if missing:            # never offer other files in place of one the user named
+        return (f"\n[系统：没有找到用户说的文件 {'、'.join(missing)}（既不是已打开的文档，也不存在这个路径）。"
+                '不要修改任何其他文件；告诉用户没找到，问清楚是哪个文件。]')
     lowered = str(text).lower()
-    named = [d for d in documents if Path(d['path']).name.lower() in lowered or Path(d['path']).stem.lower() in lowered]
-    shown = named or documents
+    named = [d for d in documents if d['path'] in scope or Path(d['path']).stem.lower() in lowered]
+    shown = named or ([] if NAMED_FILE.search(lowered) else documents)
     if not shown:
-        return '\n[系统：没有找到已打开的文档；如果用户说了文件名，用 fs_search 找到真实路径，不要猜路径。]'
+        return '\n[系统：没有找到已打开的文档；不要猜路径，问用户是哪个文件。]'
     listing = '；'.join(f"{Path(d['path']).name}（{d['app']}）→ {d['path']}" for d in shown[:8])
     return (f'\n[系统：已打开的文档 {listing}。读用 doc_read，改一段用 doc_replace，在末尾加行用 doc_append_lines，'
             '都用这个完整路径；删除一行就是把那一行连同换行替换成空。做完要以工具结果为准，不要声称没做的事。]')
