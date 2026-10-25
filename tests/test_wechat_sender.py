@@ -68,3 +68,26 @@ def test_title_ignores_icons(monkeypatch, tmp_path):
     monkeypatch.setattr(ws.wechat_reader, 'capture', lambda wid: image)
     monkeypatch.setattr(ws.wechat_reader, 'ocr', lambda img: (boxes, 2000, 1400))
     assert ws._read_pane() == ('Wenbo yan', ['你好'])
+
+
+def test_focus_change_stops_before_return(monkeypatch, tmp_path):
+    """Checks: before the click, before the paste, before Return — the third fails, so Return is never sent."""
+    keys, fronts = [], iter([None, None, ws.FocusLost('前台变成了 访达')])
+    monkeypatch.setattr(ws, 'Path', lambda p: tmp_path / 'lock')
+    monkeypatch.setattr(ws, '_clipboard', lambda: [])
+    monkeypatch.setattr(ws, '_restore_clipboard', lambda saved: None)
+    monkeypatch.setattr(ws, '_set_clipboard', lambda text: None)
+    monkeypatch.setattr(ws, '_front', lambda: None)
+    monkeypatch.setattr(ws, '_search', lambda q: ({'x': 0, 'y': 0, 'scale': 2}, [{'text': '张三', 'x': 0, 'y': 0, 'w': 2, 'h': 2}]))
+    monkeypatch.setattr(ws, '_click', lambda x, y: None)
+    monkeypatch.setattr(ws, '_read_pane', lambda: ('张三', []))
+    monkeypatch.setattr(ws, '_keys', lambda *steps: keys.extend(steps))
+
+    def front():
+        step = next(fronts)
+        if step:
+            raise step
+    monkeypatch.setattr(ws, '_ensure_front', front)
+    monkeypatch.setattr(ws.time, 'sleep', lambda s: None)
+    reply = ws.send('张三', 'hi')
+    assert reply.startswith('没有发送：前台变成了 访达') and 'key code 36' not in keys

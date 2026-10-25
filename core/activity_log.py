@@ -17,6 +17,8 @@ from pathlib import Path
 import re
 import threading
 
+from core.storage import append_line, atomic_write_text, file_lock, private_dir
+
 ROOT = Path('~/.kage/activity').expanduser()
 CLAIM = re.compile(r'(已|已经)(打开|修改|改好|添加|加好|删除|删掉|保存|发送|发给|发出|设置|完成|创建)')
 USER_METHOD = re.compile(r'(我是这样做的|我是这么做的|我自己|我手动|我最后|我后来|我是用|我用的是|我改成)')
@@ -82,7 +84,10 @@ class ActivityLog:
                     continue
         return rows
 
-    def record(self, *, request: str, reply: str, path: str, tools: list[dict] | None = None) -> dict:
+    def record(self, *, request: str, reply: str, path: str, tools: list[dict] | None = None,
+               timings: dict | None = None) -> dict:
+        """Append one finished turn. `timings`: per-stage milliseconds / cache flags (e.g. decision_ms, fetch_ms,
+        cache_hit) so "why was this slow" is answered from the log."""
         now = datetime.datetime.now()
         tools = [{'name': t.get('name'), 'success': bool(t.get('success')),
                   'error_type': t.get('error_type'), 'error_message': str(t.get('error_message') or '')[:200]}
@@ -91,10 +96,11 @@ class ActivityLog:
         request = str(request or '').split('\n[系统：')[0]          # the user's words, not the hints the server appended
         entry = {'id': f'{now:%H%M%S%f}', 'time': now.isoformat(timespec='seconds'), 'request': request[:500],
                  'path': path, 'tools': tools, 'reply': str(reply or '')[:500], 'status': status, 'reason': reason}
+        if timings:
+            entry['timings'] = timings
         with self._lock:
-            self.root.mkdir(parents=True, exist_ok=True)
-            with self._day(now).open('a', encoding='utf-8') as stream:
-                stream.write(json.dumps(entry, ensure_ascii=False) + '\n')
+            private_dir(self.root)
+            append_line(self._day(now), json.dumps(entry, ensure_ascii=False), private=True)
             self._render(now.date())
         return entry
 
@@ -114,16 +120,17 @@ class ActivityLog:
         if target is None:
             return None
         now = datetime.datetime.now()
-        with self._lock:
+        with self._lock, file_lock(self._day(now)):          # read-modify-write: no other process in between
             entries = self.entries(now.date())
             for entry in entries:
                 if entry['id'] == target['id']:
                     entry['user_method'] = {'time': now.isoformat(timespec='seconds'), 'text': str(text)[:1000]}
-            self._day(now).write_text(''.join(json.dumps(e, ensure_ascii=False) + '\n' for e in entries), encoding='utf-8')
-            with (self.root / 'methods.jsonl').open('a', encoding='utf-8') as stream:
-                stream.write(json.dumps({'time': now.isoformat(timespec='seconds'), 'request': target['request'],
-                                         'failure': target['reason'], 'user_method': str(text)[:1000],
-                                         'tools': [t['name'] for t in target['tools']]}, ensure_ascii=False) + '\n')
+            atomic_write_text(self._day(now), ''.join(json.dumps(e, ensure_ascii=False) + '\n' for e in entries),
+                              private=True)
+            append_line(self.root / 'methods.jsonl', json.dumps(
+                {'time': now.isoformat(timespec='seconds'), 'request': target['request'], 'failure': target['reason'],
+                 'user_method': str(text)[:1000], 'tools': [t['name'] for t in target['tools']]}, ensure_ascii=False),
+                private=True)
             self._render(now.date())
         return target
 
@@ -149,10 +156,12 @@ class ActivityLog:
             out.append(f"  - 路径：{e['path']}；工具：{tools}")
             if e['reason']:
                 out.append(f"  - 原因：{e['reason']}")
+            if e.get('timings'):
+                out.append('  - 耗时：' + '，'.join(f'{k}={v}' for k, v in e['timings'].items()))
             out.append(f"  - 回复：{e['reply'][:200]}")
             if e.get('user_method'):
                 out.append(f"  - **你的做法**（{e['user_method']['time'][11:16]}）：{e['user_method']['text']}")
-        (self.root / f'{day:%Y-%m-%d}.md').write_text('\n'.join(out) + '\n', encoding='utf-8')
+        atomic_write_text(self.root / f'{day:%Y-%m-%d}.md', '\n'.join(out) + '\n', private=True)
 
 
 FAILURE_FOLLOW_UP = ('（这次没做成，已经记进使用日志。你后来要是自己做成了，告诉我“我是这样做的：……”，'

@@ -14,7 +14,29 @@ import asyncio
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, "core"))
 
+def _single_instance():
+    """Hold an exclusive lock for the life of the process; a second Kage server exits at once instead of
+    loading models and writing the same logs (two ran side by side on 10-25, one stuck downloading for hours)."""
+    import fcntl
+    lock_dir = os.path.expanduser("~/.kage/run")
+    os.makedirs(lock_dir, exist_ok=True)
+    handle = open(os.path.join(lock_dir, "server.lock"), "a+")
+    try:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.seek(0)
+        owner = handle.read().strip() or "?"
+        print(f"❌ Kage is already running (pid {owner}); not starting a second server.", flush=True)
+        sys.exit(1)
+    handle.seek(0)
+    handle.truncate()
+    handle.write(str(os.getpid()))
+    handle.flush()
+    return handle            # keep a reference: the lock lives as long as the file stays open
+
+
 def main():
+    _instance_lock = _single_instance()  # noqa: F841
     print("\n================================================")
     print("   👻 Project Kage (Shadow) - Phase 4: The Body")
     print("================================================")

@@ -15,6 +15,8 @@ import shutil
 import subprocess
 import time
 
+from core.storage import atomic_write_text, file_lock
+
 CACHE = Path('~/.kage/opencli-catalog.json').expanduser()
 CACHE_TTL_S = 7 * 24 * 3600
 SITES = {  # what people say -> OpenCLI site
@@ -45,8 +47,25 @@ def binary() -> str:
     raise RuntimeError('opencli is not installed (npm install -g @jackwener/opencli)')
 
 
-def _run(args: list[str], timeout: float = 150) -> dict:
-    result = subprocess.run([binary(), *args, '-f', 'json'], capture_output=True, text=True, timeout=timeout)
+def setting(key: str, default):
+    """`opencli.<key>` from settings / KAGE_OPENCLI_<KEY>, falling back to the default here."""
+    from core.config import get_config
+    value = get_config(f'opencli.{key}', None)
+    if value is None:
+        return default
+    try:
+        return type(default)(value) if not isinstance(default, dict) else value
+    except (TypeError, ValueError):
+        return default
+
+
+def _run(args: list[str], timeout: float | None = None) -> dict:
+    # Interactive reads should fail in tens of seconds, not minutes (the first version waited up to 150 s).
+    timeout = timeout or setting('read_timeout_s', 45.0)
+    try:
+        result = subprocess.run([binary(), *args, '-f', 'json'], capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return {'ok': False, 'error': {'code': 'Timeout', 'message': f'OpenCLI 超过 {timeout:.0f} 秒没有返回'}}
     try:
         return json.loads(result.stdout or '{}')
     except ValueError:
@@ -71,9 +90,13 @@ def catalog(site: str) -> list[dict]:
         options = [o.get('name') for o in detail.get('command_options', [])] if 'command_options' in detail else []
         commands.append({'name': name, 'access': row.get('access', 'write'), 'description': row.get('description', ''),
                          'positionals': positionals, 'options': options})
-    cached[site] = {'time': time.time(), 'commands': commands}
-    CACHE.parent.mkdir(parents=True, exist_ok=True)
-    CACHE.write_text(json.dumps(cached, ensure_ascii=False))
+    with file_lock(CACHE):
+        try:
+            cached = json.loads(CACHE.read_text())        # another process may have added sites meanwhile
+        except (OSError, ValueError):
+            cached = {}
+        cached[site] = {'time': time.time(), 'commands': commands}
+        atomic_write_text(CACHE, json.dumps(cached, ensure_ascii=False))
     return commands
 
 
@@ -133,11 +156,25 @@ def _lookup(site: str, command: str) -> dict | None:
 
 
 # Public lists change slowly: reuse a result for a few minutes instead of driving Chrome again (~4 s each).
-# Account-specific reads (feed, notifications, profile…) are never cached. Rows are fetched at MAX_ROWS so
-# "前三" and "前五" share one entry.
-RESULT_TTL_S = {'hot': 300, 'ranking': 300, 'trending': 300, 'latest': 300, 'news': 300, 'search': 1800}
+# Policy (all overridable under `opencli` in settings):
+# - freshness: per-command TTL (hot lists 5 min, searches 30 min); account-specific reads (feed, notifications,
+#   profile…) are never cached; rows are fetched at MAX_ROWS so "前三" and "前五" share one entry;
+# - capacity: at most `result_cache_max` entries; expired entries go first, then the least recently used
+#   (a hit refreshes recency, never freshness, or a popular list would never expire);
+# - failure: stale-if-error — when a fetch fails (not a login problem), an entry up to `stale_if_error_s` old
+#   is returned and marked stale instead of an error;
+# - integrity: one file, read-modify-write under a cross-process lock, written atomically.
+# A JSON file is enough for one user and one server process (≤200 small entries, <1 ms); a shared cache for
+# several processes or machines would move to Redis (TTL + allkeys-lru) behind the same two functions.
+DEFAULT_TTL_S = {'hot': 300, 'ranking': 300, 'trending': 300, 'latest': 300, 'news': 300, 'search': 1800}
 RESULT_CACHE = Path('~/.kage/cache/opencli-results.json').expanduser()
+RESULT_CACHE_MAX = 200
+STALE_IF_ERROR_S = 3600
 REFRESH = re.compile(r'刷新|最新的|重新(获取|查|看)')
+
+
+def _ttl(command: str) -> int:
+    return int(setting('result_ttl_s', DEFAULT_TTL_S).get(command, 0))
 
 
 def _cache_load() -> dict:
@@ -147,39 +184,42 @@ def _cache_load() -> dict:
         return {}
 
 
-RESULT_CACHE_MAX = 200        # entries; beyond it the least recently used go first (expired ones always go)
-
-
 def _cache_save(cache: dict) -> None:
     try:
-        RESULT_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        RESULT_CACHE.write_text(json.dumps(cache, ensure_ascii=False))
+        atomic_write_text(RESULT_CACHE, json.dumps(cache, ensure_ascii=False))
     except OSError:
         pass
 
 
 def _cache_store(key: str, data) -> None:
-    """Expiry first (lists go stale), then LRU when over RESULT_CACHE_MAX (many distinct searches)."""
     now = time.time()
-    cache = {k: v for k, v in _cache_load().items() if now - v['time'] < max(RESULT_TTL_S.values())}
-    cache[key] = {'time': now, 'used': now, 'data': data}
-    if len(cache) > RESULT_CACHE_MAX:
-        keep = sorted(cache, key=lambda k: cache[k].get('used', cache[k]['time']), reverse=True)[:RESULT_CACHE_MAX]
-        cache = {k: cache[k] for k in keep}
-    _cache_save(cache)
+    keep_for = max(max(setting('result_ttl_s', DEFAULT_TTL_S).values()), setting('stale_if_error_s', STALE_IF_ERROR_S))
+    limit = setting('result_cache_max', RESULT_CACHE_MAX)
+    with file_lock(RESULT_CACHE):
+        cache = {k: v for k, v in _cache_load().items() if now - v['time'] < keep_for}
+        cache[key] = {'time': now, 'used': now, 'data': data}
+        if len(cache) > limit:
+            keep = sorted(cache, key=lambda k: cache[k].get('used', cache[k]['time']), reverse=True)[:limit]
+            cache = {k: cache[k] for k in keep}
+        _cache_save(cache)
 
 
-def _cache_get(key: str, ttl: float):
-    cache = _cache_load()
-    hit = cache.get(key)
-    if not hit or time.time() - hit['time'] >= ttl:
-        return None
-    hit['used'] = time.time()                 # recency for LRU, not freshness: 'time' stays the fetch time
-    _cache_save(cache)
-    return hit
+def _cache_get(key: str, max_age: float):
+    with file_lock(RESULT_CACHE):
+        cache = _cache_load()
+        hit = cache.get(key)
+        if not hit or time.time() - hit['time'] >= max_age:
+            return None
+        hit['used'] = time.time()
+        _cache_save(cache)
+        return hit
+
+
+LAST_FETCH: dict = {}         # timings of the last read, for the usage log
 
 
 def opencli_read(site: str, command: str, args: dict | None = None, fresh: bool = False) -> str:
+    LAST_FETCH.clear()
     site = SITES.get(str(site).lower(), str(site).lower())
     try:
         spec = _lookup(site, command)
@@ -192,7 +232,7 @@ def opencli_read(site: str, command: str, args: dict | None = None, fresh: bool 
         return json.dumps({'success': False, 'error': 'WriteCommand',
                            'message': f'{site} {command} 会改动你的账号（{spec["access"]}），要用 opencli_write 并经用户确认'},
                           ensure_ascii=False)
-    ttl = RESULT_TTL_S.get(spec['name'], 0)
+    ttl = _ttl(spec['name'])
     if ttl:
         args = {**(args or {}), 'limit': MAX_ROWS}
     argv = _argv(site, spec, args)
@@ -200,12 +240,20 @@ def opencli_read(site: str, command: str, args: dict | None = None, fresh: bool 
     if ttl and not fresh:
         hit = _cache_get(key, ttl)
         if hit:
+            LAST_FETCH.update(fetch_ms=0, cache_hit=True)
             return json.dumps({'success': True, 'site': site, 'command': command, 'data': hit['data'],
                                'cached_age_s': int(time.time() - hit['time'])}, ensure_ascii=False)
+    started = time.time()
     result = _run(argv)
+    LAST_FETCH.update(fetch_ms=int((time.time() - started) * 1000), cache_hit=False)
     if not result.get('ok'):
         error = result.get('error') or {}
         message = error.get('message', '')
+        stale = _cache_get(key, setting('stale_if_error_s', STALE_IF_ERROR_S)) if ttl and error.get('code') != 'AUTH_REQUIRED' else None
+        if stale:                       # stale-if-error: an older list beats an error message
+            LAST_FETCH.update(cache_hit=True, stale=True)
+            return json.dumps({'success': True, 'site': site, 'command': command, 'data': stale['data'],
+                               'cached_age_s': int(time.time() - stale['time']), 'stale': True}, ensure_ascii=False)
         if error.get('code') == 'AUTH_REQUIRED':
             message = f'需要先在 Chrome 里登录 {site}（{error.get("hint", "")}）'
         return json.dumps({'success': False, 'error': error.get('code', 'Failed'), 'message': message[:300]}, ensure_ascii=False)
@@ -338,13 +386,14 @@ def quick_answer(text: str) -> str | None:
         return None
     LAST_DECISION.update(decision, site=site, by='clef')
     command = decision['command']
-    if (command not in reads or decision['command_conf'] < CONFIDENT or not decision['list_only']
-            or decision['list_conf'] < CONFIDENT):
+    confident = setting('decision_confidence', CONFIDENT)
+    if (command not in reads or decision['command_conf'] < confident or not decision['list_only']
+            or decision['list_conf'] < confident):
         LAST_DECISION['by'] = 'local-model'
         return None
     args, head = {'limit': max(decision['count'], 1)}, ''
     if reads[command]['positionals']:
-        if not decision['query'] or decision['query_conf'] < CONFIDENT:
+        if not decision['query'] or decision['query_conf'] < confident:
             LAST_DECISION['by'] = 'local-model'
             return None
         args[reads[command]['positionals'][0]] = decision['query']
@@ -370,7 +419,19 @@ def quick_answer(text: str) -> str | None:
         title = f'{what if what.startswith(name) else name + what}前 {len(lines)} 条：'
     age = result.get('cached_age_s')
     note = f'\n（{max(age // 60, 1)} 分钟前取的，说“刷新”重新获取）' if age and age >= 30 else ''
+    if result.get('stale'):
+        note = f'\n（现在取不到最新数据，这是 {max(age // 60, 1)} 分钟前的结果）'
     return title + '\n' + '\n'.join(lines) + note
+
+
+def site_timings() -> dict:
+    """Per-stage timings of the last site request (decision, fetch, cache) for the usage log."""
+    out = {}
+    if LAST_DECISION.get('latency_s') is not None:
+        out['decision_ms'] = int(LAST_DECISION['latency_s'] * 1000)
+        out['decided_by'] = LAST_DECISION.get('by')
+    out.update({k: v for k, v in LAST_FETCH.items()})
+    return out
 
 
 _last_site_request: dict = {}

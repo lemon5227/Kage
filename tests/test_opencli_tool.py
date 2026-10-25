@@ -148,7 +148,8 @@ def test_public_lists_are_cached_and_refreshable(monkeypatch, tmp_path):
 
 
 def test_cache_evicts_least_recently_used(monkeypatch):
-    monkeypatch.setattr(oc, 'RESULT_CACHE_MAX', 2)
+    real = oc.setting
+    monkeypatch.setattr(oc, 'setting', lambda key, default: 2 if key == 'result_cache_max' else real(key, default))
     clock = iter(range(1000, 2000))
     monkeypatch.setattr(oc.time, 'time', lambda: next(clock))
     oc._cache_store('a', 1)

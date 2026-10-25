@@ -7,6 +7,11 @@ local model below it.
 
 Credentials: ~/.config/kage/teachers/cloudflare.json {account_id, api_token} (never printed or logged).
 Every call is charged to the global teacher ledger at the list input price, free allocation or not.
+
+It sits on the interactive path, so failure handling is strict: a short timeout (3 s, `decision_model.timeout_s`),
+no retries, a circuit breaker (3 consecutive failures → skipped for 5 minutes) and a daily stop when the
+provider reports its free allocation used up. Every one of these ends in DecisionUnavailable, and callers fall
+back to the local model.
 """
 from __future__ import annotations
 
@@ -21,18 +26,45 @@ USD_PER_M_INPUT = 0.24
 CREDENTIALS = Path('~/.config/kage/teachers/cloudflare.json').expanduser()
 
 
+BREAKER_FAILURES, BREAKER_COOLDOWN_S = 3, 300
+_breaker = {'failures': 0, 'open_until': 0.0, 'quota_day': ''}
+
+
 class DecisionUnavailable(RuntimeError):
     pass
 
 
 def available() -> bool:
-    return CREDENTIALS.exists()
+    return _ready()
 
 
-def ask(state: str, questions: dict, *, run_id: str = 'decision', timeout: float = 15) -> dict:
+def _ready() -> bool:
+    """Configured, under quota today, breaker closed (tests disable `available`, not this)."""
+    if not CREDENTIALS.exists():
+        return False
+    if _breaker['quota_day'] == time.strftime('%Y-%m-%d', time.gmtime()):
+        return False                            # free allocation used up today: never run into a bill
+    return time.time() >= _breaker['open_until']
+
+
+def _failed(kind: str) -> None:
+    if kind == 'quota':
+        _breaker['quota_day'] = time.strftime('%Y-%m-%d', time.gmtime())
+        return
+    _breaker['failures'] += 1
+    if _breaker['failures'] >= BREAKER_FAILURES:
+        _breaker['open_until'] = time.time() + BREAKER_COOLDOWN_S
+        _breaker['failures'] = 0
+
+
+def ask(state: str, questions: dict, *, run_id: str = 'decision', timeout: float | None = None) -> dict:
     """{qid: (answer, confidence, probabilities)}. questions: {qid: {'type': 'choice', 'question': str,
     'criteria': {name: description}}} or {'type': 'noul', 'question': str} (answer True/False)."""
+    from core.config import get_config
     from core.evolution.teacher_budget import charge_external, global_teacher_budget
+    if not available():
+        raise DecisionUnavailable('decision model is paused (breaker open, quota used up, or not configured)')
+    timeout = timeout or float(get_config('decision_model.timeout_s', 3.0))
     try:
         cred = json.loads(CREDENTIALS.read_text())
     except (OSError, ValueError) as exc:
@@ -47,8 +79,14 @@ def ask(state: str, questions: dict, *, run_id: str = 'decision', timeout: float
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             body = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        detail = exc.read()[:300].decode(errors='replace')
+        _failed('quota' if exc.code == 429 and 'FreeUsageLimit' in detail else 'error')
+        raise DecisionUnavailable(f'decision model call failed: HTTP {exc.code}') from exc
     except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        _failed('error')
         raise DecisionUnavailable(f'decision model call failed: {type(exc).__name__}') from exc
+    _breaker['failures'] = 0
     result = body.get('result', body)
     usage = result.get('usage') or {}
     tokens = usage.get('input_tokens') or usage.get('prompt_tokens') or 0

@@ -1,5 +1,9 @@
 {
   "daily_brief": {"enabled": true, "time": "12:30"},
+  "opencli": {"read_timeout_s": 45, "result_cache_max": 200, "stale_if_error_s": 3600, "decision_confidence": 0.8,
+              "result_ttl_s": {"hot": 300, "ranking": 300, "trending": 300, "latest": 300, "news": 300, "search": 1800}},
+  "decision_model": {"timeout_s": 3},
+  "wechat": {"send_without_asking": ["文件传输助手", "wenbo yan"]},
     "model": {
         "path": "InternScience/Agents-A1-4B-Q4_K_M-GGUF",
         "preferred_model": "local",

@@ -998,7 +998,9 @@ class KageServer:
         request, reply = getattr(self, "_turn_reply", ("", ""))
         if activity is not None and request:
             try:
-                activity.record(request=request, reply=reply, path=path, tools=getattr(self, "_turn_tools", []))
+                timings = {"total_ms": elapsed_ms, **(fields.get("timings") or {})}
+                activity.record(request=request, reply=reply, path=path, tools=getattr(self, "_turn_tools", []),
+                                timings=timings)
             except Exception:
                 logger.warning("activity log failed", exc_info=True)
         self._turn_tools, self._turn_reply = [], ("", "")
@@ -1623,8 +1625,10 @@ class KageServer:
                         self._record_turn_completed(user_input, resumed)
                         from core.tools.opencli_tool import LAST_DECISION
                         # who chose the command: the decision model (Clef) or the local model's own loop
+                        from core.tools.opencli_tool import site_timings
                         site_path = "opencli_clef" if LAST_DECISION.get("by") == "clef" else "opencli_site"
-                        self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms(),
+                                            timings=site_timings())
                         continue
                 if site_request and not self.session.has_pending_action():
                     await self.send_state("THINKING")
@@ -1637,8 +1641,10 @@ class KageServer:
                         self._record_turn_completed(user_input, reply)
                         from core.tools.opencli_tool import LAST_DECISION
                         # who chose the command: the decision model (Clef) or the local model's own loop
+                        from core.tools.opencli_tool import site_timings
                         site_path = "opencli_clef" if LAST_DECISION.get("by") == "clef" else "opencli_site"
-                        self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms())
+                        self._log_turn_done(path=site_path, route=route_hint, elapsed_ms=_turn_elapsed_ms(),
+                                            timings=site_timings())
                         continue
 
                 # High-confidence video lookup fast path: preserve user phrase and

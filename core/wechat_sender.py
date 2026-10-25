@@ -14,7 +14,12 @@ from __future__ import annotations
 
 import re
 import subprocess
+import threading
 import time
+from contextlib import contextmanager
+from pathlib import Path
+
+from core.storage import file_lock
 
 from core import wechat_reader
 
@@ -38,12 +43,63 @@ def _keys(*steps: str) -> None:
     _osa('tell application "System Events" to tell process "WeChat"\n' + '\n'.join(steps) + '\nend tell')
 
 
-def _clipboard() -> str:
-    return subprocess.run(['pbpaste'], capture_output=True, text=True).stdout
+WECHAT_BUNDLE = 'com.tencent.xinWeChat'
+_input_lock = threading.Lock()
+
+
+class FocusLost(RuntimeError):
+    """Another app came to the front: stop before a paste or Return lands in it."""
+
+
+def _clipboard() -> list[dict]:
+    """Every item and type on the pasteboard (rich text, images, files), not just plain text: the first
+    version used pbpaste/pbcopy and flattened whatever the user had copied to plain text."""
+    from AppKit import NSPasteboard
+    board = NSPasteboard.generalPasteboard()
+    return [{str(kind): item.dataForType_(kind) for kind in item.types()} for item in (board.pasteboardItems() or [])]
+
+
+def _restore_clipboard(saved: list[dict]) -> None:
+    from AppKit import NSPasteboard, NSPasteboardItem
+    board = NSPasteboard.generalPasteboard()
+    board.clearContents()
+    items = []
+    for kinds in saved:
+        item = NSPasteboardItem.alloc().init()
+        for kind, data in kinds.items():
+            if data is not None:
+                item.setData_forType_(data, kind)
+        items.append(item)
+    if items:
+        board.writeObjects_(items)
 
 
 def _set_clipboard(text: str) -> None:
-    subprocess.run(['pbcopy'], input=text, text=True, check=True)
+    from AppKit import NSPasteboard, NSPasteboardTypeString
+    board = NSPasteboard.generalPasteboard()
+    board.clearContents()
+    board.setString_forType_(text, NSPasteboardTypeString)
+
+
+def _ensure_front() -> None:
+    from AppKit import NSWorkspace
+    front = NSWorkspace.sharedWorkspace().frontmostApplication()
+    if front is None or str(front.bundleIdentifier()) != WECHAT_BUNDLE:
+        raise FocusLost(f"前台变成了 {front.localizedName() if front else '别的应用'}")
+
+
+@contextmanager
+def _exclusive_input():
+    """One WeChat keyboard session at a time, across threads and processes (keystrokes would interleave)."""
+    with _input_lock, file_lock(Path('~/.kage/run/wechat-input').expanduser()):
+        yield
+
+
+def allowlist() -> set[str]:
+    """Recipients sent to without asking: `wechat.send_without_asking` in settings (user decision 10-25)."""
+    from core.config import get_config
+    names = get_config('wechat.send_without_asking', None) or sorted(SEND_WITHOUT_ASKING)
+    return {_norm(n) for n in (names if isinstance(names, list) else str(names).split(','))}
 
 
 def _norm(text: str) -> str:
@@ -137,6 +193,7 @@ def _search(query: str) -> tuple[dict | None, list[dict]]:
     """Type `query` into WeChat search; (popup, name rows in it). Leaves the search open. The popup appears and
     re-renders with a delay, so it is polled and its capture retried (a fixed wait missed it during the demo)."""
     _set_clipboard(query)
+    _ensure_front()
     _keys('keystroke "f" using command down', 'delay 0.4', 'keystroke "a" using command down',
           'keystroke "v" using command down', 'delay 1.2')
     for _ in range(4):
@@ -179,19 +236,24 @@ def _similar(to: str) -> list[str]:
 def lookup(to: str) -> tuple[bool, list[str]]:
     """(an exact contact/group named `to` exists, similar names otherwise). Done before asking the user to
     confirm, so a wrong name is caught at once instead of after "确认"."""
+    with _exclusive_input():
+        saved = _clipboard()
+        try:
+            return _lookup(to)
+        finally:
+            _restore_clipboard(saved)
+
+
+def _lookup(to: str) -> tuple[bool, list[str]]:
     import difflib
-    saved = _clipboard()
-    try:
-        _front()
-        _, rows = _search(to)
-        _close_search()
-        if any(_norm(r['text']) == _norm(to) for r in rows):
-            return True, []
-        names = [r['text'].strip() for r in rows
-                 if difflib.SequenceMatcher(None, _norm(to), _norm(r['text'])).ratio() >= 0.4]
-        return False, names[:3] or _similar(to)
-    finally:
-        _set_clipboard(saved)
+    _front()
+    _, rows = _search(to)
+    _close_search()
+    if any(_norm(r['text']) == _norm(to) for r in rows):
+        return True, []
+    names = [r['text'].strip() for r in rows
+             if difflib.SequenceMatcher(None, _norm(to), _norm(r['text'])).ratio() >= 0.4]
+    return False, names[:3] or _similar(to)
 
 
 def _not_found(to: str, text: str, names: list[str]) -> str:
@@ -213,36 +275,47 @@ def _click(x: float, y: float) -> None:
 
 def send(to: str, text: str) -> str:
     """Open the chat with `to`, check its title, send `text`, check it appears. Returns a reply for the user."""
-    saved = _clipboard()
-    try:
-        _front()
-        popup, rows = _search(to)
-        exact = [r for r in rows if _norm(r['text']) == _norm(to)]
-        if popup is None or not exact:
-            _close_search()
-            return f'没有发送：微信搜索里没找到名字正好是“{to}”的联系人或群。'
-        hit = exact[0]
-        _click(popup['x'] + (hit['x'] + hit['w'] / 2) / popup['scale'],
-               popup['y'] + (hit['y'] + hit['h'] / 2) / popup['scale'])
-        time.sleep(1.2)
-        title, before = _read_pane()
-        if _norm(title) != _norm(to):
-            _close_search()                      # Escape: leave the search, type nothing
-            return f'没有发送：搜索“{to}”打开的是“{title or '（没认出）'}”，和收件人对不上。'
-        _set_clipboard(text)
-        _keys('keystroke "v" using command down', 'delay 0.4', 'key code 36')
-        time.sleep(1.5)
-        _, after = _read_pane()
-        # Sent = one more bubble with this text than before (a short chat shows new bubbles near the top).
-        # or the newest bubble (bottom of the pane) is this text: with an identical older message scrolled off,
-        # the count can stay the same (demo take 4)
-        if _count(after, text) > _count(before, text) or _count(after[-3:], text):
-            return f'已发给 {title}：{text}'
-        return f'已在和 {title} 的聊天里按了发送，但截图里没认出这条消息，请看一眼微信确认。'
-    except Exception as exc:
-        return f'没能发微信：{exc}'
-    finally:
-        _set_clipboard(saved)
+    with _exclusive_input():
+        saved = _clipboard()
+        try:
+            return _send(to, text)
+        except FocusLost as exc:
+            return f'没有发送：{exc}，为了不把消息打到别的窗口，我停下了。'
+        except Exception as exc:
+            return f'没能发微信：{exc}'
+        finally:
+            _restore_clipboard(saved)
+
+
+def _send(to: str, text: str) -> str:
+    _front()
+    popup, rows = _search(to)
+    exact = [r for r in rows if _norm(r['text']) == _norm(to)]
+    if popup is None or not exact:
+        _close_search()
+        return f'没有发送：微信搜索里没找到名字正好是“{to}”的联系人或群。'
+    hit = exact[0]
+    _ensure_front()
+    _click(popup['x'] + (hit['x'] + hit['w'] / 2) / popup['scale'],
+           popup['y'] + (hit['y'] + hit['h'] / 2) / popup['scale'])
+    time.sleep(1.2)
+    title, before = _read_pane()
+    if _norm(title) != _norm(to):
+        _close_search()                      # Escape: leave the search, type nothing
+        return f'没有发送：搜索“{to}”打开的是“{title or '（没认出）'}”，和收件人对不上。'
+    _set_clipboard(text)
+    _ensure_front()                                       # right before the paste …
+    _keys('keystroke "v" using command down', 'delay 0.4')
+    _ensure_front()                                       # … and before Return (the user may have clicked away)
+    _keys('key code 36')
+    time.sleep(1.5)
+    _, after = _read_pane()
+    # Sent = one more bubble with this text than before (a short chat shows new bubbles near the top).
+    # or the newest bubble (bottom of the pane) is this text: with an identical older message scrolled off,
+    # the count can stay the same (demo take 4)
+    if _count(after, text) > _count(before, text) or _count(after[-3:], text):
+        return f'已发给 {title}：{text}'
+    return f'已在和 {title} 的聊天里按了发送，但截图里没认出这条消息，请看一眼微信确认。'
 
 
 def parse(text: str) -> tuple[str, str] | None:
@@ -285,7 +358,7 @@ def answer(text: str) -> str | None:
         return f'没能打开微信搜索：{exc}'
     if not exists:
         return _not_found(to, body, similar)
-    if _norm(to) in {_norm(n) for n in SEND_WITHOUT_ASKING}:
+    if _norm(to) in allowlist():
         return send(to, body)
     _pending.clear()
     _pending.update({'to': to, 'text': body, 'time': time.time()})
