@@ -38,7 +38,7 @@ def classify(path: str, reply: str, tools: list[dict]) -> tuple[str, str]:
     if path == 'wechat_send':
         if reply.startswith('已发给'):
             return 'ok', ''
-        if reply.startswith(('要用微信发给', '好，不发了', '好，改成发给')) or '你是不是想发给' in reply:
+        if reply.startswith(('要用微信发给', '好，不发了', '好，改成发给', '现在没有等你确认')) or '你是不是想发给' in reply:
             return 'chat', ''
         return 'failed', reply[:120]
     if path == 'wechat_fastpath':

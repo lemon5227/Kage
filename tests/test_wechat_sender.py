@@ -30,6 +30,7 @@ def test_count_and_log_status():
     assert activity_log.classify('wechat_send', '已发给 张三：x', [])[0] == 'ok'
     assert activity_log.classify('wechat_send', '要用微信发给“张三”：x', [])[0] == 'chat'
     assert activity_log.classify('wechat_send', '没有发送：微信搜索里没找到', [])[0] == 'failed'
+    assert activity_log.classify('wechat_send', '现在没有等你确认的微信消息，什么都没发。', [])[0] == 'chat'
 
 
 def test_unknown_name_suggests_similar(monkeypatch):
@@ -55,3 +56,15 @@ def test_bare_confirm_after_wechat_turn_is_not_left_to_the_model(monkeypatch):
 
 def test_unverified_send_claim_is_flagged():
     assert activity_log.classify('agentic_loop', '已发给 Wenbo yan：x', [])[0] == 'unverified'
+
+
+def test_title_ignores_icons(monkeypatch, tmp_path):
+    from pathlib import Path
+    image = tmp_path / 'x.png'
+    image.write_bytes(b'')
+    boxes = [{'text': 'Wenbo yan', 'x': 700, 'y': 40, 'w': 150, 'h': 30}, {'text': '●••', 'x': 1900, 'y': 44, 'w': 30, 'h': 17},
+             {'text': 'く', 'x': 640, 'y': 40, 'w': 20, 'h': 30}, {'text': '你好', 'x': 900, 'y': 600, 'w': 60, 'h': 30}]
+    monkeypatch.setattr(ws, '_main_window', lambda: 1)
+    monkeypatch.setattr(ws.wechat_reader, 'capture', lambda wid: image)
+    monkeypatch.setattr(ws.wechat_reader, 'ocr', lambda img: (boxes, 2000, 1400))
+    assert ws._read_pane() == ('Wenbo yan', ['你好'])

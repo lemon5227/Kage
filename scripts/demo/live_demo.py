@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import json
 import sys
+import subprocess
 import time
 
 import websockets
@@ -25,6 +26,7 @@ LINES = [
     '确认',
     '看看今天的使用日志',
 ]
+AFTER = {'打开计算器': ['osascript', '-e', 'tell application "Calculator" to quit']}
 BOLD, DIM, CYAN, GREEN, RESET = '\033[1m', '\033[2m', '\033[36m', '\033[32m', '\033[0m'
 
 
@@ -57,6 +59,8 @@ async def main() -> None:
     parser.add_argument('--pause', type=float, default=3.0)
     args = parser.parse_args()
     lines = [l.strip() for l in open(args.lines, encoding='utf-8')] if args.lines else LINES
+    stamp = time.strftime('%H:%M')                    # a message identical to an older one is harder to verify
+    lines = [l.replace('Kage 演示：', f'Kage 演示 {stamp}：') for l in lines]
     print(f'{BOLD}Kage 桌面助手 · 实时演示{RESET}  {DIM}本地 4B 模型 · 命令行优先 · 所有回复来自实时运行{RESET}\n')
     async with websockets.connect('ws://127.0.0.1:12345/ws', max_size=None) as ws:
         for line in [l for l in lines if l]:
@@ -65,6 +69,9 @@ async def main() -> None:
             reply = await ask(ws, line, timeout=240)
             print(f'{BOLD}{GREEN}Kage ›{RESET} {reply}')
             print(f'{DIM}（{time.monotonic() - started:.1f} 秒）{RESET}\n')
+            if line in AFTER and not args.dry:
+                time.sleep(2.5)                       # show the opened app, then close it so it covers nothing
+                subprocess.run(AFTER[line], capture_output=True)
             if not args.dry:
                 time.sleep(args.pause)
 

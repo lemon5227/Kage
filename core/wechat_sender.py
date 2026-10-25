@@ -96,9 +96,10 @@ def _read_pane() -> tuple[str, list[str]]:
     pane = [b for b in boxes if b['x'] > width * 0.3]
     top = [b for b in pane if b['y'] < height * 0.06]
     # single-glyph boxes are title-bar icons (a narrow window adds a back arrow, read as "く")
-    words = [b for b in sorted(top, key=lambda b: b['x']) if b['text'].strip() not in ('•••', '...')]
+    # and the "•••" menu button is read as "•••" / "●••" / "..." (no letters at all)
+    words = [b for b in sorted(top, key=lambda b: b['x']) if re.search(r'\w', b['text'])]
     title = ' '.join(b['text'] for b in (words if len(words) == 1 else [w for w in words if len(w['text'].strip()) > 1]))
-    messages = [b['text'] for b in pane if height * 0.06 < b['y'] < height * 0.78]
+    messages = [b['text'] for b in sorted(pane, key=lambda b: (b['y'], b['x'])) if height * 0.06 < b['y'] < height * 0.78]
     return title.strip(), messages
 
 
@@ -133,20 +134,30 @@ def _entries(boxes: list[dict], width: float) -> list[dict]:
 
 
 def _search(query: str) -> tuple[dict | None, list[dict]]:
-    """Type `query` into WeChat search; (popup, name rows in it). Leaves the search open."""
+    """Type `query` into WeChat search; (popup, name rows in it). Leaves the search open. The popup appears and
+    re-renders with a delay, so it is polled and its capture retried (a fixed wait missed it during the demo)."""
     _set_clipboard(query)
     _keys('keystroke "f" using command down', 'delay 0.4', 'keystroke "a" using command down',
-          'keystroke "v" using command down', 'delay 1.8')
-    popup = _popup()
-    if popup is None:
-        return None, []
-    image = wechat_reader.capture(popup['id'])
-    try:
-        boxes, width, _ = wechat_reader.ocr(image)
-    finally:
-        image.unlink(missing_ok=True)
-    popup['scale'] = width / popup['w']
-    return popup, _entries(boxes, width)
+          'keystroke "v" using command down', 'delay 1.2')
+    for _ in range(4):
+        popup = _popup()
+        if popup is None:
+            time.sleep(0.5)
+            continue
+        time.sleep(0.4)
+        popup = _popup() or popup
+        try:
+            image = wechat_reader.capture(popup['id'])
+        except Exception:
+            time.sleep(0.4)
+            continue
+        try:
+            boxes, width, _ = wechat_reader.ocr(image)
+        finally:
+            image.unlink(missing_ok=True)
+        popup['scale'] = width / popup['w']
+        return popup, _entries(boxes, width)
+    return None, []
 
 
 def _similar(to: str) -> list[str]:
@@ -223,7 +234,9 @@ def send(to: str, text: str) -> str:
         time.sleep(1.5)
         _, after = _read_pane()
         # Sent = one more bubble with this text than before (a short chat shows new bubbles near the top).
-        if _count(after, text) > _count(before, text):
+        # or the newest bubble (bottom of the pane) is this text: with an identical older message scrolled off,
+        # the count can stay the same (demo take 4)
+        if _count(after, text) > _count(before, text) or _count(after[-3:], text):
             return f'已发给 {title}：{text}'
         return f'已在和 {title} 的聊天里按了发送，但截图里没认出这条消息，请看一眼微信确认。'
     except Exception as exc:
