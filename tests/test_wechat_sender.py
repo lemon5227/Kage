@@ -13,6 +13,7 @@ def test_parse():
 def test_confirm_first_except_allowlist(monkeypatch):
     sent = []
     monkeypatch.setattr(ws, 'send', lambda to, text: sent.append((to, text)) or f'已发给 {to}：{text}')
+    monkeypatch.setattr(ws, 'lookup', lambda to: (True, []))
     ws._pending.clear()
     assert ws.answer('微信给文件传输助手发：hi').startswith('已发给') and sent == [('文件传输助手', 'hi')]
     assert ws.answer('微信给Wenbo Yan发：hi2').startswith('已发给')            # case/space-insensitive allowlist
@@ -29,3 +30,15 @@ def test_count_and_log_status():
     assert activity_log.classify('wechat_send', '已发给 张三：x', [])[0] == 'ok'
     assert activity_log.classify('wechat_send', '要用微信发给“张三”：x', [])[0] == 'chat'
     assert activity_log.classify('wechat_send', '没有发送：微信搜索里没找到', [])[0] == 'failed'
+
+
+def test_unknown_name_suggests_similar(monkeypatch):
+    sent = []
+    monkeypatch.setattr(ws, 'send', lambda to, text: sent.append((to, text)) or f'已发给 {to}：{text}')
+    monkeypatch.setattr(ws, 'lookup', lambda to: (False, ['Wenbo yan', 'wenbo2']) if 'wenbo' in to else (False, []))
+    ws._pending.clear()
+    reply = ws.answer('微信给wenbo yen发：hi')
+    assert '没有叫“wenbo yen”的人' in reply and '“Wenbo yan”' in reply and not sent     # never sent unasked
+    assert ws.answer('发给 wenbo2').startswith('好，改成发给“wenbo2”')
+    assert ws.answer('确认') == '已发给 wenbo2：hi'
+    assert '名字是不是说错了' in ws.answer('微信给查无此人发：hi') and len(sent) == 1

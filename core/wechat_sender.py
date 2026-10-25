@@ -76,6 +76,7 @@ def _read_pane() -> tuple[str, list[str]]:
 
 
 SECTIONS = ('联系人', '群聊', '功能', '最常使用', '最近使用')
+STOP = ('查看全部', '聊天记录', '搜索网络结果', '公众号', '小程序', '视频号', '文章')
 
 
 def _popup() -> dict | None:
@@ -89,26 +90,80 @@ def _popup() -> dict | None:
     return None
 
 
-def _contact_point(to: str) -> tuple[float, float] | None:
-    """Screen point of the exact-name hit under a contact/group/function section of the search popup. The rows
-    above the sections are web-search suggestions (Return would open 搜一搜, found in the first live test)."""
+def _entries(boxes: list[dict], width: float) -> list[dict]:
+    """Name rows under the contact / group / function sections of the search popup. The other sections are web
+    suggestions (Return on them opens 搜一搜, found in the first live test) and chat-history hits."""
+    rows, inside = [], False
+    for b in sorted(boxes, key=lambda b: (b['y'], b['x'])):
+        text = b['text'].strip()
+        if text in SECTIONS:
+            inside = True
+        elif any(text.endswith(stop) or text.startswith(stop) for stop in STOP):
+            inside = False
+        elif inside and b['x'] > width * 0.15 and not text.startswith('包含'):
+            rows.append(b)
+    return rows
+
+
+def _search(query: str) -> tuple[dict | None, list[dict]]:
+    """Type `query` into WeChat search; (popup, name rows in it). Leaves the search open."""
+    _set_clipboard(query)
+    _keys('keystroke "f" using command down', 'delay 0.4', 'keystroke "a" using command down',
+          'keystroke "v" using command down', 'delay 1.8')
     popup = _popup()
     if popup is None:
-        return None
+        return None, []
     image = wechat_reader.capture(popup['id'])
     try:
-        boxes, width, height = wechat_reader.ocr(image)
+        boxes, width, _ = wechat_reader.ocr(image)
     finally:
         image.unlink(missing_ok=True)
-    scale = width / popup['w']
-    headers = [b['y'] for b in boxes if b['text'].strip() in SECTIONS]
-    if not headers:
-        return None
-    hits = [b for b in boxes if _norm(b['text']) == _norm(to) and b['y'] > min(headers)]
-    if not hits:
-        return None
-    hit = min(hits, key=lambda b: b['y'])
-    return popup['x'] + (hit['x'] + hit['w'] / 2) / scale, popup['y'] + (hit['y'] + hit['h'] / 2) / scale
+    popup['scale'] = width / popup['w']
+    return popup, _entries(boxes, width)
+
+
+def _similar(to: str) -> list[str]:
+    """Names that look like `to` (a typo or a partial name): search shorter pieces of it, rank by similarity."""
+    import difflib
+    words = to.split()
+    queries = [words[0]] if len(words) > 1 and len(words[0]) >= 2 else []
+    if not to.isascii() and len(to) > 2:
+        queries.append(to[:2])
+    names: list[str] = []
+    for query in queries:
+        _, rows = _search(query)
+        names += [r['text'].strip() for r in rows]
+    _keys('key code 53')
+    scored = {n: difflib.SequenceMatcher(None, _norm(to), _norm(n)).ratio() for n in names}
+    return [n for n, score in sorted(scored.items(), key=lambda kv: -kv[1]) if score >= 0.4][:3]
+
+
+def lookup(to: str) -> tuple[bool, list[str]]:
+    """(an exact contact/group named `to` exists, similar names otherwise). Done before asking the user to
+    confirm, so a wrong name is caught at once instead of after "确认"."""
+    import difflib
+    saved = _clipboard()
+    try:
+        _osa('tell application "WeChat" to activate')
+        time.sleep(0.6)
+        _, rows = _search(to)
+        _keys('key code 53')
+        if any(_norm(r['text']) == _norm(to) for r in rows):
+            return True, []
+        names = [r['text'].strip() for r in rows
+                 if difflib.SequenceMatcher(None, _norm(to), _norm(r['text'])).ratio() >= 0.4]
+        return False, names[:3] or _similar(to)
+    finally:
+        _set_clipboard(saved)
+
+
+def _not_found(to: str, text: str, names: list[str]) -> str:
+    if not names:
+        return f'没有发送：微信里没有叫“{to}”的联系人或群，名字是不是说错了？'
+    _pending.clear()
+    _pending.update({'to': names[0], 'text': text, 'time': time.time(), 'others': names[1:]})
+    others = f'（其它相近的：{"、".join(names[1:])}，说“发给 名字”换人）' if len(names) > 1 else ''
+    return f'微信里没有叫“{to}”的人。你是不是想发给“{names[0]}”？说“确认”就发：{text}{others}'
 
 
 def _click(x: float, y: float) -> None:
@@ -126,14 +181,14 @@ def send(to: str, text: str) -> str:
         _osa('tell application "WeChat" to activate')
         time.sleep(0.6)
         _main_window()
-        _set_clipboard(to)
-        _keys('keystroke "f" using command down', 'delay 0.4', 'keystroke "a" using command down',
-              'keystroke "v" using command down', 'delay 1.8')
-        point = _contact_point(to)
-        if point is None:
+        popup, rows = _search(to)
+        exact = [r for r in rows if _norm(r['text']) == _norm(to)]
+        if popup is None or not exact:
             _keys('key code 53')
             return f'没有发送：微信搜索里没找到名字正好是“{to}”的联系人或群。'
-        _click(*point)
+        hit = exact[0]
+        _click(popup['x'] + (hit['x'] + hit['w'] / 2) / popup['scale'],
+               popup['y'] + (hit['y'] + hit['h'] / 2) / popup['scale'])
         time.sleep(1.2)
         title, before = _read_pane()
         if _norm(title) != _norm(to):
@@ -170,6 +225,11 @@ def answer(text: str) -> str | None:
             pending = dict(_pending)
             _pending.clear()
             return send(pending['to'], pending['text'])
+        switch = re.match(r'^(?:发给|是|给)\s*(.+?)[。.!！]?$', text)
+        if switch and _norm(switch.group(1)) in {_norm(n) for n in _pending.get('others', [])}:
+            _pending['to'] = switch.group(1).strip()
+            _pending['others'] = []
+            return f"好，改成发给“{_pending['to']}”：{_pending['text']}\n说“确认”发送。"
         if CANCEL.match(text):
             _pending.clear()
             return '好，不发了。'
@@ -177,6 +237,12 @@ def answer(text: str) -> str | None:
     if request is None:
         return None
     to, body = request
+    try:
+        exists, similar = lookup(to)
+    except Exception as exc:
+        return f'没能打开微信搜索：{exc}'
+    if not exists:
+        return _not_found(to, body, similar)
     if _norm(to) in {_norm(n) for n in SEND_WITHOUT_ASKING}:
         return send(to, body)
     _pending.clear()
