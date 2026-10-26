@@ -1,6 +1,6 @@
 # Interface First, Then Teach, Then Consolidate: Self-Evolution of a 4B Local Computer-Use Agent on a Four-Dollar Teacher Budget
 
-*Draft v0.2, 2026-10-25 (§6.5 added). Every number is taken from a file under `evidence/` (cited in brackets). Concurrent
+*Draft v0.3, 2026-10-26 (§7 daily use rewritten: WeChat, decision-model routing, latency). Every number is taken from a file under `evidence/` (cited in brackets). Concurrent
 work (Terminal-RSI, Harness²) is discussed in §7. Statistical tests are two-sided Fisher exact tests over task
 runs unless stated; small samples are marked as directional.*
 
@@ -8,8 +8,8 @@ runs unless stated; small samples are marked as directional.*
 
 We study how far a 4-billion-parameter local model (Agents-A1-4B, 4-bit, llama.cpp) can improve itself at
 computer-use tasks — file editing, web forms and native macOS applications — when a cloud teacher is available
-but capped at US$4 for the whole project (US$1.78 spent). Four findings, each from controlled same-session
-comparisons on frozen benchmarks with programmatic checkers:
+but capped at US$4 for the whole project (US$1.83 spent). Four findings come from controlled same-session
+comparisons on frozen benchmarks with programmatic checkers; a fifth from putting the agent in daily use:
 
 1. **Learning from demonstrations works in context, on file tasks.** Trajectory memory or verified skills raise
    in-family success from 14/48 to 39–42/48 after a 60-task stream; skills are not better than plain memory.
@@ -25,6 +25,11 @@ comparisons on frozen benchmarks with programmatic checkers:
    but erodes held-out code-writing (15/36 → 1/36).** Across five ablations, gain and forgetting come from the
    *same* training samples; replay (random or gradient-selected) protects only capabilities its data covers, and
    the trained student stops verifying its own output (48/72 → 0).
+5. **In daily use, the 4B model should not be the one making choices.** A hosted decision model answering one
+   multiple-choice question per request routes it to a program handler: 30/30 on two held-out phrasing sets where
+   hand-written patterns get 15/30 and 16/30. Measured per stage, the model's latency is prompt reading and long
+   retelling, not reasoning: routing a weather question away from web search takes it from 36 s to 0.8 s, and a
+   knowledge question from 16 s (and a wrong answer) to 2.3 s.
 
 With the resulting interface and grounded lessons, the student solves 41/45 native macOS tasks through the
 Accessibility API (baseline 19/30 on the training tasks, 3/15 on unseen variants). We argue that a
@@ -48,7 +53,9 @@ fails and what fixes each failure:
 - **interface artefacts** that masquerade as capability gaps, found with one-field ablations (§5);
 - **grounded lessons**: a cheap prompting change that makes teacher rules effective on unseen tasks (§5.3);
 - **consolidation trade-offs**: a five-version ablation that localises forgetting to the samples that carry the
-  gain (§6).
+  gain (§6);
+- **choices to a decision model, actions to the program** in daily use, with the failure modes that motivated it
+  (invented tool results, look-alike requests) and a per-stage latency analysis (§7).
 
 All code, frozen benchmarks, raw runs and per-experiment reports are public; negative results are reported.
 
@@ -71,8 +78,13 @@ guidance (demonstration + rules), only verified successes are kept, the guidance
 fine-tuned with LoRA (rank 16 on attention-output and MLP projections, response-only loss) and evaluated
 without guidance.
 
-**Budget.** Every cloud call reserves against a global ledger before it is sent (US$4 total; US$1.78 spent over
-all experiments, including void runs) [ledger, `core/evolution/teacher_budget.py`].
+**Decision model.** For choices rather than text, a hosted decision model (Cloudflare Clef, 27B) answers typed
+questions — yes/no or one of named options — with calibrated probabilities in about 0.3 s. It never writes text
+or acts. It extracts per-item goals for a web checker (§5.1) and routes daily requests (§7.2).
+
+**Budget.** Every cloud call reserves against a global ledger before it is sent (US$4 total; US$1.83 spent over
+all experiments, including void runs; decision-model calls are booked at list price, US$0.10 in total, although
+they ran inside the provider's free allocation) [ledger, `core/evolution/teacher_budget.py`].
 
 ## 3. Benchmarks
 
@@ -199,12 +211,14 @@ Implications we did not test (compute ended with this study): self-distilled rep
 correct code on other tasks, keeping write-then-verify steps in training trajectories, and gating the adapter
 by task family at deployment.
 
-## 6.5 From benchmark to daily use
+## 7. From benchmark to daily use
+
+### 7.1 The program supplies information and acts
 
 We then put the student behind the user's own requests on their Mac (calendar, mail, open documents, apps,
-websites) and logged every turn. The same pattern held, in a sharper form: the model is reliable when the
-program hands it the information and the narrow tool surface the request needs, and unreliable otherwise
-[`evidence/reports/d0`–`d5`].
+websites, WeChat) and logged every turn. The benchmark pattern held in a sharper form: the model is reliable
+when the program hands it the information and the narrow tool surface the request needs, and unreliable
+otherwise [`evidence/reports/d0`–`d5`, `d4`].
 
 | Request type | Model chooses among ~25 tools | Program supplies information / acts directly |
 |---|---|---|
@@ -212,40 +226,99 @@ program hands it the information and the narrow tool surface the request needs, 
 | Open an app ("微信", "vscode") | 5 of 9 replies claim "opened" with no tool call | resolver over localized app names + server fast path: **20/20** |
 | Today's schedule | — | small helper app with its own permission text (Python is denied silently; AppleScript does not expand recurring events): **5/5** test events, one brief per day |
 | Unread mail / summarize message *N* | — | Mail scripting (read-only) + local summary: **10/10** summaries without factual errors |
-| Website content | old video/search heuristics answer instead | dedicated loop with one read-only OpenCLI tool and the site's commands: **3/3** on Bilibili |
+| Website content | old video/search heuristics answer instead | one read-only OpenCLI tool and the site's commands: Bilibili 3/3, Zhihu 3/3 (after login) |
+| WeChat unread | — | the app exposes six accessibility nodes; window screenshot + on-device OCR: names 10/10, times 10/10, unread markers 4/4 |
+| WeChat send | — | search → click the exact-name entry → read the chat title back → paste → check the new bubble: 7/7 delivered |
 
-**A near-miss.** Asked to edit a file that did not exist, the server fell back to listing every open document; the
-model then ran three replacements on the user's real source file in another editor (each replaced a line with
-itself, so the content was unchanged). The fix is least privilege rather than instructions: each turn may write
-only the files the request names and that exist, never a substitute, and no-op edits are rejected
-(re-test 11/11, the real file untouched). A per-turn usage log marks "claimed done without any tool call" as its
-own status, which is how the false "opened" replies were caught.
+Every step of the WeChat sender is followed by a check, because GUI effects are not predictable: in the first
+live send, Return in the search box opened a web search instead of the contact, and the title check stopped the
+send before anything was typed. An unknown or misspelt recipient is looked up first ("wenbo yen" → "Wenbo yan?",
+sent only after confirmation); a name that is not in the contacts is never sent to.
 
-## 7. Related and concurrent work
+**Two near-misses.** (i) Asked to edit a file that did not exist, the server fell back to listing every open
+document; the model then ran three replacements on the user's real source file in another editor (each replaced
+a line with itself, so the content was unchanged). The fix is least privilege rather than instructions: each turn
+may write only the files the request names and that exist, never a substitute, and no-op edits are rejected
+(re-test 11/11, the real file untouched). (ii) A bare "确认" (confirm) with no message pending reached the model,
+which replied "sent to Wenbo yan" — nothing had been sent. Confirmations are now answered by the program, and the
+per-turn usage log marks "claimed done without any tool call" (including "已发给", *sent*) as its own status;
+this status is also how the false "opened" replies were caught.
+
+### 7.2 Choices to a decision model
+
+Which handler a request needs was first decided by hand-written patterns. They are fast but know only the
+phrasings written into them and misfire on look-alikes. We replaced them with one decision-model question per
+turn ("which of these twelve kinds of request is this?", plus the day for schedule questions and read-or-summarize
+for mail), sent at the start of the turn so it overlaps the server's other checks. Below 0.8 confidence the
+request goes to the general local-model loop; if the decision model is unavailable, the patterns decide. Handlers
+still cut out text parameters themselves (recipient, message number, app name); when a WeChat request has no
+explicit boundary between recipient and message, the local model extracts them and the recipient must occur
+verbatim in the request [`evidence/reports/d7`, `eval/intent_v1`]:
+
+| Phrasing set | Classes | Patterns | Decision model | With threshold (unsure → local model) |
+|---|---|---|---|---|
+| held-out 1 (30, run once) | 10 | 15/30 | **30/30** | 30/30 |
+| held-out 2 (30, run once) | 12 | 16/30 | **30/30** | 28/30 (two correct answers below 0.8) |
+
+Pattern errors include "明天会下雨吗" (will it rain tomorrow) → schedule, "B站是哪一年成立的" (when was Bilibili
+founded) → website, and "打开第一封看看" (open the first one, i.e. e-mail) → open an app; most new phrasings were
+simply not recognised. The same split serves website requests: the decision model picks the site command, row
+count and search term (from candidates the program cuts out of the request), and whether the user only wants the
+list. On ten held-out phrasings it chose the command correctly 10/10; a regex shortcut tried first got 2 of 7
+wrong [`evidence/reports/d5/clef-routing`]. Asking about a concrete item ("does the request ask to summarise,
+compare, pick the highest or filter?") worked better than asking for a judgement ("is a plain list enough?"): the
+list-only decision was wrong on 2 of 12 development phrasings with confidences of 0.6–0.8, and on 1 of 12 with
+confidences mostly above 0.83 — the same pattern as in our decision-model benchmark, where whole-state judgements
+scored 0.64 and per-item extraction 1.00 [`evidence/reports/decision-thx01/report.md`].
+
+**Latency.** On the M4 laptop the 4B model reads about 300 prompt tokens/s and writes about 26 tokens/s, so a
+reply's cost is set by prompt length and answer length. Per-stage timings in the usage log located the slow
+paths:
+
+| Request | Before | After | Cause |
+|---|---|---|---|
+| 明天会下雨吗 (rain tomorrow?) | 36.5 s, web search | 0.8 s | weather path required the word "天气"; now routed |
+| B站是哪一年成立的 (knowledge) | 16 s, "cannot find" | 2.3 s, "2009" | tool loop with a 2,200–3,600-token prompt → short fixed chat prompt |
+| 知乎热榜前三 (top three on Zhihu) | 14 s | 4.5 s; 0.4 s repeated | model choosing the command (4.2 s) and retelling the list (5.7 s) → decision model + program listing; 5-minute cache for public lists |
+| 知乎上大家在聊什么 (what is Zhihu discussing) | 27 s | 4.8 s | model re-chose the command and retold ten rows (353 tokens) → run the decision model's first choice, model answers in three sentences |
+
+The routing call costs about US$0.00013 at list price; 248 calls in this study stayed within the free
+allocation. A live demonstration recorded on the user's Mac is in `docs/assets/demo/kage-live-demo.mp4`.
+
+## 8. Related and concurrent work
 
 Skill libraries (Voyager), experience memory and rule extraction (ACE, SkillRL), harness self-improvement
 (Meta-Harness; Harness², concurrent), weight-level self-improvement (STaR, context distillation, expert
 iteration; Terminal-RSI, concurrent: runbook-guided re-execution, SFT and RL at 27B). Our consolidation loop
 borrows RSR's guided re-execution explicitly; the in-context learning and adoption findings predate our reading
-of it (worklog timestamps). ARTEMIS (Android automation) prompted the interface ablation. See
-`docs/report/related-work.md`.
+of it (worklog timestamps). ARTEMIS (Android automation) prompted the interface ablation. Routing a request to a
+handler with a classifier is classic intent detection; LLM routers such as RouteLLM route between *models*, and
+semantic routers match embeddings against example utterances — our router asks a calibrated choice model and
+keeps a confidence fallback to the general loop. See `docs/report/related-work.md`.
 
-## 8. Limitations
+## 9. Limitations
 
 Small samples (18–90 runs per arm; several p-values are directional); one student model; procedurally generated
 tasks with templated instructions (the TF-IDF gate relies on this); desktop tasks are few and partly read-only
 for safety; the pre-save checker's goals were extracted once and cached; consolidation used a single LoRA
 configuration and no RL. Desktop runs were on one Mac with one llama-server; GPU and CPU non-determinism means
 single-run comparisons are unreliable, which is why every comparison here is same-session and replicated.
+The daily-use results (§7) come from one user on one Mac with tens of requests per type; the phrasing sets were
+written by the authors, not collected from users. Routing sends each request's text to a hosted model; mail and
+WeChat content, documents and screenshots stay on the machine, but a privacy-strict setting would need a local
+router (the cached decision-model labels are a natural distillation set).
 
-## 9. Conclusion
+## 10. Conclusion
 
 For a small local agent, "it retrieved the right guidance and still failed" is common, and the cause is often
 not capability. In order: make the observation and tools state what the student needs without inference or
 escaping (one field, one tool), make it ground teacher rules in the current task before acting, and only then
 consolidate — measuring held-out behaviour, because the samples that teach a family are the ones that overwrite
-general skills. On a US$4 budget this took a 4B model to 41/45 on real macOS applications.
+general skills. On a US$4 budget this took a 4B model to 41/45 on real macOS applications. In daily use the same
+lesson goes one step further: let a decision model make the choices and the program take the actions, and keep the
+small model for reading and writing what only it can.
 
 ---
 *Evidence index*: E-1/E-2 `evidence/reports/e1*`, `e2*`; C2 `c2/`; C3 `c3/`; R2 `r2/`; R3–R3e `r3/`, `r3b/`–`r3e/`;
-C4 `c4/analysis.md`, `c4/round2.md`; G0 `g0/analysis.md`; raw Kaggle runs `evidence/kaggle/v*-results.tar.gz`.
+C4 `c4/analysis.md`, `c4/round2.md`; G0 `g0/analysis.md`; daily use D0–D7 `d0/`–`d7/` (decision routing `d5/clef-routing/`,
+`d7/`); raw Kaggle runs `evidence/kaggle/v*-results.tar.gz`.
