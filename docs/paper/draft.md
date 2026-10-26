@@ -1,6 +1,6 @@
 # Interface First, Then Teach, Then Consolidate: Self-Evolution of a 4B Local Computer-Use Agent on a Four-Dollar Teacher Budget
 
-*Draft v0.3, 2026-10-26 (§7 daily use rewritten: WeChat, decision-model routing, latency). Every number is taken from a file under `evidence/` (cited in brackets). Concurrent
+*Draft v0.3, 2026-10-26 (§7 daily use rewritten: WeChat, decision-model routing, latency; references added). Every number is taken from a file under `evidence/` (cited in brackets). Concurrent
 work (Terminal-RSI, Harness²) is discussed in §7. Statistical tests are two-sided Fisher exact tests over task
 runs unless stated; small samples are marked as directional.*
 
@@ -118,6 +118,13 @@ hotels 7 vs 8) [`evidence/reports/r2`].
 
 ## 5. Interface first
 
+That the interface between agent and computer matters is not new: SWE-agent designed an agent-computer interface
+(file viewer, editor with linting, search commands) and showed large gains for software-engineering agents built
+on strong models (Yang et al., 2024). Our contribution here is narrower and diagnostic: with a 4B student we
+isolate *single* interface factors — one observation field, one tool family — in controlled ablations, and show
+that failures we had attributed to missing capability, and that demonstrations, rules and consolidation did not
+fix, disappear when that one factor changes.
+
 ### 5.1 Web: one field (C4)
 
 Settings tasks resisted demonstrations, rules and consolidation, and we had cited them as "knows but cannot do".
@@ -191,7 +198,9 @@ R2 collected 1,900 guided successes (guidance stripped); R3 trains a LoRA adapte
 General-ability check (30 questions): 27–28/30 for every version. Under the round-2 web interface, R3e solves
 7/18 invoices where the raw student solves 0/54 (p = 2e-5): consolidated knowledge survives an interface change.
 
-What the five versions show:
+LoRA is known to forget less than full fine-tuning, and also to learn less (Biderman et al., 2024). Even so, a
+rank-16 adapter trained on about 1,900 samples erased held-out code writing here; what the ablation adds is *which*
+samples do it. What the five versions show:
 
 - **Gain and forgetting move together.** Held-out success collapses exactly when the ~300 file-solution steps
   (`write_file` targets, mostly without reasoning in the raw data) are trained (R3, R3d, R3e) and is preserved
@@ -287,14 +296,28 @@ allocation. A live demonstration recorded on the user's Mac is in `docs/assets/d
 
 ## 8. Related and concurrent work
 
-Skill libraries (Voyager), experience memory and rule extraction (ACE, SkillRL), harness self-improvement
-(Meta-Harness; Harness², concurrent), weight-level self-improvement (STaR, context distillation, expert
-iteration; Terminal-RSI, concurrent: runbook-guided re-execution, SFT and RL at 27B). Our consolidation loop
-borrows RSR's guided re-execution explicitly; the in-context learning and adoption findings predate our reading
-of it (worklog timestamps). ARTEMIS (Android automation) prompted the interface ablation. Routing a request to a
-handler with a classifier is classic intent detection; LLM routers such as RouteLLM route between *models*, and
-semantic routers match embeddings against example utterances — our router asks a calibrated choice model and
-keeps a confidence fallback to the general loop. See `docs/report/related-work.md`.
+**Learning from experience in context.** Skill libraries (Voyager; Wang et al., 2023), experience memory and
+extracted insights (ExpeL; Zhao et al., 2024; Agent Workflow Memory; Wang et al., 2025), evolving playbooks (ACE;
+Zhang et al., 2025) and skills co-trained with RL (SkillRL; Xia et al., 2026). These mostly use strong models;
+we find that a 4B student retrieves such guidance reliably but often does not act on it (§4) unless asked to
+ground it (§5.3).
+
+**Self-improvement of the harness or the weights.** Harness search (ADAS; Hu et al., 2024; Meta-Harness;
+Lee et al., 2026; Harness², concurrent, Google, 2026) changes prompts, tools and memory around a model;
+weight-level methods include STaR (Zelikman et al., 2022), context distillation (Snell et al., 2022), expert
+iteration (Anthony et al., 2017) and, concurrently, Terminal-RSI (Yang et al., 2026), whose recursive self-rewrite
+(RSR) re-executes tasks with runbooks before SFT and RL at 27B. Our consolidation loop borrows RSR's guided
+re-execution explicitly; the in-context learning and adoption findings predate our reading of it (worklog
+timestamps). Gradient-based data selection (LESS; Xia et al., 2024) is the replay selector we found
+counter-productive for forgetting (§6); replay data came from AgentNet (OpenCUA; Wang et al., 2025) and Toucan
+(Xu et al., 2025).
+
+**Interfaces and routing.** SWE-agent (Yang et al., 2024) is the closest work on agent-computer interfaces (§5);
+the ARTEMIS Android automation project prompted our interface ablation. Routing a request to a handler with a
+classifier is classic intent detection; LLM routers such as RouteLLM (Ong et al., 2025) route between *models*
+for cost, and semantic routers match embeddings against example utterances. Our router asks a calibrated choice
+model one question per turn and keeps a confidence fallback to the general loop (§7.2). A longer survey is in
+`docs/report/related-work.md`.
 
 ## 9. Limitations
 
@@ -317,6 +340,28 @@ consolidate — measuring held-out behaviour, because the samples that teach a f
 general skills. On a US$4 budget this took a 4B model to 41/45 on real macOS applications. In daily use the same
 lesson goes one step further: let a decision model make the choices and the program take the actions, and keep the
 small model for reading and writing what only it can.
+
+## References
+
+- Anthony, T., Tian, Z., Barber, D. (2017). Thinking Fast and Slow with Deep Learning and Tree Search. NeurIPS. arXiv:1705.08439.
+- Biderman, D., Portes, J., et al. (2024). LoRA Learns Less and Forgets Less. TMLR. arXiv:2405.09673.
+- Google (2026). Harness² (concurrent work). arXiv:2610.14224.
+- Google. ARTEMIS: Android automation. github.com/google/artemis.
+- Hu, S., Lu, C., Clune, J. (2024). Automated Design of Agentic Systems. arXiv:2408.08435.
+- Lee, Nair, Zhang, Lee, Khattab, Finn (2026). Meta-Harness. arXiv:2603.28052.
+- Ong, I., et al. (2025). RouteLLM: Learning to Route LLMs from Preference Data. ICLR. arXiv:2406.18665.
+- Snell, C., Klein, D., Zhong, R. (2022). Learning by Distilling Context. arXiv:2209.15189.
+- Wang, G., et al. (2023). Voyager: An Open-Ended Embodied Agent with Large Language Models. arXiv:2305.16291.
+- Wang, X., et al. (2025). OpenCUA: Open Foundations for Computer-Use Agents (AgentNet). NeurIPS. arXiv:2508.09123.
+- Wang, Z. Z., Mao, J., Fried, D., Neubig, G. (2025). Agent Workflow Memory. ICML. arXiv:2409.07429.
+- Xia, M., Malladi, S., Gururangan, S., Arora, S., Chen, D. (2024). LESS: Selecting Influential Data for Targeted Instruction Tuning. ICML. arXiv:2402.04333.
+- Xia, P., Yao, H., et al. (2026). SkillRL: Evolving Agents via Recursive Skill-Augmented Reinforcement Learning. arXiv:2602.08234.
+- Xu, Z., et al. (2025). TOUCAN: Synthesizing 1.5M Tool-Agentic Data from Real-World MCP Environments. arXiv:2510.01179.
+- Yang, J., Jimenez, C. E., Wettig, A., Lieret, K., Yao, S., Narasimhan, K., Press, O. (2024). SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering. NeurIPS. arXiv:2405.15793.
+- Yang et al. (2026). Terminal-RSI: Recursive Self-Improving Terminal Agents via Recursive Self-Rewrite and Policy-Refine. arXiv:2610.22192.
+- Zelikman, E., Wu, Y., Mu, J., Goodman, N. (2022). STaR: Bootstrapping Reasoning With Reasoning. NeurIPS. arXiv:2203.14465.
+- Zhang, Q., et al. (2025). Agentic Context Engineering: Evolving Contexts for Self-Improving Language Models. arXiv:2510.04618.
+- Zhao, A., et al. (2024). ExpeL: LLM Agents Are Experiential Learners. AAAI. arXiv:2308.10144.
 
 ---
 *Evidence index*: E-1/E-2 `evidence/reports/e1*`, `e2*`; C2 `c2/`; C3 `c3/`; R2 `r2/`; R3–R3e `r3/`, `r3b/`–`r3e/`;
