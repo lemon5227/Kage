@@ -210,7 +210,12 @@ class DesktopService:
         try:
             ax, restore = self._prepare(app, document)
             if app == 'calculator':
-                ax.press(_ids(ax)['AllClear']['ref'])
+                for _ in range(3):                 # "C" replaces "AC" while an expression is on the display
+                    found = _ids(ax)
+                    if 'AllClear' in found:
+                        ax.press(found['AllClear']['ref'])
+                        break
+                    ax.press(found['Clear']['ref'])
             tools = DesktopTools(ax, task, interface='v4')
             with (run_dir / 'trace.jsonl').open('w', encoding='utf-8') as trace:
                 agent = run_agent(self.model, tools, task, trace, max_tokens=600, lessons=load_lessons(), mode='plan')

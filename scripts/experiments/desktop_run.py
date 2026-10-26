@@ -35,6 +35,18 @@ ON = {'on', 'yes', 'true', 'enabled', '开', '开启', '打开', '是', '已开�
 OFF = {'off', 'no', 'false', 'disabled', '关', '关闭', '否', '未开启'}
 
 
+def wait_until_unlocked(poll_s: float = 30) -> None:
+    """Accessibility actions fail while the screen is locked; every run then errors in setup (10-26: a
+    replication left unattended at 3 am voided 58 of 60 runs). Wait instead of recording invalid runs."""
+    import Quartz
+    announced = False
+    while (Quartz.CGSessionCopyCurrentDictionary() or {}).get('CGSSessionScreenIsLocked'):
+        if not announced:
+            print(f'{time.strftime("%H:%M:%S")} screen locked: waiting', flush=True)
+            announced = True
+        time.sleep(poll_s)
+
+
 def write_json(path, value):
     Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')
 
@@ -87,7 +99,14 @@ class Calculator:
             self.restore_history = True
             self.ax.press_menu_unchecked('显示', '隐藏历史记录')
             wait_for(lambda: self.ax.menu_item('显示', '显示历史记录') is not None)
-        self.ax.press(ids(self.ax.snapshot())['AllClear']['ref'])
+        # "AC" (AllClear) only exists while the display is clear; after a half-finished expression the key is
+        # "C" (Clear). Agents-A1 always left the display clear; Nemotron did not (11/30 setups failed, 10-26).
+        for _ in range(3):
+            found = ids(self.ax.snapshot())
+            if 'AllClear' in found:
+                self.ax.press(found['AllClear']['ref'])
+                break
+            self.ax.press(found['Clear']['ref'])
         return self.ax
 
     def check(self, final):
@@ -244,6 +263,8 @@ def teach(source, tasks):
         task = tasks[record['task_id']]
         if record['check'].get('passed') or record['task_id'] in seen or task['family'] == 'settings_read':
             continue                       # settings failures were interface problems (fixed in v2), not knowledge
+        if record.get('error'):
+            continue                       # a setup error is not a student failure: nothing to teach from
         seen.add(record['task_id'])
         actions = []
         for line in (source / f"{record['task_id']}-r{record['run']}" / 'trace.jsonl').read_text().splitlines():
@@ -317,6 +338,7 @@ def main(argv=None):
     with service:
         for run in range(1, args.runs + 1):
             for task in tasks:
+                wait_until_unlocked()
                 run_dir = out / f"{task['task_id']}-r{run}"
                 run_dir.mkdir(exist_ok=True)
                 environment = ENVIRONMENTS[task['family']](task, run_dir)
