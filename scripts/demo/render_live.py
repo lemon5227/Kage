@@ -52,7 +52,7 @@ def main() -> None:
                  f"scale={plan.get('scale_width', width)}:-2:flags=lanczos[out]")
     start, end = plan['trim']
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', args.src, '-filter_complex', ';'.join(chain), '-map', '[out]',
-                    '-ss', str(start), '-to', str(end), '-c:v', 'libx264', '-crf', '20', '-pix_fmt', 'yuv420p',
+                    '-ss', str(start), '-to', str(end), '-c:v', 'libx264', '-crf', str(plan.get('crf', 20)), '-preset', 'slow', '-pix_fmt', 'yuv420p',
                     '-movflags', '+faststart', args.out], check=True)
 
 

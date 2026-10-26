@@ -18,13 +18,14 @@ import time
 import websockets
 
 LINES = [
-    '今天有什么日程',
+    '明儿个忙不忙',
     '知乎热榜前三是什么',
+    '知乎上大家在聊什么',
+    '明天会下雨吗',
+    'B站是哪一年成立的',
     '打开计算器',
-    '微信给文件传输助手发：Kage 演示：明天下午三点组会，记得带电脑',
-    '微信给wenbo yen发：Kage 演示：名字说错了也能找到人',
+    '跟wenbo yen说一声：Kage 演示：名字说错了也能找到人',
     '确认',
-    '看看今天的使用日志',
 ]
 AFTER = {'打开计算器': ['osascript', '-e', 'tell application "Calculator" to quit']}
 BOLD, DIM, CYAN, GREEN, RESET = '\033[1m', '\033[2m', '\033[36m', '\033[32m', '\033[0m'
