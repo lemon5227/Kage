@@ -63,6 +63,9 @@
 - **判断训练是否结束看 Drive 上的产物和日志，不看 Colab 终端**：终端断线后画面停在旧行（10-23 显示第 521/813 步，实际 15:06 已训完并打包，15:08 的“断开”是单元格末尾的 `runtime.unassign()`）。误判后重跑同一单元格，会在已存在的分轮目录上转换 GGUF 时报错退出——不影响已有产物，但浪费一次挂载。
 - **单元格内容用 JS 写入**：`colab.global.notebook.cells[i].setText(...)`，避开编辑器自动补全括号/吞掉开头字符；`!` 开头的单元格输出比 `print(subprocess.run(...))` 好读。
 - **精简包**：解开 `<tag>-adapter.tar.gz`，去掉 `*.safetensors` 和 `adapter*/` 目录，把 `adapter/train-*.json*` 提到顶层再打包（约 100 MB：三个 GGUF + 统计/日志），Drive 网页下载（>100 MB 会弹“无法扫描病毒”，点仍然下载），`kaggle datasets create`。
+| 25 | v34/v35（R3t 冒烟）：单张 T4 在 6144 token 也 OOM；两卡切分（`device_map='balanced'`）仍 OOM | Qwen3.5 全注意力层 head_dim 256，T4 没有高效 SDPA 内核，走 math 路径一次性分配 fp32 分数矩阵（7758 token 约 3.5 GB）；`balanced_low_0` 甚至把整个模型放到 GPU1 | `lora_train --chunked-attention`：按 1024 个 query 分块的因果注意力，每块反向时重算（CPU 上与 SDPA 前向/反向完全一致）；单卡 8192 峰值 12.5 GB |
+| 26 | v36：2 步训练 22 分钟 | 线性注意力（gated delta）走 PyTorch 参考实现 | 训练前 `pip install flash-linear-attention`（0.6.0 可在 T4 安装导入） |
+| 27 | v38：每步约 23 分钟 | T4 上 `torch.cuda.is_bf16_supported()` 返回 True，但 bf16 是软件模拟 | T4 训练一律 `--dtype fp16`（带 loss scaler） |
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
 ## 4. 换设备恢复
