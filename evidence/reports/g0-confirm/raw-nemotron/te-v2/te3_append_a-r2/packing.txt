@@ -1,0 +1,4 @@
+Packing:
+- passport
+- charger
+- umbrella

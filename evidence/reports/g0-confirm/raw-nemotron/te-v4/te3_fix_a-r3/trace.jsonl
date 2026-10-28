@@ -1,0 +1,7 @@
+{"step": 0, "request_messages": 2, "text": "", "tool_calls": [{"name": "replace_text", "arguments": {"ref": "e1", "old": "Teh", "new": "The"}}], "error": null, "usage": {"input_tokens": 1077, "output_tokens": 46}}
+{"step": 0, "tool": "replace_text", "arguments": {"ref": "e1", "old": "Teh", "new": "The"}, "result": "ok\nApp com.apple.TextEdit, window \"report-note.txt\"\n  [e1] textarea id=First Text View value='The report is ready.\\nSee attached.\\n' (fill)\n  - report-note.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 1, "request_messages": 4, "text": "", "tool_calls": [{"name": "menu", "arguments": {"menu": "文件", "item": "保存"}}], "error": null, "usage": {"input_tokens": 1202, "output_tokens": 36}}
+{"step": 1, "tool": "menu", "arguments": {"menu": "文件", "item": "保存"}, "result": "ok\nApp com.apple.TextEdit, window \"report-note.txt\"\n  [e1] textarea id=First Text View value='The report is ready.\\nSee attached.\\n' (fill)\n  - report-note.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 2, "request_messages": 6, "text": "done", "tool_calls": [], "error": null, "usage": {"input_tokens": 1261, "output_tokens": 2}}
+{"step": 3, "request_messages": 8, "text": "", "tool_calls": [{"name": "done", "arguments": {}}], "error": null, "usage": {"input_tokens": 1289, "output_tokens": 14}}
+{"step": 3, "tool": "done", "arguments": {}, "result": "task ended"}

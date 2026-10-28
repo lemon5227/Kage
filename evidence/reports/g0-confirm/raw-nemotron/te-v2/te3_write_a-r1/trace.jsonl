@@ -1,0 +1,8 @@
+{"step": 0, "request_messages": 2, "text": "", "tool_calls": [{"name": "activate", "arguments": {}}], "error": null, "usage": {"input_tokens": 794, "output_tokens": 14}}
+{"step": 0, "tool": "activate", "arguments": {}, "result": "ok\nApp com.apple.TextEdit, window \"ack.txt\"\n  [e1] textarea id=First Text View value='' (fill)\n  - ack.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 1, "request_messages": 4, "text": "", "tool_calls": [{"name": "fill", "arguments": {"ref": "e1", "text": "Thanks for the update.\nI will reply soon."}}], "error": null, "usage": {"input_tokens": 874, "output_tokens": 43}}
+{"step": 1, "tool": "fill", "arguments": {"ref": "e1", "text": "Thanks for the update.\nI will reply soon."}, "result": "ok\nApp com.apple.TextEdit, window \"ack.txt\"\n  [e1] textarea id=First Text View value='Thanks for the update.\\nI will reply soon.' (fill)\n  - ack.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 2, "request_messages": 6, "text": "", "tool_calls": [{"name": "menu", "arguments": {"menu": "文件", "item": "保存"}}], "error": null, "usage": {"input_tokens": 950, "output_tokens": 36}}
+{"step": 2, "tool": "menu", "arguments": {"menu": "文件", "item": "保存"}, "result": "ok\nApp com.apple.TextEdit, window \"ack.txt\"\n  [e1] textarea id=First Text View value='Thanks for the update.\\nI will reply soon.' (fill)\n  - ack.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 3, "request_messages": 8, "text": "", "tool_calls": [{"name": "done", "arguments": {}}], "error": null, "usage": {"input_tokens": 1009, "output_tokens": 14}}
+{"step": 3, "tool": "done", "arguments": {}, "result": "task ended"}

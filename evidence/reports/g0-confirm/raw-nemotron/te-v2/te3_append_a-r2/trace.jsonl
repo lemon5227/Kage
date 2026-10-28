@@ -1,0 +1,8 @@
+{"step": 0, "request_messages": 2, "text": "", "tool_calls": [{"name": "fill", "arguments": {"ref": "e1", "text": "Packing:\n- passport\n- charger\n- umbrella\n"}}], "error": null, "usage": {"input_tokens": 801, "output_tokens": 45}}
+{"step": 0, "tool": "fill", "arguments": {"ref": "e1", "text": "Packing:\n- passport\n- charger\n- umbrella\n"}, "result": "ok\nApp com.apple.TextEdit, window \"packing.txt\"\n  [e1] textarea id=First Text View value='Packing:\\n- passport\\n- charger\\n- umbrella\\n' (fill)\n  - packing.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 1, "request_messages": 4, "text": "", "tool_calls": [{"name": "activate", "arguments": {}}], "error": null, "usage": {"input_tokens": 925, "output_tokens": 14}}
+{"step": 1, "tool": "activate", "arguments": {}, "result": "ok\nApp com.apple.TextEdit, window \"packing.txt\"\n  [e1] textarea id=First Text View value='Packing:\\n- passport\\n- charger\\n- umbrella\\n' (fill)\n  - packing.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 2, "request_messages": 6, "text": "", "tool_calls": [{"name": "menu", "arguments": {"menu": "文件", "item": "保存"}}], "error": null, "usage": {"input_tokens": 962, "output_tokens": 36}}
+{"step": 2, "tool": "menu", "arguments": {"menu": "文件", "item": "保存"}, "result": "ok\nApp com.apple.TextEdit, window \"packing.txt\"\n  [e1] textarea id=First Text View value='Packing:\\n- passport\\n- charger\\n- umbrella\\n' (fill)\n  - packing.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 3, "request_messages": 8, "text": "", "tool_calls": [{"name": "done", "arguments": {}}], "error": null, "usage": {"input_tokens": 1021, "output_tokens": 14}}
+{"step": 3, "tool": "done", "arguments": {}, "result": "task ended"}

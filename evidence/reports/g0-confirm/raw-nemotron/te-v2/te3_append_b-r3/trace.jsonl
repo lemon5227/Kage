@@ -1,0 +1,6 @@
+{"step": 0, "request_messages": 2, "text": "", "tool_calls": [{"name": "fill", "arguments": {"ref": "First Text View", "text": "Guests:\n- Mia\n- Leo"}}], "error": null, "usage": {"input_tokens": 798, "output_tokens": 43}}
+{"step": 0, "tool": "fill", "arguments": {"ref": "First Text View", "text": "Guests:\n- Mia\n- Leo"}, "result": "ok\nApp com.apple.TextEdit, window \"guests.txt\"\n  [e1] textarea id=First Text View value='Guests:\\n- Mia\\n- Leo' (fill)\n  - guests.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 1, "request_messages": 4, "text": "", "tool_calls": [{"name": "menu", "arguments": {"menu": "文件", "item": "保存"}}], "error": null, "usage": {"input_tokens": 916, "output_tokens": 36}}
+{"step": 1, "tool": "menu", "arguments": {"menu": "文件", "item": "保存"}, "result": "ok\nApp com.apple.TextEdit, window \"guests.txt\"\n  [e1] textarea id=First Text View value='Guests:\\n- Mia\\n- Leo' (fill)\n  - guests.txt\nMenu commands you may use: 文件 > 保存"}
+{"step": 2, "request_messages": 6, "text": "", "tool_calls": [{"name": "done", "arguments": {}}], "error": null, "usage": {"input_tokens": 975, "output_tokens": 14}}
+{"step": 2, "tool": "done", "arguments": {}, "result": "task ended"}

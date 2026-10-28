@@ -42,9 +42,9 @@ def boot(diffs, n=10000, seed=20261028):
     return round(means[int(0.025 * n)], 3), round(means[int(0.975 * n) - 1], 3)
 
 
-def rates(arm, drop_infra=False):
+def rates(arm, drop_infra=False, raw=RAW):
     acc = defaultdict(list)
-    for line in (RAW / arm / 'results.jsonl').read_text().splitlines():
+    for line in (raw / arm / 'results.jsonl').read_text().splitlines():
         r = json.loads(line)
         if drop_infra and r.get('error'):
             continue
@@ -52,15 +52,15 @@ def rates(arm, drop_infra=False):
     return {t: sum(v) / len(v) for t, v in acc.items()}
 
 
-def counts(arm, tasks):
-    rows = [json.loads(l) for l in (RAW / arm / 'results.jsonl').read_text().splitlines()]
+def counts(arm, tasks, raw=RAW):
+    rows = [json.loads(l) for l in (raw / arm / 'results.jsonl').read_text().splitlines()]
     rows = [r for r in rows if r['task_id'] in tasks]
     return {'passed': sum(bool(r['check'].get('passed')) for r in rows), 'n': len(rows),
             'infra_failures': sum(bool(r.get('error')) for r in rows)}
 
 
-def paired(a, b, tasks, drop_infra=False):
-    ra, rb = rates(a, drop_infra), rates(b, drop_infra)
+def paired(a, b, tasks, drop_infra=False, raw=RAW):
+    ra, rb = rates(a, drop_infra, raw), rates(b, drop_infra, raw)
     d = [ra[t] - rb[t] for t in tasks]
     p = exact_signflip(d)
     return {'contrast': f'{a} vs {b}', 'tasks': len(tasks), 'mean_diff': round(float(sum(d) / len(d)), 3),
@@ -78,9 +78,11 @@ out = {'counts': {'grouping': {a: counts(a, GROUPING) for a in CALC},
        'primary': [paired(a, b, GROUPING) for a, b in PRIMARY],
        'secondary_S1': paired('te-v4', 'te-v2', TE),
        'sensitivity_drop_infra': [paired(a, b, GROUPING, drop_infra=True) for a, b in PRIMARY],
+       'second_student_S1': paired('te-v4', 'te-v2', TE, raw=RAW.with_name('raw-nemotron')),
+       'second_student_counts': {a: counts(a, TE, RAW.with_name('raw-nemotron')) for a in ('te-v2', 'te-v4')},
        'exploratory_vs_none': [paired(a, 'calc-none', GROUPING) for a in CALC[1:]]}
 (Path(__file__).resolve().parent / 'analysis.json').write_text(json.dumps(out, indent=1, ensure_ascii=False))
 for k in ('counts',):
     print(json.dumps(out[k], ensure_ascii=False))
-for row in out['primary'] + [out['secondary_S1']] + out['sensitivity_drop_infra'] + out['exploratory_vs_none']:
+for row in out['primary'] + [out['secondary_S1'], out['second_student_S1']] + out['sensitivity_drop_infra'] + out['exploratory_vs_none']:
     print(row['contrast'], row['mean_diff'], f"{row['improved']}/{row['worse']}/{row['tied']}", row['p_fraction'], row['boot95'])

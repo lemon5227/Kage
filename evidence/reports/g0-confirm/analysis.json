@@ -301,6 +301,40 @@
    }
   }
  ],
+ "second_student_S1": {
+  "contrast": "te-v4 vs te-v2",
+  "tasks": 6,
+  "mean_diff": 0.833,
+  "improved": 6,
+  "worse": 0,
+  "tied": 0,
+  "p_fraction": "1/32",
+  "p": 0.0312,
+  "boot95": [
+   0.722,
+   0.944
+  ],
+  "per_task": {
+   "te3_append_a": "2/3",
+   "te3_append_b": "2/3",
+   "te3_fix_a": "2/3",
+   "te3_fix_b": "1",
+   "te3_write_a": "1",
+   "te3_write_b": "1"
+  }
+ },
+ "second_student_counts": {
+  "te-v2": {
+   "passed": 2,
+   "n": 18,
+   "infra_failures": 0
+  },
+  "te-v4": {
+   "passed": 17,
+   "n": 18,
+   "infra_failures": 0
+  }
+ },
  "exploratory_vs_none": [
   {
    "contrast": "calc-system vs calc-none",
