@@ -74,7 +74,8 @@ class DesktopTools:
         """task: {'family': calculator|textedit|settings_read, 'press_ids': optional id prefix that may be pressed
         in a read-only task}. interface picks the TextEdit tool set (v2 fill, v3, v4 line-based)."""
         self.ax, self.task, self.final, self.actions = ax, task, None, 0
-        suffix = f'-{interface}'
+        suffix = f"-{'v4' if interface == 'v5' else interface}"          # v5 = v4 tools + id refs
+        self.ref_style = 'id' if interface == 'v5' else 'e'
         family = task['family'] + (suffix if task['family'] + suffix in FAMILY_TOOLS else '')
         self.allowed = FAMILY_TOOLS[family] + (['press'] if task.get('press_ids') else [])
 
@@ -84,7 +85,7 @@ class DesktopTools:
             for item in observation['items']:
                 navigable = self.task.get('press_ids') and str(item.get('id', '')).startswith(self.task['press_ids'])
                 item['ops'] = ['press'] if navigable else []
-        return render(observation)
+        return render(observation, ref_style=self.ref_style)
 
     def call(self, name, arguments):
         if name not in self.allowed:
@@ -159,9 +160,12 @@ def user_lessons(task, lessons, mode='plan'):
         return ('\n\nBefore your first action, write a short plan for this task (for example the exact text or the '
                 'exact button order you will use). Then follow the plan.')
     learned = (lessons or {}).get(task['family'], [])
-    if not learned or mode != 'plan':
+    if not learned or mode not in ('plan', 'adjacent'):
         return ''
-    return ('\n\nLessons from your earlier attempts at this kind of task:\n' + '\n'.join(f'- {x}' for x in learned)
+    listed = '\n\nLessons from your earlier attempts at this kind of task:\n' + '\n'.join(f'- {x}' for x in learned)
+    if mode == 'adjacent':                      # control: lessons next to the task, no planning request
+        return listed
+    return (listed
             + '\nBefore your first action, write a short plan that says how each lesson applies to this task '
               '(for example the exact text or the exact button order you will use). Then follow the plan.')
 

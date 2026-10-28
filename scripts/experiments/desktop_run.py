@@ -305,16 +305,17 @@ def main(argv=None):
     p.add_argument('--arm', choices=['oracle', 'a0', 'teach'], default='oracle')
     p.add_argument('--split', choices=['train', 'test', 'all'], default='train')
     p.add_argument('--lessons', type=Path, default=None)
-    p.add_argument('--interface', choices=['v2', 'v3', 'v4'], default='v2',
+    p.add_argument('--interface', choices=['v2', 'v3', 'v4', 'v5'], default='v2',
                    help='TextEdit tools: v3 adds replace_text/append_text; v4 = replace_text + line-based append/set (no fill)')
-    p.add_argument('--lesson-mode', choices=['system', 'plan', 'plan-only'], default='system')
+    p.add_argument('--lesson-mode', choices=['system', 'plan', 'plan-only', 'adjacent'], default='system')
     p.add_argument('--from', dest='source', type=Path, default=None, help='teach: the a0 results directory')
     p.add_argument('--runs', type=int, default=1)
     p.add_argument('--tasks', default='')
+    p.add_argument('--manifest', type=Path, default=MANIFEST)
     p.add_argument('--port', type=int, default=8091)
     p.add_argument('--out', type=Path, default=None)
     args = p.parse_args(argv)
-    manifest = json.loads(MANIFEST.read_text())
+    manifest = json.loads(args.manifest.read_text())
     tasks = [t for t in manifest['tasks'] if (not args.tasks or t['task_id'] in args.tasks.split(','))
              and (args.tasks or args.split == 'all' or t.get('split', 'train') == args.split)]
     if args.arm == 'teach':

@@ -187,6 +187,9 @@ class DesktopAX:
         bracketed = re.match(r'\s*\[?(e\d+)\]', str(ref))      # the whole line: '[e12] button "外观" id=…'
         if bracketed and bracketed.group(1) in self._handles:
             return bracketed.group(1)
+        named = re.match(r'\s*\[([^\]]+)\]', str(ref))          # interface v5 shows ids as refs: '[Seven] button "7"'
+        if named:
+            ref = named.group(1)
         for key in ('id', 'label'):
             matches = [item['ref'] for item in self._items if item.get('ref') and item.get(key) == ref]
             if len(matches) == 1:
@@ -297,18 +300,32 @@ class DesktopAX:
         time.sleep(self.settle_s * 2)
 
 
-def render(observation, max_value=400):
-    """Plain-text state table for the model (one line per control or text)."""
+ID_REF = re.compile(r'[A-Za-z][A-Za-z0-9_.-]{0,40}')
+
+
+def render(observation, max_value=400, ref_style='e'):
+    """Plain-text state table for the model (one line per control or text).
+
+    ref_style 'id' (interface v5): a control with a simple unique id is shown as `[Seven] button "7"` instead
+    of `[e5] button "7"`. A second 4B student (Nemotron) read the numeric part of eN as the digit to press
+    (pressed e5, e6… for "1234 + 5678"); the resolver accepts ids, so nothing else changes."""
+    ids = [i.get('id') for i in observation['items'] if i.get('id')]
+    def shown_ref(item):
+        ident = item.get('id')
+        if ref_style == 'id' and ident and ID_REF.fullmatch(ident) and ids.count(ident) == 1:
+            return ident, True
+        return item['ref'], False
     lines = [f"App {observation['app']}, window \"{observation['window']}\""
              + ('' if observation.get('frontmost') else ' (in background; you can still act on it)')]
     for item in observation['items']:
         if item['kind'] in ('text', 'heading'):
             lines.append(f"  {'#' if item['kind'] == 'heading' else '-'} {item['text']}")
             continue
-        parts = [f"[{item['ref']}] {item['kind']}"]
+        ref, by_id = shown_ref(item)
+        parts = [f"[{ref}] {item['kind']}"]
         if item.get('label'):
             parts.append(f"\"{item['label']}\"")
-        if item.get('id'):
+        if item.get('id') and not by_id:
             parts.append(f"id={item['id']}")
         if item.get('state') is not None:
             state = item['state']

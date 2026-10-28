@@ -1,0 +1,228 @@
+{
+  "version": "desktop-v2-confirm",
+  "note": "Frozen confirmation set (written 2026-10-28, before any model run on it): new instances of the calculator and TextEdit families of desktop-v1, never seen by the developer, the teacher or the student. Lessons stay the four written from desktop-v1 training failures (evidence/reports/g0/a0-baseline-v1/lessons.json). grouping: parentheses first, the student must press Equals before the second operator; precedence_control: no parentheses, typing straight through is correct and pressing Equals after the addition is wrong (measures over-application of the calculator lesson). Pre-registration: docs/plans/g0-confirm-prereg.md.",
+  "tasks": [
+    {
+      "task_id": "c2_add_mul_1",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (23 + 19) × 2. Leave the result on Calculator's display.",
+      "expected": "84",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_add_mul_2",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (8 + 17) × 4. Leave the result on Calculator's display.",
+      "expected": "100",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_add_mul_3",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (36 + 9) × 5. Leave the result on Calculator's display.",
+      "expected": "225",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_sub_mul_1",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (61 - 25) × 3. Leave the result on Calculator's display.",
+      "expected": "108",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_sub_mul_2",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (90 - 42) × 2. Leave the result on Calculator's display.",
+      "expected": "96",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_add_div_1",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (48 + 24) ÷ 6. Leave the result on Calculator's display.",
+      "expected": "12",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_add_div_2",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (55 + 33) ÷ 8. Leave the result on Calculator's display.",
+      "expected": "11",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_sub_div_1",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (100 - 28) ÷ 9. Leave the result on Calculator's display.",
+      "expected": "8",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_sub_div_2",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (75 - 15) ÷ 12. Leave the result on Calculator's display.",
+      "expected": "5",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_sub_div_3",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute (64 - 19) ÷ 5. Leave the result on Calculator's display.",
+      "expected": "9",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "grouping"
+    },
+    {
+      "task_id": "c2_prec_1",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute 8 + 7 × 6. Leave the result on Calculator's display.",
+      "expected": "50",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "precedence_control"
+    },
+    {
+      "task_id": "c2_prec_2",
+      "family": "calculator",
+      "app": "com.apple.calculator",
+      "instruction": "Use the Calculator app to compute 12 + 9 × 3. Leave the result on Calculator's display.",
+      "expected": "39",
+      "max_steps": 20,
+      "split": "confirm",
+      "kind": "precedence_control"
+    },
+    {
+      "task_id": "te3_fix_a",
+      "family": "textedit",
+      "app": "com.apple.TextEdit",
+      "document": "report-note.txt",
+      "initial": "Teh report is ready.\nSee attached.\n",
+      "instruction": "The TextEdit document report-note.txt has a typo: \"Teh\" should be \"The\". Fix it, keep everything else exactly the same, and save the document.",
+      "expected": "The report is ready.\nSee attached.\n",
+      "menus": [
+        [
+          "文件",
+          "保存"
+        ]
+      ],
+      "max_steps": 10,
+      "split": "confirm"
+    },
+    {
+      "task_id": "te3_fix_b",
+      "family": "textedit",
+      "app": "com.apple.TextEdit",
+      "document": "lunch.txt",
+      "initial": "Lunch on Firday at noon.\n",
+      "instruction": "The TextEdit document lunch.txt has a typo: \"Firday\" should be \"Friday\". Fix it, keep everything else exactly the same, and save the document.",
+      "expected": "Lunch on Friday at noon.\n",
+      "menus": [
+        [
+          "文件",
+          "保存"
+        ]
+      ],
+      "max_steps": 10,
+      "split": "confirm"
+    },
+    {
+      "task_id": "te3_append_a",
+      "family": "textedit",
+      "app": "com.apple.TextEdit",
+      "document": "packing.txt",
+      "initial": "Packing:\n- passport\n- charger\n",
+      "instruction": "In the TextEdit document packing.txt, add a new last line \"- umbrella\" to the list (same format as the other items, ending with a newline), and save the document.",
+      "expected": "Packing:\n- passport\n- charger\n- umbrella\n",
+      "menus": [
+        [
+          "文件",
+          "保存"
+        ]
+      ],
+      "max_steps": 10,
+      "split": "confirm"
+    },
+    {
+      "task_id": "te3_append_b",
+      "family": "textedit",
+      "app": "com.apple.TextEdit",
+      "document": "guests.txt",
+      "initial": "Guests:\n- Mia\n",
+      "instruction": "In the TextEdit document guests.txt, add a new last line \"- Leo\" to the list (same format as the other items, ending with a newline), and save the document.",
+      "expected": "Guests:\n- Mia\n- Leo\n",
+      "menus": [
+        [
+          "文件",
+          "保存"
+        ]
+      ],
+      "max_steps": 10,
+      "split": "confirm"
+    },
+    {
+      "task_id": "te3_write_a",
+      "family": "textedit",
+      "app": "com.apple.TextEdit",
+      "document": "ack.txt",
+      "initial": "",
+      "instruction": "The TextEdit document ack.txt is empty. Write exactly these two lines into it (each line ends with a newline):\nThanks for the update.\nI will reply soon.\nThen save the document.",
+      "expected": "Thanks for the update.\nI will reply soon.\n",
+      "menus": [
+        [
+          "文件",
+          "保存"
+        ]
+      ],
+      "max_steps": 10,
+      "split": "confirm"
+    },
+    {
+      "task_id": "te3_write_b",
+      "family": "textedit",
+      "app": "com.apple.TextEdit",
+      "document": "room.txt",
+      "initial": "",
+      "instruction": "The TextEdit document room.txt is empty. Write exactly these two lines into it (each line ends with a newline):\nRoom 204\nStarts 9:30\nThen save the document.",
+      "expected": "Room 204\nStarts 9:30\n",
+      "menus": [
+        [
+          "文件",
+          "保存"
+        ]
+      ],
+      "max_steps": 10,
+      "split": "confirm"
+    }
+  ]
+}

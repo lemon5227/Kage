@@ -23,4 +23,8 @@ L=$OUT/a0-train-v2/lessons.json
 [ -f $OUT/a0-test-v2-plan/results.jsonl ] || run a0-test-v2-plan --tasks $TEST --interface v2 --lessons $L --lesson-mode plan
 [ -f $OUT/a0-te-v4/results.jsonl ] || run a0-te-v4 --tasks $TE --interface v4
 [ -f $OUT/a0-final-v4-plan/results.jsonl ] || run a0-final-v4-plan --tasks $TRAIN,$TEST --interface v4 --lessons $L --lesson-mode plan
+# interface v5 (ids as refs): the second student read eN's number as the digit to press
+CALC=calc_add,calc_mul,calc_div,calc_chain,calc_chain2,calc_chain3
+[ -f $OUT/a0-calc-v5/results.jsonl ] || run a0-calc-v5 --tasks $CALC --interface v5
+[ -f $OUT/a0-final-v5-plan/results.jsonl ] || run a0-final-v5-plan --tasks $TRAIN,$TEST --interface v5 --lessons $L --lesson-mode plan
 echo "== done $(date +%H:%M:%S)"
