@@ -42,6 +42,11 @@ def load_examples(tok, path: Path, max_tokens: int) -> tuple[list, int]:
     return data, skipped
 
 
+def peak_mb() -> int:
+    import torch
+    return sum(torch.cuda.max_memory_allocated(d) for d in range(torch.cuda.device_count())) // 2**20
+
+
 def response_loss(model, ids: list, labels: list):
     """Mean cross-entropy over the response tokens. The response is the tail of the sequence, so only its
     logits are computed (`logits_to_keep`): with a 248k vocabulary, full-length fp32 logits alone take
@@ -50,7 +55,7 @@ def response_loss(model, ids: list, labels: list):
     n = sum(label != -100 for label in labels)
     x = torch.tensor([ids], device=model.device)
     logits = model(input_ids=x, logits_to_keep=n + 1).logits[0, :-1].float()
-    return torch.nn.functional.cross_entropy(logits, torch.tensor(ids[-n:], device=model.device))
+    return torch.nn.functional.cross_entropy(logits, torch.tensor(ids[-n:], device=logits.device))
 
 
 def validation_loss(model, data: list, dtype=None) -> float:
@@ -83,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--max-tokens', type=int, default=6144)
     p.add_argument('--targets', choices=sorted(TARGETS), default='full')
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--split-gpus', action='store_true', help='spread the layers over all visible GPUs')
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
     p.add_argument('--checkpoint-every', type=int, default=0,
                    help='save a resumable checkpoint (OUT-ckpt.pt) every N optimizer steps; an existing one is resumed')
@@ -120,13 +126,16 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_model(model_dir: str, dtype=None):
+def load_model(model_dir: str, dtype=None, split: bool = False):
+    """split: layers spread over all visible GPUs (Kaggle T4 x2: fp16 weights plus the attention of an 8k-token
+    sample do not fit one 15 GB card; R3t 10-28)."""
     import torch
     import transformers
     for name in ('AutoModelForCausalLM', 'AutoModelForImageTextToText'):
         try:
             model = getattr(transformers, name).from_pretrained(model_dir, dtype=dtype or torch.float16,
-                                                               device_map={'': 0}, low_cpu_mem_usage=True)
+                                                               device_map='balanced' if split else {'': 0},
+                                                               low_cpu_mem_usage=True)
             return model, name
         except (ValueError, KeyError) as exc:
             last = exc
@@ -170,7 +179,7 @@ def main(argv=None):
     print(json.dumps({'examples': len(data), 'skipped_too_long': skipped,
                       'max_len': max(len(d[0]) for d in data), 'sample_target': data[0][2][:300]}), flush=True)
 
-    model, loader = load_model(args.model, dtype)
+    model, loader = load_model(args.model, dtype, split=args.split_gpus)
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
     model.enable_input_require_grads()
     config = LoraConfig(r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.05, target_modules=TARGETS[args.targets],
@@ -264,7 +273,7 @@ def main(argv=None):
                               'lr': sched.get_last_lr()[0], 'grad_norm': round(grad_norm, 4),
                               'scale': scaler.get_scale() if scaler.is_enabled() else None,
                               'seconds': round(time.time() - t0, 1),
-                              'gpu_mb': torch.cuda.max_memory_allocated() // 2**20}), flush=True)
+                              'gpu_mb': peak_mb()}), flush=True)
             if train_log is not None and step % 10 == 0:
                 train_log.append(loss_record(epoch, step, sum(recent) / len(recent)))
                 recent = []
@@ -275,7 +284,7 @@ def main(argv=None):
         train_log.append(loss_record(epoch, step, sum(epoch_losses) / len(epoch_losses), epoch_val()))
 
     wall = round(time.time() - started, 1)
-    peak_gpu_mb = torch.cuda.max_memory_allocated() // 2**20
+    peak_gpu_mb = peak_mb()
     lora_b_max = max(float(p_.detach().abs().max()) for n_, p_ in model.named_parameters() if 'lora_B' in n_)
     model.save_pretrained(args.out)
     if ckpt_path.exists():
