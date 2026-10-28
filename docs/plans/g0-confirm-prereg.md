@@ -50,3 +50,8 @@ X1 36 次（约 45 s/次）+ X2 180 次（约 75 s/次）≈ 4.2 小时。
 - R3 多训练 seed（3 个）同数据重训，测学过/留出/阴性。
 - 等暴露量回放对照、强制读回干预（`docs/plans/r3f-forgetting-fix.md`）。
 - 第二学生（Nemotron）在同一确认集上跑 X2：视本次结果决定。
+
+## 附录 A：第二学生（2026-10-28 08:40 追加，跑之前写定）
+- Nemotron-3-Nano-4B Q4_K_M（`KAGE_MODEL_PATH`），同一冻结题、同一脚本，只跑 **X1**（TextEdit 6 题 × v2/v4 × 3）。假设 S1'：te-v4 > te-v2（题级精确 sign-flip，最小可达 1/32）。
+- **不跑 X2**：该学生在计算器上此前所有条件均为 0（v2/v4/v5、有无规则、有无计划，共 0/108，`evidence/reports/g0-nemotron`），五臂会落在地板上，无法区分条件。论文照实写明这一点。
+- 输出 `~/.kage/g0/confirm-nemotron/` → `evidence/reports/g0-confirm/raw-nemotron/`。
