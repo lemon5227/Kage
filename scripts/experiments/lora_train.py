@@ -89,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--targets', choices=sorted(TARGETS), default='full')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--split-gpus', action='store_true', help='spread the layers over all visible GPUs')
+    p.add_argument('--chunked-attention', action='store_true', help='causal attention in recomputed query chunks')
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
     p.add_argument('--checkpoint-every', type=int, default=0,
                    help='save a resumable checkpoint (OUT-ckpt.pt) every N optimizer steps; an existing one is resumed')
@@ -126,16 +127,45 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_model(model_dir: str, dtype=None, split: bool = False):
+CHUNK = 1024
+
+
+def chunked_attention(module, query, key, value, attention_mask, dropout=0.0, scaling=None, is_causal=None, **kwargs):
+    """Causal attention in query chunks, each recomputed in backward (R3t 10-28). On a T4, head_dim 256 has no
+    efficient SDPA kernel, so the math path materialized the full fp32 score matrix (3.5 GB for a 7.7k-token
+    sample) and ran out of memory; per chunk it is CHUNK x keys. Same result as causal SDPA; assumes one unpadded
+    sequence per batch (as lora_train feeds it)."""
+    import torch
+    from torch.utils.checkpoint import checkpoint
+    groups = query.shape[1] // key.shape[1]
+    if groups > 1:
+        key, value = key.repeat_interleave(groups, dim=1), value.repeat_interleave(groups, dim=1)
+    q_len, k_len = query.shape[2], key.shape[2]
+
+    def block(q, k, v, start):
+        rows = torch.arange(start, start + q.shape[2], device=q.device)[:, None] + (k_len - q_len)
+        mask = torch.arange(k_len, device=q.device)[None, :] <= rows
+        return torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=mask, scale=scaling)
+
+    outs = [checkpoint(block, query[:, :, s:s + CHUNK], key, value, s, use_reentrant=False) if query.requires_grad
+            or key.requires_grad else block(query[:, :, s:s + CHUNK], key, value, s) for s in range(0, q_len, CHUNK)]
+    return torch.cat(outs, dim=2).transpose(1, 2).contiguous(), None
+
+
+def load_model(model_dir: str, dtype=None, split: bool = False, chunked: bool = False):
     """split: layers spread over all visible GPUs (Kaggle T4 x2: fp16 weights plus the attention of an 8k-token
     sample do not fit one 15 GB card; R3t 10-28)."""
     import torch
     import transformers
     for name in ('AutoModelForCausalLM', 'AutoModelForImageTextToText'):
         try:
+            extra = {}
+            if chunked:
+                transformers.AttentionInterface.register('chunked_sdpa', chunked_attention)
+                extra['attn_implementation'] = 'chunked_sdpa'
             model = getattr(transformers, name).from_pretrained(model_dir, dtype=dtype or torch.float16,
-                                                               device_map='balanced_low_0' if split else {'': 0},
-                                                               low_cpu_mem_usage=True)
+                                                               device_map='balanced' if split else {'': 0},
+                                                               low_cpu_mem_usage=True, **extra)
             return model, name
         except (ValueError, KeyError) as exc:
             last = exc
@@ -179,7 +209,7 @@ def main(argv=None):
     print(json.dumps({'examples': len(data), 'skipped_too_long': skipped,
                       'max_len': max(len(d[0]) for d in data), 'sample_target': data[0][2][:300]}), flush=True)
 
-    model, loader = load_model(args.model, dtype, split=args.split_gpus)
+    model, loader = load_model(args.model, dtype, split=args.split_gpus, chunked=args.chunked_attention)
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant': False})
     model.enable_input_require_grads()
     config = LoraConfig(r=args.rank, lora_alpha=2 * args.rank, lora_dropout=0.05, target_modules=TARGETS[args.targets],

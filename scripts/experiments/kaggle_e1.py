@@ -833,91 +833,98 @@ def r3_train_only(smoke: bool = False) -> None:
 
 
 # R3t (10-28, review: "one training seed"): the R3 recipe retrained with other seeds on Kaggle T4 x2 (Colab is
-# gone). One 15 GB T4 cannot hold the fp16 weights plus the attention of the 7.7k-token samples (v34 smoke: OOM
-# even at a 6144 cap), so each seed spreads its layers over both GPUs and the seeds run one after another. Same
-# data, cap (8192), rank, targets, learning rate and epochs as R3; differences: fp16 with a loss scaler (T4 has
-# no bf16) and the seed.
+# gone). On a T4, head_dim 256 has no efficient attention kernel and the math path materialized a 3.5 GB score
+# matrix for the 7.7k-token samples (v34-v37 smokes ran out of memory even with the layers split over both GPUs),
+# so training uses causal attention in recomputed query chunks (lora_train --chunked-attention, numerically the
+# same) and flash-linear-attention for the gated-delta layers. One seed per GPU, in parallel. Same data, cap,
+# rank, targets, learning rate and epochs as R3; differences: fp16 with a loss scaler (no bf16 on T4) and the seed.
 R3T_MAX_TOKENS = 8192
+R3T_ENV = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}
 
 
-def r3t_train(seeds: list[int], smoke: bool = False) -> None:
-    """Seeds in turn, each over both GPUs; resumable across sessions (checkpoint every 25 steps, carried over from
-    the previous version's output); stops before the session deadline and resumes in the next one. Finished
-    adapters land in OUT/r3t<seed>-adapter/adapter.gguf, where 'adapter-eval r3t<seed> ...' finds them."""
+def r3t_setup():
     data = prepare_r3_data()
     linfo = lora_setup()
-    # v36: without it the gated-delta (linear attention) layers run a reference PyTorch implementation: 2 smoke
-    # steps took 22 min and only a 5120 cap fitted. On the A100 it was ~5x faster with identical results.
     fla = subprocess.run([PY, '-m', 'pip', 'install', '-q', 'flash-linear-attention'], capture_output=True, text=True)
-    log('flash-linear-attention', code=fla.returncode, err=fla.stderr[-300:])
+    probe = subprocess.run([PY, '-c', 'import fla, sys; print(fla.__version__)'], capture_output=True, text=True)
+    log('flash-linear-attention', install=fla.returncode, version=probe.stdout.strip(), err=probe.stderr[-200:])
     prebuilt = find_prebuilt()
     if prebuilt is not None:
         save_build(prebuilt)                    # keep the llama-server build for the next (eval) version
-    sfx = '-smoke' if smoke else ''
+    return data, linfo
+
+
+def r3t_args(data: Path, cap: int, seed: int, smoke: bool) -> list[str]:
+    return ((['--smoke'] if smoke else ['--epochs', '2', '--checkpoint-every', '25'])
+            + ['--rank', '16', '--lr', '1e-4', '--targets', 'safe', '--max-tokens', str(cap), '--seed', str(seed),
+               '--chunked-attention', '--val', str(data / 'val.jsonl')])
+
+
+def r3t_smoke() -> None:
+    """2 steps on the 4 longest samples, one GPU: memory and seconds per step at R3's 8192 cap."""
+    data, linfo = r3t_setup()
+    out = OUT / 'r3t-smoke'
+    with (OUT / 'r3t-smoke.log').open('w') as log_file:
+        code = subprocess.run([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
+                               '--model', linfo['hf_model'], '--out', str(out), *r3t_args(data, R3T_MAX_TOKENS, 1, True)],
+                              cwd=ROOT, stdout=log_file, stderr=subprocess.STDOUT,
+                              env={**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': '0'}).returncode
+    config = out / 'train-config.json'
+    log('r3t smoke', cap=R3T_MAX_TOKENS, code=code, config=json.loads(config.read_text()) if config.exists() else None)
+
+
+def r3t_train(seeds: list[int]) -> None:
+    """One seed per GPU in parallel; resumable across sessions (checkpoint every 25 steps, carried over from the
+    previous version's output); stops before the session deadline and resumes in the next one. Finished adapters
+    land in OUT/r3t<seed>-adapter/adapter.gguf, where 'adapter-eval r3t<seed> ...' finds them."""
+    data, linfo = r3t_setup()
     stop_at = START + DEADLINE_S - 1200         # converting and packaging need ~20 minutes
-    if smoke:                                   # which length cap fits two T4s? (2 steps on the 4 longest samples)
-        for cap in (8192, 6144):
-            out = OUT / f'r3t-smoke-{cap}'
-            with (OUT / f'r3t-smoke-{cap}.log').open('w') as log_file:
-                code = subprocess.run([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
-                                       '--model', linfo['hf_model'], '--out', str(out), '--smoke', '--rank', '16',
-                                       '--targets', 'safe', '--max-tokens', str(cap), '--split-gpus'], cwd=ROOT,
-                                      stdout=log_file, stderr=subprocess.STDOUT,
-                                      env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0,1',
-                                           'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}).returncode
-            config = out / 'train-config.json'
-            log('r3t smoke', cap=cap, code=code,
-                config=json.loads(config.read_text()) if config.exists() else None)
-        return
-    for seed in seeds:
-        out = OUT / f'r3t{seed}-adapter{sfx}'
-        if (out / 'adapter.gguf').exists():
-            log('r3t adapter already done', seed=seed)
-            continue
-        done = next(iter(INPUT.glob(f'**/e1/r3t{seed}-adapter{sfx}/adapter.gguf')), None)
+    procs = {}
+    for gpu, seed in enumerate(seeds[:2]):
+        out = OUT / f'r3t{seed}-adapter'
+        done = next(iter(INPUT.glob(f'**/e1/r3t{seed}-adapter/adapter.gguf')), None)
         if done is not None:                    # finished in an earlier version
             shutil.copytree(done.parent, out, dirs_exist_ok=True)
             log('r3t adapter carried over', seed=seed, source=str(done.parent))
             continue
-        ckpt = next(iter(INPUT.glob(f'**/e1/r3t{seed}-adapter{sfx}/adapter-ckpt.pt')), None)
+        ckpt = next(iter(INPUT.glob(f'**/e1/r3t{seed}-adapter/adapter-ckpt.pt')), None)
         if ckpt is not None:
             out.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ckpt, out / 'adapter-ckpt.pt')
             log('r3t checkpoint carried over', seed=seed, source=str(ckpt))
-        if time.time() > stop_at - 1800:
-            log('r3t not started: too close to the session deadline', seed=seed)
-            break
-        args = (['--smoke'] if smoke else ['--epochs', '2', '--checkpoint-every', '25'])
-        args += ['--rank', '16', '--lr', '1e-4', '--targets', 'safe', '--max-tokens', str(R3T_MAX_TOKENS),
-                 '--seed', str(seed), '--split-gpus', '--val', str(data / 'val.jsonl')]
-        with (OUT / f'r3t{seed}{sfx}-train.log').open('a') as log_file:
-            proc = subprocess.Popen([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
-                                     '--model', linfo['hf_model'], '--out', str(out / 'adapter'), *args], cwd=ROOT,
-                                    stdout=log_file, stderr=subprocess.STDOUT,
-                                    env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0,1',
-                                         'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'})
-            log('r3t training started', seed=seed)
-            while proc.poll() is None and time.time() < stop_at:
-                time.sleep(30)
-            if proc.poll() is None:
+        log_file = (OUT / f'r3t{seed}-train.log').open('a')
+        procs[seed] = (subprocess.Popen([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
+                                         '--model', linfo['hf_model'], '--out', str(out / 'adapter'),
+                                         *r3t_args(data, R3T_MAX_TOKENS, seed, False)], cwd=ROOT,
+                                        stdout=log_file, stderr=subprocess.STDOUT,
+                                        env={**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}), out)
+        log('r3t training started', seed=seed, gpu=gpu)
+        time.sleep(240)                         # stagger the two 4B loads: host RAM is 32 GB
+    while procs:
+        for seed, (proc, out) in list(procs.items()):
+            code = proc.poll()
+            if code is None and time.time() < stop_at:
+                continue
+            del procs[seed]
+            if code is None:
                 proc.terminate()
                 proc.wait(timeout=300)
                 log('r3t paused before the session deadline; resume in the next version', seed=seed)
-                break
-        if proc.returncode:
-            log('r3t training failed', seed=seed, code=proc.returncode)
-            break
-        gguf = out / 'adapter.gguf'
-        sh([PY, linfo['converter'], str(out / 'adapter'), '--base', linfo['hf_model'], '--outfile', str(gguf),
-            '--outtype', 'f16'], cwd=ROOT)
-        shutil.copy(data / 'data-stats.json', out / 'data-stats.json')
-        for name in ('train-config.json', 'train-log.jsonl'):
-            if (out / 'adapter' / name).exists():
-                shutil.copy(out / 'adapter' / name, out / name)
-        for heavy in (out / 'adapter').glob('*.safetensors'):       # converted; keep the output small
-            heavy.unlink()
-        log('r3t adapter ready', seed=seed, gguf_sha256=sha256(gguf),
-            config=json.loads((out / 'train-config.json').read_text()) if (out / 'train-config.json').exists() else None)
+            elif code:
+                log('r3t training failed', seed=seed, code=code)
+            else:
+                gguf = out / 'adapter.gguf'
+                sh([PY, linfo['converter'], str(out / 'adapter'), '--base', linfo['hf_model'], '--outfile', str(gguf),
+                    '--outtype', 'f16'], cwd=ROOT)
+                shutil.copy(data / 'data-stats.json', out / 'data-stats.json')
+                for name in ('train-config.json', 'train-log.jsonl'):
+                    if (out / 'adapter' / name).exists():
+                        shutil.copy(out / 'adapter' / name, out / name)
+                for heavy in (out / 'adapter').glob('*.safetensors'):   # converted; keep the output small
+                    heavy.unlink()
+                log('r3t adapter ready', seed=seed, gguf_sha256=sha256(gguf),
+                    config=json.loads((out / 'train-config.json').read_text()) if (out / 'train-config.json').exists() else None)
+        time.sleep(30)
 
 
 def r3_input_adapter() -> Path:
@@ -1156,8 +1163,8 @@ def main(argv=None):
     if args.phase == 'r3e-train':
         r3e_train_only(smoke='smoke' in (only or []))
         return
-    if args.phase == 'r3t-train':           # e.g. "r3t-train 1 2" or "r3t-train smoke 1 2"
-        r3t_train([int(x) for x in only if x.isdigit()], smoke='smoke' in only)
+    if args.phase == 'r3t-train':           # "r3t-train smoke", or "r3t-train 1 2" (one seed per GPU)
+        r3t_smoke() if 'smoke' in only else r3t_train([int(x) for x in only if x.isdigit()])
         return
     info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b',
                                                     'adapter-eval'))
