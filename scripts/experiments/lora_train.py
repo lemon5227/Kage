@@ -189,7 +189,9 @@ def main(argv=None):
         if p_.requires_grad:
             p_.data = p_.data.float()
     trainable = sum(p_.numel() for p_ in model.parameters() if p_.requires_grad)
-    print(json.dumps({'loader': loader, 'trainable_params': trainable, 'targets': args.targets}), flush=True)
+    print(json.dumps({'loader': loader, 'trainable_params': trainable, 'targets': args.targets,
+                      'gpu_mb_after_load': [torch.cuda.memory_allocated(d) // 2**20 for d in range(torch.cuda.device_count())],
+                      'device_map': sorted(set(str(v) for v in (getattr(model, 'hf_device_map', None) or {}).values()))}), flush=True)
 
     params = [p_ for p_ in model.parameters() if p_.requires_grad]
     opt = torch.optim.AdamW(params, lr=args.lr, weight_decay=0.0)

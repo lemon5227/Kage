@@ -851,6 +851,20 @@ def r3t_train(seeds: list[int], smoke: bool = False) -> None:
         save_build(prebuilt)                    # keep the llama-server build for the next (eval) version
     sfx = '-smoke' if smoke else ''
     stop_at = START + DEADLINE_S - 1200         # converting and packaging need ~20 minutes
+    if smoke:                                   # which length cap fits two T4s? (2 steps on the 4 longest samples)
+        for cap in (8192, 7168, 6144, 5120):
+            out = OUT / f'r3t-smoke-{cap}'
+            with (OUT / f'r3t-smoke-{cap}.log').open('w') as log_file:
+                code = subprocess.run([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
+                                       '--model', linfo['hf_model'], '--out', str(out), '--smoke', '--rank', '16',
+                                       '--targets', 'safe', '--max-tokens', str(cap), '--split-gpus'], cwd=ROOT,
+                                      stdout=log_file, stderr=subprocess.STDOUT,
+                                      env={**os.environ, 'CUDA_VISIBLE_DEVICES': '0,1',
+                                           'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}).returncode
+            config = out / 'train-config.json'
+            log('r3t smoke', cap=cap, code=code,
+                config=json.loads(config.read_text()) if config.exists() else None)
+        return
     for seed in seeds:
         out = OUT / f'r3t{seed}-adapter{sfx}'
         if (out / 'adapter.gguf').exists():
