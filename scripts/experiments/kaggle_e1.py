@@ -837,7 +837,8 @@ def r3_train_only(smoke: bool = False) -> None:
 # matrix for the 7.7k-token samples (v34-v37 smokes ran out of memory even with the layers split over both GPUs),
 # so training uses causal attention in recomputed query chunks (lora_train --chunked-attention, numerically the
 # same) and flash-linear-attention for the gated-delta layers. One seed per GPU, in parallel. Same data, cap,
-# rank, targets, learning rate and epochs as R3; differences: fp16 with a loss scaler (no bf16 on T4) and the seed.
+# rank, targets, learning rate and epochs as R3; differences: fp16 with a loss scaler and the seed. (v38 smoke: 8192
+# fits one T4 at 12.5 GB; torch reports bf16 as supported on a T4 but emulates it, ~23 min per step, so fp16.)
 R3T_MAX_TOKENS = 8192
 R3T_ENV = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}
 
@@ -857,7 +858,7 @@ def r3t_setup():
 def r3t_args(data: Path, cap: int, seed: int, smoke: bool) -> list[str]:
     return ((['--smoke'] if smoke else ['--epochs', '2', '--checkpoint-every', '25'])
             + ['--rank', '16', '--lr', '1e-4', '--targets', 'safe', '--max-tokens', str(cap), '--seed', str(seed),
-               '--chunked-attention', '--val', str(data / 'val.jsonl')])
+               '--chunked-attention', '--dtype', 'fp16', '--val', str(data / 'val.jsonl')])
 
 
 def r3t_smoke() -> None:
