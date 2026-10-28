@@ -134,7 +134,7 @@ def load_model(model_dir: str, dtype=None, split: bool = False):
     for name in ('AutoModelForCausalLM', 'AutoModelForImageTextToText'):
         try:
             model = getattr(transformers, name).from_pretrained(model_dir, dtype=dtype or torch.float16,
-                                                               device_map='balanced' if split else {'': 0},
+                                                               device_map='balanced_low_0' if split else {'': 0},
                                                                low_cpu_mem_usage=True)
             return model, name
         except (ValueError, KeyError) as exc:

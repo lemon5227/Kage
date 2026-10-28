@@ -846,13 +846,17 @@ def r3t_train(seeds: list[int], smoke: bool = False) -> None:
     adapters land in OUT/r3t<seed>-adapter/adapter.gguf, where 'adapter-eval r3t<seed> ...' finds them."""
     data = prepare_r3_data()
     linfo = lora_setup()
+    # v36: without it the gated-delta (linear attention) layers run a reference PyTorch implementation: 2 smoke
+    # steps took 22 min and only a 5120 cap fitted. On the A100 it was ~5x faster with identical results.
+    fla = subprocess.run([PY, '-m', 'pip', 'install', '-q', 'flash-linear-attention'], capture_output=True, text=True)
+    log('flash-linear-attention', code=fla.returncode, err=fla.stderr[-300:])
     prebuilt = find_prebuilt()
     if prebuilt is not None:
         save_build(prebuilt)                    # keep the llama-server build for the next (eval) version
     sfx = '-smoke' if smoke else ''
     stop_at = START + DEADLINE_S - 1200         # converting and packaging need ~20 minutes
     if smoke:                                   # which length cap fits two T4s? (2 steps on the 4 longest samples)
-        for cap in (8192, 7168, 6144, 5120):
+        for cap in (8192, 6144):
             out = OUT / f'r3t-smoke-{cap}'
             with (OUT / f'r3t-smoke-{cap}.log').open('w') as log_file:
                 code = subprocess.run([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
