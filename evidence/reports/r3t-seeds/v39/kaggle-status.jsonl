@@ -1,0 +1,10 @@
+{"t": 0.0, "msg": "phase from repository control file", "phase": "r3t-train", "only": ["1", "2"]}
+{"t": 0.9, "msg": "r3 data ready", "rows": {"train": 1677, "val": 223}, "tasks": {"train": 133, "val": 18}, "dropped": {"guidance_remnant": 0, "duplicate": 0, "cap": 0}}
+{"t": 144.0, "msg": "lora preflight ok"}
+{"t": 144.0, "msg": "lora setup done", "hf_model": "/kaggle/tmp/hf-model", "torch": "2.11.0+cu128", "transformers": "5.21.0", "peft": "0.21.2", "converter": "/kaggle/tmp/llama.cpp/convert_lora_to_gguf.py"}
+{"t": 162.2, "msg": "flash-linear-attention", "install": 0, "version": "0.6.0", "err": ""}
+{"t": 167.8, "msg": "saved llama-server build for reuse", "files": ["BUILD_COMMIT", "libggml-base.so", "libggml-base.so.0", "libggml-base.so.0.24.0", "libggml-cpu.so", "libggml-cpu.so.0", "libggml-cpu.so.0.24.0", "libggml-cuda.so", "libggml-cuda.so.0", "libggml-cuda.so.0.24.0", "libggml.so", "libggml.so.0", "libggml.so.0.24.0", "libllama-common.so", "libllama-common.so.0", "libllama-common.so.0.4.1", "libllama-server-impl.so", "libllama.so", "libllama.so.0", "libllama.so.0.4.1", "libmtmd.so", "libmtmd.so.0", "libmtmd.so.0.4.1", "llama-server"]}
+{"t": 169.6, "msg": "r3t training started", "seed": 1, "gpu": 0}
+{"t": 409.7, "msg": "r3t training started", "seed": 2, "gpu": 1}
+{"t": 15812.4, "msg": "r3t training failed", "seed": 1, "code": -9}
+{"t": 38404.3, "msg": "r3t paused before the session deadline; resume in the next version", "seed": 2}
