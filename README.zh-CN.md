@@ -11,6 +11,7 @@
   <a href="#迈向可自进化的个人-agent">项目愿景</a> ·
   <a href="#研究方向">研究方向</a> ·
   <a href="#体验浏览器教学流程">开始体验</a> ·
+  <a href="#演示">演示</a> ·
   <a href="#最新进展2026-年-10-月">最新进展</a> ·
   <a href="#实验结果一个向老师学习的-4b-本地模型">实验结果</a> ·
   <a href="docs/report/kage-tech-report.md">技术报告</a> ·
@@ -18,10 +19,18 @@
   <a href="docs/project-guide.zh-CN.md">完整指南</a>
 </p>
 
+## 演示
+
+<p align="center">
+  <a href="docs/assets/demo/kage-live-demo.mp4"><img src="docs/assets/demo/kage-live-demo.gif" width="800" alt="Kage 桌面助手现场演示"></a><br>
+  <em>实时运行，66 秒，未加速：本地 4B 模型操作日历、天气、知乎、计算器和微信（联系人名字说错时先找到正确的人、确认后再发）。点击看<a href="docs/assets/demo/kage-live-demo.mp4">高清视频</a>；教学闭环演示：<a href="docs/assets/demo/kage-demo.mp4">83 秒</a>。</em>
+</p>
+
 ## 最新进展（2026 年 10 月）
 
 - **日常桌面助手，命令行优先。** 按你平时的叫法打开软件（微信、飞书、vscode，20/20）；通过真实路径读改你打开的文档（11/11，只能改请求里点名的文件）；每天 12:30 从日历和提醒事项推送日程；列出并用本地模型总结未读邮件（10 封总结 10/10 无事实错误）；通过 [OpenCLI](https://github.com/jackwener/opencli) 在你已登录的 Chrome 里读网站。本机使用日志记录每次请求、Kage 做了什么、成没成功；失败后会问你是怎么做成的并记下来。（[D 阶段证据](evidence/reports/d0/analysis.md)）
-- **先修接口，再教，最后巩固。** 观察里一个字段让网页设置题从 1/18 到 17/18；按行编辑的工具让 macOS 文本编辑从 4/18 到 17/18；老师规则放在系统提示里学生不用（3/15），要求先写出“规则在这题怎么用”才会用（10/15）。LoRA 巩固让学过的文件题 30/72 → 65/72，但没学过的写代码题 15/36 → 1/36：五组消融显示提升和遗忘来自同一批样本。[论文初稿](docs/paper/draft.md)
+- **先修接口，再教，最后巩固。** 观察里一个字段让网页设置题从 1/18 到 17/18；按行编辑的工具让 macOS 文本编辑从 4/18 到 17/18；老师规则放在系统提示里学生不用，放在任务旁边才会用。LoRA 巩固让学过的文件题 30/72 → 65/72，但没学过的写代码题 15/36 → 1/36：五组消融显示提升和遗忘来自同一批样本。[论文 v0.7（PDF）](docs/paper/v0.7/paper.pdf)
+- **预注册确认实验（全新冻结题）。** 18 道题在任何运行前写定并记哈希，各条件同一会话交错跑。按行工具让文本编辑再次从 3/18 到 18/18，第二个学生（Nemotron-3-Nano-4B）从 2/18 到 17/18。计算器规则：无规则 1/30、系统提示 6/30、任务旁 19/30、任务旁加先写计划 23/30。起作用的主要是规则放在哪，先写计划只多一点。同样的位置也让学生把规则用在不该用的地方（对照题 18/18 → 8/12）。（[证据](evidence/reports/g0-confirm/README.md)、[预注册](docs/plans/g0-confirm-prereg.md)）
 - **通过辅助功能接口操作 macOS 原生应用。** 计算器、文本编辑、系统设置（只读）：19/30 → 41/45，并有可现场复现的“做错 → 老师写规则 → 新题做对”演示（[脚本](docs/report/demo-g0.md)）。
 
 ## 迈向可自进化的个人 Agent
@@ -128,7 +137,7 @@
 
 同样的闭环也跑在桌面应用里：每个任务结束给 👍/👎；👎 后可请老师重做（每天上限 $0.05）；验证过的成功在相关度够高时作为经验用于相似的新请求；用户离开时，Kage 在临时目录里练习老师根据真实文件任务出的变体，并汇报学到了什么。轨迹存在 `~/.kage/trajectories`（可查看、可删除、可关闭），约 1/10 的真实任务留作评测。
 
-[演示视频（83 秒）](docs/assets/demo/kage-demo.mp4) · [技术报告](docs/report/kage-tech-report.md) · [相关工作](docs/report/related-work.md) · [原始证据与报告](evidence/README.md) · [工作日志](docs/worklog/2026-10-claude.md)
+[桌面现场演示（66 秒）](docs/assets/demo/kage-live-demo.mp4) · [教学闭环演示（83 秒）](docs/assets/demo/kage-demo.mp4) · [技术报告](docs/report/kage-tech-report.md) · [相关工作](docs/report/related-work.md) · [原始证据与报告](evidence/README.md) · [工作日志](docs/worklog/2026-10-claude.md)
 
 ### 个人助手交互界面
 
@@ -201,8 +210,8 @@ npm run dev
 - ✅ <strong>C · 浏览器题型与接口：</strong>冻结 Kage-Stream-Web；老师规则（发票 0/24 → 14/24）；接口消融（设置题 1/18 → 18/18）。
 - ✅ <strong>R · 巩固：</strong>带指导重做 → LoRA（A100）；回放与补写推理五组消融（R3–R3e）。
 - ✅ <strong>G0 · macOS 原生应用：</strong>辅助功能驱动、带检查器的桌面任务、让规则落到本题、现场演示。
-- ✅ <strong>论文初稿 v0.1</strong>（[初稿](docs/paper/draft.md)）。
-- ⏳ <strong>D · 日常桌面助手</strong>（[任务卡](docs/plans/cards/D-desktop.md)）：打开软件 ✅、打开的文档 ✅、日程早报 ✅、邮件 ✅、OpenCLI 网站 ✅（B站；知乎/小红书待登录）、微信截图 + 本地文字识别（进行中）、演示视频与 arXiv。
+- ✅ <strong>论文 v0.7</strong>（[PDF](docs/paper/v0.7/paper.pdf)）：加入预注册确认实验和第二个学生；LoRA 多 seed 重训正在 Kaggle T4 上跑。
+- ⏳ <strong>D · 日常桌面助手</strong>（[任务卡](docs/plans/cards/D-desktop.md)）：打开软件 ✅、打开的文档 ✅、日程早报 ✅、邮件 ✅、OpenCLI 网站 ✅（B站；知乎/小红书待登录）、微信截图 + 本地文字识别（进行中）、现场演示视频 ✅、arXiv。
 
 <strong>这个项目是怎么做的：</strong>Claude Code 负责规划实验、写任务卡、审查每一处改动和结果；定义清楚的实现工作交给作为独立 Claude Code 进程运行的 DeepSeek-V4.1-Flash 执行器（[deepseek-agent](https://github.com/lemon5227/deepseek-agent)）；实验跑在 Kaggle 免费 T4 上，老师花费走 $4 总账本。每一步都记录在[工作日志](docs/worklog/2026-10-claude.md)。
 
