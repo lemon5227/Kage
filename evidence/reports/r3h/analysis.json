@@ -1,0 +1,699 @@
+{
+ "router": {
+  "rule": "TF-IDF cosine vs 151 training instructions, adapter iff best >= 0.3",
+  "per_group": {
+   "file:learned": {
+    "tasks": 24,
+    "adapter": 24
+   },
+   "file:held_out": {
+    "tasks": 12,
+    "adapter": 0
+   },
+   "file:negative": {
+    "tasks": 12,
+    "adapter": 7
+   },
+   "web:learned": {
+    "tasks": 18,
+    "adapter": 18
+   },
+   "web:held_out": {
+    "tasks": 6,
+    "adapter": 0
+   },
+   "web:other": {
+    "tasks": 6,
+    "adapter": 6
+   }
+  },
+  "score_range": {
+   "in_family": [
+    0.895,
+    0.98
+   ],
+   "held_out": [
+    0.123,
+    0.165
+   ],
+   "negative": [
+    0.225,
+    1.0
+   ],
+   "learned_web": [
+    0.853,
+    1.0
+   ],
+   "web_other": [
+    0.145,
+    0.729
+   ]
+  },
+  "threshold_sweep": {
+   "0.1": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 12
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 12
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 6
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 6
+    }
+   },
+   "0.2": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 0
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 12
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 2
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 6
+    }
+   },
+   "0.25": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 0
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 9
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 0
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 6
+    }
+   },
+   "0.3": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 0
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 7
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 0
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 6
+    }
+   },
+   "0.4": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 0
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 4
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 0
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 5
+    }
+   },
+   "0.5": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 0
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 3
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 0
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 2
+    }
+   },
+   "0.6": {
+    "file:learned": {
+     "tasks": 24,
+     "adapter": 24
+    },
+    "file:held_out": {
+     "tasks": 12,
+     "adapter": 0
+    },
+    "file:negative": {
+     "tasks": 12,
+     "adapter": 3
+    },
+    "web:learned": {
+     "tasks": 18,
+     "adapter": 18
+    },
+    "web:held_out": {
+     "tasks": 6,
+     "adapter": 0
+    },
+    "web:other": {
+     "tasks": 6,
+     "adapter": 2
+    }
+   }
+  }
+ },
+ "sources": {
+  "R3 seed 0 (v26)": {
+   "runs": {
+    "adapter": 3,
+    "base": 3
+   },
+   "counts": {
+    "base": {
+     "in_family": "30/72",
+     "held_out": "15/36",
+     "learned_web": "10/54",
+     "web_other": "18/36",
+     "negative_misuse": "0/36"
+    },
+    "adapter": {
+     "in_family": "64/72",
+     "held_out": "1/36",
+     "learned_web": "21/54",
+     "web_other": "18/36",
+     "negative_misuse": "2/36"
+    },
+    "gated": {
+     "in_family": "64/72",
+     "held_out": "15/36",
+     "learned_web": "21/54",
+     "web_other": "18/36",
+     "negative_misuse": "2/21 on adapter-routed negatives, 0/15 on base-routed"
+    }
+   },
+   "contrasts": {
+    "gated_vs_base_in_family": {
+     "name": "R3 seed 0 (v26) gated vs base, in_family",
+     "tasks": 24,
+     "mean_diff": 0.472,
+     "improved": 14,
+     "worse": 2,
+     "tied": 8,
+     "p_exact": 0.000335693359375,
+     "p_fraction": "11/32768",
+     "boot95": [
+      0.278,
+      0.667
+     ]
+    },
+    "gated_vs_adapter_in_family": {
+     "name": "R3 seed 0 (v26) gated vs adapter, in_family",
+     "tasks": 24,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 24,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_base_held_out": {
+     "name": "R3 seed 0 (v26) gated vs base, held_out",
+     "tasks": 12,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 12,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_adapter_held_out": {
+     "name": "R3 seed 0 (v26) gated vs adapter, held_out",
+     "tasks": 12,
+     "mean_diff": 0.389,
+     "improved": 6,
+     "worse": 1,
+     "tied": 5,
+     "p_exact": 0.046875,
+     "p_fraction": "3/64",
+     "boot95": [
+      0.111,
+      0.667
+     ]
+    },
+    "gated_vs_base_learned_web": {
+     "name": "R3 seed 0 (v26) gated vs base, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.204,
+     "improved": 7,
+     "worse": 2,
+     "tied": 9,
+     "p_exact": 0.109375,
+     "p_fraction": "7/64",
+     "boot95": [
+      0.0,
+      0.407
+     ]
+    },
+    "gated_vs_adapter_learned_web": {
+     "name": "R3 seed 0 (v26) gated vs adapter, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 18,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "R3e (v32)": {
+   "runs": {
+    "adapter": 3,
+    "base": 1
+   },
+   "counts": {
+    "base": {
+     "in_family": "11/24",
+     "held_out": "7/12",
+     "learned_web": "3/18",
+     "web_other": "6/12",
+     "negative_misuse": "0/12"
+    },
+    "adapter": {
+     "in_family": "65/72",
+     "held_out": "1/36",
+     "learned_web": "22/54",
+     "web_other": "21/36",
+     "negative_misuse": "0/36"
+    },
+    "gated": {
+     "in_family": "65/72",
+     "held_out": "21/36",
+     "learned_web": "22/54",
+     "web_other": "18/36",
+     "negative_misuse": "0/21 on adapter-routed negatives, 0/5 on base-routed"
+    }
+   },
+   "contrasts": {
+    "gated_vs_base_in_family": {
+     "name": "R3e (v32) gated vs base, in_family",
+     "tasks": 24,
+     "mean_diff": 0.444,
+     "improved": 12,
+     "worse": 1,
+     "tied": 11,
+     "p_exact": 0.000732421875,
+     "p_fraction": "3/4096",
+     "boot95": [
+      0.25,
+      0.653
+     ]
+    },
+    "gated_vs_adapter_in_family": {
+     "name": "R3e (v32) gated vs adapter, in_family",
+     "tasks": 24,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 24,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_base_held_out": {
+     "name": "R3e (v32) gated vs base, held_out",
+     "tasks": 12,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 12,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_adapter_held_out": {
+     "name": "R3e (v32) gated vs adapter, held_out",
+     "tasks": 12,
+     "mean_diff": 0.556,
+     "improved": 7,
+     "worse": 1,
+     "tied": 4,
+     "p_exact": 0.015625,
+     "p_fraction": "1/64",
+     "boot95": [
+      0.25,
+      0.833
+     ]
+    },
+    "gated_vs_base_learned_web": {
+     "name": "R3e (v32) gated vs base, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.241,
+     "improved": 6,
+     "worse": 1,
+     "tied": 11,
+     "p_exact": 0.046875,
+     "p_fraction": "3/64",
+     "boot95": [
+      0.056,
+      0.444
+     ]
+    },
+    "gated_vs_adapter_learned_web": {
+     "name": "R3e (v32) gated vs adapter, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 18,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "R3 seed 1 (v41)": {
+   "runs": {
+    "adapter": 3,
+    "base": 1
+   },
+   "counts": {
+    "base": {
+     "in_family": "10/24",
+     "held_out": "5/12",
+     "learned_web": "3/18",
+     "web_other": "6/12",
+     "negative_misuse": "0/12"
+    },
+    "adapter": {
+     "in_family": "63/72",
+     "held_out": "0/36",
+     "learned_web": "26/54",
+     "web_other": "18/36",
+     "negative_misuse": "0/36"
+    },
+    "gated": {
+     "in_family": "63/72",
+     "held_out": "15/36",
+     "learned_web": "26/54",
+     "web_other": "18/36",
+     "negative_misuse": "0/21 on adapter-routed negatives, 0/5 on base-routed"
+    }
+   },
+   "contrasts": {
+    "gated_vs_base_in_family": {
+     "name": "R3 seed 1 (v41) gated vs base, in_family",
+     "tasks": 24,
+     "mean_diff": 0.458,
+     "improved": 13,
+     "worse": 2,
+     "tied": 9,
+     "p_exact": 0.00738525390625,
+     "p_fraction": "121/16384",
+     "boot95": [
+      0.208,
+      0.708
+     ]
+    },
+    "gated_vs_adapter_in_family": {
+     "name": "R3 seed 1 (v41) gated vs adapter, in_family",
+     "tasks": 24,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 24,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_base_held_out": {
+     "name": "R3 seed 1 (v41) gated vs base, held_out",
+     "tasks": 12,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 12,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_adapter_held_out": {
+     "name": "R3 seed 1 (v41) gated vs adapter, held_out",
+     "tasks": 12,
+     "mean_diff": 0.417,
+     "improved": 5,
+     "worse": 0,
+     "tied": 7,
+     "p_exact": 0.0625,
+     "p_fraction": "1/16",
+     "boot95": [
+      0.167,
+      0.667
+     ]
+    },
+    "gated_vs_base_learned_web": {
+     "name": "R3 seed 1 (v41) gated vs base, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.315,
+     "improved": 9,
+     "worse": 1,
+     "tied": 8,
+     "p_exact": 0.03515625,
+     "p_fraction": "9/256",
+     "boot95": [
+      0.074,
+      0.556
+     ]
+    },
+    "gated_vs_adapter_learned_web": {
+     "name": "R3 seed 1 (v41) gated vs adapter, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 18,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  },
+  "R3 seed 2 (v41)": {
+   "runs": {
+    "adapter": 3,
+    "base": 1
+   },
+   "counts": {
+    "base": {
+     "in_family": "10/24",
+     "held_out": "5/12",
+     "learned_web": "3/18",
+     "web_other": "6/12",
+     "negative_misuse": "0/12"
+    },
+    "adapter": {
+     "in_family": "58/72",
+     "held_out": "2/36",
+     "learned_web": "28/54",
+     "web_other": "18/36",
+     "negative_misuse": "1/36"
+    },
+    "gated": {
+     "in_family": "58/72",
+     "held_out": "15/36",
+     "learned_web": "28/54",
+     "web_other": "18/36",
+     "negative_misuse": "1/21 on adapter-routed negatives, 0/5 on base-routed"
+    }
+   },
+   "contrasts": {
+    "gated_vs_base_in_family": {
+     "name": "R3 seed 2 (v41) gated vs base, in_family",
+     "tasks": 24,
+     "mean_diff": 0.389,
+     "improved": 12,
+     "worse": 3,
+     "tied": 9,
+     "p_exact": 0.0096435546875,
+     "p_fraction": "79/8192",
+     "boot95": [
+      0.139,
+      0.625
+     ]
+    },
+    "gated_vs_adapter_in_family": {
+     "name": "R3 seed 2 (v41) gated vs adapter, in_family",
+     "tasks": 24,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 24,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_base_held_out": {
+     "name": "R3 seed 2 (v41) gated vs base, held_out",
+     "tasks": 12,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 12,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    },
+    "gated_vs_adapter_held_out": {
+     "name": "R3 seed 2 (v41) gated vs adapter, held_out",
+     "tasks": 12,
+     "mean_diff": 0.361,
+     "improved": 5,
+     "worse": 2,
+     "tied": 5,
+     "p_exact": 0.0625,
+     "p_fraction": "1/16",
+     "boot95": [
+      0.056,
+      0.667
+     ]
+    },
+    "gated_vs_base_learned_web": {
+     "name": "R3 seed 2 (v41) gated vs base, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.352,
+     "improved": 10,
+     "worse": 1,
+     "tied": 7,
+     "p_exact": 0.021484375,
+     "p_fraction": "11/512",
+     "boot95": [
+      0.093,
+      0.593
+     ]
+    },
+    "gated_vs_adapter_learned_web": {
+     "name": "R3 seed 2 (v41) gated vs adapter, learned_web",
+     "tasks": 18,
+     "mean_diff": 0.0,
+     "improved": 0,
+     "worse": 0,
+     "tied": 18,
+     "p_exact": 1.0,
+     "p_fraction": "1/1",
+     "boot95": [
+      0.0,
+      0.0
+     ]
+    }
+   }
+  }
+ }
+}

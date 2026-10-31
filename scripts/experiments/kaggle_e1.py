@@ -843,8 +843,24 @@ R3T_MAX_TOKENS = 8192
 R3T_ENV = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}
 
 
-def r3t_setup():
-    data = prepare_r3_data()
+# Training variants on R3's data and hyperparameters, one change each (docs/plans/r3f-forgetting-fix.md):
+# tag prefix -> (adapter tag prefix, extra r3_data.py arguments). "r3t-train 1 2" = R3 seeds; "g0" = R3g seed 0.
+R3T_VARIANTS = {'': ('r3t', []), 'g': ('r3g', ['--readback'])}
+
+
+def r3t_variant(tag: str) -> tuple[str, int, list[str]]:
+    """'2' -> ('r3t2', 2, []), 'g0' -> ('r3g0', 0, ['--readback'])."""
+    prefix, seed = tag.rstrip('0123456789'), tag[len(tag.rstrip('0123456789')):]
+    if prefix not in R3T_VARIANTS or not seed:
+        raise SystemExit(f'unknown r3t-train tag {tag!r}; expected <seed> or one of {sorted(R3T_VARIANTS)} + <seed>')
+    name, extra = R3T_VARIANTS[prefix]
+    return f'{name}{seed}', int(seed), extra
+
+
+def r3t_setup(variants: tuple[tuple[str, ...], ...] = ((),)):
+    """{data args: data dir} for each variant's data, plus the shared LoRA/llama setup."""
+    data = {tuple(extra): prepare_r3_data(list(extra), name='r3-data' + ''.join(extra).replace('--', '-'))
+            for extra in dict.fromkeys(variants)}
     linfo = lora_setup()
     fla = subprocess.run([PY, '-m', 'pip', 'install', '-q', 'flash-linear-attention'], capture_output=True, text=True)
     probe = subprocess.run([PY, '-c', 'import fla, sys; print(fla.__version__)'], capture_output=True, text=True)
@@ -864,6 +880,7 @@ def r3t_args(data: Path, cap: int, seed: int, smoke: bool) -> list[str]:
 def r3t_smoke() -> None:
     """2 steps on the 4 longest samples, one GPU: memory and seconds per step at R3's 8192 cap."""
     data, linfo = r3t_setup()
+    data = data[()]
     out = OUT / 'r3t-smoke'
     with (OUT / 'r3t-smoke.log').open('w') as log_file:
         code = subprocess.run([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
@@ -874,56 +891,58 @@ def r3t_smoke() -> None:
     log('r3t smoke', cap=R3T_MAX_TOKENS, code=code, config=json.loads(config.read_text()) if config.exists() else None)
 
 
-def r3t_train(seeds: list[int]) -> None:
-    """One seed per GPU in parallel; resumable across sessions (checkpoint every 25 steps, carried over from the
+def r3t_train(tags: list[str]) -> None:
+    """One adapter per GPU in parallel; resumable across sessions (checkpoint every 25 steps, carried over from the
     previous version's output); stops before the session deadline and resumes in the next one. Finished adapters
-    land in OUT/r3t<seed>-adapter/adapter.gguf, where 'adapter-eval r3t<seed> ...' finds them."""
-    data, linfo = r3t_setup()
+    land in OUT/<name>-adapter/adapter.gguf (name r3t<seed>, r3g<seed>, ...), where 'adapter-eval <name>' finds them."""
+    runs = [r3t_variant(tag) for tag in tags[:2]]
+    datas, linfo = r3t_setup(tuple(tuple(extra) for _, _, extra in runs))
     stop_at = START + DEADLINE_S - 1200         # converting and packaging need ~20 minutes
     procs = {}
-    for gpu, seed in enumerate(seeds[:2]):
-        out = OUT / f'r3t{seed}-adapter'
-        done = next(iter(INPUT.glob(f'**/e1/r3t{seed}-adapter/adapter.gguf')), None)
+    for gpu, (tag, (name, number, extra)) in enumerate(zip(tags, runs)):
+        data = datas[tuple(extra)]
+        out = OUT / f'{name}-adapter'
+        done = next(iter(INPUT.glob(f'**/e1/{name}-adapter/adapter.gguf')), None)
         if done is not None:                    # finished in an earlier version
             shutil.copytree(done.parent, out, dirs_exist_ok=True)
-            log('r3t adapter carried over', seed=seed, source=str(done.parent))
+            log('r3t adapter carried over', tag=tag, source=str(done.parent))
             continue
-        ckpt = next(iter(INPUT.glob(f'**/e1/r3t{seed}-adapter/adapter-ckpt.pt')), None)
+        ckpt = next(iter(INPUT.glob(f'**/e1/{name}-adapter/adapter-ckpt.pt')), None)
         if ckpt is not None:
             out.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ckpt, out / 'adapter-ckpt.pt')
-            log('r3t checkpoint carried over', seed=seed, source=str(ckpt))
-        log_file = (OUT / f'r3t{seed}-train.log').open('a')
-        procs[seed] = (subprocess.Popen([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
+            log('r3t checkpoint carried over', tag=tag, source=str(ckpt))
+        log_file = (OUT / f'{name}-train.log').open('a')
+        procs[tag] = (subprocess.Popen([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
                                          '--model', linfo['hf_model'], '--out', str(out / 'adapter'),
-                                         *r3t_args(data, R3T_MAX_TOKENS, seed, False)], cwd=ROOT,
+                                         *r3t_args(data, R3T_MAX_TOKENS, number, False)], cwd=ROOT,
                                         stdout=log_file, stderr=subprocess.STDOUT,
                                         env={**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}), out)
-        log('r3t training started', seed=seed, gpu=gpu)
+        log('r3t training started', tag=tag, gpu=gpu)
         time.sleep(240)                         # stagger the two 4B loads: host RAM is 32 GB
     while procs:
-        for seed, (proc, out) in list(procs.items()):
+        for tag, (proc, out) in list(procs.items()):
             code = proc.poll()
             if code is None and time.time() < stop_at:
                 continue
-            del procs[seed]
+            del procs[tag]
             if code is None:
                 proc.terminate()
                 proc.wait(timeout=300)
-                log('r3t paused before the session deadline; resume in the next version', seed=seed)
+                log('r3t paused before the session deadline; resume in the next version', tag=tag)
             elif code:
-                log('r3t training failed', seed=seed, code=code)
+                log('r3t training failed', tag=tag, code=code)
             else:
                 gguf = out / 'adapter.gguf'
                 sh([PY, linfo['converter'], str(out / 'adapter'), '--base', linfo['hf_model'], '--outfile', str(gguf),
                     '--outtype', 'f16'], cwd=ROOT)
-                shutil.copy(data / 'data-stats.json', out / 'data-stats.json')
-                for name in ('train-config.json', 'train-log.jsonl'):
-                    if (out / 'adapter' / name).exists():
-                        shutil.copy(out / 'adapter' / name, out / name)
+                shutil.copy(datas[tuple(r3t_variant(tag)[2])] / 'data-stats.json', out / 'data-stats.json')
+                for file in ('train-config.json', 'train-log.jsonl'):
+                    if (out / 'adapter' / file).exists():
+                        shutil.copy(out / 'adapter' / file, out / file)
                 for heavy in (out / 'adapter').glob('*.safetensors'):   # converted; keep the output small
                     heavy.unlink()
-                log('r3t adapter ready', seed=seed, gguf_sha256=sha256(gguf),
+                log('r3t adapter ready', tag=tag, gguf_sha256=sha256(gguf),
                     config=json.loads((out / 'train-config.json').read_text()) if (out / 'train-config.json').exists() else None)
         time.sleep(30)
 
@@ -1165,7 +1184,7 @@ def main(argv=None):
         r3e_train_only(smoke='smoke' in (only or []))
         return
     if args.phase == 'r3t-train':           # "r3t-train smoke", or "r3t-train 1 2" (one seed per GPU)
-        r3t_smoke() if 'smoke' in only else r3t_train([int(x) for x in only if x.isdigit()])
+        r3t_smoke() if 'smoke' in only else r3t_train(only)
         return
     info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b',
                                                     'adapter-eval'))

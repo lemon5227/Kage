@@ -1,7 +1,7 @@
 """R3 data: train/val splits from the R2 guidance-free samples, with leakage guards.
 
   python scripts/experiments/r3_data.py --sft FILE [--sft FILE ...] --out DIR \
-      [--cap 600] [--val-frac 0.1]
+      [--cap 600] [--val-frac 0.1] [--readback]
 
 Rows are in the R2 SFT format (task_id, family, negative, writes, tools, messages, target,
 source, attempt, guidance). Transfer families and any seed outside the practice split are
@@ -9,6 +9,12 @@ refused outright; rows whose messages still mention guidance are dropped and cou
 Exact (messages, target) duplicates are dropped, each family keeps at most --cap rows
 (uniform random subset, fixed seed), and the split is stratified by family over task_ids
 (hash order), so every family with 2+ tasks is in both splits and no task straddles them.
+
+--readback (R3g, docs/plans/r3f-forgetting-fix.md): every trained student stopped reading its file back after
+writing it (48/72 -> 0), because R2 trajectories end at "write -> done". Each row whose last message is a write_file
+result and whose target is the final answer becomes two rows: the read_file call of that path, then the original
+final answer after the read result. The read result is exact, not sampled: the workspace tool returns the content
+just written (agent_provider.read_file), so no model or task run is needed.
 """
 from __future__ import annotations
 
@@ -19,9 +25,11 @@ import json
 from pathlib import Path
 import random
 import sys
+import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from core.evolution.agent_provider import MAX_TOOL_RESULT_CHARS  # noqa: E402
 from core.evolution.stream_tasks import split_of        # noqa: E402
 
 TRANSFER_FAMILIES = ('text_normalize', 'config_migrate', 'web_form')
@@ -98,8 +106,34 @@ def reasonless_call(row: dict) -> bool:
     return bool(target.get('tool_calls')) and not (target.get('content') or '').strip()
 
 
+def _call(message: dict) -> dict | None:
+    calls = message.get('tool_calls') or []
+    return calls[0]['function'] if calls else None
+
+
+def with_readback(row: dict) -> list[dict]:
+    """[row] unchanged, or the two rows of a read-back inserted between the last write and the final answer."""
+    messages, target = row.get('messages') or [], row.get('target') or {}
+    if (row.get('negative') or target.get('tool_calls') or len(messages) < 2 or messages[-1].get('role') != 'tool'
+            or not str(messages[-1].get('content', '')).startswith('[Tool: write_file]')):
+        return [row]
+    write = _call(messages[-2])
+    if not write or write.get('name') != 'write_file':
+        return [row]
+    args = write['arguments'] if isinstance(write['arguments'], dict) else json.loads(write['arguments'])
+    path, content = args['path'], str(args['content'])
+    call = {'role': 'assistant', 'content': '',
+            'tool_calls': [{'type': 'function', 'function': {'name': 'read_file', 'arguments': {'path': path}}}]}
+    call_id = 'call_' + uuid.uuid5(uuid.NAMESPACE_URL, f"{row['task_id']}/{row.get('attempt')}/{path}").hex
+    result = {'role': 'tool', 'tool_call_id': call_id, 'content': '[Tool: read_file] ' + json.dumps(
+        {'success': True, 'path': path, 'content': content[:MAX_TOOL_RESULT_CHARS]}, ensure_ascii=False)}
+    return [{**row, 'target': call, 'readback': 'call'},
+            {**row, 'messages': messages + [call, result], 'readback': 'final'}]
+
+
 def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.1,
-          seed: int = CAP_SEED, require_reasoning: bool = False, replay: list[Path] = ()) -> dict:
+          seed: int = CAP_SEED, require_reasoning: bool = False, replay: list[Path] = (),
+          readback: bool = False) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     rows, inputs = [], []
     for path in sft_paths:
@@ -109,6 +143,10 @@ def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.
         validate(loaded, path)
         inputs.append({'path': str(path), 'sha256': sha256_file(path), 'rows': len(loaded)})
         rows += loaded
+    if readback:
+        before = len(rows)
+        rows = [out_row for row in rows for out_row in with_readback(row)]
+        readback_added = len(rows) - before
 
     dropped = {'guidance_remnant': 0, 'duplicate': 0, 'cap': 0}
     if require_reasoning:
@@ -176,6 +214,7 @@ def build(sft_paths: list[Path], out: Path, cap: int = 600, val_frac: float = 0.
         'inputs': inputs,
         'replay_inputs': replay_inputs,
         'require_reasoning': require_reasoning,
+        'readback': {'rows_added': readback_added} if readback else False,
         'cap': cap,
         'val_frac': val_frac,
         'cap_seed': seed,
@@ -201,6 +240,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help='drop tool-call targets with no explanation text (R3b)')
     parser.add_argument('--replay', type=Path, action='append', default=[],
                         help='replay rows (replay_data.py output), appended to train only')
+    parser.add_argument('--readback', action='store_true',
+                        help='insert an exact read_file of the written file before each final answer (R3g)')
     return parser
 
 
@@ -212,7 +253,7 @@ def main(argv=None) -> None:
     if not 0.0 <= args.val_frac <= 1.0:
         parser.error('--val-frac must be between 0 and 1')
     stats = build(args.sft, args.out, args.cap, args.val_frac, require_reasoning=args.require_reasoning,
-                  replay=args.replay)
+                  replay=args.replay, readback=args.readback)
     print(json.dumps({key: stats[key] for key in ('rows_out', 'tasks', 'dropped')}, ensure_ascii=False), flush=True)
 
 

@@ -159,6 +159,28 @@ def test_accepts_gzip_input(tmp_path):
 
 
 # ---------------------------------------------------------------- lora_train
+def test_readback_inserts_an_exact_read_between_the_last_write_and_the_final_answer(tmp_path):
+    write = {'role': 'assistant', 'content': '', 'tool_calls': [{'type': 'function', 'function': {
+        'name': 'write_file', 'arguments': {'path': 'ops.py', 'content': 'def f():\n    return "é"\n'}}}]}
+    result = {'role': 'tool', 'tool_call_id': 'call_x', 'content': '[Tool: write_file] {"success": true}'}
+    base = [{'role': 'system', 'content': 's'}, {'role': 'user', 'content': 'u'}, write, result]
+    final = {'role': 'assistant', 'content': 'done'}
+    rows = [_row('stream-v1-interval_merge-13000', 'interval_merge', messages=base, target=final),
+            _row('stream-v1-interval_merge-13000', 'interval_merge', messages=base[:2], target=write),
+            _row('stream-v1-read_preserve-13001', 'read_preserve', messages=base, target=final, negative=True)]
+    sft = _jsonl(tmp_path / 'sft.jsonl', rows)
+    r3_data.main(['--sft', str(sft), '--out', str(tmp_path / 'out'), '--val-frac', '0', '--readback'])
+    out = _out_rows(tmp_path / 'out')
+    call = next(r for r in out if r.get('readback') == 'call')
+    after = next(r for r in out if r.get('readback') == 'final')
+    assert call['messages'] == base and call['target']['tool_calls'][0]['function'] == {
+        'name': 'read_file', 'arguments': {'path': 'ops.py'}}
+    assert after['target'] == final and after['messages'][-2] == call['target']
+    assert after['messages'][-1]['content'] == '[Tool: read_file] {"success": true, "path": "ops.py", "content": "def f():\\n    return \\"é\\"\\n"}'
+    assert sum(1 for r in out if 'readback' not in r) == 2       # the earlier step and the negative row are untouched
+    assert json.loads((tmp_path / 'out' / 'data-stats.json').read_text())['readback'] == {'rows_added': 1}
+
+
 def test_lora_parser_accepts_val_and_defaults_to_none():
     parser = lora_train.build_parser()
     args = parser.parse_args(['--data', 'train.jsonl', '--model', 'base', '--out', 'adapter',
@@ -380,3 +402,11 @@ def test_split_is_stratified_so_every_family_with_two_tasks_is_in_both_splits(tm
     for family in ('log_aggregation', 'inspect_question', 'web_prefs'):
         assert stats['rows']['train'].get(family) and stats['rows']['val'].get(family), family
     assert 'read_preserve' not in stats['rows']['val']  # a single task stays in train
+
+
+def test_r3t_variant_tags_name_the_adapter_and_its_data_change():
+    assert kaggle_e1.r3t_variant('2') == ('r3t2', 2, [])
+    assert kaggle_e1.r3t_variant('g0') == ('r3g0', 0, ['--readback'])
+    for bad in ('x1', 'g', 'smoke'):
+        with pytest.raises(SystemExit):
+            kaggle_e1.r3t_variant(bad)
