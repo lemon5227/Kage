@@ -840,12 +840,14 @@ def r3_train_only(smoke: bool = False) -> None:
 # rank, targets, learning rate and epochs as R3; differences: fp16 with a loss scaler and the seed. (v38 smoke: 8192
 # fits one T4 at 12.5 GB; torch reports bf16 as supported on a T4 but emulates it, ~23 min per step, so fp16.)
 R3T_MAX_TOKENS = 8192
+R3F_CAP = 150                   # samples per code-replay family: ~600 rows, the size planned for R3f
 R3T_ENV = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}
 
 
 # Training variants on R3's data and hyperparameters, one change each (docs/plans/r3f-forgetting-fix.md):
 # tag prefix -> (adapter tag prefix, extra r3_data.py arguments). "r3t-train 1 2" = R3 seeds; "g0" = R3g seed 0.
-R3T_VARIANTS = {'': ('r3t', []), 'g': ('r3g', ['--readback'])}
+R3F_SFT = ROOT / 'evidence' / 'reports' / 'r3f' / 'sft-replay.jsonl.gz'      # from 'r3f-collect', committed
+R3T_VARIANTS = {'': ('r3t', []), 'g': ('r3g', ['--readback']), 'f': ('r3f', ['--sft', str(R3F_SFT)])}
 
 
 def r3t_variant(tag: str) -> tuple[str, int, list[str]]:
@@ -859,7 +861,7 @@ def r3t_variant(tag: str) -> tuple[str, int, list[str]]:
 
 def r3t_setup(variants: tuple[tuple[str, ...], ...] = ((),)):
     """{data args: data dir} for each variant's data, plus the shared LoRA/llama setup."""
-    data = {tuple(extra): prepare_r3_data(list(extra), name='r3-data' + ''.join(extra).replace('--', '-'))
+    data = {tuple(extra): prepare_r3_data(list(extra), name='r3-data' + ''.join(e for e in extra if e.startswith('--')).replace('--', '-'))
             for extra in dict.fromkeys(variants)}
     linfo = lora_setup()
     fla = subprocess.run([PY, '-m', 'pip', 'install', '-q', 'flash-linear-attention'], capture_output=True, text=True)
@@ -1138,7 +1140,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3t-train', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3t-train', 'r3f-collect', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1167,7 +1169,8 @@ def main(argv=None):
         PHASE_CAP['usd'] = C3_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
                                  'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
-                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval')
+                                 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval',
+                                 'r3f-collect')
     if args.phase == 'r3-train':
         r3_train_only(smoke='smoke' in (only or []))
         return
@@ -1187,7 +1190,7 @@ def main(argv=None):
         r3t_smoke() if 'smoke' in only else r3t_train(only)
         return
     info = (setup(teacher_config=args.phase not in ('rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b',
-                                                    'adapter-eval'))
+                                                    'adapter-eval', 'r3f-collect'))
             if needs_setup
             else json.loads((OUT / 'host.json').read_text()))
     if args.phase == 'c-cal':
@@ -1243,6 +1246,24 @@ def main(argv=None):
             root = OUT / 'rsr' / name.removeprefix('rsr-')
             done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(root)], cwd=ROOT, capture_output=True, text=True)
             log('rsr build', job=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'r3f-collect':
+        # R3f (10-31): the frozen student's own unguided solutions to four code families it is never evaluated on,
+        # as replay for the R3 data ('r3t-train f0'). No teacher, no cloud calls. "r3f-collect <seeds> <k>".
+        seeds, k = (int(only[0]), int(only[1])) if len(only or []) >= 2 else (24, 4)
+        groups = [(family, family) for family in ('rpn_eval', 'run_length', 'grid_rotate', 'version_sort')]
+        jobs = [(f'r3f-{name}', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'r3f' / name), '--port', str(18620 + i),
+                                 '--families', families, '--seeds', str(seeds), '--k', str(k), '--guidance', 'none',
+                                 '--temperature', '0.6', '--skill-runner', 'process'])
+                for i, (name, families) in enumerate(groups)]
+        run_jobs(info, jobs, 'r3f-collect')
+        for name, _ in groups:
+            done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(OUT / 'r3f' / name), '--cap', str(R3F_CAP)],
+                                  cwd=ROOT, capture_output=True, text=True)
+            log('r3f build', group=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))

@@ -31,6 +31,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from core.evolution.agent_provider import KageChainProvider            # noqa: E402
 from core.evolution.budget import BudgetConfig, BudgetTracker          # noqa: E402
+from core.evolution.code_tasks import CODE_REPLAY_FAMILIES              # noqa: E402
 from core.evolution.contracts import Candidate                         # noqa: E402
 from core.evolution.journal import Journal                             # noqa: E402
 from core.evolution.leakage import guidance_free                       # noqa: E402
@@ -74,10 +75,12 @@ def practice_task(family: str, seed: int) -> dict:
 
 def validate_collect(parser, args) -> None:
     families = [name.strip() for name in args.families.split(',') if name.strip()]
-    refused = [name for name in families if name not in COLLECT_FAMILIES]
+    # R3f: the code-replay families are the frozen student's own unguided solutions (self-distillation), never guided.
+    allowed = COLLECT_FAMILIES + (tuple(CODE_REPLAY_FAMILIES) if args.guidance == 'none' else ())
+    refused = [name for name in families if name not in allowed]
     if not families or refused:
         parser.error(f'{", ".join(refused) or "no family"} cannot be collected; allowed: '
-                     f'{", ".join(COLLECT_FAMILIES)} (transfer families stay untrained: '
+                     f'{", ".join(allowed)} (transfer families stay untrained: '
                      f'{", ".join(TRANSFER_FAMILIES)})')
     if args.seeds < 1 or args.k < 1 or args.negatives < 0:
         parser.error('--seeds and --k must be positive; --negatives must be >= 0')

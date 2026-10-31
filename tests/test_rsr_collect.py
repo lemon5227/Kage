@@ -315,3 +315,13 @@ def test_none_guidance_is_the_unguided_control():
     parser = rsr_collect.build_parser()
     args = parser.parse_args(['collect', '--root', '/tmp/x', '--families', 'web_invoice', '--guidance', 'none'])
     rsr_collect.validate_collect(parser, args)          # no memory/playbook required
+
+
+def test_code_replay_families_are_collected_only_without_guidance(tmp_path):
+    parser = rsr_collect.build_parser()
+    ok = parser.parse_args(['collect', '--root', str(tmp_path), '--families', 'rpn_eval,version_sort', '--guidance', 'none'])
+    rsr_collect.validate_collect(parser, ok)
+    guided = parser.parse_args(['collect', '--root', str(tmp_path), '--families', 'rpn_eval', '--guidance', 'demo',
+                                '--memory', str(tmp_path / 'm.jsonl')])
+    with pytest.raises(SystemExit):
+        rsr_collect.validate_collect(parser, guided)

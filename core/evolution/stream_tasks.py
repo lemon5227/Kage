@@ -546,6 +546,8 @@ NEGATIVE_FAMILIES = {'read_preserve', 'inspect_question', 'lookalike_readonly'}
 from core.evolution.browser_tasks import BROWSER_FAMILIES, BROWSER_NEGATIVE  # noqa: E402
 FAMILIES.update(BROWSER_FAMILIES)
 NEGATIVE_FAMILIES |= BROWSER_NEGATIVE
+from core.evolution.code_tasks import CODE_REPLAY_FAMILIES  # noqa: E402  (R3f self-distilled replay only)
+FAMILIES.update(CODE_REPLAY_FAMILIES)
 
 
 def make_task(family: str, seed: int) -> dict:
