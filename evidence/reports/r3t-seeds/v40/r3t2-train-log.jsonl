@@ -1,0 +1,7 @@
+{"epoch": 2, "step": 380, "train_loss": 0.084641, "val_loss": null}
+{"epoch": 2, "step": 390, "train_loss": 0.088022, "val_loss": null}
+{"epoch": 2, "step": 400, "train_loss": 0.110311, "val_loss": null}
+{"epoch": 2, "step": 410, "train_loss": 0.101714, "val_loss": null}
+{"epoch": 2, "step": 419, "train_loss": 0.102831, "val_loss": 0.116737}
+{"epoch": 3, "step": 420, "train_loss": 0.142562, "val_loss": null}
+{"epoch": 3, "step": 420, "train_loss": 0.142562, "val_loss": 0.116724}
