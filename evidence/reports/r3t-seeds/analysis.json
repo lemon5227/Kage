@@ -1,0 +1,351 @@
+{
+ "counts": {
+  "r3t1@41": {
+   "in_family": "63/72",
+   "held_out": "0/36",
+   "learned_web": "26/54"
+  },
+  "r3t2@41": {
+   "in_family": "58/72",
+   "held_out": "2/36",
+   "learned_web": "28/54"
+  },
+  "A0@41": {
+   "in_family": "10/24",
+   "held_out": "5/12",
+   "learned_web": "3/18"
+  },
+  "R3@26": {
+   "in_family": "64/72",
+   "held_out": "1/36",
+   "learned_web": "21/54"
+  },
+  "A0@26": {
+   "in_family": "30/72",
+   "held_out": "15/36",
+   "learned_web": "10/54"
+  }
+ },
+ "per_run": {
+  "r3t1@41": {
+   "in_family": [
+    21,
+    21,
+    21
+   ],
+   "held_out": [
+    0,
+    0,
+    0
+   ]
+  },
+  "r3t2@41": {
+   "in_family": [
+    20,
+    19,
+    19
+   ],
+   "held_out": [
+    1,
+    1,
+    0
+   ]
+  },
+  "A0@41": {
+   "in_family": [
+    10
+   ],
+   "held_out": [
+    5
+   ]
+  },
+  "R3@26": {
+   "in_family": [
+    22,
+    22,
+    20
+   ],
+   "held_out": [
+    1,
+    0,
+    0
+   ]
+  },
+  "A0@26": {
+   "in_family": [
+    9,
+    12,
+    9
+   ],
+   "held_out": [
+    5,
+    5,
+    5
+   ]
+  }
+ },
+ "contrasts": {
+  "r3t1_vs_anchor41_in": {
+   "name": "r3t1 vs same-session base (v41, 1 run), in-family",
+   "tasks": 24,
+   "mean_diff": 0.458,
+   "improved": 13,
+   "worse": 2,
+   "tied": 9,
+   "p_exact": 0.00738525390625,
+   "p_fraction": "121/16384",
+   "boot95": [
+    0.208,
+    0.708
+   ]
+  },
+  "r3t1_vs_anchor41_held": {
+   "name": "r3t1 vs same-session base (v41, 1 run), held-out",
+   "tasks": 12,
+   "mean_diff": -0.417,
+   "improved": 0,
+   "worse": 5,
+   "tied": 7,
+   "p_exact": 0.0625,
+   "p_fraction": "1/16",
+   "boot95": [
+    -0.667,
+    -0.167
+   ]
+  },
+  "r3t1_vs_base26_in": {
+   "name": "r3t1 vs v26 base (3 runs, other session), in-family",
+   "tasks": 24,
+   "mean_diff": 0.458,
+   "improved": 14,
+   "worse": 1,
+   "tied": 9,
+   "p_exact": 0.001220703125,
+   "p_fraction": "5/4096",
+   "boot95": [
+    0.236,
+    0.667
+   ]
+  },
+  "r3t1_vs_base26_held": {
+   "name": "r3t1 vs v26 base (3 runs, other session), held-out",
+   "tasks": 12,
+   "mean_diff": -0.417,
+   "improved": 0,
+   "worse": 6,
+   "tied": 6,
+   "p_exact": 0.03125,
+   "p_fraction": "1/32",
+   "boot95": [
+    -0.667,
+    -0.167
+   ]
+  },
+  "r3t1_vs_R3_in": {
+   "name": "r3t1 vs original R3 seed 0 (v26), in-family",
+   "tasks": 24,
+   "mean_diff": -0.014,
+   "improved": 3,
+   "worse": 2,
+   "tied": 19,
+   "p_exact": 1.0,
+   "p_fraction": "1/1",
+   "boot95": [
+    -0.167,
+    0.125
+   ]
+  },
+  "r3t1_vs_R3_held": {
+   "name": "r3t1 vs original R3 seed 0 (v26), held-out",
+   "tasks": 12,
+   "mean_diff": -0.028,
+   "improved": 0,
+   "worse": 1,
+   "tied": 11,
+   "p_exact": 1.0,
+   "p_fraction": "1/1",
+   "boot95": [
+    -0.083,
+    0.0
+   ]
+  },
+  "r3t1_vs_anchor41_web": {
+   "name": "r3t1 vs same-session base, learned web",
+   "tasks": 18,
+   "mean_diff": 0.315,
+   "improved": 9,
+   "worse": 1,
+   "tied": 8,
+   "p_exact": 0.03515625,
+   "p_fraction": "9/256",
+   "boot95": [
+    0.074,
+    0.556
+   ]
+  },
+  "r3t2_vs_anchor41_in": {
+   "name": "r3t2 vs same-session base (v41, 1 run), in-family",
+   "tasks": 24,
+   "mean_diff": 0.389,
+   "improved": 12,
+   "worse": 3,
+   "tied": 9,
+   "p_exact": 0.0096435546875,
+   "p_fraction": "79/8192",
+   "boot95": [
+    0.139,
+    0.625
+   ]
+  },
+  "r3t2_vs_anchor41_held": {
+   "name": "r3t2 vs same-session base (v41, 1 run), held-out",
+   "tasks": 12,
+   "mean_diff": -0.361,
+   "improved": 2,
+   "worse": 5,
+   "tied": 5,
+   "p_exact": 0.0625,
+   "p_fraction": "1/16",
+   "boot95": [
+    -0.667,
+    -0.056
+   ]
+  },
+  "r3t2_vs_base26_in": {
+   "name": "r3t2 vs v26 base (3 runs, other session), in-family",
+   "tasks": 24,
+   "mean_diff": 0.389,
+   "improved": 14,
+   "worse": 1,
+   "tied": 9,
+   "p_exact": 0.00213623046875,
+   "p_fraction": "35/16384",
+   "boot95": [
+    0.181,
+    0.583
+   ]
+  },
+  "r3t2_vs_base26_held": {
+   "name": "r3t2 vs v26 base (3 runs, other session), held-out",
+   "tasks": 12,
+   "mean_diff": -0.361,
+   "improved": 2,
+   "worse": 6,
+   "tied": 4,
+   "p_exact": 0.0625,
+   "p_fraction": "1/16",
+   "boot95": [
+    -0.667,
+    -0.083
+   ]
+  },
+  "r3t2_vs_R3_in": {
+   "name": "r3t2 vs original R3 seed 0 (v26), in-family",
+   "tasks": 24,
+   "mean_diff": -0.083,
+   "improved": 3,
+   "worse": 6,
+   "tied": 15,
+   "p_exact": 0.4609375,
+   "p_fraction": "59/128",
+   "boot95": [
+    -0.264,
+    0.097
+   ]
+  },
+  "r3t2_vs_R3_held": {
+   "name": "r3t2 vs original R3 seed 0 (v26), held-out",
+   "tasks": 12,
+   "mean_diff": 0.028,
+   "improved": 1,
+   "worse": 0,
+   "tied": 11,
+   "p_exact": 1.0,
+   "p_fraction": "1/1",
+   "boot95": [
+    0.0,
+    0.083
+   ]
+  },
+  "r3t2_vs_anchor41_web": {
+   "name": "r3t2 vs same-session base, learned web",
+   "tasks": 18,
+   "mean_diff": 0.352,
+   "improved": 10,
+   "worse": 1,
+   "tied": 7,
+   "p_exact": 0.021484375,
+   "p_fraction": "11/512",
+   "boot95": [
+    0.093,
+    0.593
+   ]
+  },
+  "seeds12_vs_base26_in": {
+   "name": "mean of seeds 1-2 vs v26 base, in-family",
+   "tasks": 24,
+   "mean_diff": 0.424,
+   "improved": 15,
+   "worse": 1,
+   "tied": 8,
+   "p_exact": 0.000823974609375,
+   "p_fraction": "27/32768",
+   "boot95": [
+    0.215,
+    0.611
+   ]
+  },
+  "seeds12_vs_base26_held": {
+   "name": "mean of seeds 1-2 vs v26 base, held-out",
+   "tasks": 12,
+   "mean_diff": -0.389,
+   "improved": 2,
+   "worse": 6,
+   "tied": 4,
+   "p_exact": 0.0390625,
+   "p_fraction": "5/128",
+   "boot95": [
+    -0.667,
+    -0.125
+   ]
+  },
+  "anchor41_vs_base26_in": {
+   "name": "v41 base (1 run) vs v26 base (3 runs), in-family: session drift",
+   "tasks": 24,
+   "mean_diff": 0.0,
+   "improved": 4,
+   "worse": 5,
+   "tied": 15,
+   "p_exact": 1.0,
+   "p_fraction": "1/1",
+   "boot95": [
+    -0.194,
+    0.194
+   ]
+  },
+  "anchor41_vs_base26_held": {
+   "name": "v41 base vs v26 base, held-out: session drift",
+   "tasks": 12,
+   "mean_diff": 0.0,
+   "improved": 2,
+   "worse": 2,
+   "tied": 8,
+   "p_exact": 1.0,
+   "p_fraction": "1/1",
+   "boot95": [
+    -0.25,
+    0.25
+   ]
+  }
+ },
+ "negative_misuse": {
+  "executions": "1/72",
+  "tasks": [
+   "stream-v1-lookalike_readonly-10502"
+  ]
+ },
+ "general": {
+  "r3t1": "28/30",
+  "r3t2": "28/30"
+ }
+}

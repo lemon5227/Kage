@@ -129,7 +129,7 @@
 Computer-Use Agents: A Diagnostic Case Study}
 \author{Wenbo Yan \textperiodcentered{} EURECOM, Sophia Antipolis, France \textperiodcentered{}
 yan2000926@gmail.com}
-\date{October 2026 \textperiodcentered{} v0.7}
+\date{October 2026 \textperiodcentered{} v0.8}
 
 \begin{document}
 \maketitle
@@ -160,15 +160,17 @@ the second student, which could not operate Calculator in any condition.
 action-level examples from guided rollouts raised file success on new
 instances of the trained families from 30/72 to 64/72 (14 of 24 tasks
 improved, 2 declined) while success on two untrained families fell from
-15/36 to 1/36 (6 of 12 declined, 1 improved). Follow-up variants rule
-out restoring reasoning text as a sufficient fix but do not identify a
-single mechanism. A composite desktop configuration reached 41/45; only
-its TextEdit component has a matched control, which reached the same
-score without lessons. Apart from the two pre-registered desktop
-confirmations, all results are development-set results with one training
-seed and nominal, uncorrected task-level tests. We offer a diagnostic
-order---interface, then presentation of guidance, then retention---as a
-working procedure, not as a tested algorithm.
+15/36 to 1/36 (6 of 12 declined, 1 improved); two further training seeds
+on the same data reproduced both the gain (63/72 and 58/72) and the loss
+(0/36 and 2/36). Follow-up variants rule out restoring reasoning text as
+a sufficient fix but do not identify a single mechanism. A composite
+desktop configuration reached 41/45; only its TextEdit component has a
+matched control, which reached the same score without lessons. Apart
+from the two pre-registered desktop confirmations, all results are
+development-set results; the main adapter has three training seeds and
+each follow-up variant one, and tests are nominal and uncorrected. We
+offer a diagnostic order---interface, then presentation of guidance,
+then retention---as a working procedure, not as a tested algorithm.
 \end{abstract}
 
 \section{Introduction}\label{introduction}
@@ -191,8 +193,9 @@ combine automated teacher calls, frozen benchmarks with programmatic
 checkers, developer-designed tools and prompts, and a consolidation
 stage that turns verified guided rollouts into LoRA training data. The
 study is deliberately narrow: a primary 4B student, a partial
-replication with a second 4B student on the desktop suite, one training
-seed, procedural task generators, and development-set evaluations.
+replication with a second 4B student on the desktop suite, three
+training seeds for the main adapter and one for each variant, procedural
+task generators, and development-set evaluations.
 
 Our claims, each with its evidence and its limit, are:
 
@@ -221,9 +224,10 @@ Our claims, each with its evidence and its limit, are:
 \item
   \textbf{C3 (forgetting).} Supervised fine-tuning on the student's own
   verified successes improved trained families and degraded untrained
-  ones in the same adapter. Variants that filtered targets, added
-  replay, or restored teacher-written rationales did not recover both,
-  and they do not identify a single cause.
+  ones in the same adapter, in each of three training seeds. Variants
+  that filtered targets, added replay, or restored teacher-written
+  rationales did not recover both, and they do not identify a single
+  cause.
 \item
   \textbf{Working procedure.} Rule out observation and action-interface
   causes, then the presentation of guidance, then retention, before
@@ -308,8 +312,9 @@ tasks. Successful rollouts were converted to action-level supervised
 examples after removing the guidance, split by task into training and
 validation sets, and used for LoRA training (rank 16 on attention-output
 and MLP projections, response-only loss, two epochs, learning rate
-\(10^{-4}\), maximum sequence length 8,192, seed 0). Adapters were
-evaluated without retrieved guidance or teacher assistance.
+\(10^{-4}\), maximum sequence length 8,192, seed 0). Two further seeds
+of R3 used the same data and hyperparameters (Section 6.2). Adapters
+were evaluated without retrieved guidance or teacher assistance.
 
 \textbf{Cost scope.} The cloud-teacher ledger is capped at US\$4.00 and
 recorded US\$1.83 of cumulative use on 28 October 2026, including hosted
@@ -363,8 +368,9 @@ variants reused during development \\
 G0 confirmation & 12 Calculator + 6 TextEdit, new & pre-registered;
 three repeats; all arms interleaved in one session \\
 R3 series & 24 learned-file, 12 held-out, 12 negative, 18 learned-web &
-three repeats per adapter; one training seed; R3b--R3e with single-run
-base anchors \\
+three repeats per adapter; three training seeds for R3, one for
+R3b--R3e; single-run base anchors for R3b--R3e and the seed
+replication \\
 D7 (deployment) & 30 authored utterances per set & one prediction each;
 intent label only \\
 \end{longtable}
@@ -884,6 +890,74 @@ detectable in-family gain (+0.06 and +0.01) with held-out differences of
 noisier than the three-run base, so these variant contrasts are
 descriptive.
 
+\textbf{Training seeds.} To test whether the R3 result depends on one
+training run, we retrained R3 with seeds 1 and 2 on the same 1,677
+examples (identical data hash) and hyperparameters. Only the hardware
+differed: seed 0 was trained on an A100 in bf16, seeds 1 and 2 on a T4
+in fp16, with exactly computed causal attention in query blocks of 1,024
+tokens to fit the 8,192-token limit in 16 GB. Both adapters were
+evaluated in one later session under the R3 protocol, with one base run
+as the anchor (Table 9).
+
+\emph{Table 9. R3 training seeds (executions; three inference runs per
+adapter).}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Adapter
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Training
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Learned files (/72)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Held-out files (/36)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Learned web (/54)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Negative skill misuse (/36)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+General (/30)
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+R3, seed 0 & A100, bf16 & 64 (22, 22, 20) & 1 (1, 0, 0) & 21 & 2 & 28 \\
+R3, seed 1 & T4, fp16 & 63 (21, 21, 21) & 0 (0, 0, 0) & 26 & 0 & 28 \\
+R3, seed 2 & T4, fp16 & 58 (20, 19, 19) & 2 (1, 1, 0) & 28 & 1 & 28 \\
+Base, seed-session anchor (1 run) & --- & 10/24 & 5/12 & 3/18 & 0/12 &
+--- \\
+\end{longtable}
+}
+
+Both seeds reproduce both effects. Against the same-session anchor, seed
+1 gained in-family (+0.46; 13 tasks improved, 2 declined;
+\(p=121/16{,}384\)) and lost on held-out families (\ensuremath{-}0.42; 0 improved, 5
+declined; \(p=1/16\)); seed 2 likewise (+0.39, 12/3, \(p=79/8{,}192\);
+\ensuremath{-}0.36, 2/5, \(p=1/16\)). With five or seven untied held-out tasks
+against a single anchor run, \(p=1/16\) is close to the smallest
+attainable value. The anchor matched the earlier three-run base exactly
+in totals (10/24 and 5/12 against 30/72 and 15/36), and against that
+base the held-out decline is \(p=1/32\) for seed 1 and \(1/16\) for seed
+2; averaging the two seeds, 15 in-family tasks improved and 1 declined
+(\(p=27/32{,}768\)), and 6 held-out tasks declined and 2 improved
+(\(p=5/128\)). Neither seed differs detectably from seed 0 (in-family
+\ensuremath{-}0.01 and \ensuremath{-}0.08, \(p=1\) and \(59/128\); held-out \ensuremath{-}0.03 and +0.03,
+\(p=1\)). Learned web tasks also improved for both (+0.32 and +0.35;
+\(p=9/256\) and \(11/512\)). Seed 2 made one skill call on the same
+read-only look-alike family that seed 0 misused. The trade-off is
+therefore not an artifact of one training run; it remains a result for
+one dataset, one model, and one hyperparameter setting.
+
 R3 also issued skill calls on read-only negative tasks in 2 of 36
 executions; both were on the same look-alike task (two of its three
 runs) and failed it, and neither run wrote a file. The base model and
@@ -935,8 +1009,8 @@ while holding model and task fixed, and R3b retained more held-out
 success despite reduced verification. Testing it requires controlled
 verification interventions and training data that keep successful
 checking steps; testing replay explanations requires matched amounts,
-source composition, exposure, and several training seeds. None of these
-experiments is claimed here.
+source composition, exposure, and several training seeds per variant
+(only R3 has more than one). None of these experiments is claimed here.
 
 \section{Second student}\label{second-student}
 
@@ -1068,16 +1142,18 @@ sampling (Dror et al., 2018).
 status}\label{limitations-and-reproduction-status}
 
 The study uses one primary model, a partial desktop replication with a
-second, one training seed per adapter, procedural task families, a small
-desktop suite, and one user's deployment. Repeated runs characterize
-inference variability but do not add independent tasks or training
-replicates. Developer inspection of evaluation failures influenced later
-prompts, tools, and training variants. A pre-registered confirmation
-exists only for the desktop tool and rule-placement results; it covers
-one rule family, eighteen developer-written tasks, and one session per
-student. Cross-session single-run anchors for R3b--R3e, unequal training
-exposure across variants, a composite final desktop configuration, and
-nominal tests without multiplicity correction further limit causal
+second, three training seeds for the main adapter but one for each
+variant, procedural task families, a small desktop suite, and one user's
+deployment. Repeated runs characterize inference variability but do not
+add independent tasks; the two extra R3 seeds were trained in fp16 on
+different hardware from seed 0, so seed and precision are not separated.
+Developer inspection of evaluation failures influenced later prompts,
+tools, and training variants. A pre-registered confirmation exists only
+for the desktop tool and rule-placement results; it covers one rule
+family, eighteen developer-written tasks, and one session per student.
+Cross-session single-run anchors for R3b--R3e, unequal training exposure
+across variants, a composite final desktop configuration, and nominal
+tests without multiplicity correction further limit causal
 interpretation.
 
 \textbf{Deployment note.} In daily use, a hosted decision model (Clef)
@@ -1101,7 +1177,7 @@ offline scripts that recompute every table and test from the raw
 archives (\texttt{docs/paper/v0.5-support/verify.py},
 \texttt{make\_figures.py}). Reproduction is incomplete: adapters are in
 private storage, the evidence checksum index stops at archive v31 (v32,
-v33, G0, D7, and the second-student runs are not covered), and the
+v33, v41, G0, D7, and the second-student runs are not covered), and the
 daily-use logs contain private content. A release should provide
 adapters or reconstruction instructions, complete checksums, environment
 versions, and sanitized timing data.
@@ -1123,12 +1199,12 @@ tasks. Rules placed beside the task were used, and the plan added
 little; the same placement made the student apply a rule where it did
 not hold, and the effect did not reproduce with the second student,
 which lacked the underlying Calculator skill. Consolidation improved
-trained families while degrading two excluded families; follow-up
-variants narrow the explanations without identifying a mechanism, and
-the adapter once misused a skill on a read-only task. The practical
-lesson is to examine the interface and the presentation of guidance
-before attributing a failure to capability, and to measure retention
-whenever weights change.
+trained families while degrading two excluded families, in each of three
+training seeds; follow-up variants narrow the explanations without
+identifying a mechanism, and the adapter once misused a skill on a
+read-only task. The practical lesson is to examine the interface and the
+presentation of guidance before attributing a failure to capability, and
+to measure retention whenever weights change.
 
 \small
 
@@ -1267,11 +1343,14 @@ statistics files \\
 Consolidation (R3 series) & \texttt{evidence/kaggle/v26},
 \texttt{v29}--\texttt{v32}; \texttt{evidence/reports/r3*}; saved
 \texttt{train-config.json} files \\
+R3 training seeds & \texttt{evidence/kaggle/v41-results.tar.gz}
+(evaluation); \texttt{evidence/reports/r3t-seeds/} (training logs
+v39--v40, \texttt{analysis.json}) \\
 Deployment routing (D7) & \texttt{evidence/reports/d7};
 \texttt{eval/intent\_v1} \\
 Tables, tests, figures & \texttt{docs/paper/v0.5-support/verify.py}
 (writes \texttt{verify.json});
-\texttt{docs/paper/v0.7-support/make\_figures.py} \\
+\texttt{docs/paper/v0.8-support/make\_figures.py} \\
 \end{longtable}
 }
 
@@ -1367,7 +1446,10 @@ All tables and task-level tests &
 Confirmation analysis &
 \texttt{python3\ evidence/reports/g0-confirm/analyze.py} (writes
 \texttt{analysis.json}) \\
-Figures & \texttt{python3\ docs/paper/v0.7-support/make\_figures.py} \\
+Seed replication &
+\texttt{python3\ evidence/reports/r3t-seeds/analyze.py} (writes
+\texttt{analysis.json}) \\
+Figures & \texttt{python3\ docs/paper/v0.8-support/make\_figures.py} \\
 Desktop runs (G0, second student) &
 \texttt{scripts/experiments/desktop\_run.py\ -\/-arm\ a0\ -\/-runs\ 3\ -\/-tasks\ \ldots{}\ -\/-interface\ v2/v4/v5\ {[}-\/-lessons\ \ldots{}\ -\/-lesson-mode\ plan/plan-only{]}};
 \texttt{scripts/experiments/g0\_replicate.sh} with
@@ -1378,8 +1460,10 @@ File and browser runs (E-1, C4, R3 evaluation) &
 on a Kaggle T4 (\texttt{docs/development/kaggle-runbook.md}) \\
 Consolidation training & phases \texttt{r3-train} \ldots{}
 \texttt{r3e-train} of the same script on an A100; configurations in
-\texttt{evidence/reports/r3*/train-config.json} \\
-Paper & \texttt{docs/paper/v0.7/build.sh} (pandoc + tectonic) \\
+\texttt{evidence/reports/r3*/train-config.json}; extra seeds: phase
+\texttt{r3t-train\ 1\ 2} on two T4s (resumable across sessions), then
+\texttt{adapter-eval\ r3t1\ r3t2} \\
+Paper & \texttt{docs/paper/v0.8/build.sh} (pandoc + tectonic) \\
 \end{longtable}
 }
 
