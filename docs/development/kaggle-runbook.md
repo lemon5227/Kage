@@ -49,6 +49,7 @@
 | 22 | Colab：训练完成后运行时“因长时间无活动断开”，`/content` 清空，适配器丢失 | 训练在后台进程里，单元格空闲；Colab Pro 空闲约一小时后回收虚拟机 | 训练放前台单元格（`colab_r3.sh run`），同一单元格末尾 `files.download(...)`，训练一结束就落到本机 |
 | 23 | Colab：前台单元格训练约 36 分钟后运行时仍被断开（“未连接到代码执行程序”），两个排队单元格均无产出 | 运行时被平台回收（可能是 A100 抢占；笔记本同时有“自动保存失败”冲突），前台运行也不保证 | 工作目录放在 Google Drive（`KAGE_WORK=/content/drive/MyDrive/kage/work`），训练每 25 步写可续训检查点（`lora_train --checkpoint-every`），数据/候选池/LESS 热身与打分/已完成训练都做“已有就跳过”；断开后重连、重跑同一命令即可接着做；冒烟用独立的 `-smoke` 路径 |
 | 24 | Colab 计算单元 200 → 138（两天约 62 CU，A100 约 5.3 CU/小时） | 运行时只要连着就计费：训练结束后空闲、挂载失败后空等、被回收前的空转都在扣 | 训练单元格最后一行加 `from google.colab import runtime; runtime.unassign()`，做完立即释放；不再用后台进程训练；每次开新运行时前确认上一个已断开 |
+| 25 | v45：运行 13 分钟后状态变成 `CANCEL_ACKNOWLEDGED`，日志无报错直接停 | 编辑页左下角“Active Events”里正在运行的版本条目本身带停止操作，用自动化点它的中心会取消运行 | **不要点运行中的条目**；看日志用 `/code/<用户>/<笔记>/log?scriptVersionId=<id>`（id 从已完成条目或新开的标签页里取），或读编辑页控制台最后一行；被取消后同 phase 直接重新 Save & Run All（输入不受影响） |
 
 ## Colab A100 训练（10-21 起，用户的 Colab Pro 计算单元）
 
