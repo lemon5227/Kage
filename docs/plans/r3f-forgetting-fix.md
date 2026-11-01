@@ -23,5 +23,5 @@ R3 系列五个版本：学过的题 30→64/72，留出题 15→1/36；提升�
 
 ## 进展（10-31）
 - R3h：离线完成，见 `evidence/reports/r3h/README.md`（门控保住学过题提升、留出题回到原学生；不是修复）。
-- R3g：数据改为精确插入读回步骤（不重新采集，见 `r3_data.py --readback`）；Kaggle v42 训练两个 seed。
-- R3f：新增 4 个回放专用编程族（`core/evolution/code_tasks.py`），采集 phase `r3f-collect` 已就绪，排在 R3g 训练之后。
+- R3g：完成（v42–v44，`evidence/reports/r3g/README.md`）。读回率 0 → 100%，学过 61、69/72，留出 5/36、5/36——不满足条件。原学生在留出题上也从不“读回后改写”，读回不是留出题塌的原因。
+- R3f：新增 4 个回放专用编程族（`core/evolution/code_tasks.py`），采集 phase `r3f-collect` 已就绪；R3g 评测后启动（v45）。

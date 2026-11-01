@@ -1,0 +1,342 @@
+{
+ "counts": {
+  "r3g0@44": {
+   "in_family": "61/72",
+   "held_out": "5/36",
+   "learned_web": "21/54"
+  },
+  "r3g1@44": {
+   "in_family": "69/72",
+   "held_out": "5/36",
+   "learned_web": "25/54"
+  },
+  "A0@44": {
+   "in_family": "11/24",
+   "held_out": "7/12",
+   "learned_web": "3/18"
+  },
+  "r3t1@41": {
+   "in_family": "63/72",
+   "held_out": "0/36"
+  },
+  "r3t2@41": {
+   "in_family": "58/72",
+   "held_out": "2/36"
+  },
+  "A0@26": {
+   "in_family": "30/72",
+   "held_out": "15/36"
+  }
+ },
+ "readback": {
+  "v44": {
+   "A0-r1": {
+    "held_out": "7/12",
+    "all": "15/30",
+    "learned": "8/18"
+   },
+   "r3g0-r1": {
+    "held_out": "12/12",
+    "all": "37/37",
+    "learned": "24/24",
+    "other": "1/1"
+   },
+   "r3g0-r2": {
+    "held_out": "12/12",
+    "all": "37/37",
+    "learned": "24/24",
+    "other": "1/1"
+   },
+   "r3g0-r3": {
+    "held_out": "12/12",
+    "all": "37/37",
+    "learned": "24/24",
+    "other": "1/1"
+   },
+   "r3g1-r1": {
+    "held_out": "12/12",
+    "all": "36/36",
+    "learned": "24/24"
+   },
+   "r3g1-r2": {
+    "held_out": "12/12",
+    "all": "36/36",
+    "learned": "24/24"
+   },
+   "r3g1-r3": {
+    "held_out": "12/12",
+    "all": "36/36",
+    "learned": "24/24"
+   }
+  },
+  "v41": {
+   "A0-r1": {
+    "held_out": "9/12",
+    "all": "17/34",
+    "learned": "7/20",
+    "other": "1/2"
+   },
+   "r3t1-r1": {
+    "held_out": "0/12",
+    "all": "0/37",
+    "learned": "0/24",
+    "other": "0/1"
+   },
+   "r3t1-r2": {
+    "held_out": "0/12",
+    "all": "0/36",
+    "learned": "0/24"
+   },
+   "r3t1-r3": {
+    "held_out": "0/12",
+    "all": "0/37",
+    "learned": "0/24",
+    "other": "0/1"
+   },
+   "r3t2-r1": {
+    "held_out": "0/12",
+    "all": "1/38",
+    "learned": "0/24",
+    "other": "1/2"
+   },
+   "r3t2-r2": {
+    "held_out": "0/12",
+    "all": "0/37",
+    "learned": "0/24",
+    "other": "0/1"
+   },
+   "r3t2-r3": {
+    "held_out": "0/12",
+    "all": "1/38",
+    "learned": "0/24",
+    "other": "1/2"
+   }
+  }
+ },
+ "contrasts": {
+  "r3g0_vs_anchor44_in": {
+   "name": "r3g0 vs same-session base (1 run), in",
+   "tasks": 24,
+   "mean_diff": 0.389,
+   "improved": 11,
+   "worse": 1,
+   "tied": 12,
+   "p_exact": 0.00634765625,
+   "p_fraction": "13/2048",
+   "boot95": [
+    0.167,
+    0.611
+   ]
+  },
+  "r3g0_vs_base26_in": {
+   "name": "r3g0 vs v26 base (3 runs), in",
+   "tasks": 24,
+   "mean_diff": 0.431,
+   "improved": 14,
+   "worse": 2,
+   "tied": 8,
+   "p_exact": 0.002197265625,
+   "p_fraction": "9/4096",
+   "boot95": [
+    0.208,
+    0.639
+   ]
+  },
+  "r3g0_vs_anchor44_held": {
+   "name": "r3g0 vs same-session base (1 run), held",
+   "tasks": 12,
+   "mean_diff": -0.444,
+   "improved": 1,
+   "worse": 7,
+   "tied": 4,
+   "p_exact": 0.0703125,
+   "p_fraction": "9/128",
+   "boot95": [
+    -0.778,
+    -0.083
+   ]
+  },
+  "r3g0_vs_base26_held": {
+   "name": "r3g0 vs v26 base (3 runs), held",
+   "tasks": 12,
+   "mean_diff": -0.278,
+   "improved": 1,
+   "worse": 6,
+   "tied": 5,
+   "p_exact": 0.171875,
+   "p_fraction": "11/64",
+   "boot95": [
+    -0.556,
+    0.028
+   ]
+  },
+  "r3g0_vs_anchor44_web": {
+   "name": "r3g0 vs same-session base, learned web",
+   "tasks": 18,
+   "mean_diff": 0.222,
+   "improved": 7,
+   "worse": 1,
+   "tied": 10,
+   "p_exact": 0.1015625,
+   "p_fraction": "13/128",
+   "boot95": [
+    -0.0,
+    0.444
+   ]
+  },
+  "r3g1_vs_anchor44_in": {
+   "name": "r3g1 vs same-session base (1 run), in",
+   "tasks": 24,
+   "mean_diff": 0.5,
+   "improved": 13,
+   "worse": 1,
+   "tied": 10,
+   "p_exact": 0.0003662109375,
+   "p_fraction": "3/8192",
+   "boot95": [
+    0.278,
+    0.708
+   ]
+  },
+  "r3g1_vs_base26_in": {
+   "name": "r3g1 vs v26 base (3 runs), in",
+   "tasks": 24,
+   "mean_diff": 0.542,
+   "improved": 15,
+   "worse": 0,
+   "tied": 9,
+   "p_exact": 6.103515625e-05,
+   "p_fraction": "1/16384",
+   "boot95": [
+    0.361,
+    0.722
+   ]
+  },
+  "r3g1_vs_anchor44_held": {
+   "name": "r3g1 vs same-session base (1 run), held",
+   "tasks": 12,
+   "mean_diff": -0.444,
+   "improved": 2,
+   "worse": 7,
+   "tied": 3,
+   "p_exact": 0.05078125,
+   "p_fraction": "13/256",
+   "boot95": [
+    -0.778,
+    -0.111
+   ]
+  },
+  "r3g1_vs_base26_held": {
+   "name": "r3g1 vs v26 base (3 runs), held",
+   "tasks": 12,
+   "mean_diff": -0.278,
+   "improved": 2,
+   "worse": 5,
+   "tied": 5,
+   "p_exact": 0.125,
+   "p_fraction": "1/8",
+   "boot95": [
+    -0.556,
+    -0.0
+   ]
+  },
+  "r3g1_vs_anchor44_web": {
+   "name": "r3g1 vs same-session base, learned web",
+   "tasks": 18,
+   "mean_diff": 0.296,
+   "improved": 10,
+   "worse": 1,
+   "tied": 7,
+   "p_exact": 0.0185546875,
+   "p_fraction": "19/1024",
+   "boot95": [
+    0.093,
+    0.5
+   ]
+  },
+  "r3g_vs_r3t_in": {
+   "name": "mean of R3g seeds vs mean of R3 seeds 1-2 (v41), in-family",
+   "tasks": 24,
+   "mean_diff": 0.062,
+   "improved": 5,
+   "worse": 2,
+   "tied": 17,
+   "p_exact": 0.40625,
+   "p_fraction": "13/32",
+   "boot95": [
+    -0.042,
+    0.181
+   ]
+  },
+  "r3g_vs_r3t_held": {
+   "name": "mean of R3g seeds vs mean of R3 seeds 1-2 (v41), held-out",
+   "tasks": 12,
+   "mean_diff": 0.111,
+   "improved": 4,
+   "worse": 1,
+   "tied": 7,
+   "p_exact": 0.1875,
+   "p_fraction": "3/16",
+   "boot95": [
+    0.0,
+    0.236
+   ]
+  }
+ },
+ "held_out_repair": {
+  "v44": {
+   "A0": {
+    "tasks": 12,
+    "passed": 7,
+    "read_back": 7,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3g0": {
+    "tasks": 36,
+    "passed": 5,
+    "read_back": 36,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3g1": {
+    "tasks": 36,
+    "passed": 5,
+    "read_back": 36,
+    "rewrite_after_read_back": 2,
+    "passed_after_rewrite": 0
+   }
+  },
+  "v41": {
+   "A0": {
+    "tasks": 12,
+    "passed": 5,
+    "read_back": 9,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3t1": {
+    "tasks": 36,
+    "passed": 0,
+    "read_back": 0,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3t2": {
+    "tasks": 36,
+    "passed": 2,
+    "read_back": 0,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   }
+  }
+ },
+ "negative_misuse": {
+  "executions": "0/72",
+  "tasks": []
+ },
+ "general": {
+  "r3g0": "28/30",
+  "r3g1": "28/30"
+ }
+}
