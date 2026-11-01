@@ -1,0 +1,13 @@
+{"epoch": 1, "step": 10, "train_loss": 0.222907, "val_loss": null}
+{"epoch": 1, "step": 20, "train_loss": 0.204169, "val_loss": null}
+{"epoch": 1, "step": 30, "train_loss": 0.177949, "val_loss": null}
+{"epoch": 1, "step": 40, "train_loss": 0.150121, "val_loss": null}
+{"epoch": 1, "step": 50, "train_loss": 0.166064, "val_loss": null}
+{"epoch": 1, "step": 60, "train_loss": 0.151827, "val_loss": null}
+{"epoch": 1, "step": 70, "train_loss": 0.135567, "val_loss": null}
+{"epoch": 1, "step": 80, "train_loss": 0.114839, "val_loss": null}
+{"epoch": 1, "step": 90, "train_loss": 0.131334, "val_loss": null}
+{"epoch": 1, "step": 100, "train_loss": 0.118756, "val_loss": null}
+{"epoch": 1, "step": 110, "train_loss": 0.139472, "val_loss": null}
+{"epoch": 1, "step": 120, "train_loss": 0.103122, "val_loss": null}
+{"epoch": 1, "step": 130, "train_loss": 0.131493, "val_loss": null}
