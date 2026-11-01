@@ -1,0 +1,31 @@
+{
+ "families": {
+  "grid_rotate": {
+   "tasks": 24,
+   "attempts": 96,
+   "successes": 0,
+   "yield": 0.0,
+   "samples_kept": 0,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  }
+ },
+ "no_guidance": {},
+ "totals": {
+  "tasks": 24,
+  "attempts": 96,
+  "successes": 0,
+  "yield": 0.0,
+  "samples_kept": 0,
+  "dropped": {
+   "guidance_not_removed": 0,
+   "duplicate": 0,
+   "cap": 0,
+   "no_trace": 0
+  }
+ }
+}

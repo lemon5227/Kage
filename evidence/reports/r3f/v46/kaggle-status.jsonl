@@ -1,0 +1,37 @@
+{"t": 0.0, "msg": "phase from repository control file", "phase": "r3f-collect", "only": []}
+{"t": 14.6, "msg": "reused prebuilt llama-server", "source": "/kaggle/input/notebooks/lemon5227/notebookf3ff1d131c/llama-bin"}
+{"t": 14.7, "msg": "saved llama-server build for reuse", "files": ["BUILD_COMMIT", "libggml-base.so", "libggml-base.so.0", "libggml-base.so.0.24.0", "libggml-cpu.so", "libggml-cpu.so.0", "libggml-cpu.so.0.24.0", "libggml-cuda.so", "libggml-cuda.so.0", "libggml-cuda.so.0.24.0", "libggml.so", "libggml.so.0", "libggml.so.0.24.0", "libllama-common.so", "libllama-common.so.0", "libllama-common.so.0.4.1", "libllama-server-impl.so", "libllama.so", "libllama.so.0", "libllama.so.0.4.1", "libmtmd.so", "libmtmd.so.0", "libmtmd.so.0.4.1", "llama-server"]}
+{"t": 48.4, "msg": "kv cache", "type": "q8_0", "max_parallel": 4, "gpus": ["Tesla T4, 15360 MiB", "Tesla T4, 15360 MiB"]}
+{"t": 48.4, "msg": "setup done", "gpus": ["Tesla T4, 15360 MiB", "Tesla T4, 15360 MiB"], "repo_head": "912a35809c2172428cadf79a0d30d18d08345d9b"}
+{"t": 48.4, "msg": "r3f-collect started", "jobs": ["r3f-rpn_eval", "r3f-run_length", "r3f-grid_rotate", "r3f-version_sort"], "max_parallel": 4}
+{"t": 48.4, "msg": "r3f-rpn_eval launched", "attempt": 1, "gpu": 0}
+{"t": 68.4, "msg": "r3f-run_length launched", "attempt": 1, "gpu": 1}
+{"t": 88.4, "msg": "r3f-grid_rotate launched", "attempt": 1, "gpu": 0}
+{"t": 108.4, "msg": "r3f-version_sort launched", "attempt": 1, "gpu": 1}
+{"t": 128.5, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4271, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5971,15360"]}
+{"t": 428.6, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4306, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 728.7, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4583, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 1028.7, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4576, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 1328.8, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4685, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 1628.9, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4631, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 1929.0, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4878, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 2229.1, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 5009, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 2529.1, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4946, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 2829.2, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 5107, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 3129.3, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 4967, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 3429.4, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 5269, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 3729.5, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-rpn_eval", "r3f-run_length", "r3f-version_sort"], "ram_used_mb": 5125, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "5983,15360"]}
+{"t": 3759.5, "msg": "r3f-run_length exit", "code": 0, "attempt": 1, "ram_used_mb": 4101, "ram_total_mb": 32098, "gpu_mb": ["5983,15360", "2993,15360"]}
+{"t": 3984.6, "msg": "r3f-rpn_eval exit", "code": 0, "attempt": 1, "ram_used_mb": 3254, "ram_total_mb": 32098, "gpu_mb": ["2993,15360", "2993,15360"]}
+{"t": 4029.6, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-version_sort"], "ram_used_mb": 3309, "ram_total_mb": 32098, "gpu_mb": ["2993,15360", "2993,15360"]}
+{"t": 4329.7, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-version_sort"], "ram_used_mb": 3248, "ram_total_mb": 32098, "gpu_mb": ["2993,15360", "2993,15360"]}
+{"t": 4629.7, "msg": "resources", "running": ["r3f-grid_rotate", "r3f-version_sort"], "ram_used_mb": 3301, "ram_total_mb": 32098, "gpu_mb": ["2993,15360", "2993,15360"]}
+{"t": 4644.8, "msg": "r3f-grid_rotate exit", "code": 0, "attempt": 1, "ram_used_mb": 2366, "ram_total_mb": 32098, "gpu_mb": ["0,15360", "2993,15360"]}
+{"t": 4929.8, "msg": "resources", "running": ["r3f-version_sort"], "ram_used_mb": 2446, "ram_total_mb": 32098, "gpu_mb": ["0,15360", "2993,15360"]}
+{"t": 5229.9, "msg": "resources", "running": ["r3f-version_sort"], "ram_used_mb": 2412, "ram_total_mb": 32098, "gpu_mb": ["0,15360", "2993,15360"]}
+{"t": 5274.9, "msg": "r3f-version_sort exit", "code": 0, "attempt": 1, "ram_used_mb": 1349, "ram_total_mb": 32098, "gpu_mb": ["0,15360", "0,15360"]}
+{"t": 5291.7, "msg": "r3f build", "group": "rpn_eval", "code": 0, "out": "{\"tasks\": 24, \"attempts\": 96, \"successes\": 88, \"yield\": 0.9167, \"samples_kept\": 150, \"dropped\": {\"guidance_not_removed\": 0, \"duplicate\": 0, \"cap\": 248, \"no_trace\": 0}, \"samples\": 150}", "err": ""}
+{"t": 5293.4, "msg": "r3f build", "group": "run_length", "code": 0, "out": "{\"tasks\": 24, \"attempts\": 96, \"successes\": 90, \"yield\": 0.9375, \"samples_kept\": 150, \"dropped\": {\"guidance_not_removed\": 0, \"duplicate\": 0, \"cap\": 227, \"no_trace\": 0}, \"samples\": 150}", "err": ""}
+{"t": 5295.0, "msg": "r3f build", "group": "grid_rotate", "code": 0, "out": "{\"tasks\": 24, \"attempts\": 96, \"successes\": 0, \"yield\": 0.0, \"samples_kept\": 0, \"dropped\": {\"guidance_not_removed\": 0, \"duplicate\": 0, \"cap\": 0, \"no_trace\": 0}, \"samples\": 0}", "err": ""}
+{"t": 5296.7, "msg": "r3f build", "group": "version_sort", "code": 0, "out": "{\"tasks\": 24, \"attempts\": 96, \"successes\": 14, \"yield\": 0.1458, \"samples_kept\": 63, \"dropped\": {\"guidance_not_removed\": 0, \"duplicate\": 0, \"cap\": 0, \"no_trace\": 0}, \"samples\": 63}", "err": ""}
+{"t": 5297.7, "msg": "packaged", "tarball": "/kaggle/working/e1-results.tar.gz"}

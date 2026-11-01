@@ -1,0 +1,31 @@
+{
+ "families": {
+  "version_sort": {
+   "tasks": 24,
+   "attempts": 96,
+   "successes": 14,
+   "yield": 0.1458,
+   "samples_kept": 63,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 0,
+    "no_trace": 0
+   }
+  }
+ },
+ "no_guidance": {},
+ "totals": {
+  "tasks": 24,
+  "attempts": 96,
+  "successes": 14,
+  "yield": 0.1458,
+  "samples_kept": 63,
+  "dropped": {
+   "guidance_not_removed": 0,
+   "duplicate": 0,
+   "cap": 0,
+   "no_trace": 0
+  }
+ }
+}

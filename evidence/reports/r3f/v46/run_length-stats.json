@@ -1,0 +1,31 @@
+{
+ "families": {
+  "run_length": {
+   "tasks": 24,
+   "attempts": 96,
+   "successes": 90,
+   "yield": 0.9375,
+   "samples_kept": 150,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 227,
+    "no_trace": 0
+   }
+  }
+ },
+ "no_guidance": {},
+ "totals": {
+  "tasks": 24,
+  "attempts": 96,
+  "successes": 90,
+  "yield": 0.9375,
+  "samples_kept": 150,
+  "dropped": {
+   "guidance_not_removed": 0,
+   "duplicate": 0,
+   "cap": 227,
+   "no_trace": 0
+  }
+ }
+}

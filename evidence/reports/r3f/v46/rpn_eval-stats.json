@@ -1,0 +1,31 @@
+{
+ "families": {
+  "rpn_eval": {
+   "tasks": 24,
+   "attempts": 96,
+   "successes": 88,
+   "yield": 0.9167,
+   "samples_kept": 150,
+   "dropped": {
+    "guidance_not_removed": 0,
+    "duplicate": 0,
+    "cap": 248,
+    "no_trace": 0
+   }
+  }
+ },
+ "no_guidance": {},
+ "totals": {
+  "tasks": 24,
+  "attempts": 96,
+  "successes": 88,
+  "yield": 0.9167,
+  "samples_kept": 150,
+  "dropped": {
+   "guidance_not_removed": 0,
+   "duplicate": 0,
+   "cap": 248,
+   "no_trace": 0
+  }
+ }
+}
