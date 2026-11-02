@@ -905,21 +905,26 @@ def r3t_train(tags: list[str]) -> None:
         data = datas[tuple(extra)]
         out = OUT / f'{name}-adapter'
         done = next(iter(INPUT.glob(f'**/e1/{name}-adapter/adapter.gguf')), None)
+        if (out / 'adapter.gguf').exists():     # Colab: finished in an earlier run on the same Drive work dir
+            log('r3t adapter already finished', tag=tag, path=str(out))
+            continue
         if done is not None:                    # finished in an earlier version
             shutil.copytree(done.parent, out, dirs_exist_ok=True)
             log('r3t adapter carried over', tag=tag, source=str(done.parent))
             continue
         ckpt = next(iter(INPUT.glob(f'**/e1/{name}-adapter/adapter-ckpt.pt')), None)
-        if ckpt is not None:
+        trained = (out / 'adapter' / 'train-config.json').exists()   # lora_train writes it last
+        if ckpt is not None and not trained and not (out / 'adapter-ckpt.pt').exists():
+            # Colab reruns keep their own, newer checkpoint on Drive; only an empty work dir takes the input one
             out.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ckpt, out / 'adapter-ckpt.pt')
             log('r3t checkpoint carried over', tag=tag, source=str(ckpt))
+        cmd = ([PY, '-c', ''] if trained else    # trained before a disconnect: only convert below
+               [PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'), '--model',
+                linfo['hf_model'], '--out', str(out / 'adapter'), *r3t_args(data, R3T_MAX_TOKENS, number, False)])
         log_file = (OUT / f'{name}-train.log').open('a')
-        procs[tag] = (subprocess.Popen([PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'),
-                                         '--model', linfo['hf_model'], '--out', str(out / 'adapter'),
-                                         *r3t_args(data, R3T_MAX_TOKENS, number, False)], cwd=ROOT,
-                                        stdout=log_file, stderr=subprocess.STDOUT,
-                                        env={**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}), out)
+        procs[tag] = (subprocess.Popen(cmd, cwd=ROOT, stdout=log_file, stderr=subprocess.STDOUT,
+                                       env={**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}), out)
         log('r3t training started', tag=tag, gpu=gpu)
         time.sleep(240)                         # stagger the two 4B loads: host RAM is 32 GB
     while procs:

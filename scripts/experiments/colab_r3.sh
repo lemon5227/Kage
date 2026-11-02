@@ -23,8 +23,12 @@ cd /content/Kage
 # so a recycled runtime loses nothing: rerunning the same command resumes (10-22: two finished/half-finished runs lost).
 if [ -d /content/drive/MyDrive ]; then export KAGE_WORK=/content/drive/MyDrive/kage/work; else export KAGE_WORK=/content/work; fi
 export KAGE_TOOLS=/content/tools
+# Resumed runs ("r3t-train f0"): put the previous Kaggle version's e1/<name>-adapter/adapter-ckpt.pt under
+# MyDrive/kage/input/e1/; Kaggle's /kaggle/input plays this role there.
+export KAGE_INPUT=${KAGE_INPUT:-$(dirname "$KAGE_WORK")/input}
 mkdir -p "$KAGE_WORK"
 P=${R3PHASE:-r3-train}                 # r3b-train: random replay mix; r3c-train: LESS-selected replay mix
+PL=${P// /-}                           # log name: "r3t-train f0" -> r3t-train-f0
 TAR=$KAGE_WORK/${P%-train}-adapter.tar.gz
 KEY='^\{"step"|lora_b_max_abs|falling back|Error|failed|packaged'
 for action in "$@"; do
@@ -32,10 +36,10 @@ for action in "$@"; do
     fla) pip install -q flash-linear-attention > /content/fla.log 2>&1; tail -3 /content/fla.log; pip show flash-linear-attention | head -2 ;;
     smoke) KAGE_PHASE="$P smoke" python scripts/experiments/kaggle_e1.py > /content/smoke.log 2>&1
            echo "exit $?"; grep -E "$KEY" /content/smoke.log ;;
-    run) KAGE_PHASE=$P python scripts/experiments/kaggle_e1.py >> "$KAGE_WORK/$P.log" 2>&1
-         echo "exit $?"; grep -E "$KEY|\"epoch\"|resumed_from" "$KAGE_WORK/$P.log" | tail -8; ls -la "$TAR" ;;
-    train) nohup env KAGE_PHASE=$P python scripts/experiments/kaggle_e1.py > /content/train.log 2>&1 &
+    run) KAGE_PHASE="$P" python scripts/experiments/kaggle_e1.py >> "$KAGE_WORK/$PL.log" 2>&1
+         echo "exit $?"; grep -E "$KEY|\"epoch\"|resumed_from" "$KAGE_WORK/$PL.log" | tail -8; ls -la "$TAR" "$KAGE_WORK"/e1/*-adapter 2>/dev/null ;;
+    train) nohup env KAGE_PHASE="$P" python scripts/experiments/kaggle_e1.py > /content/train.log 2>&1 &
            echo "started pid $!" ;;
-    status) grep -E "$KEY|\"epoch\"|resumed_from" "$KAGE_WORK/$P.log" | tail -6; nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv ;;
+    status) grep -E "$KEY|\"epoch\"|resumed_from|msg" "$KAGE_WORK/$PL.log" "$KAGE_WORK"/e1/*-train.log | tail -6; nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv ;;
   esac
 done
