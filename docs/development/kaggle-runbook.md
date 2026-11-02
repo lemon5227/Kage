@@ -67,6 +67,8 @@
 - **精简包**：解开 `<tag>-adapter.tar.gz`，去掉 `*.safetensors` 和 `adapter*/` 目录，把 `adapter/train-*.json*` 提到顶层再打包（约 100 MB：三个 GGUF + 统计/日志），Drive 网页下载（>100 MB 会弹“无法扫描病毒”，点仍然下载），`kaggle datasets create`。
 | 25 | v34/v35（R3t 冒烟）：单张 T4 在 6144 token 也 OOM；两卡切分（`device_map='balanced'`）仍 OOM | Qwen3.5 全注意力层 head_dim 256，T4 没有高效 SDPA 内核，走 math 路径一次性分配 fp32 分数矩阵（7758 token 约 3.5 GB）；`balanced_low_0` 甚至把整个模型放到 GPU1 | `lora_train --chunked-attention`：按 1024 个 query 分块的因果注意力，每块反向时重算（CPU 上与 SDPA 前向/反向完全一致）；单卡 8192 峰值 12.5 GB |
 | 26 | v36：2 步训练 22 分钟 | 线性注意力（gated delta）走 PyTorch 参考实现 | 训练前 `pip install flash-linear-attention`（0.6.0 可在 T4 安装导入） |
+| 28 | 免费 Colab T4（本机 `colab` CLI 开会话、后台训练）：轮询间隔 20 分钟时，约 1 h 后会话被后端回收（`Session not found`） | 免费版把没有内核执行的会话当作空闲回收，后台进程不算活动 | 每 3 分钟 `colab exec` 一个轻量状态脚本保活；检查点只在 VM 本地盘时要实时拉回本机 |
+| 29 | 3 分钟保活后会话约 5.3 h 被回收，随后 `colab new --gpu T4` 返回 Service Unavailable；本机备份目录是空的，5 h 训练白费 | 免费 GPU 有不公开的用量上限；备份脚本里远程 split 没输出也没报错，静默跳过 | 备份启动时立刻备份一次续训检查点来验证整条链路，远程脚本异常要打印出来；`colab upload` 目标目录必须已存在（否则 500），单文件过大也 500，分 20 MB 块传 |
 | 27 | v38：每步约 23 分钟 | T4 上 `torch.cuda.is_bf16_supported()` 返回 True，但 bf16 是软件模拟 | T4 训练一律 `--dtype fp16`（带 loss scaler） |
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 
