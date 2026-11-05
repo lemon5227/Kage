@@ -1,0 +1,8 @@
+{"t": 0.0, "msg": "phase from KAGE_PHASE", "phase": "r3t-train", "only": ["f1"]}
+{"t": 1.9, "msg": "r3 data ready", "rows": {"train": 2003, "val": 260}, "tasks": {"train": 163, "val": 21}, "dropped": {"guidance_remnant": 0, "duplicate": 0, "cap": 0}}
+{"t": 104.9, "msg": "lora preflight ok"}
+{"t": 104.9, "msg": "lora setup done", "hf_model": "/root/tools/hf-model", "torch": "2.11.0+cu130", "transformers": "5.22.1", "peft": "0.21.2", "converter": "/root/tools/llama.cpp/convert_lora_to_gguf.py"}
+{"t": 119.9, "msg": "flash-linear-attention", "install": 0, "version": "0.6.0", "err": ""}
+{"t": 121.3, "msg": "r3t checkpoint carried over", "tag": "f1", "source": "/vol/f1/input/e1/r3f1-adapter/adapter-ckpt.pt"}
+{"t": 121.3, "msg": "r3t training started", "tag": "f1", "gpu": 0}
+{"t": 4598.5, "msg": "r3t adapter ready", "tag": "f1", "gguf_sha256": "9ee3b1cc366ee9ea4029ec4551e2bfb5cfed74565e0c09cc5dff66fb65e588a8", "config": {"data": "/vol/f1/work/e1/r3-data-sft/train.jsonl", "val": "/vol/f1/work/e1/r3-data-sft/val.jsonl", "model": "/root/tools/hf-model", "out": "/vol/f1/work/e1/r3f1-adapter/adapter", "epochs": 2.0, "lr": 0.0001, "rank": 16, "accum": 8, "max_tokens": 8192, "targets": "safe", "seed": 1, "split_gpus": false, "chunked_attention": true, "smoke": false, "checkpoint_every": 25, "save_optimizer": false, "save_epochs": false, "dtype": "fp16", "data_sha256": "33e943de2d31188bd552600cec931a6c70efb075e0715da0ebb3e91e5aeafaec", "examples": 2003, "skipped_too_long": 0, "val_examples": 260, "val_skipped_too_long": 0, "steps": 501, "wall_seconds": 4440.1, "peak_gpu_mb": 12139, "lora_b_max_abs": 0.007892580702900887}}
