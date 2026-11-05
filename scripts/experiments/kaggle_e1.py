@@ -114,6 +114,8 @@ def setup(*, teacher_config: bool = True) -> dict:
         for f in prebuilt.iterdir():
             shutil.copy2(f, server.parent / f.name)
         server.chmod(0o755)
+        # Its RUNPATH is the original build dir; point the loader at the copied libraries wherever TOOLS is.
+        os.environ['LD_LIBRARY_PATH'] = f"{server.parent}:{os.environ.get('LD_LIBRARY_PATH', '')}"
         probe = subprocess.run([str(server), '--version'], capture_output=True, text=True)
         if probe.returncode == 0:
             log('reused prebuilt llama-server', source=str(prebuilt))
@@ -123,6 +125,8 @@ def setup(*, teacher_config: bool = True) -> dict:
             shutil.rmtree(server.parent)
     if not server.exists():
         src = TOOLS / 'llama.cpp'
+        if not (src / '.git').exists():            # e.g. only the bin dir a failed prebuilt probe left behind
+            shutil.rmtree(src, ignore_errors=True)
         if not src.exists():
             sh(['git', 'clone', '-q', 'https://github.com/ggml-org/llama.cpp', str(src)])
         sh(['git', '-C', str(src), 'checkout', '-q', LLAMA_COMMIT])
