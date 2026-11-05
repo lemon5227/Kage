@@ -70,8 +70,9 @@ def sh(cmd: list[str] | str, **kw) -> None:
 
 
 def find_prebuilt() -> Path | None:
-    """A dataset under /kaggle/input holding llama-server + libs and a BUILD_COMMIT file for LLAMA_COMMIT."""
-    for stamp in Path('/kaggle/input').glob('**/BUILD_COMMIT'):
+    """A dataset under /kaggle/input (or KAGE_INPUT elsewhere) holding llama-server + libs and a BUILD_COMMIT file
+    for LLAMA_COMMIT. Off Kaggle it saves the ~30 min CPU build; setup() probes it and rebuilds if it cannot run."""
+    for stamp in (s for root in dict.fromkeys([Path('/kaggle/input'), INPUT]) for s in root.glob('**/BUILD_COMMIT')):
         if stamp.read_text().strip() == BUILD_STAMP and (stamp.parent / 'llama-server').exists():
             return stamp.parent
     return None
