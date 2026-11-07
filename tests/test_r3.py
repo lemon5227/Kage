@@ -407,6 +407,7 @@ def test_split_is_stratified_so_every_family_with_two_tasks_is_in_both_splits(tm
 def test_r3t_variant_tags_name_the_adapter_and_its_data_change():
     assert kaggle_e1.r3t_variant('2') == ('r3t2', 2, [])
     assert kaggle_e1.r3t_variant('g0') == ('r3g0', 0, ['--readback'])
+    assert kaggle_e1.r3t_variant('fg1') == ('r3fg1', 1, ['--sft', str(kaggle_e1.R3F_SFT), '--readback'])
     for bad in ('x1', 'g', 'smoke'):
         with pytest.raises(SystemExit):
             kaggle_e1.r3t_variant(bad)

@@ -93,7 +93,7 @@ def main(tags: str, ckpt_dir: str = '', commit: str = ''):
     names = {}
     for tag in tags.split(','):                # 'f0' -> 'r3f0', the adapter dir the trainer resumes from
         prefix = tag.rstrip('0123456789')
-        names[tag] = {'': 'r3t', 'g': 'r3g', 'f': 'r3f'}[prefix] + tag[len(prefix):]
+        names[tag] = {'': 'r3t', 'g': 'r3g', 'f': 'r3f', 'fg': 'r3fg'}[prefix] + tag[len(prefix):]
     for tag, name in names.items():             # upload once: a rerun must not replace the input of a resumed run
         ckpt = Path(ckpt_dir) / 'e1' / f'{name}-adapter' / 'adapter-ckpt.pt'
         if not ckpt_dir or not ckpt.exists():

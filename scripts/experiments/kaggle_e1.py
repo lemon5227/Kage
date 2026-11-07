@@ -852,7 +852,8 @@ R3T_ENV = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}
 # Training variants on R3's data and hyperparameters, one change each (docs/plans/r3f-forgetting-fix.md):
 # tag prefix -> (adapter tag prefix, extra r3_data.py arguments). "r3t-train 1 2" = R3 seeds; "g0" = R3g seed 0.
 R3F_SFT = ROOT / 'evidence' / 'reports' / 'r3f' / 'sft-replay.jsonl.gz'      # from 'r3f-collect', committed
-R3T_VARIANTS = {'': ('r3t', []), 'g': ('r3g', ['--readback']), 'f': ('r3f', ['--sft', str(R3F_SFT)])}
+R3T_VARIANTS = {'': ('r3t', []), 'g': ('r3g', ['--readback']), 'f': ('r3f', ['--sft', str(R3F_SFT)]),
+                'fg': ('r3fg', ['--sft', str(R3F_SFT), '--readback'])}     # R3f's replay + R3g's read-back steps
 
 
 def r3t_variant(tag: str) -> tuple[str, int, list[str]]:
