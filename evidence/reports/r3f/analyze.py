@@ -27,7 +27,7 @@ exec(src[:src.index('out = {}')], v)          # helper functions only
 paired, count, task_rates, LEARN, HELD, NEG = v['paired'], v['count'], v['task_rates'], v['LEARN'], v['HELD'], v['NEG']
 WEB_LEARN = {'web_invoice', 'web_prefs', 'web_catalog'}
 SEEDS = ('r3f0', 'r3f1')
-EVAL = 'evidence/modal/r3f-eval-results.tar.gz'
+EVAL = 'evidence/colab/r3f-eval-results.tar.gz'
 
 
 def members(version):

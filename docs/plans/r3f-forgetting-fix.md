@@ -25,3 +25,7 @@ R3 系列五个版本：学过的题 30→64/72，留出题 15→1/36；提升�
 - R3h：离线完成，见 `evidence/reports/r3h/README.md`（门控保住学过题提升、留出题回到原学生；不是修复）。
 - R3g：完成（v42–v44，`evidence/reports/r3g/README.md`）。读回率 0 → 100%，学过 61、69/72，留出 5/36、5/36——不满足条件。原学生在留出题上也从不“读回后改写”，读回不是留出题塌的原因。
 - R3f：新增 4 个回放专用编程族（`core/evolution/code_tasks.py`），v46 采集 363 行（rpn 150、rle 150、version_sort 63、grid_rotate 0），`evidence/reports/r3f/`；v47 起训练两个 seed。
+
+## 进展（11-07）
+- R3f：完成（v47 + Modal 训练，免费 Colab 评测，`evidence/reports/r3f/README.md`）。学过 57、65/72，留出 15、18/36——遗忘修好；读回率 0，RSI 第二轮条件差这一项；seed 0 在一道只读诱饵题上误用 3 次。
+- 下一步 R3fg：R3f 数据 + R3g 读回插入，两个 seed，同配方同评测。三项都满足才进第 2 轮。
