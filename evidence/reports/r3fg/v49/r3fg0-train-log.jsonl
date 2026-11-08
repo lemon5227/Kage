@@ -1,0 +1,4 @@
+{"epoch": 2, "step": 530, "train_loss": 0.099828, "val_loss": null}
+{"epoch": 2, "step": 540, "train_loss": 0.080293, "val_loss": null}
+{"epoch": 2, "step": 550, "train_loss": 0.09952, "val_loss": null}
+{"epoch": 2, "step": 560, "train_loss": 0.110287, "val_loss": null}

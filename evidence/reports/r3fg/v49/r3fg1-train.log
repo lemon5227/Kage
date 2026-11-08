@@ -1,0 +1,455 @@
+{"examples": 2282, "skipped_too_long": 0, "max_len": 7758, "sample_target": "<tool_call>\n<function=skill_search>\n<parameter=query>\ncrm_clean dedupe_export\n</parameter>\n<parameter=limit>\n5\n</parameter>\n</function>\n</tool_call><|im_end|>\n"}
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights:   0%|          | 1/426 [00:01<13:39,  1.93s/it]Loading weights:  25%|██▍       | 106/426 [00:02<00:04, 71.37it/s]Loading weights:  36%|███▌      | 154/426 [00:02<00:03, 77.97it/s]Loading weights:  43%|████▎     | 184/426 [00:02<00:02, 85.58it/s]Loading weights:  49%|████▊     | 207/426 [00:03<00:02, 79.90it/s]Loading weights:  53%|█████▎    | 224/426 [00:03<00:02, 82.51it/s]Loading weights:  56%|█████▌    | 239/426 [00:03<00:02, 87.01it/s]Loading weights:  59%|█████▉    | 253/426 [00:03<00:01, 87.26it/s]Loading weights:  62%|██████▏   | 265/426 [00:03<00:01, 88.11it/s]Loading weights:  65%|██████▌   | 277/426 [00:03<00:01, 92.94it/s]Loading weights:  68%|██████▊   | 291/426 [00:04<00:01, 84.89it/s]Loading weights:  72%|███████▏  | 305/426 [00:04<00:01, 85.44it/s]Loading weights:  74%|███████▍  | 316/426 [00:04<00:01, 90.23it/s]Loading weights:  77%|███████▋  | 326/426 [00:04<00:01, 86.18it/s]Loading weights:  80%|███████▉  | 340/426 [00:04<00:00, 89.21it/s]Loading weights:  83%|████████▎ | 354/426 [00:04<00:00, 97.16it/s]Loading weights:  86%|████████▌ | 365/426 [00:04<00:00, 83.72it/s]Loading weights:  89%|████████▉ | 379/426 [00:05<00:00, 89.63it/s]Loading weights:  92%|█████████▏| 393/426 [00:05<00:00, 96.47it/s]Loading weights:  95%|█████████▍| 404/426 [00:05<00:00, 96.17it/s]Loading weights:  97%|█████████▋| 414/426 [00:05<00:00, 81.42it/s]Loading weights: 100%|██████████| 426/426 [00:05<00:00, 76.47it/s]
+{"loader": "AutoModelForCausalLM", "trainable_params": 18939904, "targets": "safe", "gpu_mb_after_load": [8094], "device_map": []}
+{"resumed_from": "/kaggle/working/e1/r3fg1-adapter/adapter-ckpt.pt", "step": 150, "epoch": 1}
+[transformers] `use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+{"step": 151, "of": 571, "loss": 0.091, "lr": 7.355516637478108e-05, "grad_norm": 0.3454, "scale": 1024.0, "seconds": 163.1, "gpu_mb": 11171, "rss_mb": 2769, "host_free_mb": 25890}
+{"step": 152, "of": 571, "loss": 0.1089, "lr": 7.33800350262697e-05, "grad_norm": 0.3846, "scale": 1024.0, "seconds": 226.2, "gpu_mb": 11171, "rss_mb": 2907, "host_free_mb": 25563}
+{"step": 153, "of": 571, "loss": 0.0823, "lr": 7.320490367775831e-05, "grad_norm": 0.3719, "scale": 1024.0, "seconds": 293.7, "gpu_mb": 11171, "rss_mb": 3045, "host_free_mb": 25329}
+{"step": 154, "of": 571, "loss": 0.1728, "lr": 7.302977232924694e-05, "grad_norm": 0.472, "scale": 1024.0, "seconds": 369.5, "gpu_mb": 11171, "rss_mb": 3195, "host_free_mb": 25059}
+{"step": 155, "of": 571, "loss": 0.2393, "lr": 7.285464098073556e-05, "grad_norm": 0.6343, "scale": 1024.0, "seconds": 451.0, "gpu_mb": 11171, "rss_mb": 3334, "host_free_mb": 24765}
+{"step": 156, "of": 571, "loss": 0.1235, "lr": 7.267950963222417e-05, "grad_norm": 0.4631, "scale": 1024.0, "seconds": 550.0, "gpu_mb": 11480, "rss_mb": 3461, "host_free_mb": 24446}
+{"step": 157, "of": 571, "loss": 0.1525, "lr": 7.25043782837128e-05, "grad_norm": 0.4987, "scale": 1024.0, "seconds": 653.5, "gpu_mb": 11480, "rss_mb": 3594, "host_free_mb": 24063}
+{"step": 158, "of": 571, "loss": 0.1376, "lr": 7.23292469352014e-05, "grad_norm": 0.4688, "scale": 1024.0, "seconds": 727.7, "gpu_mb": 11480, "rss_mb": 3777, "host_free_mb": 23765}
+{"step": 159, "of": 571, "loss": 0.1043, "lr": 7.215411558669001e-05, "grad_norm": 0.4127, "scale": 1024.0, "seconds": 796.4, "gpu_mb": 11480, "rss_mb": 3897, "host_free_mb": 23523}
+{"step": 160, "of": 571, "loss": 0.0994, "lr": 7.197898423817864e-05, "grad_norm": 0.3912, "scale": 1024.0, "seconds": 869.0, "gpu_mb": 11480, "rss_mb": 4004, "host_free_mb": 23338}
+{"step": 161, "of": 571, "loss": 0.0987, "lr": 7.180385288966726e-05, "grad_norm": 0.3481, "scale": 1024.0, "seconds": 943.3, "gpu_mb": 11480, "rss_mb": 4114, "host_free_mb": 23110}
+{"step": 162, "of": 571, "loss": 0.1568, "lr": 7.162872154115587e-05, "grad_norm": 0.568, "scale": 1024.0, "seconds": 1004.7, "gpu_mb": 11480, "rss_mb": 4207, "host_free_mb": 22910}
+{"step": 163, "of": 571, "loss": 0.1246, "lr": 7.145359019264448e-05, "grad_norm": 0.3996, "scale": 1024.0, "seconds": 1064.4, "gpu_mb": 11480, "rss_mb": 4317, "host_free_mb": 22752}
+{"step": 164, "of": 571, "loss": 0.1239, "lr": 7.127845884413312e-05, "grad_norm": 0.4251, "scale": 1024.0, "seconds": 1147.6, "gpu_mb": 11480, "rss_mb": 4475, "host_free_mb": 22458}
+{"step": 165, "of": 571, "loss": 0.1287, "lr": 7.110332749562171e-05, "grad_norm": 0.4423, "scale": 1024.0, "seconds": 1226.8, "gpu_mb": 11480, "rss_mb": 4597, "host_free_mb": 22260}
+{"step": 166, "of": 571, "loss": 0.1171, "lr": 7.092819614711034e-05, "grad_norm": 0.6435, "scale": 1024.0, "seconds": 1304.2, "gpu_mb": 11480, "rss_mb": 4714, "host_free_mb": 22023}
+{"step": 167, "of": 571, "loss": 0.0585, "lr": 7.075306479859896e-05, "grad_norm": 0.2448, "scale": 1024.0, "seconds": 1410.8, "gpu_mb": 11485, "rss_mb": 4817, "host_free_mb": 21771}
+{"step": 168, "of": 571, "loss": 0.0688, "lr": 7.057793345008757e-05, "grad_norm": 0.359, "scale": 1024.0, "seconds": 1493.6, "gpu_mb": 11485, "rss_mb": 4920, "host_free_mb": 21493}
+{"step": 169, "of": 571, "loss": 0.1336, "lr": 7.040280210157619e-05, "grad_norm": 0.4768, "scale": 1024.0, "seconds": 1595.6, "gpu_mb": 11507, "rss_mb": 5041, "host_free_mb": 21209}
+{"step": 170, "of": 571, "loss": 0.1704, "lr": 7.02276707530648e-05, "grad_norm": 0.5836, "scale": 1024.0, "seconds": 1696.1, "gpu_mb": 12139, "rss_mb": 5172, "host_free_mb": 20973}
+{"step": 171, "of": 571, "loss": 0.1551, "lr": 7.005253940455341e-05, "grad_norm": 0.6605, "scale": 1024.0, "seconds": 1801.8, "gpu_mb": 12139, "rss_mb": 5315, "host_free_mb": 20698}
+{"step": 172, "of": 571, "loss": 0.1784, "lr": 6.987740805604204e-05, "grad_norm": 0.7112, "scale": 1024.0, "seconds": 1876.9, "gpu_mb": 12139, "rss_mb": 5435, "host_free_mb": 20476}
+{"step": 173, "of": 571, "loss": 0.192, "lr": 6.970227670753065e-05, "grad_norm": 0.5268, "scale": 1024.0, "seconds": 1983.0, "gpu_mb": 12139, "rss_mb": 5571, "host_free_mb": 20225}
+{"step": 174, "of": 571, "loss": 0.1608, "lr": 6.952714535901927e-05, "grad_norm": 0.6296, "scale": 1024.0, "seconds": 2076.1, "gpu_mb": 12139, "rss_mb": 5743, "host_free_mb": 19885}
+{"step": 175, "of": 571, "loss": 0.115, "lr": 6.935201401050788e-05, "grad_norm": 0.4421, "scale": 1024.0, "seconds": 2144.1, "gpu_mb": 12139, "rss_mb": 5853, "host_free_mb": 19692}
+{"step": 176, "of": 571, "loss": 0.0683, "lr": 6.91768826619965e-05, "grad_norm": 0.4065, "scale": 1024.0, "seconds": 2206.1, "gpu_mb": 12139, "rss_mb": 5924, "host_free_mb": 19544}
+{"step": 177, "of": 571, "loss": 0.1262, "lr": 6.900175131348513e-05, "grad_norm": 0.632, "scale": 1024.0, "seconds": 2315.6, "gpu_mb": 12139, "rss_mb": 6026, "host_free_mb": 19289}
+{"step": 178, "of": 571, "loss": 0.1395, "lr": 6.882661996497372e-05, "grad_norm": 0.7214, "scale": 1024.0, "seconds": 2417.9, "gpu_mb": 12139, "rss_mb": 6113, "host_free_mb": 19015}
+{"step": 179, "of": 571, "loss": 0.1543, "lr": 6.865148861646236e-05, "grad_norm": 0.6293, "scale": 1024.0, "seconds": 2519.8, "gpu_mb": 12139, "rss_mb": 6235, "host_free_mb": 18732}
+{"step": 180, "of": 571, "loss": 0.0895, "lr": 6.847635726795097e-05, "grad_norm": 0.3454, "scale": 1024.0, "seconds": 2622.8, "gpu_mb": 12139, "rss_mb": 6358, "host_free_mb": 18459}
+{"step": 181, "of": 571, "loss": 0.1508, "lr": 6.830122591943958e-05, "grad_norm": 0.5978, "scale": 1024.0, "seconds": 2676.9, "gpu_mb": 12139, "rss_mb": 6482, "host_free_mb": 18192}
+{"step": 182, "of": 571, "loss": 0.1717, "lr": 6.81260945709282e-05, "grad_norm": NaN, "scale": 512.0, "seconds": 2746.9, "gpu_mb": 12139, "rss_mb": 6549, "host_free_mb": 18023}
+{"step": 183, "of": 571, "loss": 0.1005, "lr": 6.795096322241681e-05, "grad_norm": 0.388, "scale": 512.0, "seconds": 2804.3, "gpu_mb": 12139, "rss_mb": 6658, "host_free_mb": 17828}
+{"step": 184, "of": 571, "loss": 0.162, "lr": 6.777583187390543e-05, "grad_norm": 0.4737, "scale": 512.0, "seconds": 2910.2, "gpu_mb": 12139, "rss_mb": 6764, "host_free_mb": 17545}
+{"step": 185, "of": 571, "loss": 0.1017, "lr": 6.760070052539404e-05, "grad_norm": 0.3831, "scale": 512.0, "seconds": 3025.3, "gpu_mb": 12139, "rss_mb": 6917, "host_free_mb": 17273}
+{"step": 186, "of": 571, "loss": 0.2074, "lr": 6.742556917688267e-05, "grad_norm": 0.7331, "scale": 512.0, "seconds": 3175.0, "gpu_mb": 12139, "rss_mb": 7091, "host_free_mb": 16897}
+{"step": 187, "of": 571, "loss": 0.1034, "lr": 6.725043782837128e-05, "grad_norm": 0.4605, "scale": 512.0, "seconds": 3249.4, "gpu_mb": 12139, "rss_mb": 7171, "host_free_mb": 16659}
+{"step": 188, "of": 571, "loss": 0.196, "lr": 6.70753064798599e-05, "grad_norm": 0.7392, "scale": 512.0, "seconds": 3329.4, "gpu_mb": 12139, "rss_mb": 7273, "host_free_mb": 16445}
+{"step": 189, "of": 571, "loss": 0.1081, "lr": 6.690017513134852e-05, "grad_norm": 0.445, "scale": 512.0, "seconds": 3412.9, "gpu_mb": 12139, "rss_mb": 7387, "host_free_mb": 16211}
+{"step": 190, "of": 571, "loss": 0.1131, "lr": 6.672504378283713e-05, "grad_norm": 0.5413, "scale": 512.0, "seconds": 3496.5, "gpu_mb": 12139, "rss_mb": 7535, "host_free_mb": 15898}
+{"step": 191, "of": 571, "loss": 0.1754, "lr": 6.654991243432574e-05, "grad_norm": 0.6712, "scale": 512.0, "seconds": 3561.9, "gpu_mb": 12139, "rss_mb": 7644, "host_free_mb": 15715}
+{"step": 192, "of": 571, "loss": 0.1135, "lr": 6.637478108581437e-05, "grad_norm": 0.4351, "scale": 512.0, "seconds": 3669.0, "gpu_mb": 12139, "rss_mb": 7765, "host_free_mb": 15442}
+{"step": 193, "of": 571, "loss": 0.1217, "lr": 6.619964973730298e-05, "grad_norm": 0.5415, "scale": 512.0, "seconds": 3758.5, "gpu_mb": 12139, "rss_mb": 7879, "host_free_mb": 15162}
+{"step": 194, "of": 571, "loss": 0.1144, "lr": 6.60245183887916e-05, "grad_norm": 0.4513, "scale": 512.0, "seconds": 3846.2, "gpu_mb": 12139, "rss_mb": 8033, "host_free_mb": 14954}
+{"step": 195, "of": 571, "loss": 0.1415, "lr": 6.584938704028021e-05, "grad_norm": 0.4237, "scale": 512.0, "seconds": 3914.1, "gpu_mb": 12139, "rss_mb": 8091, "host_free_mb": 14825}
+{"step": 196, "of": 571, "loss": 0.0855, "lr": 6.567425569176883e-05, "grad_norm": 0.3134, "scale": 512.0, "seconds": 4012.3, "gpu_mb": 12139, "rss_mb": 8208, "host_free_mb": 14564}
+{"step": 197, "of": 571, "loss": 0.2059, "lr": 6.549912434325744e-05, "grad_norm": 0.674, "scale": 512.0, "seconds": 4065.0, "gpu_mb": 12139, "rss_mb": 8314, "host_free_mb": 14332}
+{"step": 198, "of": 571, "loss": 0.1357, "lr": 6.532399299474607e-05, "grad_norm": 0.4545, "scale": 512.0, "seconds": 4150.2, "gpu_mb": 12139, "rss_mb": 8474, "host_free_mb": 14053}
+{"step": 199, "of": 571, "loss": 0.1328, "lr": 6.514886164623469e-05, "grad_norm": 0.4661, "scale": 512.0, "seconds": 4232.9, "gpu_mb": 12139, "rss_mb": 8643, "host_free_mb": 13734}
+{"step": 200, "of": 571, "loss": 0.0779, "lr": 6.497373029772329e-05, "grad_norm": 0.3501, "scale": 512.0, "seconds": 4301.3, "gpu_mb": 12139, "rss_mb": 8743, "host_free_mb": 13514}
+{"step": 201, "of": 571, "loss": 0.1758, "lr": 6.479859894921192e-05, "grad_norm": 0.4641, "scale": 512.0, "seconds": 4393.6, "gpu_mb": 12139, "rss_mb": 8768, "host_free_mb": 13255}
+{"step": 202, "of": 571, "loss": 0.0997, "lr": 6.462346760070053e-05, "grad_norm": 0.345, "scale": 512.0, "seconds": 4468.3, "gpu_mb": 12139, "rss_mb": 8850, "host_free_mb": 13085}
+{"step": 203, "of": 571, "loss": 0.139, "lr": 6.444833625218914e-05, "grad_norm": 0.453, "scale": 512.0, "seconds": 4531.4, "gpu_mb": 12139, "rss_mb": 8927, "host_free_mb": 12940}
+{"step": 204, "of": 571, "loss": 0.1081, "lr": 6.427320490367776e-05, "grad_norm": 0.3175, "scale": 512.0, "seconds": 4625.2, "gpu_mb": 12139, "rss_mb": 9013, "host_free_mb": 12706}
+{"step": 205, "of": 571, "loss": 0.2323, "lr": 6.409807355516637e-05, "grad_norm": 0.5544, "scale": 512.0, "seconds": 4685.5, "gpu_mb": 12139, "rss_mb": 9087, "host_free_mb": 12549}
+{"step": 206, "of": 571, "loss": 0.2004, "lr": 6.3922942206655e-05, "grad_norm": 0.6079, "scale": 512.0, "seconds": 4799.8, "gpu_mb": 12139, "rss_mb": 9210, "host_free_mb": 12278}
+{"step": 207, "of": 571, "loss": 0.1895, "lr": 6.374781085814361e-05, "grad_norm": 0.4163, "scale": 512.0, "seconds": 4875.5, "gpu_mb": 12139, "rss_mb": 9314, "host_free_mb": 12049}
+{"step": 208, "of": 571, "loss": 0.0979, "lr": 6.357267950963223e-05, "grad_norm": 0.4193, "scale": 512.0, "seconds": 4949.0, "gpu_mb": 12139, "rss_mb": 9437, "host_free_mb": 11808}
+{"step": 209, "of": 571, "loss": 0.153, "lr": 6.339754816112084e-05, "grad_norm": 0.4457, "scale": 512.0, "seconds": 5044.1, "gpu_mb": 12139, "rss_mb": 9591, "host_free_mb": 11530}
+{"step": 210, "of": 571, "loss": 0.1579, "lr": 6.322241681260945e-05, "grad_norm": 0.567, "scale": 512.0, "seconds": 5108.8, "gpu_mb": 12139, "rss_mb": 9731, "host_free_mb": 11336}
+{"step": 211, "of": 571, "loss": 0.0649, "lr": 6.304728546409809e-05, "grad_norm": 0.2694, "scale": 512.0, "seconds": 5174.9, "gpu_mb": 12139, "rss_mb": 9822, "host_free_mb": 11159}
+{"step": 212, "of": 571, "loss": 0.2099, "lr": 6.287215411558668e-05, "grad_norm": 0.6983, "scale": 512.0, "seconds": 5245.4, "gpu_mb": 12139, "rss_mb": 9937, "host_free_mb": 10944}
+{"step": 213, "of": 571, "loss": 0.1773, "lr": 6.269702276707531e-05, "grad_norm": 0.4936, "scale": 512.0, "seconds": 5302.6, "gpu_mb": 12139, "rss_mb": 10054, "host_free_mb": 10807}
+{"step": 214, "of": 571, "loss": 0.1994, "lr": 6.252189141856393e-05, "grad_norm": 0.6075, "scale": 512.0, "seconds": 5428.3, "gpu_mb": 12139, "rss_mb": 10220, "host_free_mb": 10473}
+{"step": 215, "of": 571, "loss": 0.0734, "lr": 6.234676007005254e-05, "grad_norm": 0.3189, "scale": 512.0, "seconds": 5522.7, "gpu_mb": 12139, "rss_mb": 10352, "host_free_mb": 10249}
+{"step": 216, "of": 571, "loss": 0.1506, "lr": 6.217162872154116e-05, "grad_norm": 0.4392, "scale": 512.0, "seconds": 5618.0, "gpu_mb": 12139, "rss_mb": 10417, "host_free_mb": 10118}
+{"step": 217, "of": 571, "loss": 0.175, "lr": 6.199649737302977e-05, "grad_norm": 0.7088, "scale": 512.0, "seconds": 5722.8, "gpu_mb": 12139, "rss_mb": 10471, "host_free_mb": 9932}
+{"step": 218, "of": 571, "loss": 0.0645, "lr": 6.18213660245184e-05, "grad_norm": 0.2763, "scale": 512.0, "seconds": 5797.7, "gpu_mb": 12139, "rss_mb": 10525, "host_free_mb": 9761}
+{"step": 219, "of": 571, "loss": 0.0895, "lr": 6.1646234676007e-05, "grad_norm": 0.3112, "scale": 512.0, "seconds": 5880.8, "gpu_mb": 12139, "rss_mb": 10623, "host_free_mb": 9633}
+{"step": 220, "of": 571, "loss": 0.0271, "lr": 6.147110332749563e-05, "grad_norm": 0.1846, "scale": 512.0, "seconds": 5954.3, "gpu_mb": 12139, "rss_mb": 10699, "host_free_mb": 9477}
+{"step": 221, "of": 571, "loss": 0.1785, "lr": 6.129597197898424e-05, "grad_norm": 0.5146, "scale": 512.0, "seconds": 6061.9, "gpu_mb": 12139, "rss_mb": 10774, "host_free_mb": 9264}
+{"step": 222, "of": 571, "loss": 0.0875, "lr": 6.112084063047285e-05, "grad_norm": 0.4416, "scale": 512.0, "seconds": 6144.8, "gpu_mb": 12139, "rss_mb": 10850, "host_free_mb": 9132}
+{"step": 223, "of": 571, "loss": 0.1642, "lr": 6.094570928196147e-05, "grad_norm": 0.4762, "scale": 512.0, "seconds": 6219.6, "gpu_mb": 12139, "rss_mb": 10914, "host_free_mb": 8993}
+{"step": 224, "of": 571, "loss": 0.1367, "lr": 6.077057793345009e-05, "grad_norm": 0.5033, "scale": 512.0, "seconds": 6347.9, "gpu_mb": 12139, "rss_mb": 10989, "host_free_mb": 8666}
+{"step": 225, "of": 571, "loss": 0.126, "lr": 6.059544658493871e-05, "grad_norm": 0.423, "scale": 512.0, "seconds": 6454.3, "gpu_mb": 12139, "rss_mb": 11110, "host_free_mb": 8449}
+{"step": 226, "of": 571, "loss": 0.0834, "lr": 6.042031523642733e-05, "grad_norm": 0.3654, "scale": 512.0, "seconds": 6518.7, "gpu_mb": 12139, "rss_mb": 11221, "host_free_mb": 8264}
+{"step": 227, "of": 571, "loss": 0.072, "lr": 6.024518388791593e-05, "grad_norm": 0.2757, "scale": 512.0, "seconds": 6614.4, "gpu_mb": 12139, "rss_mb": 11294, "host_free_mb": 8063}
+{"step": 228, "of": 571, "loss": 0.1141, "lr": 6.007005253940456e-05, "grad_norm": 0.4088, "scale": 512.0, "seconds": 6697.3, "gpu_mb": 12139, "rss_mb": 11361, "host_free_mb": 7891}
+{"step": 229, "of": 571, "loss": 0.1987, "lr": 5.989492119089317e-05, "grad_norm": 0.5905, "scale": 512.0, "seconds": 6797.5, "gpu_mb": 12139, "rss_mb": 11449, "host_free_mb": 7718}
+{"step": 230, "of": 571, "loss": 0.2221, "lr": 5.971978984238179e-05, "grad_norm": 0.5918, "scale": 512.0, "seconds": 6865.8, "gpu_mb": 12139, "rss_mb": 11505, "host_free_mb": 7595}
+{"step": 231, "of": 571, "loss": 0.0851, "lr": 5.954465849387041e-05, "grad_norm": 0.491, "scale": 512.0, "seconds": 6937.8, "gpu_mb": 12139, "rss_mb": 11576, "host_free_mb": 7440}
+{"step": 232, "of": 571, "loss": 0.1316, "lr": 5.9369527145359014e-05, "grad_norm": 0.4596, "scale": 512.0, "seconds": 7021.0, "gpu_mb": 12139, "rss_mb": 11692, "host_free_mb": 7228}
+{"step": 233, "of": 571, "loss": 0.1073, "lr": 5.9194395796847644e-05, "grad_norm": 0.4464, "scale": 512.0, "seconds": 7099.3, "gpu_mb": 12139, "rss_mb": 11771, "host_free_mb": 7064}
+{"step": 234, "of": 571, "loss": 0.1707, "lr": 5.9019264448336254e-05, "grad_norm": 0.5252, "scale": 512.0, "seconds": 7203.8, "gpu_mb": 12139, "rss_mb": 11875, "host_free_mb": 6865}
+{"step": 235, "of": 571, "loss": 0.1401, "lr": 5.884413309982487e-05, "grad_norm": 0.484, "scale": 512.0, "seconds": 7288.1, "gpu_mb": 12139, "rss_mb": 11947, "host_free_mb": 6715}
+{"step": 236, "of": 571, "loss": 0.2354, "lr": 5.866900175131349e-05, "grad_norm": 0.6325, "scale": 512.0, "seconds": 7357.1, "gpu_mb": 12139, "rss_mb": 12001, "host_free_mb": 6614}
+{"step": 237, "of": 571, "loss": 0.1719, "lr": 5.84938704028021e-05, "grad_norm": 0.58, "scale": 512.0, "seconds": 7413.1, "gpu_mb": 12139, "rss_mb": 12054, "host_free_mb": 6524}
+{"step": 238, "of": 571, "loss": 0.1468, "lr": 5.831873905429073e-05, "grad_norm": 0.4652, "scale": 512.0, "seconds": 7489.0, "gpu_mb": 12139, "rss_mb": 12087, "host_free_mb": 6452}
+{"step": 239, "of": 571, "loss": 0.1275, "lr": 5.814360770577934e-05, "grad_norm": 0.44, "scale": 512.0, "seconds": 7603.7, "gpu_mb": 12139, "rss_mb": 12206, "host_free_mb": 6300}
+{"step": 240, "of": 571, "loss": 0.1812, "lr": 5.796847635726795e-05, "grad_norm": 0.4754, "scale": 512.0, "seconds": 7712.1, "gpu_mb": 12139, "rss_mb": 12260, "host_free_mb": 6120}
+{"step": 241, "of": 571, "loss": 0.1438, "lr": 5.779334500875657e-05, "grad_norm": 0.4116, "scale": 512.0, "seconds": 7828.4, "gpu_mb": 12139, "rss_mb": 12335, "host_free_mb": 5959}
+{"step": 242, "of": 571, "loss": 0.0833, "lr": 5.761821366024518e-05, "grad_norm": 0.3586, "scale": 512.0, "seconds": 7900.9, "gpu_mb": 12139, "rss_mb": 12429, "host_free_mb": 5848}
+{"step": 243, "of": 571, "loss": 0.1624, "lr": 5.744308231173381e-05, "grad_norm": 0.5971, "scale": 512.0, "seconds": 7972.5, "gpu_mb": 12139, "rss_mb": 12485, "host_free_mb": 5705}
+{"step": 244, "of": 571, "loss": 0.1112, "lr": 5.726795096322242e-05, "grad_norm": 0.3708, "scale": 512.0, "seconds": 8080.4, "gpu_mb": 12139, "rss_mb": 12539, "host_free_mb": 5524}
+{"step": 245, "of": 571, "loss": 0.1822, "lr": 5.7092819614711036e-05, "grad_norm": 0.4936, "scale": 512.0, "seconds": 8155.1, "gpu_mb": 12139, "rss_mb": 12593, "host_free_mb": 5430}
+{"step": 246, "of": 571, "loss": 0.0987, "lr": 5.691768826619965e-05, "grad_norm": 0.3618, "scale": 512.0, "seconds": 8265.3, "gpu_mb": 12139, "rss_mb": 12657, "host_free_mb": 17685}
+{"step": 247, "of": 571, "loss": 0.1069, "lr": 5.674255691768826e-05, "grad_norm": 0.3648, "scale": 512.0, "seconds": 8341.4, "gpu_mb": 12139, "rss_mb": 12689, "host_free_mb": 16410}
+{"step": 248, "of": 571, "loss": 0.0585, "lr": 5.656742556917689e-05, "grad_norm": 0.2619, "scale": 512.0, "seconds": 8408.4, "gpu_mb": 12139, "rss_mb": 12732, "host_free_mb": 16156}
+{"step": 249, "of": 571, "loss": 0.1273, "lr": 5.6392294220665495e-05, "grad_norm": 0.3602, "scale": 512.0, "seconds": 8460.9, "gpu_mb": 12139, "rss_mb": 12786, "host_free_mb": 15999}
+{"step": 250, "of": 571, "loss": 0.0949, "lr": 5.621716287215412e-05, "grad_norm": 0.3174, "scale": 512.0, "seconds": 8575.5, "gpu_mb": 12139, "rss_mb": 12885, "host_free_mb": 15734}
+{"paused_at": 250, "restart": "resume from checkpoint"}
+{"examples": 2282, "skipped_too_long": 0, "max_len": 7758, "sample_target": "<tool_call>\n<function=skill_search>\n<parameter=query>\ncrm_clean dedupe_export\n</parameter>\n<parameter=limit>\n5\n</parameter>\n</function>\n</tool_call><|im_end|>\n"}
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights:   0%|          | 1/426 [00:02<19:15,  2.72s/it]Loading weights:  18%|█▊        | 76/426 [00:03<00:10, 33.83it/s]Loading weights:  21%|██        | 90/426 [00:03<00:11, 30.28it/s]Loading weights:  23%|██▎       | 99/426 [00:04<00:13, 23.69it/s]Loading weights:  25%|██▍       | 105/426 [00:04<00:14, 22.78it/s]Loading weights:  28%|██▊       | 120/426 [00:04<00:09, 31.16it/s]Loading weights:  31%|███       | 132/426 [00:05<00:07, 38.30it/s]Loading weights:  34%|███▍      | 146/426 [00:05<00:05, 47.72it/s]Loading weights:  37%|███▋      | 156/426 [00:05<00:05, 52.68it/s]Loading weights:  39%|███▊      | 165/426 [00:05<00:04, 55.47it/s]Loading weights:  42%|████▏     | 181/426 [00:05<00:03, 68.55it/s]Loading weights:  46%|████▌     | 195/426 [00:05<00:03, 72.45it/s]Loading weights:  48%|████▊     | 206/426 [00:05<00:03, 72.03it/s]Loading weights:  53%|█████▎    | 224/426 [00:06<00:02, 89.56it/s]Loading weights:  56%|█████▌    | 238/426 [00:06<00:02, 89.58it/s]Loading weights:  59%|█████▉    | 252/426 [00:06<00:02, 84.20it/s]Loading weights:  62%|██████▏   | 262/426 [00:06<00:01, 84.15it/s]Loading weights:  65%|██████▌   | 277/426 [00:06<00:01, 90.30it/s]Loading weights:  68%|██████▊   | 291/426 [00:06<00:01, 101.36it/s]Loading weights:  71%|███████   | 302/426 [00:06<00:01, 102.67it/s]Loading weights:  73%|███████▎  | 313/426 [00:07<00:01, 84.30it/s] Loading weights:  77%|███████▋  | 330/426 [00:07<00:01, 94.56it/s]Loading weights:  81%|████████  | 344/426 [00:07<00:00, 97.19it/s]Loading weights:  84%|████████▍ | 358/426 [00:07<00:00, 85.35it/s]Loading weights:  87%|████████▋ | 371/426 [00:07<00:00, 80.12it/s]Loading weights:  90%|█████████ | 385/426 [00:07<00:00, 89.50it/s]Loading weights:  93%|█████████▎| 398/426 [00:07<00:00, 88.30it/s]Loading weights:  96%|█████████▋| 411/426 [00:08<00:00, 93.20it/s]Loading weights:  99%|█████████▉| 421/426 [00:08<00:00, 89.78it/s]Loading weights: 100%|██████████| 426/426 [00:08<00:00, 51.63it/s]
+{"loader": "AutoModelForCausalLM", "trainable_params": 18939904, "targets": "safe", "gpu_mb_after_load": [8094], "device_map": []}
+{"resumed_from": "/kaggle/working/e1/r3fg1-adapter/adapter-ckpt.pt", "step": 250, "epoch": 1}
+[transformers] `use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+{"step": 251, "of": 571, "loss": 0.1214, "lr": 5.6042031523642735e-05, "grad_norm": 0.4463, "scale": 512.0, "seconds": 60.9, "gpu_mb": 9939, "rss_mb": 2602, "host_free_mb": 25785}
+{"step": 252, "of": 571, "loss": 0.0928, "lr": 5.586690017513135e-05, "grad_norm": 0.3614, "scale": 512.0, "seconds": 164.9, "gpu_mb": 11143, "rss_mb": 2734, "host_free_mb": 25504}
+{"step": 253, "of": 571, "loss": 0.1624, "lr": 5.5691768826619975e-05, "grad_norm": 0.6788, "scale": 512.0, "seconds": 256.1, "gpu_mb": 11478, "rss_mb": 2873, "host_free_mb": 25226}
+{"step": 254, "of": 571, "loss": 0.1209, "lr": 5.551663747810858e-05, "grad_norm": 0.452, "scale": 512.0, "seconds": 360.3, "gpu_mb": 11478, "rss_mb": 3016, "host_free_mb": 24893}
+{"step": 255, "of": 571, "loss": 0.0943, "lr": 5.53415061295972e-05, "grad_norm": 0.3301, "scale": 512.0, "seconds": 485.6, "gpu_mb": 12080, "rss_mb": 3148, "host_free_mb": 24567}
+{"step": 256, "of": 571, "loss": 0.0945, "lr": 5.516637478108582e-05, "grad_norm": 0.4164, "scale": 512.0, "seconds": 573.3, "gpu_mb": 12080, "rss_mb": 3309, "host_free_mb": 24306}
+{"step": 257, "of": 571, "loss": 0.1339, "lr": 5.4991243432574434e-05, "grad_norm": 0.4034, "scale": 512.0, "seconds": 646.5, "gpu_mb": 12080, "rss_mb": 3437, "host_free_mb": 24107}
+{"step": 258, "of": 571, "loss": 0.0984, "lr": 5.481611208406305e-05, "grad_norm": 0.3329, "scale": 512.0, "seconds": 733.6, "gpu_mb": 12080, "rss_mb": 3545, "host_free_mb": 23911}
+{"step": 259, "of": 571, "loss": 0.1236, "lr": 5.464098073555166e-05, "grad_norm": 0.4867, "scale": 512.0, "seconds": 813.7, "gpu_mb": 12080, "rss_mb": 3668, "host_free_mb": 23700}
+{"step": 260, "of": 571, "loss": 0.0397, "lr": 5.446584938704029e-05, "grad_norm": 0.2408, "scale": 512.0, "seconds": 943.3, "gpu_mb": 12080, "rss_mb": 3828, "host_free_mb": 23353}
+{"step": 261, "of": 571, "loss": 0.1111, "lr": 5.42907180385289e-05, "grad_norm": 0.423, "scale": 512.0, "seconds": 1031.4, "gpu_mb": 12080, "rss_mb": 3925, "host_free_mb": 23102}
+{"step": 262, "of": 571, "loss": 0.0917, "lr": 5.411558669001752e-05, "grad_norm": 0.4108, "scale": 512.0, "seconds": 1121.2, "gpu_mb": 12080, "rss_mb": 4030, "host_free_mb": 22929}
+{"step": 263, "of": 571, "loss": 0.0989, "lr": 5.3940455341506134e-05, "grad_norm": 0.3554, "scale": 512.0, "seconds": 1252.6, "gpu_mb": 12080, "rss_mb": 4180, "host_free_mb": 22608}
+{"step": 264, "of": 571, "loss": 0.0372, "lr": 5.3765323992994743e-05, "grad_norm": 0.2587, "scale": 512.0, "seconds": 1332.2, "gpu_mb": 12080, "rss_mb": 4322, "host_free_mb": 22375}
+{"step": 265, "of": 571, "loss": 0.0998, "lr": 5.3590192644483374e-05, "grad_norm": 0.4006, "scale": 512.0, "seconds": 1400.0, "gpu_mb": 12080, "rss_mb": 4481, "host_free_mb": 22077}
+{"step": 266, "of": 571, "loss": 0.0469, "lr": 5.3415061295971977e-05, "grad_norm": 0.2646, "scale": 512.0, "seconds": 1469.0, "gpu_mb": 12080, "rss_mb": 4593, "host_free_mb": 21816}
+{"step": 267, "of": 571, "loss": 0.1274, "lr": 5.32399299474606e-05, "grad_norm": 0.4427, "scale": 512.0, "seconds": 1547.8, "gpu_mb": 12080, "rss_mb": 4759, "host_free_mb": 21503}
+{"step": 268, "of": 571, "loss": 0.0828, "lr": 5.3064798598949216e-05, "grad_norm": 0.5487, "scale": 512.0, "seconds": 1609.0, "gpu_mb": 12080, "rss_mb": 4941, "host_free_mb": 21193}
+{"step": 269, "of": 571, "loss": 0.1351, "lr": 5.2889667250437826e-05, "grad_norm": 0.4015, "scale": 512.0, "seconds": 1710.7, "gpu_mb": 12080, "rss_mb": 5073, "host_free_mb": 20887}
+{"step": 270, "of": 571, "loss": 0.1173, "lr": 5.2714535901926456e-05, "grad_norm": 0.3605, "scale": 512.0, "seconds": 1799.8, "gpu_mb": 12080, "rss_mb": 5177, "host_free_mb": 20566}
+{"step": 271, "of": 571, "loss": 0.1195, "lr": 5.253940455341506e-05, "grad_norm": 0.492, "scale": 512.0, "seconds": 1895.1, "gpu_mb": 12080, "rss_mb": 5287, "host_free_mb": 20354}
+{"step": 272, "of": 571, "loss": 0.1391, "lr": 5.236427320490368e-05, "grad_norm": 0.4886, "scale": 512.0, "seconds": 1948.8, "gpu_mb": 12080, "rss_mb": 5395, "host_free_mb": 20158}
+{"step": 273, "of": 571, "loss": 0.1989, "lr": 5.21891418563923e-05, "grad_norm": 0.6549, "scale": 512.0, "seconds": 1998.3, "gpu_mb": 12080, "rss_mb": 5540, "host_free_mb": 19933}
+{"step": 274, "of": 571, "loss": 0.1387, "lr": 5.201401050788091e-05, "grad_norm": 0.5511, "scale": 512.0, "seconds": 2106.5, "gpu_mb": 12080, "rss_mb": 5651, "host_free_mb": 19676}
+{"step": 275, "of": 571, "loss": 0.1086, "lr": 5.183887915936954e-05, "grad_norm": 0.4455, "scale": 512.0, "seconds": 2211.4, "gpu_mb": 12080, "rss_mb": 5774, "host_free_mb": 19306}
+{"step": 276, "of": 571, "loss": 0.0829, "lr": 5.166374781085814e-05, "grad_norm": 0.3169, "scale": 512.0, "seconds": 2273.1, "gpu_mb": 12080, "rss_mb": 5937, "host_free_mb": 19027}
+{"step": 277, "of": 571, "loss": 0.1208, "lr": 5.148861646234676e-05, "grad_norm": 0.4544, "scale": 512.0, "seconds": 2391.2, "gpu_mb": 12080, "rss_mb": 6054, "host_free_mb": 18700}
+{"step": 278, "of": 571, "loss": 0.1561, "lr": 5.131348511383538e-05, "grad_norm": 0.5353, "scale": 512.0, "seconds": 2496.1, "gpu_mb": 12080, "rss_mb": 6170, "host_free_mb": 18412}
+{"step": 279, "of": 571, "loss": 0.0875, "lr": 5.1138353765323985e-05, "grad_norm": 0.3764, "scale": 512.0, "seconds": 2613.9, "gpu_mb": 12100, "rss_mb": 6275, "host_free_mb": 18121}
+{"step": 280, "of": 571, "loss": 0.0771, "lr": 5.0963222416812615e-05, "grad_norm": 0.3677, "scale": 512.0, "seconds": 2721.4, "gpu_mb": 12100, "rss_mb": 6391, "host_free_mb": 17775}
+{"step": 281, "of": 571, "loss": 0.0933, "lr": 5.0788091068301225e-05, "grad_norm": 0.3873, "scale": 512.0, "seconds": 2799.3, "gpu_mb": 12100, "rss_mb": 6513, "host_free_mb": 17575}
+{"step": 282, "of": 571, "loss": 0.098, "lr": 5.061295971978984e-05, "grad_norm": 0.4133, "scale": 512.0, "seconds": 2860.2, "gpu_mb": 12100, "rss_mb": 6652, "host_free_mb": 17383}
+{"step": 283, "of": 571, "loss": 0.1428, "lr": 5.0437828371278464e-05, "grad_norm": 0.4277, "scale": 512.0, "seconds": 2961.9, "gpu_mb": 12100, "rss_mb": 6816, "host_free_mb": 17096}
+{"step": 284, "of": 571, "loss": 0.0707, "lr": 5.026269702276708e-05, "grad_norm": 0.3159, "scale": 512.0, "seconds": 3047.0, "gpu_mb": 12100, "rss_mb": 6957, "host_free_mb": 16783}
+{"step": 285, "of": 571, "loss": 0.1123, "lr": 5.00875656742557e-05, "grad_norm": 0.3383, "scale": 512.0, "seconds": 3140.0, "gpu_mb": 12100, "rss_mb": 7090, "host_free_mb": 16521}
+{"step": 286, "of": 571, "loss": 0.0916, "lr": 4.991243432574431e-05, "grad_norm": 0.3634, "scale": 512.0, "seconds": 4048.8, "gpu_mb": 12100, "rss_mb": 8844, "host_free_mb": 13715}
+{"step": 287, "of": 571, "loss": 0.1179, "lr": 4.9737302977232924e-05, "grad_norm": 0.4351, "scale": 512.0, "seconds": 4166.4, "gpu_mb": 12100, "rss_mb": 8960, "host_free_mb": 13502}
+{"step": 288, "of": 571, "loss": 0.1448, "lr": 4.956217162872154e-05, "grad_norm": 0.5647, "scale": 512.0, "seconds": 4231.2, "gpu_mb": 12100, "rss_mb": 9064, "host_free_mb": 13313}
+{"step": 289, "of": 571, "loss": 0.0925, "lr": 4.9387040280210164e-05, "grad_norm": 0.4453, "scale": 512.0, "seconds": 4312.4, "gpu_mb": 12100, "rss_mb": 9196, "host_free_mb": 13102}
+{"step": 290, "of": 571, "loss": 0.086, "lr": 4.921190893169878e-05, "grad_norm": 0.4649, "scale": 512.0, "seconds": 4396.4, "gpu_mb": 12100, "rss_mb": 9279, "host_free_mb": 12913}
+{"step": 291, "of": 571, "loss": 0.0864, "lr": 4.903677758318739e-05, "grad_norm": 0.356, "scale": 512.0, "seconds": 4461.9, "gpu_mb": 12100, "rss_mb": 9365, "host_free_mb": 12762}
+{"step": 292, "of": 571, "loss": 0.1049, "lr": 4.8861646234676006e-05, "grad_norm": 0.3728, "scale": 512.0, "seconds": 4564.8, "gpu_mb": 12100, "rss_mb": 9515, "host_free_mb": 12554}
+{"step": 293, "of": 571, "loss": 0.1326, "lr": 4.868651488616462e-05, "grad_norm": 0.5186, "scale": 512.0, "seconds": 4627.1, "gpu_mb": 12100, "rss_mb": 9591, "host_free_mb": 12352}
+{"step": 294, "of": 571, "loss": 0.114, "lr": 4.8511383537653246e-05, "grad_norm": 0.4646, "scale": 512.0, "seconds": 4702.6, "gpu_mb": 12100, "rss_mb": 9665, "host_free_mb": 12189}
+{"step": 295, "of": 571, "loss": 0.1034, "lr": 4.833625218914186e-05, "grad_norm": 0.4306, "scale": 512.0, "seconds": 4793.5, "gpu_mb": 12100, "rss_mb": 9800, "host_free_mb": 11895}
+{"step": 296, "of": 571, "loss": 0.1134, "lr": 4.816112084063048e-05, "grad_norm": 0.3872, "scale": 512.0, "seconds": 4871.0, "gpu_mb": 12100, "rss_mb": 9883, "host_free_mb": 11634}
+{"step": 297, "of": 571, "loss": 0.1048, "lr": 4.798598949211909e-05, "grad_norm": 0.4464, "scale": 512.0, "seconds": 4950.9, "gpu_mb": 12100, "rss_mb": 10006, "host_free_mb": 11384}
+{"step": 298, "of": 571, "loss": 0.1002, "lr": 4.7810858143607706e-05, "grad_norm": 0.4209, "scale": 512.0, "seconds": 5019.9, "gpu_mb": 12100, "rss_mb": 10076, "host_free_mb": 11232}
+{"step": 299, "of": 571, "loss": 0.0665, "lr": 4.763572679509632e-05, "grad_norm": 0.2775, "scale": 512.0, "seconds": 5072.6, "gpu_mb": 12100, "rss_mb": 10206, "host_free_mb": 11028}
+{"step": 300, "of": 571, "loss": 0.0901, "lr": 4.7460595446584946e-05, "grad_norm": 0.4078, "scale": 512.0, "seconds": 5156.2, "gpu_mb": 12100, "rss_mb": 10341, "host_free_mb": 10792}
+{"step": 301, "of": 571, "loss": 0.0563, "lr": 4.728546409807356e-05, "grad_norm": 0.3173, "scale": 512.0, "seconds": 5273.7, "gpu_mb": 12100, "rss_mb": 10450, "host_free_mb": 10589}
+{"step": 302, "of": 571, "loss": 0.1173, "lr": 4.711033274956217e-05, "grad_norm": 0.4229, "scale": 512.0, "seconds": 5358.4, "gpu_mb": 12100, "rss_mb": 10567, "host_free_mb": 10427}
+{"step": 303, "of": 571, "loss": 0.0966, "lr": 4.693520140105079e-05, "grad_norm": 0.4817, "scale": 512.0, "seconds": 5469.0, "gpu_mb": 12100, "rss_mb": 10658, "host_free_mb": 10271}
+{"step": 304, "of": 571, "loss": 0.1036, "lr": 4.6760070052539405e-05, "grad_norm": 0.4314, "scale": 512.0, "seconds": 5579.3, "gpu_mb": 12100, "rss_mb": 10776, "host_free_mb": 10047}
+{"step": 305, "of": 571, "loss": 0.0823, "lr": 4.658493870402803e-05, "grad_norm": 0.5121, "scale": 512.0, "seconds": 5629.1, "gpu_mb": 12100, "rss_mb": 10819, "host_free_mb": 9951}
+{"step": 306, "of": 571, "loss": 0.0845, "lr": 4.6409807355516645e-05, "grad_norm": 0.4008, "scale": 512.0, "seconds": 5689.2, "gpu_mb": 12100, "rss_mb": 10872, "host_free_mb": 9840}
+{"step": 307, "of": 571, "loss": 0.0831, "lr": 4.623467600700525e-05, "grad_norm": 0.4535, "scale": 512.0, "seconds": 5755.9, "gpu_mb": 12100, "rss_mb": 10908, "host_free_mb": 9765}
+{"step": 308, "of": 571, "loss": 0.1086, "lr": 4.605954465849387e-05, "grad_norm": 0.4627, "scale": 512.0, "seconds": 5842.8, "gpu_mb": 12100, "rss_mb": 10982, "host_free_mb": 9614}
+{"step": 309, "of": 571, "loss": 0.1015, "lr": 4.588441330998249e-05, "grad_norm": 0.3516, "scale": 512.0, "seconds": 5924.9, "gpu_mb": 12100, "rss_mb": 11073, "host_free_mb": 9490}
+{"step": 310, "of": 571, "loss": 0.1207, "lr": 4.5709281961471104e-05, "grad_norm": 0.4354, "scale": 512.0, "seconds": 5984.9, "gpu_mb": 12100, "rss_mb": 11118, "host_free_mb": 9381}
+{"step": 311, "of": 571, "loss": 0.0473, "lr": 4.553415061295973e-05, "grad_norm": 0.3035, "scale": 512.0, "seconds": 6061.1, "gpu_mb": 12100, "rss_mb": 11196, "host_free_mb": 9303}
+{"step": 312, "of": 571, "loss": 0.0885, "lr": 4.5359019264448344e-05, "grad_norm": 0.4292, "scale": 512.0, "seconds": 6127.2, "gpu_mb": 12100, "rss_mb": 11251, "host_free_mb": 9156}
+{"step": 313, "of": 571, "loss": 0.0626, "lr": 4.5183887915936954e-05, "grad_norm": 0.3505, "scale": 512.0, "seconds": 6202.4, "gpu_mb": 12100, "rss_mb": 11307, "host_free_mb": 9083}
+{"step": 314, "of": 571, "loss": 0.0728, "lr": 4.500875656742557e-05, "grad_norm": 0.3581, "scale": 512.0, "seconds": 6292.5, "gpu_mb": 12100, "rss_mb": 11345, "host_free_mb": 8961}
+{"step": 315, "of": 571, "loss": 0.0828, "lr": 4.483362521891419e-05, "grad_norm": 0.5063, "scale": 512.0, "seconds": 6387.7, "gpu_mb": 12100, "rss_mb": 11406, "host_free_mb": 8828}
+{"step": 316, "of": 571, "loss": 0.0958, "lr": 4.46584938704028e-05, "grad_norm": 0.4981, "scale": 512.0, "seconds": 6460.7, "gpu_mb": 12100, "rss_mb": 11496, "host_free_mb": 8705}
+{"step": 317, "of": 571, "loss": 0.1016, "lr": 4.448336252189143e-05, "grad_norm": 0.3259, "scale": 512.0, "seconds": 6536.3, "gpu_mb": 12100, "rss_mb": 11542, "host_free_mb": 8583}
+{"step": 318, "of": 571, "loss": 0.0755, "lr": 4.430823117338003e-05, "grad_norm": 0.4705, "scale": 512.0, "seconds": 6639.4, "gpu_mb": 12100, "rss_mb": 11614, "host_free_mb": 8453}
+{"step": 319, "of": 571, "loss": 0.0839, "lr": 4.413309982486865e-05, "grad_norm": 0.456, "scale": 512.0, "seconds": 6738.8, "gpu_mb": 12100, "rss_mb": 11710, "host_free_mb": 8318}
+{"step": 320, "of": 571, "loss": 0.0692, "lr": 4.395796847635727e-05, "grad_norm": 0.4371, "scale": 512.0, "seconds": 6807.9, "gpu_mb": 12100, "rss_mb": 11776, "host_free_mb": 8201}
+{"step": 321, "of": 571, "loss": 0.0963, "lr": 4.3782837127845886e-05, "grad_norm": 0.4343, "scale": 512.0, "seconds": 6877.7, "gpu_mb": 12100, "rss_mb": 11837, "host_free_mb": 8089}
+{"step": 322, "of": 571, "loss": 0.0567, "lr": 4.360770577933451e-05, "grad_norm": 0.3836, "scale": 512.0, "seconds": 6979.6, "gpu_mb": 12100, "rss_mb": 11895, "host_free_mb": 7825}
+{"step": 323, "of": 571, "loss": 0.1275, "lr": 4.343257443082311e-05, "grad_norm": 0.4603, "scale": 512.0, "seconds": 7051.8, "gpu_mb": 12100, "rss_mb": 11948, "host_free_mb": 7724}
+{"step": 324, "of": 571, "loss": 0.0675, "lr": 4.3257443082311736e-05, "grad_norm": 0.4179, "scale": 512.0, "seconds": 7108.8, "gpu_mb": 12100, "rss_mb": 11980, "host_free_mb": 7640}
+{"step": 325, "of": 571, "loss": 0.1148, "lr": 4.308231173380035e-05, "grad_norm": 0.4881, "scale": 512.0, "seconds": 7234.3, "gpu_mb": 12100, "rss_mb": 12034, "host_free_mb": 7458}
+{"step": 326, "of": 571, "loss": 0.1069, "lr": 4.290718038528897e-05, "grad_norm": 0.4992, "scale": 512.0, "seconds": 7300.1, "gpu_mb": 12100, "rss_mb": 12178, "host_free_mb": 7285}
+{"step": 327, "of": 571, "loss": 0.131, "lr": 4.2732049036777585e-05, "grad_norm": 0.6004, "scale": 512.0, "seconds": 7366.4, "gpu_mb": 12100, "rss_mb": 12273, "host_free_mb": 7156}
+{"step": 328, "of": 571, "loss": 0.0437, "lr": 4.255691768826621e-05, "grad_norm": 0.2369, "scale": 512.0, "seconds": 7445.3, "gpu_mb": 12100, "rss_mb": 12299, "host_free_mb": 7092}
+{"step": 329, "of": 571, "loss": 0.1233, "lr": 4.238178633975481e-05, "grad_norm": 0.5945, "scale": 512.0, "seconds": 7508.0, "gpu_mb": 12100, "rss_mb": 12353, "host_free_mb": 6996}
+{"step": 330, "of": 571, "loss": 0.1255, "lr": 4.2206654991243435e-05, "grad_norm": 0.4662, "scale": 512.0, "seconds": 7611.6, "gpu_mb": 12100, "rss_mb": 12424, "host_free_mb": 6891}
+{"step": 331, "of": 571, "loss": 0.0575, "lr": 4.203152364273205e-05, "grad_norm": 0.3088, "scale": 512.0, "seconds": 7677.4, "gpu_mb": 12100, "rss_mb": 12522, "host_free_mb": 6748}
+{"step": 332, "of": 571, "loss": 0.0913, "lr": 4.185639229422067e-05, "grad_norm": 0.3878, "scale": 512.0, "seconds": 7742.3, "gpu_mb": 12100, "rss_mb": 12605, "host_free_mb": 6592}
+{"step": 333, "of": 571, "loss": 0.1425, "lr": 4.168126094570929e-05, "grad_norm": 0.561, "scale": 512.0, "seconds": 7827.3, "gpu_mb": 12100, "rss_mb": 12664, "host_free_mb": 6503}
+{"step": 334, "of": 571, "loss": 0.0959, "lr": 4.1506129597197894e-05, "grad_norm": 0.4179, "scale": 512.0, "seconds": 7903.6, "gpu_mb": 12100, "rss_mb": 12762, "host_free_mb": 6388}
+{"step": 335, "of": 571, "loss": 0.0916, "lr": 4.133099824868652e-05, "grad_norm": 0.3676, "scale": 512.0, "seconds": 7995.8, "gpu_mb": 12100, "rss_mb": 12803, "host_free_mb": 6271}
+{"step": 336, "of": 571, "loss": 0.0458, "lr": 4.1155866900175134e-05, "grad_norm": 0.2898, "scale": 512.0, "seconds": 8073.8, "gpu_mb": 12100, "rss_mb": 12881, "host_free_mb": 6109}
+{"step": 337, "of": 571, "loss": 0.0682, "lr": 4.098073555166375e-05, "grad_norm": 0.3933, "scale": 512.0, "seconds": 8141.9, "gpu_mb": 12100, "rss_mb": 12923, "host_free_mb": 6024}
+{"step": 338, "of": 571, "loss": 0.1149, "lr": 4.080560420315237e-05, "grad_norm": 0.4675, "scale": 512.0, "seconds": 8231.9, "gpu_mb": 12100, "rss_mb": 12973, "host_free_mb": 5909}
+{"step": 339, "of": 571, "loss": 0.0669, "lr": 4.063047285464098e-05, "grad_norm": 0.4381, "scale": 512.0, "seconds": 8311.0, "gpu_mb": 12100, "rss_mb": 13057, "host_free_mb": 5769}
+{"step": 340, "of": 571, "loss": 0.0461, "lr": 4.0455341506129593e-05, "grad_norm": 0.3261, "scale": 512.0, "seconds": 8419.4, "gpu_mb": 12100, "rss_mb": 13095, "host_free_mb": 5621}
+{"step": 341, "of": 571, "loss": 0.1354, "lr": 4.028021015761822e-05, "grad_norm": 0.5139, "scale": 512.0, "seconds": 8487.4, "gpu_mb": 12100, "rss_mb": 13165, "host_free_mb": 5516}
+{"step": 342, "of": 571, "loss": 0.0633, "lr": 4.010507880910683e-05, "grad_norm": 0.396, "scale": 512.0, "seconds": 8553.9, "gpu_mb": 12100, "rss_mb": 13252, "host_free_mb": 5386}
+{"step": 343, "of": 571, "loss": 0.1316, "lr": 3.992994746059545e-05, "grad_norm": 0.4605, "scale": 512.0, "seconds": 8650.7, "gpu_mb": 12100, "rss_mb": 13307, "host_free_mb": 5306}
+{"step": 344, "of": 571, "loss": 0.1076, "lr": 3.975481611208407e-05, "grad_norm": NaN, "scale": 256.0, "seconds": 8711.4, "gpu_mb": 12100, "rss_mb": 13372, "host_free_mb": 5243}
+{"step": 345, "of": 571, "loss": 0.0541, "lr": 3.9579684763572676e-05, "grad_norm": 0.3829, "scale": 256.0, "seconds": 8817.7, "gpu_mb": 12100, "rss_mb": 13463, "host_free_mb": 5119}
+{"step": 346, "of": 571, "loss": 0.0695, "lr": 3.940455341506129e-05, "grad_norm": 0.3821, "scale": 256.0, "seconds": 8879.2, "gpu_mb": 12100, "rss_mb": 13517, "host_free_mb": 4991}
+{"step": 347, "of": 571, "loss": 0.0914, "lr": 3.9229422066549916e-05, "grad_norm": 0.4815, "scale": 256.0, "seconds": 8968.3, "gpu_mb": 12100, "rss_mb": 13586, "host_free_mb": 17596}
+{"step": 348, "of": 571, "loss": 0.0806, "lr": 3.905429071803853e-05, "grad_norm": 0.3467, "scale": 256.0, "seconds": 9079.1, "gpu_mb": 12100, "rss_mb": 13652, "host_free_mb": 15524}
+{"step": 349, "of": 571, "loss": 0.0883, "lr": 3.887915936952715e-05, "grad_norm": 0.5399, "scale": 256.0, "seconds": 9133.1, "gpu_mb": 12100, "rss_mb": 13699, "host_free_mb": 15389}
+{"step": 350, "of": 571, "loss": 0.0805, "lr": 3.870402802101576e-05, "grad_norm": 0.671, "scale": 256.0, "seconds": 9211.5, "gpu_mb": 12100, "rss_mb": 13769, "host_free_mb": 15041}
+{"paused_at": 350, "restart": "resume from checkpoint"}
+{"examples": 2282, "skipped_too_long": 0, "max_len": 7758, "sample_target": "<tool_call>\n<function=skill_search>\n<parameter=query>\ncrm_clean dedupe_export\n</parameter>\n<parameter=limit>\n5\n</parameter>\n</function>\n</tool_call><|im_end|>\n"}
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights:   0%|          | 1/426 [00:02<15:45,  2.22s/it]Loading weights:  34%|███▍      | 146/426 [00:02<00:03, 84.56it/s]Loading weights:  46%|████▋     | 198/426 [00:03<00:04, 56.79it/s]Loading weights:  54%|█████▎    | 228/426 [00:05<00:05, 37.23it/s]Loading weights:  58%|█████▊    | 247/426 [00:06<00:04, 37.35it/s]Loading weights:  61%|██████▏   | 261/426 [00:07<00:05, 30.10it/s]Loading weights:  68%|██████▊   | 291/426 [00:07<00:03, 40.66it/s]Loading weights:  72%|███████▏  | 305/426 [00:07<00:02, 43.33it/s]Loading weights:  75%|███████▍  | 318/426 [00:07<00:02, 47.68it/s]Loading weights:  80%|███████▉  | 340/426 [00:07<00:01, 62.25it/s]Loading weights:  83%|████████▎ | 353/426 [00:07<00:01, 68.66it/s]Loading weights:  86%|████████▌ | 366/426 [00:08<00:00, 64.59it/s]Loading weights:  89%|████████▉ | 379/426 [00:08<00:00, 68.44it/s]Loading weights:  93%|█████████▎| 397/426 [00:08<00:00, 76.54it/s]Loading weights:  96%|█████████▋| 411/426 [00:08<00:00, 75.65it/s]Loading weights: 100%|██████████| 426/426 [00:08<00:00, 48.49it/s]
+{"loader": "AutoModelForCausalLM", "trainable_params": 18939904, "targets": "safe", "gpu_mb_after_load": [8094], "device_map": []}
+{"resumed_from": "/kaggle/working/e1/r3fg1-adapter/adapter-ckpt.pt", "step": 350, "epoch": 2}
+[transformers] `use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+{"step": 351, "of": 571, "loss": 0.0718, "lr": 3.8528896672504375e-05, "grad_norm": 0.4365, "scale": 256.0, "seconds": 77.5, "gpu_mb": 10694, "rss_mb": 2588, "host_free_mb": 26089}
+{"step": 352, "of": 571, "loss": 0.0608, "lr": 3.8353765323993e-05, "grad_norm": 0.3666, "scale": 256.0, "seconds": 262.3, "gpu_mb": 12040, "rss_mb": 2733, "host_free_mb": 25721}
+{"step": 353, "of": 571, "loss": 0.0879, "lr": 3.8178633975481615e-05, "grad_norm": 0.5229, "scale": 256.0, "seconds": 350.6, "gpu_mb": 12040, "rss_mb": 2849, "host_free_mb": 25435}
+{"step": 354, "of": 571, "loss": 0.0655, "lr": 3.800350262697023e-05, "grad_norm": 0.4651, "scale": 256.0, "seconds": 432.9, "gpu_mb": 12040, "rss_mb": 3028, "host_free_mb": 25088}
+{"step": 355, "of": 571, "loss": 0.0887, "lr": 3.782837127845884e-05, "grad_norm": 0.3416, "scale": 256.0, "seconds": 499.5, "gpu_mb": 12040, "rss_mb": 3126, "host_free_mb": 24863}
+{"step": 356, "of": 571, "loss": 0.0454, "lr": 3.765323992994746e-05, "grad_norm": 0.2706, "scale": 256.0, "seconds": 549.4, "gpu_mb": 12040, "rss_mb": 3276, "host_free_mb": 24603}
+{"step": 357, "of": 571, "loss": 0.1268, "lr": 3.7478108581436075e-05, "grad_norm": 0.5314, "scale": 256.0, "seconds": 606.3, "gpu_mb": 12040, "rss_mb": 3425, "host_free_mb": 24301}
+{"step": 358, "of": 571, "loss": 0.0979, "lr": 3.73029772329247e-05, "grad_norm": 0.4766, "scale": 256.0, "seconds": 708.9, "gpu_mb": 12040, "rss_mb": 3547, "host_free_mb": 24049}
+{"step": 359, "of": 571, "loss": 0.0817, "lr": 3.7127845884413314e-05, "grad_norm": 0.387, "scale": 256.0, "seconds": 763.1, "gpu_mb": 12040, "rss_mb": 3711, "host_free_mb": 23755}
+{"step": 360, "of": 571, "loss": 0.1019, "lr": 3.695271453590193e-05, "grad_norm": 0.3713, "scale": 256.0, "seconds": 850.2, "gpu_mb": 12040, "rss_mb": 3829, "host_free_mb": 23526}
+{"step": 361, "of": 571, "loss": 0.0489, "lr": 3.677758318739054e-05, "grad_norm": 0.3773, "scale": 256.0, "seconds": 964.6, "gpu_mb": 12040, "rss_mb": 3950, "host_free_mb": 23225}
+{"step": 362, "of": 571, "loss": 0.0939, "lr": 3.660245183887916e-05, "grad_norm": 0.5223, "scale": 256.0, "seconds": 1041.8, "gpu_mb": 12040, "rss_mb": 4115, "host_free_mb": 22997}
+{"step": 363, "of": 571, "loss": 0.0893, "lr": 3.642732049036778e-05, "grad_norm": 0.527, "scale": 256.0, "seconds": 1152.1, "gpu_mb": 12040, "rss_mb": 4239, "host_free_mb": 22729}
+{"step": 364, "of": 571, "loss": 0.0973, "lr": 3.62521891418564e-05, "grad_norm": 0.5013, "scale": 256.0, "seconds": 1237.6, "gpu_mb": 12040, "rss_mb": 4408, "host_free_mb": 22390}
+{"step": 365, "of": 571, "loss": 0.1114, "lr": 3.6077057793345014e-05, "grad_norm": 0.417, "scale": 256.0, "seconds": 1342.9, "gpu_mb": 12069, "rss_mb": 4545, "host_free_mb": 22008}
+{"step": 366, "of": 571, "loss": 0.095, "lr": 3.5901926444833623e-05, "grad_norm": 0.3679, "scale": 256.0, "seconds": 1438.1, "gpu_mb": 12069, "rss_mb": 4631, "host_free_mb": 21782}
+{"step": 367, "of": 571, "loss": 0.0389, "lr": 3.572679509632224e-05, "grad_norm": 0.2091, "scale": 256.0, "seconds": 1503.8, "gpu_mb": 12069, "rss_mb": 4790, "host_free_mb": 21523}
+{"step": 368, "of": 571, "loss": 0.0933, "lr": 3.5551663747810857e-05, "grad_norm": 0.5101, "scale": 256.0, "seconds": 1572.5, "gpu_mb": 12069, "rss_mb": 4925, "host_free_mb": 21312}
+{"step": 369, "of": 571, "loss": 0.1302, "lr": 3.537653239929948e-05, "grad_norm": 0.7092, "scale": 256.0, "seconds": 1661.4, "gpu_mb": 12069, "rss_mb": 5063, "host_free_mb": 21095}
+{"step": 370, "of": 571, "loss": 0.0463, "lr": 3.5201401050788096e-05, "grad_norm": 0.247, "scale": 256.0, "seconds": 1754.5, "gpu_mb": 12069, "rss_mb": 5180, "host_free_mb": 20832}
+{"step": 371, "of": 571, "loss": 0.0225, "lr": 3.5026269702276706e-05, "grad_norm": 0.2042, "scale": 256.0, "seconds": 1849.0, "gpu_mb": 12069, "rss_mb": 5319, "host_free_mb": 20596}
+{"step": 372, "of": 571, "loss": 0.1001, "lr": 3.485113835376532e-05, "grad_norm": 0.4247, "scale": 256.0, "seconds": 1913.8, "gpu_mb": 12069, "rss_mb": 5458, "host_free_mb": 20375}
+{"step": 373, "of": 571, "loss": 0.0679, "lr": 3.467600700525394e-05, "grad_norm": 0.2752, "scale": 256.0, "seconds": 2005.8, "gpu_mb": 12069, "rss_mb": 5618, "host_free_mb": 20059}
+{"step": 374, "of": 571, "loss": 0.0934, "lr": 3.450087565674256e-05, "grad_norm": 0.3473, "scale": 256.0, "seconds": 2061.7, "gpu_mb": 12069, "rss_mb": 5733, "host_free_mb": 19870}
+{"step": 375, "of": 571, "loss": 0.0629, "lr": 3.432574430823118e-05, "grad_norm": 0.3497, "scale": 256.0, "seconds": 2130.6, "gpu_mb": 12069, "rss_mb": 5849, "host_free_mb": 19617}
+{"step": 376, "of": 571, "loss": 0.1352, "lr": 3.4150612959719796e-05, "grad_norm": 0.5592, "scale": 256.0, "seconds": 2247.8, "gpu_mb": 12069, "rss_mb": 5983, "host_free_mb": 19312}
+{"step": 377, "of": 571, "loss": 0.1122, "lr": 3.3975481611208405e-05, "grad_norm": 0.429, "scale": 256.0, "seconds": 2341.5, "gpu_mb": 12069, "rss_mb": 6101, "host_free_mb": 19069}
+{"step": 378, "of": 571, "loss": 0.0995, "lr": 3.380035026269702e-05, "grad_norm": 0.4777, "scale": 256.0, "seconds": 2432.7, "gpu_mb": 12069, "rss_mb": 6261, "host_free_mb": 18748}
+{"step": 379, "of": 571, "loss": 0.0908, "lr": 3.362521891418564e-05, "grad_norm": 0.3524, "scale": 256.0, "seconds": 2564.6, "gpu_mb": 12069, "rss_mb": 6384, "host_free_mb": 18353}
+{"step": 380, "of": 571, "loss": 0.1523, "lr": 3.345008756567426e-05, "grad_norm": 0.8238, "scale": 256.0, "seconds": 2655.7, "gpu_mb": 12069, "rss_mb": 6520, "host_free_mb": 18103}
+{"step": 381, "of": 571, "loss": 0.0729, "lr": 3.327495621716288e-05, "grad_norm": 0.3563, "scale": 256.0, "seconds": 2767.6, "gpu_mb": 12069, "rss_mb": 6685, "host_free_mb": 17794}
+{"step": 382, "of": 571, "loss": 0.128, "lr": 3.309982486865149e-05, "grad_norm": 0.3716, "scale": 256.0, "seconds": 2834.6, "gpu_mb": 12069, "rss_mb": 6830, "host_free_mb": 17541}
+{"step": 383, "of": 571, "loss": 0.0556, "lr": 3.2924693520140105e-05, "grad_norm": 0.3435, "scale": 256.0, "seconds": 2957.0, "gpu_mb": 12069, "rss_mb": 6952, "host_free_mb": 17257}
+{"step": 384, "of": 571, "loss": 0.1335, "lr": 3.274956217162872e-05, "grad_norm": 0.4583, "scale": 256.0, "seconds": 3022.6, "gpu_mb": 12069, "rss_mb": 7081, "host_free_mb": 17055}
+{"step": 385, "of": 571, "loss": 0.0916, "lr": 3.2574430823117344e-05, "grad_norm": 0.473, "scale": 256.0, "seconds": 3153.3, "gpu_mb": 12069, "rss_mb": 7186, "host_free_mb": 16775}
+{"step": 386, "of": 571, "loss": 0.0777, "lr": 3.239929947460596e-05, "grad_norm": 0.3448, "scale": 256.0, "seconds": 3219.3, "gpu_mb": 12069, "rss_mb": 7304, "host_free_mb": 16600}
+{"step": 387, "of": 571, "loss": 0.0471, "lr": 3.2224168126094564e-05, "grad_norm": 0.3302, "scale": 256.0, "seconds": 3331.4, "gpu_mb": 12069, "rss_mb": 7377, "host_free_mb": 16388}
+{"step": 388, "of": 571, "loss": 0.1075, "lr": 3.204903677758319e-05, "grad_norm": NaN, "scale": 128.0, "seconds": 3408.6, "gpu_mb": 12069, "rss_mb": 7510, "host_free_mb": 16132}
+{"step": 389, "of": 571, "loss": 0.1585, "lr": 3.1873905429071804e-05, "grad_norm": 0.5129, "scale": 128.0, "seconds": 3471.5, "gpu_mb": 12069, "rss_mb": 7601, "host_free_mb": 15943}
+{"step": 390, "of": 571, "loss": 0.0928, "lr": 3.169877408056042e-05, "grad_norm": 0.3778, "scale": 128.0, "seconds": 3531.7, "gpu_mb": 12069, "rss_mb": 7704, "host_free_mb": 15755}
+{"step": 391, "of": 571, "loss": 0.0358, "lr": 3.1523642732049044e-05, "grad_norm": 0.262, "scale": 128.0, "seconds": 3644.5, "gpu_mb": 12069, "rss_mb": 7845, "host_free_mb": 15481}
+{"step": 392, "of": 571, "loss": 0.0813, "lr": 3.134851138353766e-05, "grad_norm": 0.3791, "scale": 128.0, "seconds": 3743.0, "gpu_mb": 12069, "rss_mb": 7948, "host_free_mb": 15257}
+{"step": 393, "of": 571, "loss": 0.1134, "lr": 3.117338003502627e-05, "grad_norm": 0.4644, "scale": 128.0, "seconds": 3817.4, "gpu_mb": 12069, "rss_mb": 8052, "host_free_mb": 15093}
+{"step": 394, "of": 571, "loss": 0.0672, "lr": 3.0998248686514886e-05, "grad_norm": 0.3268, "scale": 128.0, "seconds": 3868.8, "gpu_mb": 12069, "rss_mb": 8150, "host_free_mb": 14938}
+{"step": 395, "of": 571, "loss": 0.1421, "lr": 3.08231173380035e-05, "grad_norm": 0.4247, "scale": 128.0, "seconds": 3944.1, "gpu_mb": 12069, "rss_mb": 8264, "host_free_mb": 14723}
+{"step": 396, "of": 571, "loss": 0.0569, "lr": 3.064798598949212e-05, "grad_norm": 0.4753, "scale": 128.0, "seconds": 4065.6, "gpu_mb": 12069, "rss_mb": 8380, "host_free_mb": 14425}
+{"step": 397, "of": 571, "loss": 0.0928, "lr": 3.0472854640980743e-05, "grad_norm": 0.4218, "scale": 128.0, "seconds": 4131.8, "gpu_mb": 12069, "rss_mb": 8503, "host_free_mb": 14254}
+{"step": 398, "of": 571, "loss": 0.1519, "lr": 3.029772329246935e-05, "grad_norm": 0.5541, "scale": 128.0, "seconds": 4192.8, "gpu_mb": 12069, "rss_mb": 8617, "host_free_mb": 14063}
+{"step": 399, "of": 571, "loss": 0.1244, "lr": 3.0122591943957966e-05, "grad_norm": 0.5441, "scale": 128.0, "seconds": 4309.2, "gpu_mb": 12069, "rss_mb": 8737, "host_free_mb": 13805}
+{"step": 400, "of": 571, "loss": 0.1153, "lr": 2.9947460595446586e-05, "grad_norm": 0.4923, "scale": 128.0, "seconds": 4399.0, "gpu_mb": 12069, "rss_mb": 8821, "host_free_mb": 13550}
+{"step": 401, "of": 571, "loss": 0.1031, "lr": 2.9772329246935206e-05, "grad_norm": 0.5295, "scale": 128.0, "seconds": 4496.7, "gpu_mb": 12069, "rss_mb": 8902, "host_free_mb": 13368}
+{"step": 402, "of": 571, "loss": 0.1213, "lr": 2.9597197898423822e-05, "grad_norm": 0.5001, "scale": 128.0, "seconds": 4576.9, "gpu_mb": 12069, "rss_mb": 9005, "host_free_mb": 13119}
+{"step": 403, "of": 571, "loss": 0.1137, "lr": 2.9422066549912432e-05, "grad_norm": 0.4636, "scale": 128.0, "seconds": 4664.5, "gpu_mb": 12069, "rss_mb": 9112, "host_free_mb": 12851}
+{"step": 404, "of": 571, "loss": 0.0769, "lr": 2.924693520140105e-05, "grad_norm": 0.3068, "scale": 128.0, "seconds": 4732.1, "gpu_mb": 12069, "rss_mb": 9185, "host_free_mb": 12735}
+{"step": 405, "of": 571, "loss": 0.1436, "lr": 2.907180385288967e-05, "grad_norm": 0.6129, "scale": 128.0, "seconds": 4833.1, "gpu_mb": 12069, "rss_mb": 9264, "host_free_mb": 12540}
+{"step": 406, "of": 571, "loss": 0.0804, "lr": 2.8896672504378285e-05, "grad_norm": 0.3224, "scale": 128.0, "seconds": 4945.1, "gpu_mb": 12069, "rss_mb": 9404, "host_free_mb": 12256}
+{"step": 407, "of": 571, "loss": 0.0893, "lr": 2.8721541155866905e-05, "grad_norm": 0.3618, "scale": 128.0, "seconds": 5046.1, "gpu_mb": 12069, "rss_mb": 9570, "host_free_mb": 11994}
+{"step": 408, "of": 571, "loss": 0.0365, "lr": 2.854640980735552e-05, "grad_norm": 0.2482, "scale": 128.0, "seconds": 5095.7, "gpu_mb": 12069, "rss_mb": 9632, "host_free_mb": 11886}
+{"step": 409, "of": 571, "loss": 0.0658, "lr": 2.837127845884413e-05, "grad_norm": 0.3407, "scale": 128.0, "seconds": 5170.9, "gpu_mb": 12069, "rss_mb": 9754, "host_free_mb": 11670}
+{"step": 410, "of": 571, "loss": 0.1059, "lr": 2.8196147110332748e-05, "grad_norm": 0.4596, "scale": 128.0, "seconds": 5256.3, "gpu_mb": 12069, "rss_mb": 9858, "host_free_mb": 11436}
+{"step": 411, "of": 571, "loss": 0.1204, "lr": 2.8021015761821368e-05, "grad_norm": 0.6379, "scale": 128.0, "seconds": 5326.8, "gpu_mb": 12069, "rss_mb": 9958, "host_free_mb": 11270}
+{"step": 412, "of": 571, "loss": 0.0703, "lr": 2.7845884413309988e-05, "grad_norm": 0.4444, "scale": 128.0, "seconds": 5426.4, "gpu_mb": 12069, "rss_mb": 10054, "host_free_mb": 11031}
+{"step": 413, "of": 571, "loss": 0.1033, "lr": 2.7670753064798604e-05, "grad_norm": 0.4709, "scale": 128.0, "seconds": 5548.9, "gpu_mb": 12069, "rss_mb": 10184, "host_free_mb": 10793}
+{"step": 414, "of": 571, "loss": 0.1554, "lr": 2.749562171628721e-05, "grad_norm": 0.541, "scale": 128.0, "seconds": 5613.0, "gpu_mb": 12069, "rss_mb": 10287, "host_free_mb": 10588}
+{"step": 415, "of": 571, "loss": 0.0759, "lr": 2.732049036777583e-05, "grad_norm": 0.4476, "scale": 128.0, "seconds": 5700.3, "gpu_mb": 12069, "rss_mb": 10391, "host_free_mb": 10294}
+{"step": 416, "of": 571, "loss": 0.0624, "lr": 2.714535901926445e-05, "grad_norm": 0.4329, "scale": 128.0, "seconds": 5786.2, "gpu_mb": 12069, "rss_mb": 10544, "host_free_mb": 10024}
+{"step": 417, "of": 571, "loss": 0.0904, "lr": 2.6970227670753067e-05, "grad_norm": 0.4286, "scale": 128.0, "seconds": 5873.2, "gpu_mb": 12069, "rss_mb": 10647, "host_free_mb": 9775}
+{"step": 418, "of": 571, "loss": 0.0914, "lr": 2.6795096322241687e-05, "grad_norm": 0.3672, "scale": 128.0, "seconds": 5931.7, "gpu_mb": 12069, "rss_mb": 10726, "host_free_mb": 9574}
+{"step": 419, "of": 571, "loss": 0.0988, "lr": 2.6619964973730293e-05, "grad_norm": 0.4881, "scale": 128.0, "seconds": 6008.8, "gpu_mb": 12069, "rss_mb": 10808, "host_free_mb": 9437}
+{"step": 420, "of": 571, "loss": 0.1021, "lr": 2.6444833625218913e-05, "grad_norm": 0.4108, "scale": 128.0, "seconds": 6109.1, "gpu_mb": 12069, "rss_mb": 10949, "host_free_mb": 9222}
+{"step": 421, "of": 571, "loss": 0.1044, "lr": 2.626970227670753e-05, "grad_norm": 0.4401, "scale": 128.0, "seconds": 6207.6, "gpu_mb": 12069, "rss_mb": 10943, "host_free_mb": 8996}
+{"step": 422, "of": 571, "loss": 0.1474, "lr": 2.609457092819615e-05, "grad_norm": 0.6206, "scale": 128.0, "seconds": 6274.0, "gpu_mb": 12069, "rss_mb": 11048, "host_free_mb": 8797}
+{"step": 423, "of": 571, "loss": 0.0897, "lr": 2.591943957968477e-05, "grad_norm": 0.4366, "scale": 128.0, "seconds": 6377.9, "gpu_mb": 12069, "rss_mb": 11147, "host_free_mb": 8592}
+{"step": 424, "of": 571, "loss": 0.121, "lr": 2.5744308231173386e-05, "grad_norm": 0.624, "scale": 128.0, "seconds": 6474.6, "gpu_mb": 12069, "rss_mb": 11238, "host_free_mb": 8385}
+{"step": 425, "of": 571, "loss": 0.099, "lr": 2.5569176882661992e-05, "grad_norm": 0.4278, "scale": 128.0, "seconds": 6562.3, "gpu_mb": 12069, "rss_mb": 11315, "host_free_mb": 8236}
+{"step": 426, "of": 571, "loss": 0.1508, "lr": 2.5394045534150612e-05, "grad_norm": 0.69, "scale": 128.0, "seconds": 6653.7, "gpu_mb": 12069, "rss_mb": 11469, "host_free_mb": 8018}
+{"step": 427, "of": 571, "loss": 0.1244, "lr": 2.5218914185639232e-05, "grad_norm": 0.4796, "scale": 128.0, "seconds": 6731.3, "gpu_mb": 12069, "rss_mb": 11529, "host_free_mb": 7880}
+{"step": 428, "of": 571, "loss": 0.0943, "lr": 2.504378283712785e-05, "grad_norm": 0.5127, "scale": 128.0, "seconds": 6806.5, "gpu_mb": 12069, "rss_mb": 11612, "host_free_mb": 7711}
+{"step": 429, "of": 571, "loss": 0.05, "lr": 2.486865148861647e-05, "grad_norm": 0.256, "scale": 128.0, "seconds": 6874.2, "gpu_mb": 12069, "rss_mb": 11691, "host_free_mb": 7557}
+{"step": 430, "of": 571, "loss": 0.0956, "lr": 2.4693520140105075e-05, "grad_norm": 0.4338, "scale": 128.0, "seconds": 6947.7, "gpu_mb": 12069, "rss_mb": 11769, "host_free_mb": 7422}
+{"step": 431, "of": 571, "loss": 0.1366, "lr": 2.4518388791593695e-05, "grad_norm": 0.5315, "scale": 128.0, "seconds": 7024.0, "gpu_mb": 12069, "rss_mb": 11869, "host_free_mb": 7251}
+{"step": 432, "of": 571, "loss": 0.0726, "lr": 2.434325744308231e-05, "grad_norm": 0.4168, "scale": 128.0, "seconds": 7091.1, "gpu_mb": 12069, "rss_mb": 11923, "host_free_mb": 7133}
+{"step": 433, "of": 571, "loss": 0.1066, "lr": 2.416812609457093e-05, "grad_norm": 0.5562, "scale": 128.0, "seconds": 7193.3, "gpu_mb": 12069, "rss_mb": 12017, "host_free_mb": 6947}
+{"step": 434, "of": 571, "loss": 0.0944, "lr": 2.3992994746059548e-05, "grad_norm": 0.5314, "scale": 128.0, "seconds": 7295.3, "gpu_mb": 12069, "rss_mb": 12090, "host_free_mb": 6784}
+{"step": 435, "of": 571, "loss": 0.0508, "lr": 2.3817863397548158e-05, "grad_norm": 0.2782, "scale": 128.0, "seconds": 7387.2, "gpu_mb": 12069, "rss_mb": 12160, "host_free_mb": 6646}
+{"step": 436, "of": 571, "loss": 0.066, "lr": 2.3642732049036774e-05, "grad_norm": 0.4382, "scale": 128.0, "seconds": 7463.9, "gpu_mb": 12069, "rss_mb": 12212, "host_free_mb": 6494}
+{"step": 437, "of": 571, "loss": 0.112, "lr": 2.3467600700525394e-05, "grad_norm": 0.4078, "scale": 128.0, "seconds": 7559.8, "gpu_mb": 12069, "rss_mb": 12300, "host_free_mb": 6290}
+{"step": 438, "of": 571, "loss": 0.0436, "lr": 2.3292469352014014e-05, "grad_norm": 0.2741, "scale": 128.0, "seconds": 7640.1, "gpu_mb": 12069, "rss_mb": 12386, "host_free_mb": 6160}
+{"step": 439, "of": 571, "loss": 0.0893, "lr": 2.311733800350263e-05, "grad_norm": 0.3544, "scale": 128.0, "seconds": 7725.0, "gpu_mb": 12069, "rss_mb": 12498, "host_free_mb": 6001}
+{"step": 440, "of": 571, "loss": 0.0608, "lr": 2.294220665499125e-05, "grad_norm": 0.3574, "scale": 128.0, "seconds": 7815.5, "gpu_mb": 12069, "rss_mb": 12603, "host_free_mb": 5782}
+{"step": 441, "of": 571, "loss": 0.0665, "lr": 2.2767075306479857e-05, "grad_norm": 0.3264, "scale": 128.0, "seconds": 7901.6, "gpu_mb": 12069, "rss_mb": 12660, "host_free_mb": 5622}
+{"step": 442, "of": 571, "loss": 0.1088, "lr": 2.2591943957968477e-05, "grad_norm": 0.5295, "scale": 128.0, "seconds": 7999.3, "gpu_mb": 12069, "rss_mb": 12725, "host_free_mb": 5444}
+{"step": 443, "of": 571, "loss": 0.1646, "lr": 2.2416812609457093e-05, "grad_norm": 0.6573, "scale": 128.0, "seconds": 8111.4, "gpu_mb": 12069, "rss_mb": 12808, "host_free_mb": 18305}
+{"step": 444, "of": 571, "loss": 0.1571, "lr": 2.2241681260945713e-05, "grad_norm": 0.5834, "scale": 128.0, "seconds": 8183.9, "gpu_mb": 12069, "rss_mb": 12926, "host_free_mb": 16808}
+{"step": 445, "of": 571, "loss": 0.0681, "lr": 2.206654991243433e-05, "grad_norm": 0.3154, "scale": 128.0, "seconds": 8255.7, "gpu_mb": 12069, "rss_mb": 13009, "host_free_mb": 15869}
+{"step": 446, "of": 571, "loss": 0.0896, "lr": 2.189141856392294e-05, "grad_norm": 0.371, "scale": 128.0, "seconds": 8350.2, "gpu_mb": 12069, "rss_mb": 13059, "host_free_mb": 15697}
+{"step": 447, "of": 571, "loss": 0.1182, "lr": 2.1716287215411556e-05, "grad_norm": 0.4919, "scale": 128.0, "seconds": 8429.3, "gpu_mb": 12069, "rss_mb": 13124, "host_free_mb": 15526}
+{"step": 448, "of": 571, "loss": 0.068, "lr": 2.1541155866900176e-05, "grad_norm": 0.3521, "scale": 128.0, "seconds": 8481.4, "gpu_mb": 12069, "rss_mb": 13167, "host_free_mb": 15384}
+{"step": 449, "of": 571, "loss": 0.0393, "lr": 2.1366024518388793e-05, "grad_norm": 0.2859, "scale": 128.0, "seconds": 8549.3, "gpu_mb": 12069, "rss_mb": 13270, "host_free_mb": 15102}
+{"step": 450, "of": 571, "loss": 0.1487, "lr": 2.1190893169877413e-05, "grad_norm": 0.7145, "scale": 128.0, "seconds": 8654.1, "gpu_mb": 12069, "rss_mb": 13352, "host_free_mb": 14903}
+{"paused_at": 450, "restart": "resume from checkpoint"}
+{"examples": 2282, "skipped_too_long": 0, "max_len": 7758, "sample_target": "<tool_call>\n<function=skill_search>\n<parameter=query>\ncrm_clean dedupe_export\n</parameter>\n<parameter=limit>\n5\n</parameter>\n</function>\n</tool_call><|im_end|>\n"}
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights:   0%|          | 1/426 [00:01<13:06,  1.85s/it]Loading weights:  21%|██        | 89/426 [00:01<00:05, 62.60it/s]Loading weights:  31%|███       | 132/426 [00:02<00:04, 70.65it/s]Loading weights:  38%|███▊      | 160/426 [00:02<00:03, 76.81it/s]Loading weights:  42%|████▏     | 181/426 [00:02<00:02, 84.70it/s]Loading weights:  47%|████▋     | 199/426 [00:03<00:02, 75.71it/s]Loading weights:  50%|█████     | 213/426 [00:03<00:02, 80.60it/s]Loading weights:  53%|█████▎    | 226/426 [00:03<00:02, 80.62it/s]Loading weights:  56%|█████▌    | 238/426 [00:03<00:02, 82.52it/s]Loading weights:  59%|█████▉    | 252/426 [00:03<00:02, 77.00it/s]Loading weights:  62%|██████▏   | 262/426 [00:04<00:02, 57.48it/s]Loading weights:  63%|██████▎   | 270/426 [00:04<00:03, 45.93it/s]Loading weights:  65%|██████▌   | 277/426 [00:04<00:03, 38.39it/s]Loading weights:  66%|██████▌   | 282/426 [00:05<00:04, 35.05it/s]Loading weights:  67%|██████▋   | 287/426 [00:05<00:03, 36.55it/s]Loading weights:  69%|██████▊   | 292/426 [00:05<00:04, 29.20it/s]Loading weights:  75%|███████▍  | 318/426 [00:05<00:01, 57.15it/s]Loading weights:  78%|███████▊  | 332/426 [00:05<00:01, 70.38it/s]Loading weights:  81%|████████  | 344/426 [00:05<00:01, 75.90it/s]Loading weights:  84%|████████▍ | 358/426 [00:06<00:00, 79.91it/s]Loading weights:  86%|████████▋ | 368/426 [00:06<00:00, 80.73it/s]Loading weights:  89%|████████▉ | 379/426 [00:06<00:00, 86.42it/s]Loading weights:  92%|█████████▏| 393/426 [00:06<00:00, 93.82it/s]Loading weights:  95%|█████████▍| 403/426 [00:06<00:00, 93.07it/s]Loading weights:  97%|█████████▋| 413/426 [00:06<00:00, 75.87it/s]Loading weights: 100%|██████████| 426/426 [00:06<00:00, 63.07it/s]
+{"loader": "AutoModelForCausalLM", "trainable_params": 18939904, "targets": "safe", "gpu_mb_after_load": [8094], "device_map": []}
+{"resumed_from": "/kaggle/working/e1/r3fg1-adapter/adapter-ckpt.pt", "step": 450, "epoch": 2}
+[transformers] `use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+{"step": 451, "of": 571, "loss": 0.1446, "lr": 2.101576182136602e-05, "grad_norm": 0.5108, "scale": 128.0, "seconds": 70.5, "gpu_mb": 11246, "rss_mb": 2575, "host_free_mb": 25616}
+{"step": 452, "of": 571, "loss": 0.1353, "lr": 2.084063047285464e-05, "grad_norm": 0.5257, "scale": 128.0, "seconds": 156.6, "gpu_mb": 11246, "rss_mb": 2706, "host_free_mb": 25356}
+{"step": 453, "of": 571, "loss": 0.0888, "lr": 2.066549912434326e-05, "grad_norm": 0.595, "scale": 128.0, "seconds": 255.7, "gpu_mb": 12062, "rss_mb": 2825, "host_free_mb": 25066}
+{"step": 454, "of": 571, "loss": 0.0478, "lr": 2.0490367775831875e-05, "grad_norm": 0.3311, "scale": 128.0, "seconds": 330.5, "gpu_mb": 12062, "rss_mb": 2997, "host_free_mb": 24786}
+{"step": 455, "of": 571, "loss": 0.1277, "lr": 2.0315236427320495e-05, "grad_norm": 0.4883, "scale": 128.0, "seconds": 417.9, "gpu_mb": 12062, "rss_mb": 3111, "host_free_mb": 24501}
+{"step": 456, "of": 571, "loss": 0.0696, "lr": 2.0140105078809112e-05, "grad_norm": 0.3884, "scale": 128.0, "seconds": 500.0, "gpu_mb": 12062, "rss_mb": 3262, "host_free_mb": 24179}
+{"step": 457, "of": 571, "loss": 0.1512, "lr": 1.996497373029772e-05, "grad_norm": 0.5744, "scale": 128.0, "seconds": 575.4, "gpu_mb": 12062, "rss_mb": 3439, "host_free_mb": 23881}
+{"step": 458, "of": 571, "loss": 0.0963, "lr": 1.9789842381786338e-05, "grad_norm": 0.4363, "scale": 128.0, "seconds": 699.5, "gpu_mb": 12062, "rss_mb": 3554, "host_free_mb": 23506}
+{"step": 459, "of": 571, "loss": 0.048, "lr": 1.9614711033274958e-05, "grad_norm": 0.28, "scale": 128.0, "seconds": 791.1, "gpu_mb": 12062, "rss_mb": 3740, "host_free_mb": 23156}
+{"step": 460, "of": 571, "loss": 0.0407, "lr": 1.9439579684763575e-05, "grad_norm": 0.29, "scale": 128.0, "seconds": 881.3, "gpu_mb": 12062, "rss_mb": 3882, "host_free_mb": 22906}
+{"step": 461, "of": 571, "loss": 0.0769, "lr": 1.9264448336252194e-05, "grad_norm": 0.3834, "scale": 128.0, "seconds": 930.9, "gpu_mb": 12062, "rss_mb": 4022, "host_free_mb": 22691}
+{"step": 462, "of": 571, "loss": 0.0905, "lr": 1.90893169877408e-05, "grad_norm": 0.4224, "scale": 128.0, "seconds": 989.3, "gpu_mb": 12062, "rss_mb": 4171, "host_free_mb": 22471}
+{"step": 463, "of": 571, "loss": 0.0976, "lr": 1.891418563922942e-05, "grad_norm": 0.7416, "scale": 128.0, "seconds": 1086.5, "gpu_mb": 12100, "rss_mb": 4279, "host_free_mb": 22253}
+{"step": 464, "of": 571, "loss": 0.1282, "lr": 1.8739054290718037e-05, "grad_norm": 0.658, "scale": 128.0, "seconds": 1167.9, "gpu_mb": 12100, "rss_mb": 4398, "host_free_mb": 21994}
+{"step": 465, "of": 571, "loss": 0.0622, "lr": 1.8563922942206657e-05, "grad_norm": 0.3924, "scale": 128.0, "seconds": 1241.4, "gpu_mb": 12100, "rss_mb": 4554, "host_free_mb": 21738}
+{"step": 466, "of": 571, "loss": 0.0864, "lr": 1.8388791593695277e-05, "grad_norm": 0.473, "scale": 128.0, "seconds": 1312.7, "gpu_mb": 12100, "rss_mb": 4679, "host_free_mb": 21500}
+{"step": 467, "of": 571, "loss": 0.1519, "lr": 1.8213660245183884e-05, "grad_norm": 0.5224, "scale": 128.0, "seconds": 1396.7, "gpu_mb": 12100, "rss_mb": 4779, "host_free_mb": 21236}
+{"step": 468, "of": 571, "loss": 0.1323, "lr": 1.8038528896672503e-05, "grad_norm": 0.4269, "scale": 128.0, "seconds": 1514.4, "gpu_mb": 12100, "rss_mb": 4936, "host_free_mb": 20938}
+{"step": 469, "of": 571, "loss": 0.0976, "lr": 1.786339754816112e-05, "grad_norm": 0.611, "scale": 128.0, "seconds": 1613.0, "gpu_mb": 12100, "rss_mb": 5046, "host_free_mb": 20611}
+{"step": 470, "of": 571, "loss": 0.0705, "lr": 1.768826619964974e-05, "grad_norm": 0.3536, "scale": 128.0, "seconds": 1711.9, "gpu_mb": 12100, "rss_mb": 5145, "host_free_mb": 20404}
+{"step": 471, "of": 571, "loss": 0.1266, "lr": 1.7513134851138356e-05, "grad_norm": 0.5054, "scale": 128.0, "seconds": 1836.7, "gpu_mb": 12100, "rss_mb": 5262, "host_free_mb": 20150}
+{"step": 472, "of": 571, "loss": 0.1019, "lr": 1.7338003502626976e-05, "grad_norm": 0.5243, "scale": 128.0, "seconds": 1969.2, "gpu_mb": 12100, "rss_mb": 5382, "host_free_mb": 19732}
+{"step": 473, "of": 571, "loss": 0.0551, "lr": 1.7162872154115583e-05, "grad_norm": 0.2737, "scale": 128.0, "seconds": 2049.6, "gpu_mb": 12100, "rss_mb": 5466, "host_free_mb": 19513}
+{"step": 474, "of": 571, "loss": 0.1041, "lr": 1.6987740805604203e-05, "grad_norm": 0.5126, "scale": 128.0, "seconds": 2148.2, "gpu_mb": 12100, "rss_mb": 5608, "host_free_mb": 19284}
+{"step": 475, "of": 571, "loss": 0.067, "lr": 1.681260945709282e-05, "grad_norm": 0.3714, "scale": 128.0, "seconds": 2196.6, "gpu_mb": 12100, "rss_mb": 5723, "host_free_mb": 19135}
+{"step": 476, "of": 571, "loss": 0.1008, "lr": 1.663747810858144e-05, "grad_norm": 0.4636, "scale": 128.0, "seconds": 2294.5, "gpu_mb": 12100, "rss_mb": 5871, "host_free_mb": 18851}
+{"step": 477, "of": 571, "loss": 0.0648, "lr": 1.646234676007006e-05, "grad_norm": 0.4605, "scale": 128.0, "seconds": 2367.5, "gpu_mb": 12100, "rss_mb": 6022, "host_free_mb": 18639}
+{"step": 478, "of": 571, "loss": 0.0912, "lr": 1.6287215411558665e-05, "grad_norm": 0.3659, "scale": 128.0, "seconds": 2426.7, "gpu_mb": 12100, "rss_mb": 6120, "host_free_mb": 18484}
+{"step": 479, "of": 571, "loss": 0.1185, "lr": 1.6112084063047282e-05, "grad_norm": 0.4674, "scale": 128.0, "seconds": 2533.7, "gpu_mb": 12100, "rss_mb": 6222, "host_free_mb": 18287}
+{"step": 480, "of": 571, "loss": 0.0499, "lr": 1.5936952714535902e-05, "grad_norm": 0.4027, "scale": 128.0, "seconds": 2618.2, "gpu_mb": 12100, "rss_mb": 6331, "host_free_mb": 18099}
+{"step": 481, "of": 571, "loss": 0.1234, "lr": 1.5761821366024522e-05, "grad_norm": 0.4968, "scale": 128.0, "seconds": 2691.0, "gpu_mb": 12100, "rss_mb": 6458, "host_free_mb": 17805}
+{"step": 482, "of": 571, "loss": 0.1122, "lr": 1.558669001751314e-05, "grad_norm": 0.459, "scale": 128.0, "seconds": 2812.0, "gpu_mb": 12100, "rss_mb": 6577, "host_free_mb": 17501}
+{"step": 483, "of": 571, "loss": 0.1172, "lr": 1.5411558669001748e-05, "grad_norm": 0.4885, "scale": 128.0, "seconds": 2881.4, "gpu_mb": 12100, "rss_mb": 6710, "host_free_mb": 17239}
+{"step": 484, "of": 571, "loss": 0.0274, "lr": 1.5236427320490365e-05, "grad_norm": 0.2076, "scale": 128.0, "seconds": 2951.2, "gpu_mb": 12100, "rss_mb": 6843, "host_free_mb": 16987}
+{"step": 485, "of": 571, "loss": 0.0825, "lr": 1.5061295971978983e-05, "grad_norm": 0.467, "scale": 128.0, "seconds": 3034.6, "gpu_mb": 12100, "rss_mb": 6969, "host_free_mb": 16719}
+{"step": 486, "of": 571, "loss": 0.0977, "lr": 1.4886164623467603e-05, "grad_norm": 0.4115, "scale": 128.0, "seconds": 3126.1, "gpu_mb": 12100, "rss_mb": 7082, "host_free_mb": 16436}
+{"step": 487, "of": 571, "loss": 0.1061, "lr": 1.4711033274956221e-05, "grad_norm": 0.613, "scale": 128.0, "seconds": 3179.0, "gpu_mb": 12100, "rss_mb": 7189, "host_free_mb": 16200}
+{"step": 488, "of": 571, "loss": 0.1144, "lr": 1.453590192644484e-05, "grad_norm": 0.4659, "scale": 128.0, "seconds": 3279.5, "gpu_mb": 12100, "rss_mb": 7265, "host_free_mb": 16034}
+{"step": 489, "of": 571, "loss": 0.0808, "lr": 1.4360770577933447e-05, "grad_norm": 0.3243, "scale": 128.0, "seconds": 3369.1, "gpu_mb": 12100, "rss_mb": 7371, "host_free_mb": 15842}
+{"step": 490, "of": 571, "loss": 0.0603, "lr": 1.4185639229422066e-05, "grad_norm": 0.3253, "scale": 128.0, "seconds": 3456.8, "gpu_mb": 12100, "rss_mb": 7506, "host_free_mb": 15610}
+{"step": 491, "of": 571, "loss": 0.1136, "lr": 1.4010507880910684e-05, "grad_norm": 0.5641, "scale": 128.0, "seconds": 3534.3, "gpu_mb": 12100, "rss_mb": 7609, "host_free_mb": 15425}
+{"step": 492, "of": 571, "loss": 0.0944, "lr": 1.3835376532399302e-05, "grad_norm": 0.4267, "scale": 128.0, "seconds": 3655.1, "gpu_mb": 12100, "rss_mb": 7759, "host_free_mb": 15134}
+{"step": 493, "of": 571, "loss": 0.1263, "lr": 1.366024518388792e-05, "grad_norm": 0.5177, "scale": 128.0, "seconds": 3733.5, "gpu_mb": 12100, "rss_mb": 7859, "host_free_mb": 14936}
+{"step": 494, "of": 571, "loss": 0.0728, "lr": 1.3485113835376528e-05, "grad_norm": 0.3502, "scale": 128.0, "seconds": 3807.9, "gpu_mb": 12100, "rss_mb": 7968, "host_free_mb": 14768}
+{"step": 495, "of": 571, "loss": 0.1289, "lr": 1.3309982486865147e-05, "grad_norm": 0.5433, "scale": 128.0, "seconds": 3870.8, "gpu_mb": 12100, "rss_mb": 8074, "host_free_mb": 14557}
+{"step": 496, "of": 571, "loss": 0.09, "lr": 1.3134851138353765e-05, "grad_norm": 0.4017, "scale": 128.0, "seconds": 3966.6, "gpu_mb": 12100, "rss_mb": 8210, "host_free_mb": 14297}
+{"step": 497, "of": 571, "loss": 0.0757, "lr": 1.2959719789842385e-05, "grad_norm": 0.4367, "scale": 128.0, "seconds": 4089.5, "gpu_mb": 12100, "rss_mb": 8319, "host_free_mb": 14035}
+{"step": 498, "of": 571, "loss": 0.0812, "lr": 1.2784588441331003e-05, "grad_norm": 0.4298, "scale": 128.0, "seconds": 4159.5, "gpu_mb": 12100, "rss_mb": 8424, "host_free_mb": 13810}
+{"step": 499, "of": 571, "loss": 0.0483, "lr": 1.260945709281961e-05, "grad_norm": 0.3091, "scale": 128.0, "seconds": 4268.0, "gpu_mb": 12100, "rss_mb": 8578, "host_free_mb": 13523}
+{"step": 500, "of": 571, "loss": 0.1222, "lr": 1.2434325744308228e-05, "grad_norm": 0.5974, "scale": 128.0, "seconds": 4333.6, "gpu_mb": 12100, "rss_mb": 8682, "host_free_mb": 13297}
+{"step": 501, "of": 571, "loss": 0.0648, "lr": 1.2259194395796847e-05, "grad_norm": 0.3188, "scale": 128.0, "seconds": 4422.4, "gpu_mb": 12100, "rss_mb": 8791, "host_free_mb": 13084}
+{"step": 502, "of": 571, "loss": 0.0819, "lr": 1.2084063047285466e-05, "grad_norm": 0.4063, "scale": 128.0, "seconds": 4495.6, "gpu_mb": 12100, "rss_mb": 8904, "host_free_mb": 12876}
+{"step": 503, "of": 571, "loss": 0.1037, "lr": 1.1908931698774084e-05, "grad_norm": 0.5577, "scale": 128.0, "seconds": 4548.0, "gpu_mb": 12100, "rss_mb": 9031, "host_free_mb": 12693}
+{"step": 504, "of": 571, "loss": 0.0971, "lr": 1.1733800350262702e-05, "grad_norm": 0.448, "scale": 128.0, "seconds": 4635.2, "gpu_mb": 12100, "rss_mb": 9146, "host_free_mb": 12489}
+{"step": 505, "of": 571, "loss": 0.0606, "lr": 1.155866900175131e-05, "grad_norm": 0.3655, "scale": 128.0, "seconds": 4744.9, "gpu_mb": 12100, "rss_mb": 9279, "host_free_mb": 12212}
+{"step": 506, "of": 571, "loss": 0.1232, "lr": 1.1383537653239928e-05, "grad_norm": 0.5761, "scale": 128.0, "seconds": 4800.2, "gpu_mb": 12100, "rss_mb": 9371, "host_free_mb": 12068}
+{"step": 507, "of": 571, "loss": 0.1324, "lr": 1.1208406304728547e-05, "grad_norm": 0.624, "scale": 128.0, "seconds": 4897.1, "gpu_mb": 12100, "rss_mb": 9522, "host_free_mb": 11767}
+{"step": 508, "of": 571, "loss": 0.0583, "lr": 1.1033274956217165e-05, "grad_norm": 0.3434, "scale": 128.0, "seconds": 5016.0, "gpu_mb": 12100, "rss_mb": 9629, "host_free_mb": 11564}
+{"step": 509, "of": 571, "loss": 0.0971, "lr": 1.0858143607705785e-05, "grad_norm": 0.4747, "scale": 128.0, "seconds": 5095.1, "gpu_mb": 12100, "rss_mb": 9732, "host_free_mb": 11411}
+{"step": 510, "of": 571, "loss": 0.0759, "lr": 1.0683012259194391e-05, "grad_norm": 0.3669, "scale": 128.0, "seconds": 5210.3, "gpu_mb": 12100, "rss_mb": 9877, "host_free_mb": 11203}
+{"step": 511, "of": 571, "loss": 0.1555, "lr": 1.050788091068301e-05, "grad_norm": 0.5208, "scale": 128.0, "seconds": 5306.9, "gpu_mb": 12100, "rss_mb": 9998, "host_free_mb": 10915}
+{"step": 512, "of": 571, "loss": 0.113, "lr": 1.033274956217163e-05, "grad_norm": 0.5111, "scale": 128.0, "seconds": 5366.0, "gpu_mb": 12100, "rss_mb": 10141, "host_free_mb": 10741}
+{"step": 513, "of": 571, "loss": 0.0942, "lr": 1.0157618213660248e-05, "grad_norm": 0.4465, "scale": 128.0, "seconds": 5449.5, "gpu_mb": 12100, "rss_mb": 10256, "host_free_mb": 10568}
+{"step": 514, "of": 571, "loss": 0.1206, "lr": 9.982486865148866e-06, "grad_norm": 0.5587, "scale": 128.0, "seconds": 5534.0, "gpu_mb": 12100, "rss_mb": 10331, "host_free_mb": 10455}
+{"step": 515, "of": 571, "loss": 0.149, "lr": 9.807355516637474e-06, "grad_norm": 0.6357, "scale": 128.0, "seconds": 5598.7, "gpu_mb": 12100, "rss_mb": 10412, "host_free_mb": 10330}
+{"step": 516, "of": 571, "loss": 0.079, "lr": 9.632224168126092e-06, "grad_norm": 0.3324, "scale": 128.0, "seconds": 5703.3, "gpu_mb": 12100, "rss_mb": 10554, "host_free_mb": 10091}
+{"step": 517, "of": 571, "loss": 0.0732, "lr": 9.45709281961471e-06, "grad_norm": 0.4141, "scale": 128.0, "seconds": 5793.8, "gpu_mb": 12100, "rss_mb": 10651, "host_free_mb": 9829}
+{"step": 518, "of": 571, "loss": 0.05, "lr": 9.281961471103329e-06, "grad_norm": 0.3321, "scale": 128.0, "seconds": 5863.8, "gpu_mb": 12100, "rss_mb": 10700, "host_free_mb": 9752}
+{"step": 519, "of": 571, "loss": 0.051, "lr": 9.106830122591947e-06, "grad_norm": 0.3228, "scale": 128.0, "seconds": 5934.5, "gpu_mb": 12100, "rss_mb": 10765, "host_free_mb": 9645}
+{"step": 520, "of": 571, "loss": 0.0906, "lr": 8.931698774080565e-06, "grad_norm": 0.4786, "scale": 128.0, "seconds": 6025.0, "gpu_mb": 12100, "rss_mb": 10813, "host_free_mb": 9508}
+{"step": 521, "of": 571, "loss": 0.1434, "lr": 8.756567425569173e-06, "grad_norm": 0.6174, "scale": 128.0, "seconds": 6140.9, "gpu_mb": 12100, "rss_mb": 10906, "host_free_mb": 9324}
+{"step": 522, "of": 571, "loss": 0.1799, "lr": 8.581436077057791e-06, "grad_norm": 0.8139, "scale": 128.0, "seconds": 6237.3, "gpu_mb": 12100, "rss_mb": 10971, "host_free_mb": 9132}
+{"step": 523, "of": 571, "loss": 0.1165, "lr": 8.40630472854641e-06, "grad_norm": 0.4307, "scale": 128.0, "seconds": 6365.5, "gpu_mb": 12100, "rss_mb": 11046, "host_free_mb": 8898}
+{"step": 524, "of": 571, "loss": 0.1089, "lr": 8.23117338003503e-06, "grad_norm": 0.3941, "scale": 128.0, "seconds": 6452.9, "gpu_mb": 12100, "rss_mb": 11157, "host_free_mb": 8702}
+{"step": 525, "of": 571, "loss": 0.0745, "lr": 8.056042031523648e-06, "grad_norm": 0.3506, "scale": 128.0, "seconds": 6542.8, "gpu_mb": 12100, "rss_mb": 11233, "host_free_mb": 8574}
+{"step": 526, "of": 571, "loss": 0.112, "lr": 7.880910683012254e-06, "grad_norm": 0.4914, "scale": 128.0, "seconds": 6634.4, "gpu_mb": 12100, "rss_mb": 11324, "host_free_mb": 8333}
+{"step": 527, "of": 571, "loss": 0.1273, "lr": 7.705779334500874e-06, "grad_norm": 0.4554, "scale": 128.0, "seconds": 6708.1, "gpu_mb": 12100, "rss_mb": 11421, "host_free_mb": 8213}
+{"step": 528, "of": 571, "loss": 0.1137, "lr": 7.5306479859894914e-06, "grad_norm": 0.422, "scale": 128.0, "seconds": 6793.2, "gpu_mb": 12100, "rss_mb": 11495, "host_free_mb": 8085}
+{"step": 529, "of": 571, "loss": 0.11, "lr": 7.3555166374781105e-06, "grad_norm": 0.463, "scale": 128.0, "seconds": 6877.4, "gpu_mb": 12100, "rss_mb": 11560, "host_free_mb": 7924}
+{"step": 530, "of": 571, "loss": 0.047, "lr": 7.180385288966729e-06, "grad_norm": 0.3042, "scale": 128.0, "seconds": 6987.2, "gpu_mb": 12100, "rss_mb": 11630, "host_free_mb": 7745}
+{"step": 531, "of": 571, "loss": 0.0466, "lr": 7.005253940455336e-06, "grad_norm": 0.327, "scale": 128.0, "seconds": 7056.4, "gpu_mb": 12100, "rss_mb": 11701, "host_free_mb": 7592}
+{"step": 532, "of": 571, "loss": 0.0648, "lr": 6.830122591943955e-06, "grad_norm": 0.387, "scale": 128.0, "seconds": 7150.3, "gpu_mb": 12100, "rss_mb": 11760, "host_free_mb": 7465}
+{"step": 533, "of": 571, "loss": 0.0766, "lr": 6.654991243432573e-06, "grad_norm": 0.3645, "scale": 128.0, "seconds": 7211.9, "gpu_mb": 12100, "rss_mb": 11829, "host_free_mb": 7320}
+{"step": 534, "of": 571, "loss": 0.1934, "lr": 6.479859894921192e-06, "grad_norm": 0.7391, "scale": 128.0, "seconds": 7288.1, "gpu_mb": 12100, "rss_mb": 11914, "host_free_mb": 7137}
+{"step": 535, "of": 571, "loss": 0.0836, "lr": 6.304728546409811e-06, "grad_norm": 0.3878, "scale": 128.0, "seconds": 7343.8, "gpu_mb": 12100, "rss_mb": 12023, "host_free_mb": 7023}
+{"step": 536, "of": 571, "loss": 0.0721, "lr": 6.129597197898429e-06, "grad_norm": 0.3773, "scale": 128.0, "seconds": 7426.3, "gpu_mb": 12100, "rss_mb": 12119, "host_free_mb": 6810}
+{"step": 537, "of": 571, "loss": 0.0719, "lr": 5.954465849387036e-06, "grad_norm": 0.3566, "scale": 128.0, "seconds": 7498.5, "gpu_mb": 12100, "rss_mb": 12190, "host_free_mb": 6653}
+{"step": 538, "of": 571, "loss": 0.095, "lr": 5.779334500875655e-06, "grad_norm": 0.4787, "scale": 128.0, "seconds": 7593.9, "gpu_mb": 12100, "rss_mb": 12285, "host_free_mb": 6460}
+{"step": 539, "of": 571, "loss": 0.1004, "lr": 5.604203152364273e-06, "grad_norm": 0.5299, "scale": 128.0, "seconds": 7648.1, "gpu_mb": 12100, "rss_mb": 12367, "host_free_mb": 6377}
+{"step": 540, "of": 571, "loss": 0.0708, "lr": 5.4290718038528924e-06, "grad_norm": 0.3554, "scale": 128.0, "seconds": 7748.0, "gpu_mb": 12100, "rss_mb": 12458, "host_free_mb": 6202}
+{"step": 541, "of": 571, "loss": 0.0613, "lr": 5.253940455341511e-06, "grad_norm": 0.314, "scale": 128.0, "seconds": 7836.5, "gpu_mb": 12100, "rss_mb": 12549, "host_free_mb": 16841}
+{"step": 542, "of": 571, "loss": 0.0849, "lr": 5.078809106830118e-06, "grad_norm": 0.5186, "scale": 128.0, "seconds": 7931.2, "gpu_mb": 12100, "rss_mb": 12623, "host_free_mb": 16303}
+{"step": 543, "of": 571, "loss": 0.0846, "lr": 4.903677758318737e-06, "grad_norm": 0.3937, "scale": 128.0, "seconds": 7989.9, "gpu_mb": 12100, "rss_mb": 12679, "host_free_mb": 16162}
+{"step": 544, "of": 571, "loss": 0.1487, "lr": 4.728546409807355e-06, "grad_norm": 0.5401, "scale": 128.0, "seconds": 8042.5, "gpu_mb": 12100, "rss_mb": 12757, "host_free_mb": 15997}
+{"step": 545, "of": 571, "loss": 0.0893, "lr": 4.5534150612959734e-06, "grad_norm": 0.3894, "scale": 128.0, "seconds": 8092.9, "gpu_mb": 12100, "rss_mb": 12836, "host_free_mb": 15850}
+{"step": 546, "of": 571, "loss": 0.0524, "lr": 4.3782837127845925e-06, "grad_norm": 0.3308, "scale": 128.0, "seconds": 8175.3, "gpu_mb": 12100, "rss_mb": 12894, "host_free_mb": 15624}
+{"step": 547, "of": 571, "loss": 0.1156, "lr": 4.2031523642732e-06, "grad_norm": 0.5969, "scale": 128.0, "seconds": 8270.9, "gpu_mb": 12100, "rss_mb": 12951, "host_free_mb": 15306}
+{"step": 548, "of": 571, "loss": 0.0682, "lr": 4.028021015761818e-06, "grad_norm": 0.3837, "scale": 128.0, "seconds": 8369.1, "gpu_mb": 12100, "rss_mb": 12989, "host_free_mb": 15103}
+{"step": 549, "of": 571, "loss": 0.099, "lr": 3.852889667250437e-06, "grad_norm": 0.3716, "scale": 128.0, "seconds": 8466.3, "gpu_mb": 12100, "rss_mb": 13081, "host_free_mb": 14866}
+{"step": 550, "of": 571, "loss": 0.1079, "lr": 3.6777583187390553e-06, "grad_norm": 0.4292, "scale": 128.0, "seconds": 8556.6, "gpu_mb": 12100, "rss_mb": 13124, "host_free_mb": 14704}
+{"paused_at": 550, "restart": "resume from checkpoint"}
+{"examples": 2282, "skipped_too_long": 0, "max_len": 7758, "sample_target": "<tool_call>\n<function=skill_search>\n<parameter=query>\ncrm_clean dedupe_export\n</parameter>\n<parameter=limit>\n5\n</parameter>\n</function>\n</tool_call><|im_end|>\n"}
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights:   0%|          | 1/426 [00:02<16:10,  2.28s/it]Loading weights:  31%|███▏      | 134/426 [00:02<00:03, 77.12it/s]Loading weights:  45%|████▌     | 192/426 [00:03<00:02, 83.73it/s]Loading weights:  54%|█████▎    | 228/426 [00:03<00:02, 81.97it/s]Loading weights:  59%|█████▉    | 253/426 [00:03<00:02, 82.08it/s]Loading weights:  64%|██████▍   | 272/426 [00:03<00:01, 87.11it/s]Loading weights:  68%|██████▊   | 289/426 [00:04<00:01, 88.89it/s]Loading weights:  71%|███████▏  | 304/426 [00:04<00:01, 89.67it/s]Loading weights:  74%|███████▍  | 317/426 [00:04<00:01, 83.33it/s]Loading weights:  77%|███████▋  | 328/426 [00:04<00:01, 85.36it/s]Loading weights:  80%|███████▉  | 340/426 [00:04<00:00, 89.61it/s]Loading weights:  82%|████████▏ | 351/426 [00:04<00:00, 88.76it/s]Loading weights:  85%|████████▍ | 361/426 [00:04<00:00, 86.72it/s]Loading weights:  87%|████████▋ | 371/426 [00:05<00:00, 78.13it/s]Loading weights:  91%|█████████ | 386/426 [00:05<00:00, 92.70it/s]Loading weights:  93%|█████████▎| 397/426 [00:05<00:00, 91.25it/s]Loading weights:  96%|█████████▋| 411/426 [00:05<00:00, 90.45it/s]Loading weights:  99%|█████████▉| 421/426 [00:05<00:00, 92.09it/s]Loading weights: 100%|██████████| 426/426 [00:05<00:00, 75.52it/s]
+{"loader": "AutoModelForCausalLM", "trainable_params": 18939904, "targets": "safe", "gpu_mb_after_load": [8094], "device_map": []}
+{"resumed_from": "/kaggle/working/e1/r3fg1-adapter/adapter-ckpt.pt", "step": 550, "epoch": 2}
+[transformers] `use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+{"step": 551, "of": 571, "loss": 0.1246, "lr": 3.502626970227674e-06, "grad_norm": 0.5918, "scale": 128.0, "seconds": 63.6, "gpu_mb": 10114, "rss_mb": 2597, "host_free_mb": 25164}
+{"step": 552, "of": 571, "loss": 0.1301, "lr": 3.327495621716292e-06, "grad_norm": 0.5103, "scale": 128.0, "seconds": 135.1, "gpu_mb": 10651, "rss_mb": 2774, "host_free_mb": 24838}
+{"step": 553, "of": 571, "loss": 0.1039, "lr": 3.1523642732049e-06, "grad_norm": 0.5385, "scale": 128.0, "seconds": 224.4, "gpu_mb": 10936, "rss_mb": 2941, "host_free_mb": 24530}
+{"step": 554, "of": 571, "loss": 0.0904, "lr": 2.977232924693518e-06, "grad_norm": 0.3619, "scale": 128.0, "seconds": 330.5, "gpu_mb": 11195, "rss_mb": 3085, "host_free_mb": 24234}
+{"step": 555, "of": 571, "loss": 0.1459, "lr": 2.8021015761821367e-06, "grad_norm": 0.6009, "scale": 128.0, "seconds": 484.5, "gpu_mb": 11592, "rss_mb": 3187, "host_free_mb": 23904}
+{"step": 556, "of": 571, "loss": 0.104, "lr": 2.6269702276707553e-06, "grad_norm": 0.4413, "scale": 128.0, "seconds": 559.3, "gpu_mb": 11592, "rss_mb": 3327, "host_free_mb": 23656}
+{"step": 557, "of": 571, "loss": 0.0902, "lr": 2.451838879159374e-06, "grad_norm": 0.4603, "scale": 128.0, "seconds": 630.7, "gpu_mb": 11592, "rss_mb": 3501, "host_free_mb": 23392}
+{"step": 558, "of": 571, "loss": 0.1151, "lr": 2.276707530647981e-06, "grad_norm": 0.3586, "scale": 128.0, "seconds": 710.9, "gpu_mb": 11592, "rss_mb": 3634, "host_free_mb": 23092}
+{"step": 559, "of": 571, "loss": 0.1538, "lr": 2.1015761821366e-06, "grad_norm": 0.6284, "scale": 128.0, "seconds": 785.0, "gpu_mb": 11592, "rss_mb": 3789, "host_free_mb": 22856}
+{"step": 560, "of": 571, "loss": 0.0609, "lr": 1.9264448336252185e-06, "grad_norm": 0.56, "scale": 128.0, "seconds": 866.9, "gpu_mb": 11592, "rss_mb": 3926, "host_free_mb": 22596}
+{"step": 561, "of": 571, "loss": 0.0486, "lr": 1.751313485113837e-06, "grad_norm": 0.317, "scale": 128.0, "seconds": 966.7, "gpu_mb": 11592, "rss_mb": 4065, "host_free_mb": 22274}
+{"step": 562, "of": 571, "loss": 0.1016, "lr": 1.5761821366024554e-06, "grad_norm": 0.4263, "scale": 128.0, "seconds": 1084.8, "gpu_mb": 11744, "rss_mb": 4214, "host_free_mb": 21912}
+{"step": 563, "of": 571, "loss": 0.1205, "lr": 1.4010507880910628e-06, "grad_norm": 0.5306, "scale": 128.0, "seconds": 1157.8, "gpu_mb": 11744, "rss_mb": 4341, "host_free_mb": 21693}
+{"step": 564, "of": 571, "loss": 0.0986, "lr": 1.2259194395796813e-06, "grad_norm": 0.444, "scale": 128.0, "seconds": 1284.9, "gpu_mb": 11941, "rss_mb": 4497, "host_free_mb": 21382}
+{"step": 565, "of": 571, "loss": 0.0728, "lr": 1.0507880910683e-06, "grad_norm": 0.3951, "scale": 128.0, "seconds": 1362.7, "gpu_mb": 11941, "rss_mb": 4606, "host_free_mb": 21193}
+{"step": 566, "of": 571, "loss": 0.1602, "lr": 8.756567425569185e-07, "grad_norm": 0.6325, "scale": 128.0, "seconds": 1474.7, "gpu_mb": 12052, "rss_mb": 4739, "host_free_mb": 20888}
+{"step": 567, "of": 571, "loss": 0.0397, "lr": 7.005253940455369e-07, "grad_norm": 0.2273, "scale": 128.0, "seconds": 1551.6, "gpu_mb": 12052, "rss_mb": 4847, "host_free_mb": 20637}
+{"step": 568, "of": 571, "loss": 0.0817, "lr": 5.253940455341555e-07, "grad_norm": 0.467, "scale": 128.0, "seconds": 1606.9, "gpu_mb": 12052, "rss_mb": 4953, "host_free_mb": 20466}
+{"step": 569, "of": 571, "loss": 0.088, "lr": 3.5026269702276296e-07, "grad_norm": 0.4742, "scale": 128.0, "seconds": 1678.7, "gpu_mb": 12052, "rss_mb": 5068, "host_free_mb": 20268}
+{"step": 570, "of": 571, "loss": 0.0929, "lr": 1.7513134851138148e-07, "grad_norm": 0.5167, "scale": 128.0, "seconds": 1745.8, "gpu_mb": 12052, "rss_mb": 5212, "host_free_mb": 19980}
+{"step": 571, "of": 571, "loss": 0.0441, "lr": 0.0, "grad_norm": 0.2618, "scale": 128.0, "seconds": 2654.7, "gpu_mb": 12052, "rss_mb": 7105, "host_free_mb": 16540}

@@ -1,0 +1,20 @@
+{"t": 0.0, "msg": "phase from repository control file", "phase": "r3t-train", "only": ["fg0", "fg1"]}
+{"t": 1.3, "msg": "r3 data ready", "rows": {"train": 2282, "val": 296}, "tasks": {"train": 163, "val": 21}, "dropped": {"guidance_remnant": 0, "duplicate": 0, "cap": 0}}
+{"t": 156.2, "msg": "lora preflight ok"}
+{"t": 156.2, "msg": "lora setup done", "hf_model": "/kaggle/tmp/hf-model", "torch": "2.11.0+cu128", "transformers": "5.22.2", "peft": "0.21.2", "converter": "/kaggle/tmp/llama.cpp/convert_lora_to_gguf.py"}
+{"t": 175.8, "msg": "flash-linear-attention", "install": 0, "version": "0.6.0", "err": ""}
+{"t": 181.8, "msg": "saved llama-server build for reuse", "files": ["BUILD_COMMIT", "libggml-base.so", "libggml-base.so.0", "libggml-base.so.0.24.0", "libggml-cpu.so", "libggml-cpu.so.0", "libggml-cpu.so.0.24.0", "libggml-cuda.so", "libggml-cuda.so.0", "libggml-cuda.so.0.24.0", "libggml.so", "libggml.so.0", "libggml.so.0.24.0", "libllama-common.so", "libllama-common.so.0", "libllama-common.so.0.4.1", "libllama-server-impl.so", "libllama.so", "libllama.so.0", "libllama.so.0.4.1", "libmtmd.so", "libmtmd.so.0", "libmtmd.so.0.4.1", "llama-server"]}
+{"t": 184.9, "msg": "r3t checkpoint carried over", "tag": "fg0", "source": "/kaggle/input/notebooks/lemon5227/notebookf3ff1d131c/e1/r3fg0-adapter/adapter-ckpt.pt"}
+{"t": 184.9, "msg": "r3t training started", "tag": "fg0", "gpu": 0}
+{"t": 426.1, "msg": "r3t checkpoint carried over", "tag": "fg1", "source": "/kaggle/input/notebooks/lemon5227/notebookf3ff1d131c/e1/r3fg1-adapter/adapter-ckpt.pt"}
+{"t": 426.1, "msg": "r3t training started", "tag": "fg1", "gpu": 1}
+{"t": 8706.2, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg0"}
+{"t": 9066.2, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg1"}
+{"t": 18096.3, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg0"}
+{"t": 18336.3, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg1"}
+{"t": 26496.4, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg0"}
+{"t": 27066.4, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg1"}
+{"t": 34896.5, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg0"}
+{"t": 35676.5, "msg": "r3t trainer restarted from its checkpoint", "tag": "fg1"}
+{"t": 38407.4, "msg": "r3t paused before the session deadline; resume in the next version", "tag": "fg0"}
+{"t": 38408.2, "msg": "r3t paused before the session deadline; resume in the next version", "tag": "fg1"}
