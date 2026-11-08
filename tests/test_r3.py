@@ -411,3 +411,11 @@ def test_r3t_variant_tags_name_the_adapter_and_its_data_change():
     for bad in ('x1', 'g', 'smoke'):
         with pytest.raises(SystemExit):
             kaggle_e1.r3t_variant(bad)
+
+
+def test_r3t_training_restarts_every_100_steps_from_its_checkpoint():
+    # v48: host RAM grows until both Kaggle trainers stall near step 130; a restart from the checkpoint frees it
+    args = kaggle_e1.r3t_args(Path('/d'), 8192, 0, False)
+    assert args[args.index('--steps-per-run') + 1] == '100'
+    assert int(args[args.index('--checkpoint-every') + 1]) <= 100
+    assert kaggle_e1.TRAIN_PAUSED == 3

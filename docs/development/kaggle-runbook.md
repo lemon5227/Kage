@@ -70,6 +70,7 @@
 | 28 | 免费 Colab T4（本机 `colab` CLI 开会话、后台训练）：轮询间隔 20 分钟时，约 1 h 后会话被后端回收（`Session not found`） | 免费版把没有内核执行的会话当作空闲回收，后台进程不算活动 | 每 3 分钟 `colab exec` 一个轻量状态脚本保活；检查点只在 VM 本地盘时要实时拉回本机 |
 | 29 | 3 分钟保活后会话约 5.3 h 被回收，随后 `colab new --gpu T4` 返回 Service Unavailable；本机备份目录是空的，5 h 训练白费 | 免费 GPU 有不公开的用量上限；备份脚本里远程 split 没输出也没报错，静默跳过 | 备份启动时立刻备份一次续训检查点来验证整条链路，远程脚本异常要打印出来；`colab upload` 目标目录必须已存在（否则 500），单文件过大也 500，分 20 MB 块传 |
 | 30 | Colab 免费 T4 评测跑了约 2 h（t≈7460 s，30 个 run 完成过半）后 VM 被回收，再开 T4 返回 Service Unavailable；进度全在 VM 上，全部丢失；之前还在 2 核 CPU 上编译 llama-server 约 30 分钟 | 免费 GPU 有日用量上限（当天先前训练 + 评测累计约 5 h 后触发）；脚本只在 `/kaggle/input` 找预编译服务器 | `find_prebuilt` 也查 `KAGE_INPUT`（21f5343），上传 Kaggle 编好的 `llama-bin` 并 pip 装 CUDA 12 运行库（`nvidia-cuda-runtime-cu12`、`nvidia-cublas-cu12`，加进 `LD_LIBRARY_PATH`）；每 30 分钟把 `work/e1` 打包分块拉回本机持久目录，新会话先恢复再跑（`stream_run` 按任务续跑）；拿不到 T4 每 30 分钟重试 |
+| 31 | v48 两个 seed 都约 83 s/步正常跑到约 130 步（约 3 h），之后两个进程同时卡住约 7 h、无任何输出；t≈36000 s 时 fg0 被 SIGKILL（−9），fg1 随即恢复。R3g v42 的 g0 也是在第 132 步被 SIGKILL；R3f v47 的 f1 只到 125 步也像同一问题 | 主机内存（32 GB，两个 4B 训练进程）随时间增长，约 3 h 后耗尽、换页卡死，最后被 OOM killer 杀掉一个；具体泄漏点未定位（之前没记录主机内存） | `lora_train.py --steps-per-run 100`：每 100 步存检查点后以退出码 3 退出，`r3t_train` 当场从检查点重启（重启释放内存，约 3 分钟加载）；每步日志加 `rss_mb`、`host_free_mb` 以便定位 |
 | 27 | v38：每步约 23 分钟 | T4 上 `torch.cuda.is_bf16_supported()` 返回 True，但 bf16 是软件模拟 | T4 训练一律 `--dtype fp16`（带 loss scaler） |
 | 12 | 输出被覆盖、找不到上一版的 server.log | 每次重启覆盖日志 | `server.log` 改为追加 |
 

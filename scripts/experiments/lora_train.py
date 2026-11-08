@@ -47,6 +47,22 @@ def peak_mb() -> int:
     return sum(torch.cuda.max_memory_allocated(d) for d in range(torch.cuda.device_count())) // 2**20
 
 
+PAUSED = 3                      # exit code of a --steps-per-run pause; the checkpoint is saved
+
+
+def host_mb() -> dict:
+    """This process's resident memory and the host's available memory (Linux), for spotting a slow leak."""
+    out = {}
+    try:
+        for path, key, name in (('/proc/self/status', 'VmRSS:', 'rss_mb'), ('/proc/meminfo', 'MemAvailable:', 'host_free_mb')):
+            for line in open(path):
+                if line.startswith(key):
+                    out[name] = int(line.split()[1]) // 1024
+    except OSError:
+        pass
+    return out
+
+
 def response_loss(model, ids: list, labels: list):
     """Mean cross-entropy over the response tokens. The response is the tail of the sequence, so only its
     logits are computed (`logits_to_keep`): with a 248k vocabulary, full-length fp32 logits alone take
@@ -93,6 +109,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--smoke', action='store_true', help='2 optimizer steps on 4 examples, then save')
     p.add_argument('--checkpoint-every', type=int, default=0,
                    help='save a resumable checkpoint (OUT-ckpt.pt) every N optimizer steps; an existing one is resumed')
+    p.add_argument('--steps-per-run', type=int, default=0,
+                   help='with --checkpoint-every: save and exit with code 3 after this many steps; the caller restarts '
+                        'from the checkpoint (host RAM grows until two Kaggle trainers stall at ~130 steps, v48)')
     p.add_argument('--save-optimizer', action='store_true',
                    help='also save the AdamW state with the trainable parameter names (LESS warmup, R3c)')
     p.add_argument('--save-epochs', action='store_true',
@@ -271,6 +290,7 @@ def main(argv=None):
         torch.set_rng_state(state['torch_rng'])
         torch.cuda.set_rng_state(state['cuda_rng'])
         print(json.dumps({'resumed_from': str(ckpt_path), 'step': step, 'epoch': epoch}), flush=True)
+    run_start = step
 
     while step < steps_total:
         if not order:
@@ -305,13 +325,16 @@ def main(argv=None):
                               'lr': sched.get_last_lr()[0], 'grad_norm': round(grad_norm, 4),
                               'scale': scaler.get_scale() if scaler.is_enabled() else None,
                               'seconds': round(time.time() - t0, 1),
-                              'gpu_mb': peak_mb()}), flush=True)
+                              'gpu_mb': peak_mb(), **host_mb()}), flush=True)
             if train_log is not None and step % 10 == 0:
                 train_log.append(loss_record(epoch, step, sum(recent) / len(recent)))
                 recent = []
             losses = []
             if args.checkpoint_every and step % args.checkpoint_every == 0 and step < steps_total:
                 save_checkpoint()
+                if args.steps_per_run and step - run_start >= args.steps_per_run:
+                    print(json.dumps({'paused_at': step, 'restart': 'resume from checkpoint'}), flush=True)
+                    raise SystemExit(PAUSED)
     if train_log is not None and epoch > logged_epoch:
         train_log.append(loss_record(epoch, step, sum(epoch_losses) / len(epoch_losses), epoch_val()))
 

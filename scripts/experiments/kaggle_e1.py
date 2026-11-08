@@ -847,6 +847,7 @@ def r3_train_only(smoke: bool = False) -> None:
 R3T_MAX_TOKENS = 8192
 R3F_CAP = 150                   # samples per code-replay family: ~600 rows, the size planned for R3f
 R3T_ENV = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True'}
+TRAIN_PAUSED = 3                # lora_train.py --steps-per-run exit code (checkpoint saved; restart to continue)
 
 
 # Training variants on R3's data and hyperparameters, one change each (docs/plans/r3f-forgetting-fix.md):
@@ -880,7 +881,7 @@ def r3t_setup(variants: tuple[tuple[str, ...], ...] = ((),)):
 
 
 def r3t_args(data: Path, cap: int, seed: int, smoke: bool) -> list[str]:
-    return ((['--smoke'] if smoke else ['--epochs', '2', '--checkpoint-every', '25'])
+    return ((['--smoke'] if smoke else ['--epochs', '2', '--checkpoint-every', '25', '--steps-per-run', '100'])
             + ['--rank', '16', '--lr', '1e-4', '--targets', 'safe', '--max-tokens', str(cap), '--seed', str(seed),
                '--chunked-attention', '--dtype', 'fp16', '--val', str(data / 'val.jsonl')])
 
@@ -906,7 +907,7 @@ def r3t_train(tags: list[str]) -> None:
     runs = [r3t_variant(tag) for tag in tags[:2]]
     datas, linfo = r3t_setup(tuple(tuple(extra) for _, _, extra in runs))
     stop_at = START + DEADLINE_S - 1200         # converting and packaging need ~20 minutes
-    procs = {}
+    procs, proc_envs = {}, {}
     for gpu, (tag, (name, number, extra)) in enumerate(zip(tags, runs)):
         data = datas[tuple(extra)]
         out = OUT / f'{name}-adapter'
@@ -929,8 +930,9 @@ def r3t_train(tags: list[str]) -> None:
                [PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'), '--model',
                 linfo['hf_model'], '--out', str(out / 'adapter'), *r3t_args(data, R3T_MAX_TOKENS, number, False)])
         log_file = (OUT / f'{name}-train.log').open('a')
+        proc_envs[tag] = {**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}
         procs[tag] = (subprocess.Popen(cmd, cwd=ROOT, stdout=log_file, stderr=subprocess.STDOUT,
-                                       env={**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}), out)
+                                       env=proc_envs[tag]), out)
         log('r3t training started', tag=tag, gpu=gpu)
         time.sleep(240)                         # stagger the two 4B loads: host RAM is 32 GB
     while procs:
@@ -938,10 +940,17 @@ def r3t_train(tags: list[str]) -> None:
             code = proc.poll()
             if code is None and time.time() < stop_at:
                 continue
+            if code == TRAIN_PAUSED and time.time() < stop_at:      # periodic restart: frees the leaked host RAM
+                log_file = (OUT / f'{r3t_variant(tag)[0]}-train.log').open('a')
+                procs[tag] = (subprocess.Popen(proc.args, cwd=ROOT, stdout=log_file, stderr=subprocess.STDOUT,
+                                               env=proc_envs[tag]), out)
+                log('r3t trainer restarted from its checkpoint', tag=tag)
+                continue
             del procs[tag]
-            if code is None:
-                proc.terminate()
-                proc.wait(timeout=300)
+            if code is None or code == TRAIN_PAUSED:
+                if code is None:
+                    proc.terminate()
+                    proc.wait(timeout=300)
                 log('r3t paused before the session deadline; resume in the next version', tag=tag)
             elif code:
                 log('r3t training failed', tag=tag, code=code)
