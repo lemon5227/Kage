@@ -1,0 +1,321 @@
+{
+ "rows": [
+  {
+   "variant": "Base student",
+   "seed": "A0@26",
+   "change": "\u2014",
+   "learned_file": "30/72",
+   "held_out_file": "15/36",
+   "learned_web": "10/54",
+   "source": "evidence/reports/r3t-seeds/analysis.json",
+   "read_back": "\u2014",
+   "general": "\u2014"
+  },
+  {
+   "variant": "R3",
+   "seed": "R3@26",
+   "change": "guided re-execution, guidance removed",
+   "learned_file": "64/72",
+   "held_out_file": "1/36",
+   "learned_web": "21/54",
+   "source": "evidence/reports/r3t-seeds/analysis.json",
+   "read_back": "\u2014",
+   "general": "\u2014"
+  },
+  {
+   "variant": "R3",
+   "seed": "r3t1@41",
+   "change": "guided re-execution, guidance removed",
+   "learned_file": "63/72",
+   "held_out_file": "0/36",
+   "learned_web": "26/54",
+   "source": "evidence/reports/r3t-seeds/analysis.json",
+   "read_back": "0/110",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3",
+   "seed": "r3t2@41",
+   "change": "guided re-execution, guidance removed",
+   "learned_file": "58/72",
+   "held_out_file": "2/36",
+   "learned_web": "28/54",
+   "source": "evidence/reports/r3t-seeds/analysis.json",
+   "read_back": "2/113",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3g",
+   "seed": "r3g0@44",
+   "change": "R3 + read-back step after each write",
+   "learned_file": "61/72",
+   "held_out_file": "5/36",
+   "learned_web": "21/54",
+   "source": "evidence/reports/r3g/analysis.json",
+   "read_back": "111/111",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3g",
+   "seed": "r3g1@44",
+   "change": "R3 + read-back step after each write",
+   "learned_file": "69/72",
+   "held_out_file": "5/36",
+   "learned_web": "25/54",
+   "source": "evidence/reports/r3g/analysis.json",
+   "read_back": "108/108",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3f",
+   "seed": "r3f0@F",
+   "change": "R3 + 363 rows of the student's own passing code on other programming families",
+   "learned_file": "57/72",
+   "held_out_file": "15/36",
+   "learned_web": "30/54",
+   "source": "evidence/reports/r3f/analysis.json",
+   "read_back": "0/111",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3f",
+   "seed": "r3f1@F",
+   "change": "R3 + 363 rows of the student's own passing code on other programming families",
+   "learned_file": "65/72",
+   "held_out_file": "18/36",
+   "learned_web": "27/54",
+   "source": "evidence/reports/r3f/analysis.json",
+   "read_back": "0/107",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3fg",
+   "seed": "r3fg0@F",
+   "change": "R3f + read-back step",
+   "learned_file": "65/72",
+   "held_out_file": "19/36",
+   "learned_web": "25/54",
+   "source": "evidence/reports/r3fg/analysis.json",
+   "read_back": "101/102",
+   "general": "28/30"
+  },
+  {
+   "variant": "R3fg",
+   "seed": "r3fg1@F",
+   "change": "R3f + read-back step",
+   "learned_file": "63/72",
+   "held_out_file": "13/36",
+   "learned_web": "26/54",
+   "source": "evidence/reports/r3fg/analysis.json",
+   "read_back": "102/106",
+   "general": "28/30"
+  }
+ ],
+ "negative_misuse_pooled": {
+  "R3 seeds 1-2": {
+   "executions": "1/72",
+   "tasks": [
+    "stream-v1-lookalike_readonly-10502"
+   ]
+  },
+  "R3g": {
+   "executions": "0/72",
+   "tasks": []
+  },
+  "R3f": {
+   "executions": "3/72",
+   "tasks": [
+    "stream-v1-lookalike_readonly-10502"
+   ]
+  },
+  "R3fg": {
+   "executions": "3/72",
+   "tasks": [
+    "stream-v1-lookalike_readonly-10502"
+   ]
+  }
+ },
+ "held_out_repair": {
+  "R3g": {
+   "A0": {
+    "tasks": 12,
+    "passed": 7,
+    "read_back": 7,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3g0": {
+    "tasks": 36,
+    "passed": 5,
+    "read_back": 36,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3g1": {
+    "tasks": 36,
+    "passed": 5,
+    "read_back": 36,
+    "rewrite_after_read_back": 2,
+    "passed_after_rewrite": 0
+   }
+  },
+  "R3f": {
+   "A0": {
+    "tasks": 12,
+    "passed": 5,
+    "read_back": 6,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3f0": {
+    "tasks": 36,
+    "passed": 15,
+    "read_back": 0,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3f1": {
+    "tasks": 36,
+    "passed": 18,
+    "read_back": 0,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   }
+  },
+  "R3fg": {
+   "A0": {
+    "tasks": 12,
+    "passed": 8,
+    "read_back": 9,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3fg0": {
+    "tasks": 36,
+    "passed": 19,
+    "read_back": 29,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   },
+   "r3fg1": {
+    "tasks": 36,
+    "passed": 13,
+    "read_back": 30,
+    "rewrite_after_read_back": 0,
+    "passed_after_rewrite": 0
+   }
+  }
+ },
+ "contrasts": {
+  "r3fg_vs_r3f_in": {
+   "mean_diff": 0.042,
+   "improved": 5,
+   "worse": 4,
+   "tied": 15,
+   "p_fraction": "109/256",
+   "boot95": [
+    -0.035,
+    0.125
+   ]
+  },
+  "r3fg_vs_r3f_held": {
+   "mean_diff": -0.014,
+   "improved": 4,
+   "worse": 5,
+   "tied": 3,
+   "p_fraction": "1/1",
+   "boot95": [
+    -0.167,
+    0.139
+   ]
+  },
+  "r3fg_vs_r3t_held": {
+   "mean_diff": 0.417,
+   "improved": 10,
+   "worse": 1,
+   "tied": 1,
+   "p_fraction": "1/256",
+   "boot95": [
+    0.236,
+    0.597
+   ]
+  },
+  "r3fg_vs_r3g_held": {
+   "mean_diff": 0.306,
+   "improved": 8,
+   "worse": 2,
+   "tied": 2,
+   "p_fraction": "17/512",
+   "boot95": [
+    0.097,
+    0.514
+   ]
+  },
+  "r3fg0_vs_base26_held": {
+   "mean_diff": 0.111,
+   "improved": 5,
+   "worse": 1,
+   "tied": 6,
+   "p_fraction": "17/32",
+   "boot95": [
+    -0.139,
+    0.361
+   ]
+  },
+  "r3fg1_vs_base26_held": {
+   "mean_diff": -0.056,
+   "improved": 3,
+   "worse": 5,
+   "tied": 4,
+   "p_fraction": "111/128",
+   "boot95": [
+    -0.361,
+    0.278
+   ]
+  },
+  "r3fg0_vs_base26_in": {
+   "mean_diff": 0.486,
+   "improved": 15,
+   "worse": 0,
+   "tied": 9,
+   "p_fraction": "1/16384",
+   "boot95": [
+    0.319,
+    0.653
+   ]
+  },
+  "r3fg1_vs_base26_in": {
+   "mean_diff": 0.458,
+   "improved": 15,
+   "worse": 2,
+   "tied": 7,
+   "p_fraction": "5/16384",
+   "boot95": [
+    0.278,
+    0.639
+   ]
+  },
+  "r3f_vs_r3t_held": {
+   "mean_diff": 0.431,
+   "improved": 10,
+   "worse": 0,
+   "tied": 2,
+   "p_fraction": "1/512",
+   "boot95": [
+    0.278,
+    0.583
+   ]
+  },
+  "r3f_vs_r3g_held": {
+   "mean_diff": 0.319,
+   "improved": 8,
+   "worse": 2,
+   "tied": 2,
+   "p_fraction": "1/64",
+   "boot95": [
+    0.139,
+    0.514
+   ]
+  }
+ }
+}

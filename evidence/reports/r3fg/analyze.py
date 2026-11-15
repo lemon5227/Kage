@@ -73,15 +73,28 @@ def read_back(calls):
     return False
 
 
+TRACE = re.compile(r'^cp0-(stream-v1-(.+)-\d+)(?:-a(\d+))?\.jsonl$')
+
+
+def traces(tar, prefix):
+    """{(run, task id): (family, member)} for cp0 file traces, last attempt per task (resumed sessions add -aN)."""
+    best = {}
+    for m in tar.getmembers():
+        if not (m.isfile() and m.name.startswith(prefix + '/') and '/model-traces/cp0-' in m.name):
+            continue
+        hit = TRACE.match(m.name.rsplit('/', 1)[1])
+        run = m.name[len(prefix) + 1:].split('/')[0]
+        key, attempt = (run, hit.group(1)), int(hit.group(3) or 1)
+        if key not in best or attempt > best[key][0]:
+            best[key] = (attempt, hit.group(2), m)
+    return {key: (family, m) for key, (_, family, m) in best.items()}
+
+
 def readback_rates(version, prefix):
     """{arm-run: {group: [read back, wrote]}} over cp0 file tasks."""
     out = defaultdict(lambda: defaultdict(lambda: [0, 0]))
     with members(version) as tar:
-        for m in tar.getmembers():
-            if not (m.isfile() and m.name.startswith(prefix + '/') and '/model-traces/cp0-' in m.name):
-                continue
-            run = m.name[len(prefix) + 1:].split('/')[0]
-            family = re.sub(r'^cp0-stream-v1-|-\d+\.jsonl$', '', m.name.rsplit('/', 1)[1])
+        for (run, _), (family, m) in sorted(traces(tar, prefix).items()):
             lines = tar.extractfile(m).read().decode().splitlines()
             calls = list(tool_calls(lines)) if lines else []
             if not any(name == 'write_file' for name, _ in calls):
@@ -106,12 +119,10 @@ def held_out_repair(version, prefix):
                     r = json.loads(line)
                     if r['checkpoint'] == 'cp0':
                         passed[run, r['task_id']] = float(r['score']) >= 1
-        for m in names:
-            family = re.sub(r'^cp0-stream-v1-|-\d+\.jsonl$', '', m.name.rsplit('/', 1)[1])
-            if '/model-traces/cp0-' not in m.name or family not in HELD:
+        for (run, task), (family, m) in sorted(traces(tar, prefix).items()):
+            if family not in HELD:
                 continue
-            run = m.name[len(prefix) + 1:].split('/')[0]
-            ok = passed.get((run, m.name.rsplit('/', 1)[1][4:-6]), False)
+            ok = passed.get((run, task), False)
             lines = tar.extractfile(m).read().decode().splitlines()
             written, read, rewrite = set(), False, False
             for name, path in (tool_calls(lines) if lines else []):

@@ -52,28 +52,24 @@
     "learned": "12/18"
    },
    "r3fg0-r1": {
-    "other": "6/7",
+    "held_out": "9/10",
     "all": "33/34",
-    "learned": "24/24",
-    "held_out": "3/3"
+    "learned": "24/24"
    },
    "r3fg0-r2": {
-    "other": "9/9",
+    "held_out": "11/11",
     "all": "35/35",
-    "learned": "24/24",
-    "held_out": "2/2"
+    "learned": "24/24"
    },
    "r3fg0-r3": {
-    "held_out": "7/7",
-    "all": "34/34",
-    "learned": "24/24",
-    "other": "3/3"
+    "held_out": "9/9",
+    "all": "33/33",
+    "learned": "24/24"
    },
    "r3fg1-r1": {
-    "held_out": "9/9",
-    "all": "35/36",
-    "learned": "24/24",
-    "other": "2/3"
+    "held_out": "10/11",
+    "all": "34/35",
+    "learned": "24/24"
    },
    "r3fg1-r2": {
     "held_out": "10/11",
@@ -323,16 +319,16 @@
     "passed_after_rewrite": 0
    },
    "r3fg0": {
-    "tasks": 15,
-    "passed": 9,
-    "read_back": 12,
+    "tasks": 36,
+    "passed": 19,
+    "read_back": 29,
     "rewrite_after_read_back": 0,
     "passed_after_rewrite": 0
    },
    "r3fg1": {
-    "tasks": 34,
+    "tasks": 36,
     "passed": 13,
-    "read_back": 29,
+    "read_back": 30,
     "rewrite_after_read_back": 0,
     "passed_after_rewrite": 0
    }
