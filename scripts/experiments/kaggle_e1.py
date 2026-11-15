@@ -1291,9 +1291,13 @@ def main(argv=None):
     if args.phase == 'adapter-eval':
         # R3b/R3c (10-23): Colab-trained adapters from input datasets, e.g. kaggle_phase "adapter-eval r3b r3c";
         # final and epoch-1 adapter of each tag, 3 runs per eval set, one A0 anchor, general check per final adapter.
-        adapters = input_adapters(only or ['r3b'])
+        # 'adapter-eval quick <names>' (R4-1, 11-15): the quick gate — one run per adapter per eval set and the A0
+        # anchor, no general check; about a third of the full evaluation, to decide whether the full one is worth it.
+        quick = 'quick' in only
+        adapters = input_adapters([tag for tag in only if tag != 'quick'] or ['r3b'])
         browser_setup()
-        jobs, general = adapter_eval_jobs(adapters)
+        jobs, general = adapter_eval_jobs(adapters, 1 if quick else R3_RUNS)
+        general = [] if quick else general
         run_jobs(info, jobs + general, 'adapter-eval')
         summary = r3_summary(jobs)
         summary['general'] = r3_general_summary(general)

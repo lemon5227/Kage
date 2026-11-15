@@ -6,10 +6,12 @@
 # must match kaggle_e1.py) in 20 MB parts; the VM is polled every 3 min (an idle free VM is pruned), the progress is
 # packed and downloaded every 30 min into <work dir>/bak, and a lost VM is replaced (retry every 30 min while no free
 # T4 is offered) and restored from it. Results land in <work dir>/results/e1-results.tar.gz.
+# EVAL_MODE=quick runs the quick gate (one run per adapter, no general check); a later full run in the same work dir
+# resumes from it (run 1 is reused).
 set -u
 W=$1; A=$2; shift 2; NAMES="$*"; S=${COLAB_SESSION:-kage-ev}; H=$(cd "$(dirname "$0")" && pwd)
 LLAMA_BIN=${LLAMA_BIN:-/Users/wenbo/Kage/artifacts/r3f-ckpt/v47/llama-bin}
-mkdir -p "$W/up"; echo "$NAMES" > "$W/up/names.txt"
+mkdir -p "$W/up"; echo "$NAMES" > "$W/up/names.txt"; echo "${EVAL_MODE:-}" > "$W/up/mode.txt"
 if [ ! -f "$W/up/lb.done" ]; then
   tar czf "$W/lb.tgz" -C "$(dirname "$LLAMA_BIN")" "$(basename "$LLAMA_BIN")" && split -b 20m "$W/lb.tgz" "$W/up/lb.a"
   for n in $NAMES; do
@@ -32,7 +34,7 @@ for attempt in $(seq 1 60); do
   colab sessions 2>/dev/null | grep -q "\[$S\]" || until colab new -s $S --gpu T4 >/dev/null 2>&1; do
     echo "$(date '+%m-%d %H:%M') no free T4; retry in 30 min"; sleep 1800; done
   echo "$(date '+%m-%d %H:%M') session up (attempt $attempt)"
-  up "$W"/up/*.a* "$W/up/names.txt" $( [ -d "$W/bak" ] && ls "$W"/bak/* ) || { echo upload failed; colab stop -s $S >/dev/null 2>&1; continue; }
+  up "$W"/up/*.a* "$W/up/names.txt" "$W/up/mode.txt" $( [ -d "$W/bak" ] && ls "$W"/bak/* ) || { echo upload failed; colab stop -s $S >/dev/null 2>&1; continue; }
   ex "$H/prep.py" 900 | grep -v Deprecation | tail -6
   i=0; miss=0
   while true; do

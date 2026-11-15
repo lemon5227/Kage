@@ -81,3 +81,7 @@
 3. 本机账本 `~/.config/kage/teachers/ledger.sqlite` 不在仓库里：新设备上从工作日志最新的“本机账本剩 $X”恢复上限（`KAGE_TEACHER_CAP_USD`），避免超出总预算 $2。
 4. 实验原始数据：`evidence/`（见其 README）。
 5. Kaggle CLI：`pip install kaggle` 到任意虚拟环境，在 Kaggle 网站 Settings → API 生成令牌放 `~/.kaggle/`。
+
+## 评测快速门（2026-11-15）
+- `kaggle_phase` 写 `adapter-eval quick <名字>...`：每个适配器每套评测只跑 1 次 + 原学生锚点，不跑通用检查，约为全量的 1/3；用于决定值不值得跑全量。之后去掉 `quick` 在同一输出上跑全量，会从第 1 次续跑。
+- 免费 Colab：`EVAL_MODE=quick scripts/experiments/colab_eval/go.sh <工作目录> <适配器根目录> <名字>...`。

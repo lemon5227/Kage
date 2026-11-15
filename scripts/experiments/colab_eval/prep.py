@@ -14,6 +14,7 @@ def join(pattern, dest):
 
 
 names = open('/content/names.txt').read().split()
+mode = 'quick' if os.path.exists('/content/mode.txt') and open('/content/mode.txt').read().strip() == 'quick' else ''
 for n in names:
     print(n, join(f'/content/{n}.a*', f'/content/input/e1/{n}-adapter/adapter.gguf'))
 print('llama-bin', join('/content/lb.a*', '/content/lb.tgz'))         # the Kaggle build (sm75, CUDA 12)
@@ -28,6 +29,6 @@ ld = ':'.join(sorted({os.path.dirname(p) for p in glob.glob(site.getsitepackages
 subprocess.run('rm -rf /content/Kage /content/tools; git clone -q -b dev --depth 1 '
                'https://github.com/lemon5227/Kage.git /content/Kage', shell=True)
 subprocess.Popen(f'cd /content/Kage && LD_LIBRARY_PATH={ld}:$LD_LIBRARY_PATH KAGE_WORK=/content/work '
-                 f'KAGE_TOOLS=/content/tools KAGE_INPUT=/content/input KAGE_PHASE="adapter-eval {" ".join(names)}" '
+                 f'KAGE_TOOLS=/content/tools KAGE_INPUT=/content/input KAGE_PHASE="adapter-eval {mode} {" ".join(names)}" '
                  'nohup python scripts/experiments/kaggle_e1.py >> /content/eval.out 2>&1 &', shell=True, start_new_session=True)
 print('started', subprocess.run('git -C /content/Kage log --oneline -1', shell=True, capture_output=True, text=True).stdout)

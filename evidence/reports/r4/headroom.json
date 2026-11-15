@@ -1,0 +1,100 @@
+{
+ "file:config_migrate": {
+  "A0": "3/6",
+  "r3fg0": "8/18",
+  "r3fg1": "7/18",
+  "r3fg_pooled": "15/36",
+  "headroom": 0.58
+ },
+ "file:csv_transform": {
+  "A0": "3/6",
+  "r3fg0": "18/18",
+  "r3fg1": "16/18",
+  "r3fg_pooled": "34/36",
+  "headroom": 0.06
+ },
+ "file:inspect_question": {
+  "A0": "4/4",
+  "r3fg0": "12/12",
+  "r3fg1": "12/12",
+  "r3fg_pooled": "24/24",
+  "headroom": 0.0
+ },
+ "file:interval_merge": {
+  "A0": "6/6",
+  "r3fg0": "18/18",
+  "r3fg1": "17/18",
+  "r3fg_pooled": "35/36",
+  "headroom": 0.03
+ },
+ "file:log_aggregation": {
+  "A0": "2/6",
+  "r3fg0": "17/18",
+  "r3fg1": "13/18",
+  "r3fg_pooled": "30/36",
+  "headroom": 0.17
+ },
+ "file:lookalike_readonly": {
+  "A0": "4/4",
+  "r3fg0": "12/12",
+  "r3fg1": "9/12",
+  "r3fg_pooled": "21/24",
+  "headroom": 0.12
+ },
+ "file:read_preserve": {
+  "A0": "4/4",
+  "r3fg0": "12/12",
+  "r3fg1": "12/12",
+  "r3fg_pooled": "24/24",
+  "headroom": 0.0
+ },
+ "file:subset_selection": {
+  "A0": "0/6",
+  "r3fg0": "12/18",
+  "r3fg1": "17/18",
+  "r3fg_pooled": "29/36",
+  "headroom": 0.19
+ },
+ "file:text_normalize": {
+  "A0": "5/6",
+  "r3fg0": "11/18",
+  "r3fg1": "6/18",
+  "r3fg_pooled": "17/36",
+  "headroom": 0.53
+ },
+ "web:web_catalog": {
+  "A0": "3/6",
+  "r3fg0": "11/18",
+  "r3fg1": "13/18",
+  "r3fg_pooled": "24/36",
+  "headroom": 0.33
+ },
+ "web:web_form": {
+  "A0": "1/6",
+  "r3fg0": "0/18",
+  "r3fg1": "0/18",
+  "r3fg_pooled": "0/36",
+  "headroom": 1.0
+ },
+ "web:web_invoice": {
+  "A0": "0/6",
+  "r3fg0": "11/18",
+  "r3fg1": "9/18",
+  "r3fg_pooled": "20/36",
+  "headroom": 0.44
+ },
+ "web:web_lookup": {
+  "A0": "6/6",
+  "r3fg0": "18/18",
+  "r3fg1": "18/18",
+  "r3fg_pooled": "36/36",
+  "headroom": 0.0
+ },
+ "web:web_prefs": {
+  "A0": "0/6",
+  "r3fg0": "3/18",
+  "r3fg1": "4/18",
+  "r3fg_pooled": "7/36",
+  "headroom": 0.81
+ }
+}

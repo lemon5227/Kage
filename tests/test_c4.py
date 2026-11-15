@@ -73,6 +73,10 @@ def test_adapter_eval_finds_final_and_epoch_adapters_and_builds_jobs(tmp_path, m
     assert [g[0] for g in general] == ['general-r3b']
     env = {name: e for name, _, e in jobs}
     assert env['file-A0-r1'] == {} and env['web-r3b-r1']['KAGE_LORA'].endswith('adapter.gguf')
+    quick, _ = kaggle_e1.adapter_eval_jobs(adapters, 1)                     # the quick gate: run 1 only, same roots
+    assert [name for name, _, _ in quick] == [name for name in names if name.endswith('-r1')]
+    root = lambda argv: argv[argv.index('--root') + 1]                       # noqa: E731  (a later full run resumes run 1)
+    assert {root(argv) for _, argv, _ in quick} <= {root(argv) for _, argv, _ in jobs}
 
 
 def test_adapter_eval_without_a_final_adapter_stops(tmp_path, monkeypatch):
