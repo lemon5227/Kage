@@ -244,13 +244,13 @@ def spiral_walk(seed: int) -> dict:
     fn = _pick(rng, ['spiral', 'spiral_order', 'unwind', 'walk_spiral'])
     file = _pick(rng, ['spiral.py', 'matrix_walk.py', 'unwind.py'])
     clockwise = rng.random() < 0.5
-    way = ('clockwise: first along the top row to the right, then down the last column' if clockwise
-           else 'counter-clockwise: first down the first column, then right along the bottom row')
-    rules = (f'The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a '
-             f'spiral, {way}, and so on until every cell has been visited once. Return the visited values as one flat '
-             'list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different '
-             'lengths.')
-    instruction = _pick(rng, _templates(fn, 'grid', file, 'list the cells of a grid in spiral order', rules))
+    way = ('clockwise: first along the top line to the right, then down the right edge' if clockwise
+           else 'counter-clockwise: first down the left edge, then to the right along the bottom line')
+    rules = (f'The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move '
+             f'inwards in a spiral, {way}, and so on until every element has been taken exactly once. Return all '
+             'elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. '
+             'If the lines differ in length, raise ValueError.')
+    instruction = _pick(rng, _templates(fn, 'matrix', file, 'unwind a matrix in spiral order', rules))
 
     def ref(grid):
         return _spiral_reference(grid, clockwise)
@@ -263,7 +263,7 @@ def spiral_walk(seed: int) -> dict:
     cases += [_case(ref, [[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), _case(ref, [[[1, 2, 3, 4]]]), _case(ref, [[[1], [2], [3]]]),
               _case(ref, [[]]), _case(ref, [[[1, 2], [3]]]), _case(ref, [[[1, 2], [3, 4], [5, 6], [7, 8]]])]
     return {'family': 'spiral_walk', 'instruction': instruction, 'file': file, 'function': fn,
-            'initial_source': f'def {fn}(grid):\n    return None\n', 'cases': cases, 'params': {'clockwise': clockwise}}
+            'initial_source': f'def {fn}(matrix):\n    return None\n', 'cases': cases, 'params': {'clockwise': clockwise}}
 
 
 def _duration_reference(text, minutes, spaces):

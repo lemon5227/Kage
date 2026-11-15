@@ -57,7 +57,13 @@ def test_round2_eval_manifest_is_frozen_and_disjoint_from_collection_seeds():
     import stream_code_freeze
     from stream_freeze import load
     frozen = load('eval/stream_code_v1/eval.json')
-    assert frozen['sha256'] == stream_code_freeze.build()['sha256']          # generators still produce the frozen tasks
+    built = stream_code_freeze.build()
+    assert frozen['sha256'] == built['eval.json']['sha256']          # generators still produce the frozen tasks
     assert {t['family'] for t in frozen['tasks']} == set(code_tasks.ROUND2_FAMILIES) and len(frozen['tasks']) == 24
     assert all(t['split'] == 'eval' for t in frozen['tasks'])                # collection uses practice seeds (13000+)
     assert not set(code_tasks.CODE_NEW_FAMILIES) & set(code_tasks.CODE_REPLAY_FAMILIES)
+    stream = load('eval/stream_code_v1/stream-seed1.json')
+    assert stream['sha256'] == built['stream-seed1.json']['sha256'] and len(stream['tasks']) == 30
+    assert all(t['split'] == 'stream' for t in stream['tasks']) and sum(t['negative'] for t in stream['tasks']) == 6
+    old = {t['task_id'] for name in ('stream-seed1.json', 'stream-seed2.json') for t in load(f'eval/stream_v1/{name}')['tasks']}
+    assert not old & {t['task_id'] for t in stream['tasks']}

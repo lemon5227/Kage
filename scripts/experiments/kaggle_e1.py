@@ -1057,6 +1057,40 @@ def adapter_eval_jobs(adapters: dict[str, Path], n: int = R3_RUNS):
     return jobs, general
 
 
+R4_CAP_USD = 0.30                           # R4 probe: teacher demonstrations for the round-2 stream (cached per task)
+
+
+def r4_probe_jobs(adapters: dict[str, Path], *, seeds: int = 8, k: int = 2):
+    """R4-2b (docs/plans/cards/R4.md): where does the R3fg student start on the round-2 code families, and does
+    guided re-execution yield samples there?
+
+    Stage 1: cp0 on eval/stream_code_v1 for the base student and each adapter (one run each), and one A4mG learning
+    stream per adapter (teacher demonstrations after failures; evaluated again after the 30 stream tasks).
+    Stage 2 (needs stage 1's memory): each adapter re-executes practice tasks of the four families with its own
+    stream's demonstrations at temperature 0.6 — the round-2 collection at smoke size; yield per family decides
+    which families enter round 2 (below 20% the family is dropped)."""
+    script, m = 'scripts/experiments/stream_run.py', ROOT / 'eval' / 'stream_code_v1'
+    common = ['--stream-manifest', str(m / 'stream-seed1.json'), '--eval-manifest', str(m / 'eval.json'),
+              '--skill-runner', 'process']
+    arms = [('A0', {})] + [(name, {'KAGE_LORA': str(path)}) for name, path in adapters.items()]
+    stage1 = [(f'code-{name}-r1', [script, '--arm', 'A0', '--root', str(OUT / 'r4' / 'cp0' / f'{name}-r1'),
+                                   '--eval-only', 'cp0', '--port', str(19200 + i), *common], env)
+              for i, (name, env) in enumerate(arms)]
+    stage1 += [(f'stream-{name}', [script, '--arm', 'A4mG', '--root', str(OUT / 'r4' / 'stream' / name),
+                                   '--checkpoints', '30', '--port', str(19210 + i), *common,
+                                   '--teacher-cache', str(OUT / 'teacher-cache-code'),
+                                   '--experiment-cap-usd', str(R4_CAP_USD)], env)
+               for i, (name, env) in enumerate(arms[1:])]
+    from core.evolution.code_tasks import ROUND2_FAMILIES
+    stage2 = [(f'collect-{name}', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'r4' / 'collect' / name),
+                                   '--port', str(19220 + i), '--families', ','.join(ROUND2_FAMILIES),
+                                   '--seeds', str(seeds), '--k', str(k), '--guidance', 'demo', '--temperature', '0.6',
+                                   '--skill-runner', 'process',      # no negatives here: they include a browser family
+                                   '--memory', str(OUT / 'r4' / 'stream' / name / 'memory.jsonl')], env)
+              for i, (name, env) in enumerate(arms[1:])]
+    return stage1, stage2
+
+
 C4_ARMS = {                               # name -> interface environment (see core.evolution.stream.browser_interface)
     'V1': {},
     'V2': {'KAGE_BROWSER_OBS': 'compact-v2'},
@@ -1160,7 +1194,7 @@ def package() -> None:
 
 
 PHASES = ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2', 'e2b', 'lora-smoke', 'lora',
-          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3t-train', 'r3f-collect', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval', 'package')
+          'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr', 'r3-smoke', 'r3', 'r3-train', 'r3b-train', 'r3c-train', 'r3d-train', 'r3e-train', 'r3t-train', 'r3f-collect', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval', 'r4-probe', 'package')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1187,10 +1221,12 @@ def main(argv=None):
         PHASE_CAP['usd'] = C2_CAP_USD
     if args.phase == 'c3':
         PHASE_CAP['usd'] = C3_CAP_USD
+    if args.phase == 'r4-probe':
+        PHASE_CAP['usd'] = R4_CAP_USD
     needs_setup = args.phase in ('all', 'smoke', 'setup', 'calibration', 'e1', 'rerun', 'e1b', 'e1c', 'e2',
                                  'e2b', 'lora-smoke', 'lora', 'c-cal', 'c2', 'c3', 'rsr-smoke', 'rsr',
                                  'r3-smoke', 'r3', 'r3-eval', 'r3-scale', 'c4', 'c4b', 'adapter-eval',
-                                 'r3f-collect')
+                                 'r3f-collect', 'r4-probe')
     if args.phase == 'r3-train':
         r3_train_only(smoke='smoke' in (only or []))
         return
@@ -1284,6 +1320,30 @@ def main(argv=None):
             done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', str(OUT / 'r3f' / name), '--cap', str(R3F_CAP)],
                                   cwd=ROOT, capture_output=True, text=True)
             log('r3f build', group=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
+        with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
+            tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
+        log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))
+        return
+    if args.phase == 'r4-probe':
+        # R4-2b (11-15): "r4-probe r3fg0 r3fg1 [<seeds> <k>]" — adapters come from the input (previous version's output)
+        # and are copied into this output so the next version still finds them.
+        numbers = [int(x) for x in only if x.isdigit()]
+        adapters = input_adapters([x for x in only if not x.isdigit()] or ['r3fg0', 'r3fg1'])
+        adapters = {name: path for name, path in adapters.items() if not name.endswith('e1')}
+        for name, path in adapters.items():
+            kept = OUT / f'{name}-adapter' / 'adapter.gguf'
+            if not kept.exists():
+                kept.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, kept)
+        stage1, stage2 = r4_probe_jobs(adapters, **(dict(seeds=numbers[0], k=numbers[1]) if len(numbers) >= 2 else {}))
+        run_jobs(info, stage1, 'r4-probe eval and stream')
+        ready = [job for job in stage2 if Path(job[1][job[1].index('--memory') + 1]).exists()]
+        log('r4-probe collection', jobs=[job[0] for job in ready], skipped=[job[0] for job in stage2 if job not in ready])
+        run_jobs(info, ready, 'r4-probe collect')
+        for name, argv, _ in ready:
+            done = subprocess.run([PY, RSR_SCRIPT, 'build', '--root', argv[argv.index('--root') + 1]],
+                                  cwd=ROOT, capture_output=True, text=True)
+            log('r4 build', job=name, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
         with tarfile.open(WORK / 'e1-results.tar.gz', 'w:gz') as tar:
             tar.add(OUT, arcname='e1', filter=lambda t: None if t.name.endswith(('.gguf', 'deepseek.json')) else t)
         log('packaged', tarball=str(WORK / 'e1-results.tar.gz'))

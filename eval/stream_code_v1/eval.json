@@ -1,7 +1,7 @@
 {
- "created": "2026-11-15T19:55:14.553010+00:00",
+ "created": "2026-11-15T19:59:18.149937+00:00",
  "suite_id": "kage-stream-v1",
- "sha256": "3544537b17c53f4d63bce7825eb92b7c676be65ac873fb93031c2504cbb1a031",
+ "sha256": "c7d881705ac9b9ee5780044b1c25192166eb35abf1e61ae62c8e503637879571",
  "tasks": [
   {
    "task_id": "stream-v1-grid_rotate-10000",
@@ -2531,9 +2531,9 @@
    "task_id": "stream-v1-spiral_walk-10000",
    "family": "spiral_walk",
    "split": "eval",
-   "instruction": "In spiral.py, write spiral(grid) that should list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save the file spiral.py.",
+   "instruction": "In spiral.py, write spiral(matrix) that should unwind a matrix in spiral order. The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move inwards in a spiral, clockwise: first along the top line to the right, then down the right edge, and so on until every element has been taken exactly once. Return all elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. If the lines differ in length, raise ValueError. Save the file spiral.py.",
    "initial_files": {
-    "spiral.py": "def spiral(grid):\n    return None\n"
+    "spiral.py": "def spiral(matrix):\n    return None\n"
    },
    "expected_output_file": "spiral.py",
    "scoring_criteria": {
@@ -2795,9 +2795,9 @@
    "task_id": "stream-v1-spiral_walk-10001",
    "family": "spiral_walk",
    "split": "eval",
-   "instruction": "Fix spiral.py: spiral_order(grid) must list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Write the result to spiral.py.",
+   "instruction": "Fix spiral.py: spiral_order(matrix) must unwind a matrix in spiral order. The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move inwards in a spiral, clockwise: first along the top line to the right, then down the right edge, and so on until every element has been taken exactly once. Return all elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. If the lines differ in length, raise ValueError. Write the result to spiral.py.",
    "initial_files": {
-    "spiral.py": "def spiral_order(grid):\n    return None\n"
+    "spiral.py": "def spiral_order(matrix):\n    return None\n"
    },
    "expected_output_file": "spiral.py",
    "scoring_criteria": {
@@ -3063,9 +3063,9 @@
    "task_id": "stream-v1-spiral_walk-10002",
    "family": "spiral_walk",
    "split": "eval",
-   "instruction": "In spiral.py, write unwind(grid) that should list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save the file spiral.py.",
+   "instruction": "In spiral.py, write unwind(matrix) that should unwind a matrix in spiral order. The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move inwards in a spiral, clockwise: first along the top line to the right, then down the right edge, and so on until every element has been taken exactly once. Return all elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. If the lines differ in length, raise ValueError. Save the file spiral.py.",
    "initial_files": {
-    "spiral.py": "def unwind(grid):\n    return None\n"
+    "spiral.py": "def unwind(matrix):\n    return None\n"
    },
    "expected_output_file": "spiral.py",
    "scoring_criteria": {
@@ -3339,9 +3339,9 @@
    "task_id": "stream-v1-spiral_walk-10003",
    "family": "spiral_walk",
    "split": "eval",
-   "instruction": "In unwind.py, write spiral_order(grid) that should list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, counter-clockwise: first down the first column, then right along the bottom row, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save the file unwind.py.",
+   "instruction": "In unwind.py, write spiral_order(matrix) that should unwind a matrix in spiral order. The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move inwards in a spiral, counter-clockwise: first down the left edge, then to the right along the bottom line, and so on until every element has been taken exactly once. Return all elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. If the lines differ in length, raise ValueError. Save the file unwind.py.",
    "initial_files": {
-    "unwind.py": "def spiral_order(grid):\n    return None\n"
+    "unwind.py": "def spiral_order(matrix):\n    return None\n"
    },
    "expected_output_file": "unwind.py",
    "scoring_criteria": {
@@ -3647,9 +3647,9 @@
    "task_id": "stream-v1-spiral_walk-10004",
    "family": "spiral_walk",
    "split": "eval",
-   "instruction": "Implement spiral_order(grid) in matrix_walk.py to list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save matrix_walk.py.",
+   "instruction": "Implement spiral_order(matrix) in matrix_walk.py to unwind a matrix in spiral order. The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move inwards in a spiral, clockwise: first along the top line to the right, then down the right edge, and so on until every element has been taken exactly once. Return all elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. If the lines differ in length, raise ValueError. Save matrix_walk.py.",
    "initial_files": {
-    "matrix_walk.py": "def spiral_order(grid):\n    return None\n"
+    "matrix_walk.py": "def spiral_order(matrix):\n    return None\n"
    },
    "expected_output_file": "matrix_walk.py",
    "scoring_criteria": {
@@ -3921,9 +3921,9 @@
    "task_id": "stream-v1-spiral_walk-10005",
    "family": "spiral_walk",
    "split": "eval",
-   "instruction": "Fix unwind.py: spiral(grid) must list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Write the result to unwind.py.",
+   "instruction": "Fix unwind.py: spiral(matrix) must unwind a matrix in spiral order. The matrix comes as a list of equally long lists, one per line. Begin in the top-left corner and move inwards in a spiral, clockwise: first along the top line to the right, then down the right edge, and so on until every element has been taken exactly once. Return all elements in the order visited as one flat list. For [] or a matrix whose lines are empty the answer is []. If the lines differ in length, raise ValueError. Write the result to unwind.py.",
    "initial_files": {
-    "unwind.py": "def spiral(grid):\n    return None\n"
+    "unwind.py": "def spiral(matrix):\n    return None\n"
    },
    "expected_output_file": "unwind.py",
    "scoring_criteria": {

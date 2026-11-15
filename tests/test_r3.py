@@ -419,3 +419,21 @@ def test_r3t_training_restarts_every_100_steps_from_its_checkpoint():
     assert args[args.index('--steps-per-run') + 1] == '100'
     assert int(args[args.index('--checkpoint-every') + 1]) <= 100
     assert kaggle_e1.TRAIN_PAUSED == 3
+
+
+def test_r4_probe_jobs_cover_start_point_stream_and_guided_collection(tmp_path, monkeypatch):
+    import sys
+    sys.path.insert(0, 'scripts/experiments')
+    import rsr_collect
+    monkeypatch.setattr(kaggle_e1, 'OUT', tmp_path / 'e1')
+    stage1, stage2 = kaggle_e1.r4_probe_jobs({'r3fg0': tmp_path / 'a.gguf', 'r3fg1': tmp_path / 'b.gguf'})
+    assert [name for name, _, _ in stage1] == ['code-A0-r1', 'code-r3fg0-r1', 'code-r3fg1-r1', 'stream-r3fg0', 'stream-r3fg1']
+    assert stage1[0][2] == {} and stage1[3][2] == {'KAGE_LORA': str(tmp_path / 'a.gguf')}
+    assert all('stream_code_v1' in ' '.join(argv) for _, argv, _ in stage1)
+    ports = [argv[argv.index('--port') + 1] for _, argv, _ in stage1 + stage2]
+    assert len(set(ports)) == len(ports)
+    for (name, argv, env), stream in zip(stage2, stage1[3:]):
+        assert argv[argv.index('--memory') + 1] == stream[1][stream[1].index('--root') + 1] + '/memory.jsonl'
+        assert env == stream[2]
+        args = rsr_collect.build_parser().parse_args(argv[1:]) if hasattr(rsr_collect, 'build_parser') else None
+        assert args is None or args.guidance == 'demo'
