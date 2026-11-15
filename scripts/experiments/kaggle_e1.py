@@ -1081,6 +1081,8 @@ def r4_probe_jobs(adapters: dict[str, Path], *, seeds: int = 8, k: int = 2):
                                    '--teacher-cache', str(OUT / 'teacher-cache-code'),
                                    '--experiment-cap-usd', str(R4_CAP_USD)], env)
                for i, (name, env) in enumerate(arms[1:])]
+    if str(ROOT) not in sys.path:              # this driver runs as a script from anywhere (v51: No module named 'core')
+        sys.path.insert(0, str(ROOT))
     from core.evolution.code_tasks import ROUND2_FAMILIES
     stage2 = [(f'collect-{name}', [RSR_SCRIPT, 'collect', '--root', str(OUT / 'r4' / 'collect' / name),
                                    '--port', str(19220 + i), '--families', ','.join(ROUND2_FAMILIES),
