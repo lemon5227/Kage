@@ -112,6 +112,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--steps-per-run', type=int, default=0,
                    help='with --checkpoint-every: save and exit with code 3 after this many steps; the caller restarts '
                         'from the checkpoint (host RAM grows until two Kaggle trainers stall at ~130 steps, v48)')
+    p.add_argument('--init-params', type=Path,
+                   help="start from these LoRA weights (a file with {'params': {name: tensor}}, e.g. a checkpoint of an "
+                        'earlier adapter) instead of a fresh adapter; optimizer and schedule start anew (R4 round 2)')
     p.add_argument('--save-optimizer', action='store_true',
                    help='also save the AdamW state with the trainable parameter names (LESS warmup, R3c)')
     p.add_argument('--save-epochs', action='store_true',
@@ -274,6 +277,16 @@ def main(argv=None):
         torch.save(state, tmp)
         tmp.replace(ckpt_path)
 
+    if args.init_params and not (args.checkpoint_every and ckpt_path.exists()):
+        init = torch.load(args.init_params, map_location='cpu', weights_only=False)['params']
+        missing = [n_ for n_, _ in trainable_named if n_ not in init]
+        if missing or len(init) != len(trainable_named):
+            raise SystemExit(f'{args.init_params}: {len(init)} tensors for {len(trainable_named)} trainable ones; '
+                             f'missing {missing[:3]}')
+        with torch.no_grad():
+            for n_, p_ in trainable_named:
+                p_.copy_(init[n_].to(p_.device))
+        print(json.dumps({'init_params': str(args.init_params), 'tensors': len(init)}), flush=True)
     if args.checkpoint_every and ckpt_path.exists():
         state = torch.load(ckpt_path, map_location='cpu', weights_only=False)
         if state['steps_total'] != steps_total:

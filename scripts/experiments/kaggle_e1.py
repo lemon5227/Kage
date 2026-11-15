@@ -855,6 +855,31 @@ TRAIN_PAUSED = 3                # lora_train.py --steps-per-run exit code (check
 R3F_SFT = ROOT / 'evidence' / 'reports' / 'r3f' / 'sft-replay.jsonl.gz'      # from 'r3f-collect', committed
 R3T_VARIANTS = {'': ('r3t', []), 'g': ('r3g', ['--readback']), 'f': ('r3f', ['--sft', str(R3F_SFT)]),
                 'fg': ('r3fg', ['--sft', str(R3F_SFT), '--readback'])}     # R3f's replay + R3g's read-back steps
+# R4 round 2 (docs/plans/cards/R4.md): 'r3t-train r4s0 r4s1' continues each R3fg seed from its own weights on the
+# new families it collected itself (v53) plus replay of round 1; data and init are per seed.
+R3T_VARIANTS['r4s'] = ('r4s', ['--r4'])
+R4_SFT = ROOT / 'evidence' / 'reports' / 'r4'            # sft-r3fg<seed>.jsonl.gz, committed from the v53 collection
+
+
+def prepare_r4_data(seed: int) -> Path:
+    round1 = prepare_r3_data(['--sft', str(R3F_SFT), '--readback'], name='r3-data-sft-readback')
+    data = OUT / f'r4-data-s{seed}'
+    done = subprocess.run([PY, 'scripts/experiments/r4_data.py', '--new', str(R4_SFT / f'sft-r3fg{seed}.jsonl.gz'),
+                           '--round1', str(round1), '--out', str(data)], cwd=ROOT, capture_output=True, text=True)
+    log('r4 data', seed=seed, code=done.returncode, out=done.stdout.strip()[-400:], err=done.stderr.strip()[-400:])
+    if done.returncode:
+        raise SystemExit(1)
+    return data
+
+
+def r4_init(seed: int) -> Path:
+    """The round-1 LoRA weights this seed continues from (input dataset; made from the R3fg step-550 checkpoint)."""
+    hits = sorted(INPUT.glob(f'**/r3fg{seed}-init.pt'))
+    if not hits:
+        log('r4: no round-1 weights in the inputs', want=f'r3fg{seed}-init.pt')
+        raise SystemExit(1)
+    log('r4 init weights', seed=seed, path=str(hits[0]), sha256=sha256(hits[0]))
+    return hits[0]
 
 
 def r3t_variant(tag: str) -> tuple[str, int, list[str]]:
@@ -863,12 +888,13 @@ def r3t_variant(tag: str) -> tuple[str, int, list[str]]:
     if prefix not in R3T_VARIANTS or not seed:
         raise SystemExit(f'unknown r3t-train tag {tag!r}; expected <seed> or one of {sorted(R3T_VARIANTS)} + <seed>')
     name, extra = R3T_VARIANTS[prefix]
-    return f'{name}{seed}', int(seed), extra
+    return f'{name}{seed}', int(seed), extra + ([seed] if extra == ['--r4'] else [])
 
 
 def r3t_setup(variants: tuple[tuple[str, ...], ...] = ((),)):
     """{data args: data dir} for each variant's data, plus the shared LoRA/llama setup."""
-    data = {tuple(extra): prepare_r3_data(list(extra), name='r3-data' + ''.join(e for e in extra if e.startswith('--')).replace('--', '-'))
+    data = {tuple(extra): (prepare_r4_data(int(extra[1])) if extra[:1] == ('--r4',) else
+                           prepare_r3_data(list(extra), name='r3-data' + ''.join(e for e in extra if e.startswith('--')).replace('--', '-')))
             for extra in dict.fromkeys(variants)}
     linfo = lora_setup()
     fla = subprocess.run([PY, '-m', 'pip', 'install', '-q', 'flash-linear-attention'], capture_output=True, text=True)
@@ -928,7 +954,8 @@ def r3t_train(tags: list[str]) -> None:
             log('r3t checkpoint carried over', tag=tag, source=str(ckpt))
         cmd = ([PY, '-c', ''] if trained else    # trained before a disconnect: only convert below
                [PY, 'scripts/experiments/lora_train.py', '--data', str(data / 'train.jsonl'), '--model',
-                linfo['hf_model'], '--out', str(out / 'adapter'), *r3t_args(data, R3T_MAX_TOKENS, number, False)])
+                linfo['hf_model'], '--out', str(out / 'adapter'), *r3t_args(data, R3T_MAX_TOKENS, number, False),
+                *(['--init-params', str(r4_init(number))] if extra[:1] == ['--r4'] else [])])
         log_file = (OUT / f'{name}-train.log').open('a')
         proc_envs[tag] = {**os.environ, **R3T_ENV, 'CUDA_VISIBLE_DEVICES': str(gpu)}
         procs[tag] = (subprocess.Popen(cmd, cwd=ROOT, stdout=log_file, stderr=subprocess.STDOUT,
@@ -962,8 +989,8 @@ def r3t_train(tags: list[str]) -> None:
                 for file in ('train-config.json', 'train-log.jsonl'):
                     if (out / 'adapter' / file).exists():
                         shutil.copy(out / 'adapter' / file, out / file)
-                for heavy in (out / 'adapter').glob('*.safetensors'):   # converted; keep the output small
-                    heavy.unlink()
+                # the PEFT weights stay in the output (76 MB): a later round continues from them (R4, 11-15: R3fg's were
+                # deleted here and round 2 had to start from the step-550 checkpoint instead)
                 log('r3t adapter ready', tag=tag, gguf_sha256=sha256(gguf),
                     config=json.loads((out / 'train-config.json').read_text()) if (out / 'train-config.json').exists() else None)
         time.sleep(30)

@@ -437,3 +437,34 @@ def test_r4_probe_jobs_cover_start_point_stream_and_guided_collection(tmp_path, 
         assert env == stream[2]
         args = rsr_collect.build_parser().parse_args(argv[1:]) if hasattr(rsr_collect, 'build_parser') else None
         assert args is None or args.guidance == 'demo'
+
+
+def test_r4_round2_variant_and_data_mix(tmp_path):
+    assert kaggle_e1.r3t_variant('r4s1') == ('r4s1', 1, ['--r4', '1'])
+    import sys
+    sys.path.insert(0, 'scripts/experiments')
+    import r4_data
+
+    def row(family, seed, negative=False, attempt=1, text='x'):
+        return {'task_id': f'stream-v1-{family}-{seed}', 'family': family, 'negative': negative, 'attempt': attempt,
+                'messages': [{'role': 'user', 'content': f'{family} {seed} {attempt} {text}'}],
+                'target': {'role': 'assistant', 'content': 'done'}, 'writes': [], 'tools': []}
+    round1 = tmp_path / 'round1'
+    round1.mkdir()
+    old = [row('csv_transform', 13000 + i) for i in range(30)] + [row('web_invoice', 13000 + i) for i in range(10)]
+    old += [row('lookalike_readonly', 13000 + i, True) for i in range(3)] + [row('read_preserve', 13000, True)]
+    (round1 / 'train.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in old))
+    (round1 / 'val.jsonl').write_text(json.dumps(row('csv_transform', 13100)) + '\n')
+    new = tmp_path / 'new.jsonl'
+    new.write_text(''.join(json.dumps(row('grid_rotate', 13000 + i, attempt=a)) + '\n' for i in range(10) for a in (1, 2)))
+    stats = r4_data.build(new, round1, tmp_path / 'out')
+    parts = stats['parts']
+    assert parts['new'] + stats['new']['stats']['rows_out']['val'] == 20 and parts['negatives'] == 4
+    assert parts['replay'] == parts['new'] and parts['lookalike_extra'] == 9
+    rows = stats['rows']['train']
+    assert rows['lookalike_readonly'] == 12 and rows['csv_transform'] > rows['web_invoice'] > 0
+    assert r4_data.build(new, round1, tmp_path / 'again')['sha256'] == stats['sha256']       # deterministic
+    bad = tmp_path / 'bad.jsonl'
+    bad.write_text(json.dumps(row('csv_transform', 13000)) + '\n')
+    with pytest.raises(SystemExit):
+        r4_data.build(bad, round1, tmp_path / 'bad-out')
