@@ -1,0 +1,4822 @@
+{
+ "created": "2026-11-15T19:55:14.553010+00:00",
+ "suite_id": "kage-stream-v1",
+ "sha256": "3544537b17c53f4d63bce7825eb92b7c676be65ac873fb93031c2504cbb1a031",
+ "tasks": [
+  {
+   "task_id": "stream-v1-grid_rotate-10000",
+   "family": "grid_rotate",
+   "split": "eval",
+   "instruction": "Implement rotate(grid, turns) in tiles.py to rotate a grid counter-clockwise. The grid is a list of rows (lists) of equal length. Rotate it by 90 degrees counter-clockwise, turns times; turns is any integer, negative turns rotate the other way and only turns modulo 4 matters. Return a new list of lists and do not modify the input. An empty grid ([]) or a grid of empty rows is returned unchanged as a new list. Raise ValueError if the rows have different lengths. Save tiles.py.",
+   "initial_files": {
+    "tiles.py": "def rotate(grid, turns):\n    return None\n"
+   },
+   "expected_output_file": "tiles.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "tiles.py",
+    "function": "rotate",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         0,
+         0
+        ],
+        [
+         8,
+         1
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        8,
+        0
+       ],
+       [
+        1,
+        0
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2
+        ]
+       ],
+       -2
+      ],
+      "expected": [
+       [
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         5,
+         2
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        9,
+        5,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       6
+      ],
+      "expected": [
+       [
+        3
+       ],
+       [
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         0,
+         9
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        0,
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        3,
+        6
+       ],
+       [
+        2,
+        5
+       ],
+       [
+        1,
+        4
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        3,
+        1
+       ],
+       [
+        4,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-grid_rotate-10001",
+   "family": "grid_rotate",
+   "split": "eval",
+   "instruction": "Implement rotate_tiles(grid, turns) in tiles.py to rotate a grid counter-clockwise. The grid is a list of rows (lists) of equal length. Rotate it by 90 degrees counter-clockwise, turns times; turns is any integer, negative turns rotate the other way and only turns modulo 4 matters. Return a new list of lists and do not modify the input. An empty grid ([]) or a grid of empty rows is returned unchanged as a new list. Raise ValueError if the rows have different lengths. Save tiles.py.",
+   "initial_files": {
+    "tiles.py": "def rotate_tiles(grid, turns):\n    return None\n"
+   },
+   "expected_output_file": "tiles.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "tiles.py",
+    "function": "rotate_tiles",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         7,
+         6,
+         1
+        ]
+       ],
+       -4
+      ],
+      "expected": [
+       [
+        7,
+        6,
+        1
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         3,
+         9,
+         1,
+         8
+        ],
+        [
+         1,
+         9,
+         1,
+         1
+        ],
+        [
+         6,
+         9,
+         6,
+         6
+        ],
+        [
+         6,
+         1,
+         5,
+         3
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        8,
+        1,
+        6,
+        3
+       ],
+       [
+        1,
+        1,
+        6,
+        5
+       ],
+       [
+        9,
+        9,
+        9,
+        1
+       ],
+       [
+        3,
+        1,
+        6,
+        6
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         6,
+         1
+        ],
+        [
+         0,
+         0,
+         8
+        ]
+       ],
+       -2
+      ],
+      "expected": [
+       [
+        8,
+        0,
+        0
+       ],
+       [
+        1,
+        6,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         7,
+         4
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        4
+       ],
+       [
+        7
+       ],
+       [
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         0
+        ],
+        [
+         3
+        ],
+        [
+         9
+        ],
+        [
+         6
+        ]
+       ],
+       5
+      ],
+      "expected": [
+       [
+        0,
+        3,
+        9,
+        6
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        3,
+        6
+       ],
+       [
+        2,
+        5
+       ],
+       [
+        1,
+        4
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        3,
+        1
+       ],
+       [
+        4,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-grid_rotate-10002",
+   "family": "grid_rotate",
+   "split": "eval",
+   "instruction": "In grid.py, write rotate(grid, turns) that should rotate a grid clockwise. The grid is a list of rows (lists) of equal length. Rotate it by 90 degrees clockwise, turns times; turns is any integer, negative turns rotate the other way and only turns modulo 4 matters. Return a new list of lists and do not modify the input. An empty grid ([]) or a grid of empty rows is returned unchanged as a new list. Raise ValueError if the rows have different lengths. Save the file grid.py.",
+   "initial_files": {
+    "grid.py": "def rotate(grid, turns):\n    return None\n"
+   },
+   "expected_output_file": "grid.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "grid.py",
+    "function": "rotate",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         2,
+         0
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        2
+       ],
+       [
+        0
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         1,
+         8
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        1,
+        1,
+        8
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         5
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         8,
+         3
+        ],
+        [
+         3,
+         2
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        2,
+        5
+       ],
+       [
+        5,
+        6
+       ],
+       [
+        8,
+        3
+       ],
+       [
+        3,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         1,
+         3
+        ],
+        [
+         6,
+         9,
+         1
+        ],
+        [
+         4,
+         3,
+         4
+        ],
+        [
+         4,
+         5,
+         2
+        ]
+       ],
+       0
+      ],
+      "expected": [
+       [
+        2,
+        1,
+        3
+       ],
+       [
+        6,
+        9,
+        1
+       ],
+       [
+        4,
+        3,
+        4
+       ],
+       [
+        4,
+        5,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         3,
+         8,
+         4
+        ],
+        [
+         7,
+         4,
+         6
+        ],
+        [
+         3,
+         2,
+         7
+        ],
+        [
+         8,
+         1,
+         2
+        ]
+       ],
+       5
+      ],
+      "expected": [
+       [
+        8,
+        3,
+        7,
+        3
+       ],
+       [
+        1,
+        2,
+        4,
+        8
+       ],
+       [
+        2,
+        7,
+        6,
+        4
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        4,
+        1
+       ],
+       [
+        5,
+        2
+       ],
+       [
+        6,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        2,
+        4
+       ],
+       [
+        1,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-grid_rotate-10003",
+   "family": "grid_rotate",
+   "split": "eval",
+   "instruction": "In board.py, write rotate_tiles(grid, turns) that should rotate a grid clockwise. The grid is a list of rows (lists) of equal length. Rotate it by 90 degrees clockwise, turns times; turns is any integer, negative turns rotate the other way and only turns modulo 4 matters. Return a new list of lists and do not modify the input. An empty grid ([]) or a grid of empty rows is returned unchanged as a new list. Raise ValueError if the rows have different lengths. Save the file board.py.",
+   "initial_files": {
+    "board.py": "def rotate_tiles(grid, turns):\n    return None\n"
+   },
+   "expected_output_file": "board.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "board.py",
+    "function": "rotate_tiles",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         4
+        ],
+        [
+         1
+        ]
+       ],
+       3
+      ],
+      "expected": [
+       [
+        4,
+        1
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         7
+        ],
+        [
+         7
+        ],
+        [
+         1
+        ]
+       ],
+       0
+      ],
+      "expected": [
+       [
+        7
+       ],
+       [
+        7
+       ],
+       [
+        1
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         3,
+         6
+        ],
+        [
+         2,
+         5,
+         7
+        ],
+        [
+         1,
+         8,
+         3
+        ]
+       ],
+       6
+      ],
+      "expected": [
+       [
+        3,
+        8,
+        1
+       ],
+       [
+        7,
+        5,
+        2
+       ],
+       [
+        6,
+        3,
+        6
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         0,
+         9
+        ],
+        [
+         3,
+         5
+        ],
+        [
+         1,
+         2
+        ],
+        [
+         1,
+         2
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        9,
+        5,
+        2,
+        2
+       ],
+       [
+        0,
+        3,
+        1,
+        1
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         8,
+         7,
+         7
+        ],
+        [
+         6,
+         5,
+         3
+        ],
+        [
+         6,
+         0,
+         4
+        ],
+        [
+         3,
+         0,
+         6
+        ]
+       ],
+       -4
+      ],
+      "expected": [
+       [
+        8,
+        7,
+        7
+       ],
+       [
+        6,
+        5,
+        3
+       ],
+       [
+        6,
+        0,
+        4
+       ],
+       [
+        3,
+        0,
+        6
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        4,
+        1
+       ],
+       [
+        5,
+        2
+       ],
+       [
+        6,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        2,
+        4
+       ],
+       [
+        1,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-grid_rotate-10004",
+   "family": "grid_rotate",
+   "split": "eval",
+   "instruction": "In tiles.py, write rotate(grid, turns) that should rotate a grid counter-clockwise. The grid is a list of rows (lists) of equal length. Rotate it by 90 degrees counter-clockwise, turns times; turns is any integer, negative turns rotate the other way and only turns modulo 4 matters. Return a new list of lists and do not modify the input. An empty grid ([]) or a grid of empty rows is returned unchanged as a new list. Raise ValueError if the rows have different lengths. Save the file tiles.py.",
+   "initial_files": {
+    "tiles.py": "def rotate(grid, turns):\n    return None\n"
+   },
+   "expected_output_file": "tiles.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "tiles.py",
+    "function": "rotate",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         8,
+         1
+        ],
+        [
+         1,
+         0
+        ]
+       ],
+       2
+      ],
+      "expected": [
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        8
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         5
+        ],
+        [
+         1
+        ]
+       ],
+       2
+      ],
+      "expected": [
+       [
+        1
+       ],
+       [
+        5
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         3,
+         1,
+         4,
+         4
+        ],
+        [
+         6,
+         4,
+         4,
+         3
+        ]
+       ],
+       -3
+      ],
+      "expected": [
+       [
+        4,
+        3
+       ],
+       [
+        4,
+        4
+       ],
+       [
+        1,
+        4
+       ],
+       [
+        3,
+        6
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6,
+         2,
+         9
+        ],
+        [
+         2,
+         9,
+         2,
+         1
+        ],
+        [
+         1,
+         9,
+         2,
+         9
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6,
+        2,
+        9
+       ],
+       [
+        2,
+        9,
+        2,
+        1
+       ],
+       [
+        1,
+        9,
+        2,
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         8
+        ],
+        [
+         3,
+         2
+        ]
+       ],
+       0
+      ],
+      "expected": [
+       [
+        2,
+        8
+       ],
+       [
+        3,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        3,
+        6
+       ],
+       [
+        2,
+        5
+       ],
+       [
+        1,
+        4
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        3,
+        1
+       ],
+       [
+        4,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-grid_rotate-10005",
+   "family": "grid_rotate",
+   "split": "eval",
+   "instruction": "In grid.py, write rotate_tiles(grid, turns) that should rotate a grid clockwise. The grid is a list of rows (lists) of equal length. Rotate it by 90 degrees clockwise, turns times; turns is any integer, negative turns rotate the other way and only turns modulo 4 matters. Return a new list of lists and do not modify the input. An empty grid ([]) or a grid of empty rows is returned unchanged as a new list. Raise ValueError if the rows have different lengths. Save the file grid.py.",
+   "initial_files": {
+    "grid.py": "def rotate_tiles(grid, turns):\n    return None\n"
+   },
+   "expected_output_file": "grid.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "grid.py",
+    "function": "rotate_tiles",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         3
+        ],
+        [
+         4
+        ]
+       ],
+       -3
+      ],
+      "expected": [
+       [
+        4,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         4,
+         7
+        ],
+        [
+         6,
+         8,
+         6
+        ],
+        [
+         7,
+         2,
+         4
+        ],
+        [
+         0,
+         0,
+         3
+        ]
+       ],
+       -2
+      ],
+      "expected": [
+       [
+        3,
+        0,
+        0
+       ],
+       [
+        4,
+        2,
+        7
+       ],
+       [
+        6,
+        8,
+        6
+       ],
+       [
+        7,
+        4,
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6
+        ],
+        [
+         0
+        ],
+        [
+         5
+        ],
+        [
+         9
+        ]
+       ],
+       -5
+      ],
+      "expected": [
+       [
+        6,
+        0,
+        5,
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         9,
+         8,
+         9,
+         6
+        ],
+        [
+         8,
+         8,
+         6,
+         5
+        ],
+        [
+         2,
+         0,
+         9,
+         4
+        ]
+       ],
+       3
+      ],
+      "expected": [
+       [
+        6,
+        5,
+        4
+       ],
+       [
+        9,
+        6,
+        9
+       ],
+       [
+        8,
+        8,
+        0
+       ],
+       [
+        9,
+        8,
+        2
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         0,
+         8
+        ],
+        [
+         0,
+         8
+        ],
+        [
+         5,
+         9
+        ],
+        [
+         9,
+         3
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        8,
+        8,
+        9,
+        3
+       ],
+       [
+        0,
+        0,
+        5,
+        9
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ]
+       ],
+       1
+      ],
+      "expected": [
+       [
+        4,
+        1
+       ],
+       [
+        5,
+        2
+       ],
+       [
+        6,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ]
+       ],
+       -1
+      ],
+      "expected": [
+       [
+        2,
+        4
+       ],
+       [
+        1,
+        3
+       ]
+      ]
+     },
+     {
+      "args": [
+       [],
+       3
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ],
+       1
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         5,
+         6
+        ]
+       ],
+       4
+      ],
+      "expected": [
+       [
+        5,
+        6
+       ]
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-version_sort-10000",
+   "family": "version_sort",
+   "split": "eval",
+   "instruction": "Fix versions.py: sort_versions(versions) must sort version strings. Each version is a string of dot-separated non-negative integers like \"1.10.2\". Compare part by part as integers (so \"1.10\" is newer than \"1.9\") and return a new list ordered oldest first (ascending). Missing trailing parts count as 0, so \"1.2\" and \"1.2.0\" are equal versions. Equal versions are ordered by their string, in the same direction. Raise ValueError for an empty string or any non-numeric part. Write the result to versions.py.",
+   "initial_files": {
+    "versions.py": "def sort_versions(versions):\n    return None\n"
+   },
+   "expected_output_file": "versions.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "versions.py",
+    "function": "sort_versions",
+    "cases": [
+     {
+      "args": [
+       [
+        "2.2.5.2",
+        "9.10.1.0",
+        "10.10",
+        "2.8",
+        "1.3.0.3"
+       ]
+      ],
+      "expected": [
+       "1.3.0.3",
+       "2.2.5.2",
+       "2.8",
+       "9.10.1.0",
+       "10.10"
+      ]
+     },
+     {
+      "args": [
+       [
+        "8.2.2",
+        "12.1",
+        "12",
+        "1"
+       ]
+      ],
+      "expected": [
+       "1",
+       "8.2.2",
+       "12",
+       "12.1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "8.0.2",
+        "7.8.4.0",
+        "8.1",
+        "5",
+        "0.1.12.12",
+        "4.9.4"
+       ]
+      ],
+      "expected": [
+       "0.1.12.12",
+       "4.9.4",
+       "5",
+       "7.8.4.0",
+       "8.0.2",
+       "8.1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "7.1.4.7",
+        "5.7",
+        "12.5.12",
+        "12",
+        "1.11"
+       ]
+      ],
+      "expected": [
+       "1.11",
+       "5.7",
+       "7.1.4.7",
+       "12",
+       "12.5.12"
+      ]
+     },
+     {
+      "args": [
+       [
+        "4.6.9",
+        "5",
+        "0.9"
+       ]
+      ],
+      "expected": [
+       "0.9",
+       "4.6.9",
+       "5"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.9",
+        "1.10",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.2",
+       "1.9",
+       "1.10"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.2.0",
+        "1.2",
+        "1.1.9"
+       ]
+      ],
+      "expected": [
+       "1.1.9",
+       "1.2",
+       "1.2.0"
+      ],
+      "padding": true
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        "1.a"
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        "2",
+        ""
+       ]
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-version_sort-10001",
+   "family": "version_sort",
+   "split": "eval",
+   "instruction": "Fix releases.py: rank_versions(versions) must sort version strings. Each version is a string of dot-separated non-negative integers like \"1.10.2\". Compare part by part as integers (so \"1.10\" is newer than \"1.9\") and return a new list ordered oldest first (ascending). A shorter version that is a prefix of a longer one is older, so \"1.2\" comes before \"1.2.0\". Equal versions are ordered by their string, in the same direction. Raise ValueError for an empty string or any non-numeric part. Write the result to releases.py.",
+   "initial_files": {
+    "releases.py": "def rank_versions(versions):\n    return None\n"
+   },
+   "expected_output_file": "releases.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "releases.py",
+    "function": "rank_versions",
+    "cases": [
+     {
+      "args": [
+       [
+        "5.0.1",
+        "1"
+       ]
+      ],
+      "expected": [
+       "1",
+       "5.0.1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.6.1.8",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.2",
+       "1.6.1.8"
+      ]
+     },
+     {
+      "args": [
+       [
+        "4.1",
+        "1.10.11"
+       ]
+      ],
+      "expected": [
+       "1.10.11",
+       "4.1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "2",
+        "2",
+        "1.11.7.8",
+        "4",
+        "1.10",
+        "8.8.3.0"
+       ]
+      ],
+      "expected": [
+       "1.10",
+       "1.11.7.8",
+       "2",
+       "2",
+       "4",
+       "8.8.3.0"
+      ]
+     },
+     {
+      "args": [
+       [
+        "10.0.2.9",
+        "8.7.10.6",
+        "0.7",
+        "1.12",
+        "5.7.12.9"
+       ]
+      ],
+      "expected": [
+       "0.7",
+       "1.12",
+       "5.7.12.9",
+       "8.7.10.6",
+       "10.0.2.9"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.9",
+        "1.10",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.2",
+       "1.9",
+       "1.10"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.2.0",
+        "1.2",
+        "1.1.9"
+       ]
+      ],
+      "expected": [
+       "1.1.9",
+       "1.2",
+       "1.2.0"
+      ],
+      "padding": true
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        "1.a"
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        "2",
+        ""
+       ]
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-version_sort-10002",
+   "family": "version_sort",
+   "split": "eval",
+   "instruction": "In releases.py, write sorted_tags(versions) that should sort version strings. Each version is a string of dot-separated non-negative integers like \"1.10.2\". Compare part by part as integers (so \"1.10\" is newer than \"1.9\") and return a new list ordered newest first (descending). Missing trailing parts count as 0, so \"1.2\" and \"1.2.0\" are equal versions. Equal versions are ordered by their string, in the same direction. Raise ValueError for an empty string or any non-numeric part. Save the file releases.py.",
+   "initial_files": {
+    "releases.py": "def sorted_tags(versions):\n    return None\n"
+   },
+   "expected_output_file": "releases.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "releases.py",
+    "function": "sorted_tags",
+    "cases": [
+     {
+      "args": [
+       [
+        "9",
+        "1",
+        "5",
+        "9.1.2",
+        "4",
+        "10.6.0.8"
+       ]
+      ],
+      "expected": [
+       "10.6.0.8",
+       "9.1.2",
+       "9",
+       "5",
+       "4",
+       "1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "6.3",
+        "9.12.0.11",
+        "10.7.6",
+        "2.8.9"
+       ]
+      ],
+      "expected": [
+       "10.7.6",
+       "9.12.0.11",
+       "6.3",
+       "2.8.9"
+      ]
+     },
+     {
+      "args": [
+       [
+        "6.8.2.10",
+        "8.2.9.1",
+        "5",
+        "11.10.6.4",
+        "7.9",
+        "8.11"
+       ]
+      ],
+      "expected": [
+       "11.10.6.4",
+       "8.11",
+       "8.2.9.1",
+       "7.9",
+       "6.8.2.10",
+       "5"
+      ]
+     },
+     {
+      "args": [
+       [
+        "7.6",
+        "8.6.6",
+        "4",
+        "8.0"
+       ]
+      ],
+      "expected": [
+       "8.6.6",
+       "8.0",
+       "7.6",
+       "4"
+      ]
+     },
+     {
+      "args": [
+       [
+        "3",
+        "2.7"
+       ]
+      ],
+      "expected": [
+       "3",
+       "2.7"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.9",
+        "1.10",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.10",
+       "1.9",
+       "1.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.2.0",
+        "1.2",
+        "1.1.9"
+       ]
+      ],
+      "expected": [
+       "1.2.0",
+       "1.2",
+       "1.1.9"
+      ],
+      "padding": true
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        "1.a"
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        "2",
+        ""
+       ]
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-version_sort-10003",
+   "family": "version_sort",
+   "split": "eval",
+   "instruction": "In semver_tools.py, write sorted_tags(versions) that should sort version strings. Each version is a string of dot-separated non-negative integers like \"1.10.2\". Compare part by part as integers (so \"1.10\" is newer than \"1.9\") and return a new list ordered oldest first (ascending). Missing trailing parts count as 0, so \"1.2\" and \"1.2.0\" are equal versions. Equal versions are ordered by their string, in the same direction. Raise ValueError for an empty string or any non-numeric part. Save the file semver_tools.py.",
+   "initial_files": {
+    "semver_tools.py": "def sorted_tags(versions):\n    return None\n"
+   },
+   "expected_output_file": "semver_tools.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "semver_tools.py",
+    "function": "sorted_tags",
+    "cases": [
+     {
+      "args": [
+       [
+        "2.8",
+        "11.5.2",
+        "2.8.11",
+        "9",
+        "0.8.8",
+        "6.11.8.3"
+       ]
+      ],
+      "expected": [
+       "0.8.8",
+       "2.8",
+       "2.8.11",
+       "6.11.8.3",
+       "9",
+       "11.5.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "9",
+        "11.9.2",
+        "9.0.10",
+        "8",
+        "4.3"
+       ]
+      ],
+      "expected": [
+       "4.3",
+       "8",
+       "9",
+       "9.0.10",
+       "11.9.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "2.3.2.2",
+        "6",
+        "1.3.2.2",
+        "5.9",
+        "9"
+       ]
+      ],
+      "expected": [
+       "1.3.2.2",
+       "2.3.2.2",
+       "5.9",
+       "6",
+       "9"
+      ]
+     },
+     {
+      "args": [
+       [
+        "8",
+        "1.11.12.10",
+        "11.9.6.8",
+        "12.2.4",
+        "7.9.9.7"
+       ]
+      ],
+      "expected": [
+       "1.11.12.10",
+       "7.9.9.7",
+       "8",
+       "11.9.6.8",
+       "12.2.4"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1",
+        "7.3",
+        "10.10.3",
+        "2.7.6.5",
+        "3.1",
+        "8.6.12"
+       ]
+      ],
+      "expected": [
+       "1",
+       "2.7.6.5",
+       "3.1",
+       "7.3",
+       "8.6.12",
+       "10.10.3"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.9",
+        "1.10",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.2",
+       "1.9",
+       "1.10"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.2.0",
+        "1.2",
+        "1.1.9"
+       ]
+      ],
+      "expected": [
+       "1.1.9",
+       "1.2",
+       "1.2.0"
+      ],
+      "padding": true
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        "1.a"
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        "2",
+        ""
+       ]
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-version_sort-10004",
+   "family": "version_sort",
+   "split": "eval",
+   "instruction": "Fix versions.py: order_releases(versions) must sort version strings. Each version is a string of dot-separated non-negative integers like \"1.10.2\". Compare part by part as integers (so \"1.10\" is newer than \"1.9\") and return a new list ordered newest first (descending). A shorter version that is a prefix of a longer one is older, so \"1.2\" comes before \"1.2.0\". Equal versions are ordered by their string, in the same direction. Raise ValueError for an empty string or any non-numeric part. Write the result to versions.py.",
+   "initial_files": {
+    "versions.py": "def order_releases(versions):\n    return None\n"
+   },
+   "expected_output_file": "versions.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "versions.py",
+    "function": "order_releases",
+    "cases": [
+     {
+      "args": [
+       [
+        "3",
+        "0.10",
+        "9.10",
+        "5.8.11",
+        "2.7.9.5"
+       ]
+      ],
+      "expected": [
+       "9.10",
+       "5.8.11",
+       "3",
+       "2.7.9.5",
+       "0.10"
+      ]
+     },
+     {
+      "args": [
+       [
+        "5.1",
+        "8.2.7",
+        "0.6.1",
+        "10.0"
+       ]
+      ],
+      "expected": [
+       "10.0",
+       "8.2.7",
+       "5.1",
+       "0.6.1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "10",
+        "10.11",
+        "12.2",
+        "9.0.2"
+       ]
+      ],
+      "expected": [
+       "12.2",
+       "10.11",
+       "10",
+       "9.0.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "0.2.1",
+        "9.11.7"
+       ]
+      ],
+      "expected": [
+       "9.11.7",
+       "0.2.1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "11.11.6.12",
+        "9.2",
+        "1.12.1",
+        "12.10.3",
+        "1"
+       ]
+      ],
+      "expected": [
+       "12.10.3",
+       "11.11.6.12",
+       "9.2",
+       "1.12.1",
+       "1"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.9",
+        "1.10",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.10",
+       "1.9",
+       "1.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.2.0",
+        "1.2",
+        "1.1.9"
+       ]
+      ],
+      "expected": [
+       "1.2.0",
+       "1.2",
+       "1.1.9"
+      ],
+      "padding": true
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        "1.a"
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        "2",
+        ""
+       ]
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-version_sort-10005",
+   "family": "version_sort",
+   "split": "eval",
+   "instruction": "Fix versions.py: sort_versions(versions) must sort version strings. Each version is a string of dot-separated non-negative integers like \"1.10.2\". Compare part by part as integers (so \"1.10\" is newer than \"1.9\") and return a new list ordered newest first (descending). A shorter version that is a prefix of a longer one is older, so \"1.2\" comes before \"1.2.0\". Equal versions are ordered by their string, in the same direction. Raise ValueError for an empty string or any non-numeric part. Write the result to versions.py.",
+   "initial_files": {
+    "versions.py": "def sort_versions(versions):\n    return None\n"
+   },
+   "expected_output_file": "versions.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "versions.py",
+    "function": "sort_versions",
+    "cases": [
+     {
+      "args": [
+       [
+        "7.1.7",
+        "6.1",
+        "3.3",
+        "7.5",
+        "4.8.12"
+       ]
+      ],
+      "expected": [
+       "7.5",
+       "7.1.7",
+       "6.1",
+       "4.8.12",
+       "3.3"
+      ]
+     },
+     {
+      "args": [
+       [
+        "11.2",
+        "3.5",
+        "5",
+        "0.5.2"
+       ]
+      ],
+      "expected": [
+       "11.2",
+       "5",
+       "3.5",
+       "0.5.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "12.6.3",
+        "5.9.7",
+        "7.8",
+        "11.3"
+       ]
+      ],
+      "expected": [
+       "12.6.3",
+       "11.3",
+       "7.8",
+       "5.9.7"
+      ]
+     },
+     {
+      "args": [
+       [
+        "4",
+        "12.11.6.7",
+        "4.2"
+       ]
+      ],
+      "expected": [
+       "12.11.6.7",
+       "4.2",
+       "4"
+      ]
+     },
+     {
+      "args": [
+       [
+        "12.5.11",
+        "6.9",
+        "8.8"
+       ]
+      ],
+      "expected": [
+       "12.5.11",
+       "8.8",
+       "6.9"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.9",
+        "1.10",
+        "1.2"
+       ]
+      ],
+      "expected": [
+       "1.10",
+       "1.9",
+       "1.2"
+      ]
+     },
+     {
+      "args": [
+       [
+        "1.2.0",
+        "1.2",
+        "1.1.9"
+       ]
+      ],
+      "expected": [
+       "1.2.0",
+       "1.2",
+       "1.1.9"
+      ],
+      "padding": true
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        "1.a"
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        "2",
+        ""
+       ]
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-spiral_walk-10000",
+   "family": "spiral_walk",
+   "split": "eval",
+   "instruction": "In spiral.py, write spiral(grid) that should list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save the file spiral.py.",
+   "initial_files": {
+    "spiral.py": "def spiral(grid):\n    return None\n"
+   },
+   "expected_output_file": "spiral.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "spiral.py",
+    "function": "spiral",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         7,
+         70,
+         53
+        ],
+        [
+         47,
+         64,
+         94
+        ]
+       ]
+      ],
+      "expected": [
+       7,
+       70,
+       53,
+       94,
+       64,
+       47
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         86,
+         49
+        ],
+        [
+         71,
+         56
+        ],
+        [
+         25,
+         53
+        ],
+        [
+         18,
+         5
+        ]
+       ]
+      ],
+      "expected": [
+       86,
+       49,
+       56,
+       53,
+       5,
+       18,
+       25,
+       71
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         7,
+         45,
+         64
+        ]
+       ]
+      ],
+      "expected": [
+       7,
+       45,
+       64
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         18
+        ]
+       ]
+      ],
+      "expected": [
+       18
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         77,
+         44,
+         90
+        ],
+        [
+         9,
+         23,
+         65
+        ],
+        [
+         21,
+         39,
+         69
+        ],
+        [
+         69,
+         48,
+         95
+        ]
+       ]
+      ],
+      "expected": [
+       77,
+       44,
+       90,
+       65,
+       69,
+       95,
+       48,
+       69,
+       21,
+       9,
+       23,
+       39
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ],
+        [
+         7,
+         8,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       6,
+       9,
+       8,
+       7,
+       4,
+       5
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1
+        ],
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         7,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       4,
+       6,
+       8,
+       7,
+       5,
+       3
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-spiral_walk-10001",
+   "family": "spiral_walk",
+   "split": "eval",
+   "instruction": "Fix spiral.py: spiral_order(grid) must list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Write the result to spiral.py.",
+   "initial_files": {
+    "spiral.py": "def spiral_order(grid):\n    return None\n"
+   },
+   "expected_output_file": "spiral.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "spiral.py",
+    "function": "spiral_order",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         73,
+         8,
+         86,
+         17
+        ]
+       ]
+      ],
+      "expected": [
+       73,
+       8,
+       86,
+       17
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         32,
+         66,
+         83,
+         14
+        ],
+        [
+         49,
+         83,
+         3,
+         75
+        ],
+        [
+         66,
+         60,
+         98,
+         2
+        ]
+       ]
+      ],
+      "expected": [
+       32,
+       66,
+       83,
+       14,
+       75,
+       2,
+       98,
+       60,
+       66,
+       49,
+       83,
+       3
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14
+        ]
+       ]
+      ],
+      "expected": [
+       14
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         43
+        ],
+        [
+         70
+        ]
+       ]
+      ],
+      "expected": [
+       43,
+       70
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         40,
+         47,
+         11,
+         80,
+         41
+        ],
+        [
+         44,
+         55,
+         92,
+         15,
+         12
+        ],
+        [
+         71,
+         76,
+         33,
+         90,
+         41
+        ]
+       ]
+      ],
+      "expected": [
+       40,
+       47,
+       11,
+       80,
+       41,
+       12,
+       41,
+       90,
+       33,
+       76,
+       71,
+       44,
+       55,
+       92,
+       15
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ],
+        [
+         7,
+         8,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       6,
+       9,
+       8,
+       7,
+       4,
+       5
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1
+        ],
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         7,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       4,
+       6,
+       8,
+       7,
+       5,
+       3
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-spiral_walk-10002",
+   "family": "spiral_walk",
+   "split": "eval",
+   "instruction": "In spiral.py, write unwind(grid) that should list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save the file spiral.py.",
+   "initial_files": {
+    "spiral.py": "def unwind(grid):\n    return None\n"
+   },
+   "expected_output_file": "spiral.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "spiral.py",
+    "function": "unwind",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         31,
+         30
+        ],
+        [
+         58,
+         51
+        ],
+        [
+         97,
+         83
+        ]
+       ]
+      ],
+      "expected": [
+       31,
+       30,
+       51,
+       83,
+       97,
+       58
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         89,
+         19,
+         33,
+         76
+        ],
+        [
+         66,
+         54,
+         25,
+         5
+        ]
+       ]
+      ],
+      "expected": [
+       89,
+       19,
+       33,
+       76,
+       5,
+       25,
+       54,
+       66
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         82,
+         76,
+         40,
+         85
+        ],
+        [
+         37,
+         50,
+         47,
+         16
+        ]
+       ]
+      ],
+      "expected": [
+       82,
+       76,
+       40,
+       85,
+       16,
+       47,
+       50,
+       37
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         21,
+         31
+        ],
+        [
+         7,
+         63
+        ],
+        [
+         57,
+         58
+        ]
+       ]
+      ],
+      "expected": [
+       21,
+       31,
+       63,
+       58,
+       57,
+       7
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         83,
+         34,
+         34,
+         67
+        ],
+        [
+         79,
+         24,
+         76,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       83,
+       34,
+       34,
+       67,
+       9,
+       76,
+       24,
+       79
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ],
+        [
+         7,
+         8,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       6,
+       9,
+       8,
+       7,
+       4,
+       5
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1
+        ],
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         7,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       4,
+       6,
+       8,
+       7,
+       5,
+       3
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-spiral_walk-10003",
+   "family": "spiral_walk",
+   "split": "eval",
+   "instruction": "In unwind.py, write spiral_order(grid) that should list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, counter-clockwise: first down the first column, then right along the bottom row, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save the file unwind.py.",
+   "initial_files": {
+    "unwind.py": "def spiral_order(grid):\n    return None\n"
+   },
+   "expected_output_file": "unwind.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "unwind.py",
+    "function": "spiral_order",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         9,
+         11,
+         39
+        ],
+        [
+         72,
+         2,
+         42
+        ],
+        [
+         1,
+         83,
+         29
+        ]
+       ]
+      ],
+      "expected": [
+       9,
+       72,
+       1,
+       83,
+       29,
+       42,
+       39,
+       11,
+       2
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14,
+         46,
+         37,
+         54,
+         3
+        ],
+        [
+         33,
+         42,
+         96,
+         64,
+         50
+        ]
+       ]
+      ],
+      "expected": [
+       14,
+       33,
+       42,
+       96,
+       64,
+       50,
+       3,
+       54,
+       37,
+       46
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         6,
+         55,
+         93
+        ],
+        [
+         66,
+         79,
+         83
+        ]
+       ]
+      ],
+      "expected": [
+       6,
+       66,
+       79,
+       83,
+       93,
+       55
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         14,
+         55,
+         34,
+         56
+        ],
+        [
+         63,
+         92,
+         12,
+         83
+        ],
+        [
+         51,
+         8,
+         33,
+         88
+        ],
+        [
+         35,
+         57,
+         67,
+         43
+        ]
+       ]
+      ],
+      "expected": [
+       14,
+       63,
+       51,
+       35,
+       57,
+       67,
+       43,
+       88,
+       83,
+       56,
+       34,
+       55,
+       92,
+       8,
+       33,
+       12
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         15,
+         10,
+         78,
+         66,
+         87
+        ],
+        [
+         43,
+         1,
+         95,
+         26,
+         32
+        ]
+       ]
+      ],
+      "expected": [
+       15,
+       43,
+       1,
+       95,
+       26,
+       32,
+       87,
+       66,
+       78,
+       10
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ],
+        [
+         7,
+         8,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       4,
+       7,
+       8,
+       9,
+       6,
+       3,
+       2,
+       5
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1
+        ],
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         7,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       3,
+       5,
+       7,
+       8,
+       6,
+       4,
+       2
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-spiral_walk-10004",
+   "family": "spiral_walk",
+   "split": "eval",
+   "instruction": "Implement spiral_order(grid) in matrix_walk.py to list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Save matrix_walk.py.",
+   "initial_files": {
+    "matrix_walk.py": "def spiral_order(grid):\n    return None\n"
+   },
+   "expected_output_file": "matrix_walk.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "matrix_walk.py",
+    "function": "spiral_order",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         63,
+         86,
+         82
+        ]
+       ]
+      ],
+      "expected": [
+       63,
+       86,
+       82
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         22,
+         96
+        ],
+        [
+         99,
+         5
+        ],
+        [
+         29,
+         75
+        ]
+       ]
+      ],
+      "expected": [
+       22,
+       96,
+       5,
+       75,
+       29,
+       99
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         65,
+         83,
+         48,
+         13,
+         43
+        ],
+        [
+         71,
+         49,
+         71,
+         74,
+         44
+        ],
+        [
+         97,
+         49,
+         14,
+         70,
+         17
+        ]
+       ]
+      ],
+      "expected": [
+       65,
+       83,
+       48,
+       13,
+       43,
+       44,
+       17,
+       70,
+       14,
+       49,
+       97,
+       71,
+       49,
+       71,
+       74
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         52,
+         20
+        ],
+        [
+         7,
+         63
+        ]
+       ]
+      ],
+      "expected": [
+       52,
+       20,
+       63,
+       7
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         86,
+         87,
+         8,
+         83
+        ],
+        [
+         84,
+         69,
+         21,
+         77
+        ]
+       ]
+      ],
+      "expected": [
+       86,
+       87,
+       8,
+       83,
+       77,
+       21,
+       69,
+       84
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ],
+        [
+         7,
+         8,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       6,
+       9,
+       8,
+       7,
+       4,
+       5
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1
+        ],
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         7,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       4,
+       6,
+       8,
+       7,
+       5,
+       3
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-spiral_walk-10005",
+   "family": "spiral_walk",
+   "split": "eval",
+   "instruction": "Fix unwind.py: spiral(grid) must list the cells of a grid in spiral order. The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a spiral, clockwise: first along the top row to the right, then down the last column, and so on until every cell has been visited once. Return the visited values as one flat list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different lengths. Write the result to unwind.py.",
+   "initial_files": {
+    "unwind.py": "def spiral(grid):\n    return None\n"
+   },
+   "expected_output_file": "unwind.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "unwind.py",
+    "function": "spiral",
+    "cases": [
+     {
+      "args": [
+       [
+        [
+         42,
+         80,
+         64,
+         49,
+         61
+        ]
+       ]
+      ],
+      "expected": [
+       42,
+       80,
+       64,
+       49,
+       61
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         2,
+         64
+        ],
+        [
+         75,
+         43
+        ],
+        [
+         33,
+         25
+        ],
+        [
+         89,
+         98
+        ]
+       ]
+      ],
+      "expected": [
+       2,
+       64,
+       43,
+       25,
+       98,
+       89,
+       33,
+       75
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         8
+        ],
+        [
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       8,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         82,
+         46,
+         33,
+         39
+        ]
+       ]
+      ],
+      "expected": [
+       82,
+       46,
+       33,
+       39
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         67,
+         15,
+         51,
+         17,
+         75
+        ],
+        [
+         41,
+         86,
+         28,
+         21,
+         97
+        ],
+        [
+         51,
+         54,
+         64,
+         90,
+         76
+        ],
+        [
+         49,
+         85,
+         1,
+         6,
+         70
+        ]
+       ]
+      ],
+      "expected": [
+       67,
+       15,
+       51,
+       17,
+       75,
+       97,
+       76,
+       70,
+       6,
+       1,
+       85,
+       49,
+       51,
+       41,
+       86,
+       28,
+       21,
+       90,
+       64,
+       54
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3
+        ],
+        [
+         4,
+         5,
+         6
+        ],
+        [
+         7,
+         8,
+         9
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       6,
+       9,
+       8,
+       7,
+       4,
+       5
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2,
+         3,
+         4
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "args": [
+       [
+        [
+         1
+        ],
+        [
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       3
+      ]
+     },
+     {
+      "args": [
+       []
+      ],
+      "expected": []
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3
+        ]
+       ]
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       [
+        [
+         1,
+         2
+        ],
+        [
+         3,
+         4
+        ],
+        [
+         5,
+         6
+        ],
+        [
+         7,
+         8
+        ]
+       ]
+      ],
+      "expected": [
+       1,
+       2,
+       4,
+       6,
+       8,
+       7,
+       5,
+       3
+      ]
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-duration_parse-10000",
+   "family": "duration_parse",
+   "split": "eval",
+   "instruction": "In timespan.py, write duration_value(text) that should convert a duration text to a number. A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), m (minutes), s (seconds), for example \"1d2h\" or \"90m15s\". Return the total number of seconds as an int. Spaces between the parts are allowed and ignored (\"1h 30m\"). The units must appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing number, an unknown unit, a repeated unit or units in the wrong order. Save the file timespan.py.",
+   "initial_files": {
+    "timespan.py": "def duration_value(text):\n    return None\n"
+   },
+   "expected_output_file": "timespan.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "timespan.py",
+    "function": "duration_value",
+    "cases": [
+     {
+      "args": [
+       "84m43s"
+      ],
+      "expected": 5083
+     },
+     {
+      "args": [
+       "80h7m90s"
+      ],
+      "expected": 288510
+     },
+     {
+      "args": [
+       "59d63h36m"
+      ],
+      "expected": 5326560
+     },
+     {
+      "args": [
+       "77d34h92m85s"
+      ],
+      "expected": 6780805
+     },
+     {
+      "args": [
+       "38s"
+      ],
+      "expected": 38
+     },
+     {
+      "args": [
+       "1h30m"
+      ],
+      "expected": 5400
+     },
+     {
+      "args": [
+       "2d"
+      ],
+      "expected": 172800
+     },
+     {
+      "args": [
+       "90m15s"
+      ],
+      "expected": 5415
+     },
+     {
+      "args": [
+       "1h 30m"
+      ],
+      "expected": 5400,
+      "spacing": true
+     },
+     {
+      "args": [
+       ""
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "30m1h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "1h2h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "5x"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "h"
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-duration_parse-10001",
+   "family": "duration_parse",
+   "split": "eval",
+   "instruction": "Fix durations.py: parse_duration(text) must convert a duration text to a number. A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), m (minutes), s (seconds), for example \"1d2h\" or \"90m15s\". Return the total number of whole minutes (leftover seconds are dropped) as an int. Spaces between the parts are allowed and ignored (\"1h 30m\"). The units must appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing number, an unknown unit, a repeated unit or units in the wrong order. Write the result to durations.py.",
+   "initial_files": {
+    "durations.py": "def parse_duration(text):\n    return None\n"
+   },
+   "expected_output_file": "durations.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "durations.py",
+    "function": "parse_duration",
+    "cases": [
+     {
+      "args": [
+       "36d 62m"
+      ],
+      "expected": 51902
+     },
+     {
+      "args": [
+       "54h"
+      ],
+      "expected": 3240
+     },
+     {
+      "args": [
+       "27h"
+      ],
+      "expected": 1620
+     },
+     {
+      "args": [
+       "55s"
+      ],
+      "expected": 0
+     },
+     {
+      "args": [
+       "46d5h89m"
+      ],
+      "expected": 66629
+     },
+     {
+      "args": [
+       "1h30m"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "2d"
+      ],
+      "expected": 2880
+     },
+     {
+      "args": [
+       "90m15s"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "1h 30m"
+      ],
+      "expected": 90,
+      "spacing": true
+     },
+     {
+      "args": [
+       ""
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "30m1h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "1h2h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "5x"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "h"
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-duration_parse-10002",
+   "family": "duration_parse",
+   "split": "eval",
+   "instruction": "Implement to_seconds(text) in timespan.py to convert a duration text to a number. A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), m (minutes), s (seconds), for example \"1d2h\" or \"90m15s\". Return the total number of whole minutes (leftover seconds are dropped) as an int. Spaces between the parts are allowed and ignored (\"1h 30m\"). The units must appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing number, an unknown unit, a repeated unit or units in the wrong order. Save timespan.py.",
+   "initial_files": {
+    "timespan.py": "def to_seconds(text):\n    return None\n"
+   },
+   "expected_output_file": "timespan.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "timespan.py",
+    "function": "to_seconds",
+    "cases": [
+     {
+      "args": [
+       "67d67h95m78s"
+      ],
+      "expected": 100596
+     },
+     {
+      "args": [
+       "31m"
+      ],
+      "expected": 31
+     },
+     {
+      "args": [
+       "76h 72s"
+      ],
+      "expected": 4561
+     },
+     {
+      "args": [
+       "11d71h17m21s"
+      ],
+      "expected": 20117
+     },
+     {
+      "args": [
+       "4h"
+      ],
+      "expected": 240
+     },
+     {
+      "args": [
+       "1h30m"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "2d"
+      ],
+      "expected": 2880
+     },
+     {
+      "args": [
+       "90m15s"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "1h 30m"
+      ],
+      "expected": 90,
+      "spacing": true
+     },
+     {
+      "args": [
+       ""
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "30m1h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "1h2h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "5x"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "h"
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-duration_parse-10003",
+   "family": "duration_parse",
+   "split": "eval",
+   "instruction": "In timeparse.py, write duration_value(text) that should convert a duration text to a number. A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), m (minutes), s (seconds), for example \"1d2h\" or \"90m15s\". Return the total number of whole minutes (leftover seconds are dropped) as an int. Spaces between the parts are allowed and ignored (\"1h 30m\"). The units must appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing number, an unknown unit, a repeated unit or units in the wrong order. Save the file timeparse.py.",
+   "initial_files": {
+    "timeparse.py": "def duration_value(text):\n    return None\n"
+   },
+   "expected_output_file": "timeparse.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "timeparse.py",
+    "function": "duration_value",
+    "cases": [
+     {
+      "args": [
+       "87m"
+      ],
+      "expected": 87
+     },
+     {
+      "args": [
+       "91h"
+      ],
+      "expected": 5460
+     },
+     {
+      "args": [
+       "78h"
+      ],
+      "expected": 4680
+     },
+     {
+      "args": [
+       "34d40h91m48s"
+      ],
+      "expected": 51451
+     },
+     {
+      "args": [
+       "9d 31h 28s"
+      ],
+      "expected": 14820
+     },
+     {
+      "args": [
+       "1h30m"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "2d"
+      ],
+      "expected": 2880
+     },
+     {
+      "args": [
+       "90m15s"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "1h 30m"
+      ],
+      "expected": 90,
+      "spacing": true
+     },
+     {
+      "args": [
+       ""
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "30m1h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "1h2h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "5x"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "h"
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-duration_parse-10004",
+   "family": "duration_parse",
+   "split": "eval",
+   "instruction": "Implement read_timespan(text) in timespan.py to convert a duration text to a number. A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), m (minutes), s (seconds), for example \"1d2h\" or \"90m15s\". Return the total number of seconds as an int. The text must not contain spaces; raise ValueError if it does. The units must appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing number, an unknown unit, a repeated unit or units in the wrong order. Save timespan.py.",
+   "initial_files": {
+    "timespan.py": "def read_timespan(text):\n    return None\n"
+   },
+   "expected_output_file": "timespan.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "timespan.py",
+    "function": "read_timespan",
+    "cases": [
+     {
+      "args": [
+       "31d83h36m0s"
+      ],
+      "expected": 2979360
+     },
+     {
+      "args": [
+       "30m"
+      ],
+      "expected": 1800
+     },
+     {
+      "args": [
+       "4d15m87s"
+      ],
+      "expected": 346587
+     },
+     {
+      "args": [
+       "43h49s"
+      ],
+      "expected": 154849
+     },
+     {
+      "args": [
+       "39d79m90s"
+      ],
+      "expected": 3374430
+     },
+     {
+      "args": [
+       "1h30m"
+      ],
+      "expected": 5400
+     },
+     {
+      "args": [
+       "2d"
+      ],
+      "expected": 172800
+     },
+     {
+      "args": [
+       "90m15s"
+      ],
+      "expected": 5415
+     },
+     {
+      "args": [
+       "1h 30m"
+      ],
+      "raises": "ValueError",
+      "spacing": true
+     },
+     {
+      "args": [
+       ""
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "30m1h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "1h2h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "5x"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "h"
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  },
+  {
+   "task_id": "stream-v1-duration_parse-10005",
+   "family": "duration_parse",
+   "split": "eval",
+   "instruction": "In durations.py, write parse_duration(text) that should convert a duration text to a number. A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), m (minutes), s (seconds), for example \"1d2h\" or \"90m15s\". Return the total number of whole minutes (leftover seconds are dropped) as an int. Spaces between the parts are allowed and ignored (\"1h 30m\"). The units must appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing number, an unknown unit, a repeated unit or units in the wrong order. Save the file durations.py.",
+   "initial_files": {
+    "durations.py": "def parse_duration(text):\n    return None\n"
+   },
+   "expected_output_file": "durations.py",
+   "scoring_criteria": {
+    "type": "python_function",
+    "file": "durations.py",
+    "function": "parse_duration",
+    "cases": [
+     {
+      "args": [
+       "29d 7s"
+      ],
+      "expected": 41760
+     },
+     {
+      "args": [
+       "68d54s"
+      ],
+      "expected": 97920
+     },
+     {
+      "args": [
+       "42h"
+      ],
+      "expected": 2520
+     },
+     {
+      "args": [
+       "94d 16h 92m 12s"
+      ],
+      "expected": 136412
+     },
+     {
+      "args": [
+       "55d57h94s"
+      ],
+      "expected": 82621
+     },
+     {
+      "args": [
+       "1h30m"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "2d"
+      ],
+      "expected": 2880
+     },
+     {
+      "args": [
+       "90m15s"
+      ],
+      "expected": 90
+     },
+     {
+      "args": [
+       "1h 30m"
+      ],
+      "expected": 90,
+      "spacing": true
+     },
+     {
+      "args": [
+       ""
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "30m1h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "1h2h"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "5x"
+      ],
+      "raises": "ValueError"
+     },
+     {
+      "args": [
+       "h"
+      ],
+      "raises": "ValueError"
+     }
+    ]
+   },
+   "negative": false
+  }
+ ],
+ "role": "eval"
+}

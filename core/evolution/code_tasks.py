@@ -223,5 +223,103 @@ def version_sort(seed: int) -> dict:
             'params': {'descending': descending, 'pad': pad}}
 
 
+# ---------------------------------------------------------------- R4 round-2 families (new, 2026-11-15)
+def _spiral_reference(grid, clockwise):
+    if not grid:
+        return []
+    if any(len(row) != len(grid[0]) for row in grid):
+        raise ValueError('ragged grid')
+    rows = [list(row) for row in grid]
+    if not clockwise:
+        rows = [list(col) for col in zip(*rows)]            # counter-clockwise from the top-left = clockwise on the transpose
+    out = []
+    while rows and rows[0]:
+        out += rows.pop(0)
+        rows = [list(col) for col in zip(*rows)][::-1]
+    return out
+
+
+def spiral_walk(seed: int) -> dict:
+    rng = random.Random(f'spiral_walk:{seed}')
+    fn = _pick(rng, ['spiral', 'spiral_order', 'unwind', 'walk_spiral'])
+    file = _pick(rng, ['spiral.py', 'matrix_walk.py', 'unwind.py'])
+    clockwise = rng.random() < 0.5
+    way = ('clockwise: first along the top row to the right, then down the last column' if clockwise
+           else 'counter-clockwise: first down the first column, then right along the bottom row')
+    rules = (f'The grid is a list of rows (lists) of equal length. Start at the top-left cell and walk inwards in a '
+             f'spiral, {way}, and so on until every cell has been visited once. Return the visited values as one flat '
+             'list. An empty grid ([]) or a grid of empty rows gives []. Raise ValueError if the rows have different '
+             'lengths.')
+    instruction = _pick(rng, _templates(fn, 'grid', file, 'list the cells of a grid in spiral order', rules))
+
+    def ref(grid):
+        return _spiral_reference(grid, clockwise)
+
+    def random_grid():
+        h, w = rng.randint(1, 4), rng.randint(1, 5)
+        return [[rng.randint(0, 99) for _ in range(w)] for _ in range(h)]
+
+    cases = [_case(ref, [random_grid()]) for _ in range(5)]
+    cases += [_case(ref, [[[1, 2, 3], [4, 5, 6], [7, 8, 9]]]), _case(ref, [[[1, 2, 3, 4]]]), _case(ref, [[[1], [2], [3]]]),
+              _case(ref, [[]]), _case(ref, [[[1, 2], [3]]]), _case(ref, [[[1, 2], [3, 4], [5, 6], [7, 8]]])]
+    return {'family': 'spiral_walk', 'instruction': instruction, 'file': file, 'function': fn,
+            'initial_source': f'def {fn}(grid):\n    return None\n', 'cases': cases, 'params': {'clockwise': clockwise}}
+
+
+def _duration_reference(text, minutes, spaces):
+    units = {'d': 86400, 'h': 3600, 'm': 60, 's': 1}
+    parts, rest = [], text
+    if not spaces and ' ' in text:
+        raise ValueError('spaces are not allowed')
+    rest = rest.replace(' ', '')
+    while rest:
+        digits = ''
+        while rest and rest[0].isdigit():
+            digits, rest = digits + rest[0], rest[1:]
+        if not digits or not rest or rest[0] not in units:
+            raise ValueError(f'bad duration {text!r}')
+        parts.append((int(digits), rest[0]))
+        rest = rest[1:]
+    order = [list(units).index(unit) for _, unit in parts]
+    if not parts or order != sorted(set(order)):
+        raise ValueError(f'bad duration {text!r}')
+    seconds = sum(n * units[unit] for n, unit in parts)
+    return seconds // 60 if minutes else seconds
+
+
+def duration_parse(seed: int) -> dict:
+    rng = random.Random(f'duration_parse:{seed}')
+    fn = _pick(rng, ['parse_duration', 'to_seconds', 'duration_value', 'read_timespan'])
+    file = _pick(rng, ['durations.py', 'timespan.py', 'timeparse.py'])
+    minutes = rng.random() < 0.5
+    spaces = rng.random() < 0.5
+    result = 'the total number of whole minutes (leftover seconds are dropped)' if minutes else 'the total number of seconds'
+    gap = ('Spaces between the parts are allowed and ignored ("1h 30m").' if spaces
+           else 'The text must not contain spaces; raise ValueError if it does.')
+    rules = (f'A duration is one or more parts written as a non-negative integer followed by a unit: d (days), h (hours), '
+             f'm (minutes), s (seconds), for example "1d2h" or "90m15s". Return {result} as an int. {gap} The units must '
+             'appear from largest to smallest and each at most once. Raise ValueError for an empty text, a missing '
+             'number, an unknown unit, a repeated unit or units in the wrong order.')
+    instruction = _pick(rng, _templates(fn, 'text', file, 'convert a duration text to a number', rules))
+
+    def ref(text):
+        return _duration_reference(text, minutes, spaces)
+
+    def random_text():
+        units = sorted(rng.sample(range(4), rng.randint(1, 4)))
+        return (' ' if spaces and rng.random() < 0.5 else '').join(f"{rng.randint(0, 99)}{'dhms'[u]}" for u in units)
+
+    cases = [_case(ref, [random_text()]) for _ in range(5)]
+    cases += [_case(ref, ['1h30m']), _case(ref, ['2d']), _case(ref, ['90m15s']), _case(ref, ['1h 30m'], spacing=True),
+              _case(ref, ['']), _case(ref, ['30m1h']), _case(ref, ['1h2h']), _case(ref, ['5x']), _case(ref, ['h'])]
+    return {'family': 'duration_parse', 'instruction': instruction, 'file': file, 'function': fn,
+            'initial_source': f'def {fn}(text):\n    return None\n', 'cases': cases,
+            'params': {'minutes': minutes, 'spaces': spaces}}
+
+
 CODE_REPLAY_FAMILIES = {'rpn_eval': rpn_eval, 'run_length': run_length, 'grid_rotate': grid_rotate,
                         'version_sort': version_sort}
+# R4 (docs/plans/cards/R4.md): the families a second round may learn. grid_rotate gave no replay rows (0/96), version_sort
+# gave 63 of the student's own passing rows; spiral_walk and duration_parse have never been run or trained on.
+CODE_NEW_FAMILIES = {'spiral_walk': spiral_walk, 'duration_parse': duration_parse}
+ROUND2_FAMILIES = ('grid_rotate', 'version_sort', 'spiral_walk', 'duration_parse')

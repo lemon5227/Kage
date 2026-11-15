@@ -13,14 +13,17 @@ REFERENCES = {'rpn_eval': ([code_tasks._rpn_reference], '_rpn_reference', ('ops'
               'run_length': ([code_tasks._rle_reference], '_rle_reference', ('count_first', 'keep_ones')),
               'grid_rotate': ([code_tasks._rotate_reference], '_rotate_reference', ('clockwise',)),
               'version_sort': ([code_tasks._version_key, code_tasks._versions_reference], '_versions_reference',
-                               ('descending', 'pad'))}
+                               ('descending', 'pad')),
+              'spiral_walk': ([code_tasks._spiral_reference], '_spiral_reference', ('clockwise',)),
+              'duration_parse': ([code_tasks._duration_reference], '_duration_reference', ('minutes', 'spaces'))}
+ALL = code_tasks.CODE_REPLAY_FAMILIES | code_tasks.CODE_NEW_FAMILIES
 
 
-@pytest.mark.parametrize('family', sorted(code_tasks.CODE_REPLAY_FAMILIES))
-@pytest.mark.parametrize('seed', [13000, 13001, 13002, 13017])
+@pytest.mark.parametrize('family', sorted(ALL))
+@pytest.mark.parametrize('seed', [13000, 13001, 13002, 13017, 10000, 10005])
 def test_reference_solution_passes_and_stub_fails(tmp_path, family, seed):
-    spec = code_tasks.CODE_REPLAY_FAMILIES[family](seed)
-    assert spec == code_tasks.CODE_REPLAY_FAMILIES[family](seed)
+    spec = ALL[family](seed)
+    assert spec == ALL[family](seed)
     task = make_task(family, seed)
     criteria = task['scoring_criteria']
     funcs, ref, keys = REFERENCES[family]
@@ -46,3 +49,15 @@ def test_code_families_are_registered_and_separate_from_trained_and_held_out_fam
     for path in ('eval/stream_v1/eval.json', 'eval/stream_web_v1/eval.json'):
         tasks = json.load(open(path))['tasks']
         assert not {t['family'] for t in tasks} & set(code_tasks.CODE_REPLAY_FAMILIES)
+
+
+def test_round2_eval_manifest_is_frozen_and_disjoint_from_collection_seeds():
+    import sys
+    sys.path.insert(0, 'scripts/experiments')
+    import stream_code_freeze
+    from stream_freeze import load
+    frozen = load('eval/stream_code_v1/eval.json')
+    assert frozen['sha256'] == stream_code_freeze.build()['sha256']          # generators still produce the frozen tasks
+    assert {t['family'] for t in frozen['tasks']} == set(code_tasks.ROUND2_FAMILIES) and len(frozen['tasks']) == 24
+    assert all(t['split'] == 'eval' for t in frozen['tasks'])                # collection uses practice seeds (13000+)
+    assert not set(code_tasks.CODE_NEW_FAMILIES) & set(code_tasks.CODE_REPLAY_FAMILIES)
