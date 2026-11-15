@@ -1,0 +1,14 @@
+62d662fe7b68da3b4134599d89c55b1403d7b9c7f16ba969ed5892d79fec654f  docs/paper/draft.md
+78e5e12ae80a6b67f8bae7f7011b677f31d26d9056461059ad218565787b2dcf  docs/paper/arxiv/paper.tex
+12c41cf84af50e1785be490ec31d5c620f494d43460275b05a9c08b7bcf425d2  docs/paper/arxiv/paper.pdf
+b28d894284cf70190b122c307ac25d7e6edad9c6259adfb9ba247c9c32933635  docs/paper/arxiv/build.sh
+d2143aea76dbc4f90940f50d59dfb3d4b8ed20bf8c23c5092c8fbf4dbde8156e  docs/paper/review-codex-2026-10-27.md
+e8b436ce913415c56f570867dc288fd663fc350d28c21fca9642e94e6dbe349b  docs/paper/v0.4-changes-and-handoff.md
+27d7c97e33a10ba3a5a043d1f9c6b8761a704a36274a40c55375be3f4fd76a75  docs/paper/v0.4-support/recompute.py
+c012969f7dc783a450a7fd519d77ef5b9a3466016bed0d2a0489e956a6ddf9ba  docs/paper/v0.4-support/audit.json
+1f385cc64bb69f93aab2e1220f5361d3f8d0173a188afd87df75cd1939ad8bb1  docs/paper/versions/draft-v0.3.md
+62d662fe7b68da3b4134599d89c55b1403d7b9c7f16ba969ed5892d79fec654f  docs/paper/versions/draft-v0.4.md
+99e8fae2fdbbad25269b5e5ea8adaa3f65b1c23a7c46018213272232688fad93  docs/paper/versions/paper-v0.3.pdf
+d17e50716524a7f3289a856a8fcb315f6b7cb27fba089c4316b83cd3c37fd9de  docs/paper/versions/paper-v0.3.tex
+12c41cf84af50e1785be490ec31d5c620f494d43460275b05a9c08b7bcf425d2  docs/paper/versions/paper-v0.4.pdf
+78e5e12ae80a6b67f8bae7f7011b677f31d26d9056461059ad218565787b2dcf  docs/paper/versions/paper-v0.4.tex

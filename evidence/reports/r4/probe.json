@@ -1,0 +1,182 @@
+{
+ "eval": {
+  "A0": {
+   "grid_rotate": "0/6",
+   "version_sort": "0/6",
+   "spiral_walk": "4/6",
+   "duration_parse": "1/6",
+   "total": "5/24"
+  },
+  "r3fg0": {
+   "grid_rotate": "0/6",
+   "version_sort": "2/6",
+   "spiral_walk": "3/6",
+   "duration_parse": "0/6",
+   "total": "5/24"
+  },
+  "r3fg1": {
+   "grid_rotate": "0/6",
+   "version_sort": "1/6",
+   "spiral_walk": "3/6",
+   "duration_parse": "1/6",
+   "total": "5/24"
+  },
+  "r3fg0 + demos in memory (after the 30-task stream)": {
+   "grid_rotate": "6/6",
+   "version_sort": "6/6",
+   "spiral_walk": "5/6",
+   "duration_parse": "3/6",
+   "total": "20/24"
+  },
+  "r3fg1 + demos in memory (after the 30-task stream)": {
+   "grid_rotate": "5/6",
+   "version_sort": "4/6",
+   "spiral_walk": "5/6",
+   "duration_parse": "3/6",
+   "total": "17/24"
+  }
+ },
+ "stream": {
+  "r3fg0": {
+   "version_sort": {
+    "tasks": 6,
+    "student_passed": 4,
+    "teacher_demos": 2,
+    "misuse": 0
+   },
+   "duration_parse": {
+    "tasks": 6,
+    "student_passed": 3,
+    "teacher_demos": 2,
+    "misuse": 0
+   },
+   "grid_rotate": {
+    "tasks": 6,
+    "student_passed": 3,
+    "teacher_demos": 3,
+    "misuse": 0
+   },
+   "spiral_walk": {
+    "tasks": 6,
+    "student_passed": 4,
+    "teacher_demos": 2,
+    "misuse": 0
+   },
+   "lookalike_readonly": {
+    "tasks": 4,
+    "student_passed": 4,
+    "teacher_demos": 0,
+    "misuse": 0
+   },
+   "read_preserve": {
+    "tasks": 2,
+    "student_passed": 2,
+    "teacher_demos": 0,
+    "misuse": 0
+   }
+  },
+  "r3fg1": {
+   "version_sort": {
+    "tasks": 6,
+    "student_passed": 5,
+    "teacher_demos": 1,
+    "misuse": 0
+   },
+   "duration_parse": {
+    "tasks": 6,
+    "student_passed": 4,
+    "teacher_demos": 2,
+    "misuse": 0
+   },
+   "grid_rotate": {
+    "tasks": 6,
+    "student_passed": 3,
+    "teacher_demos": 3,
+    "misuse": 0
+   },
+   "spiral_walk": {
+    "tasks": 6,
+    "student_passed": 4,
+    "teacher_demos": 2,
+    "misuse": 0
+   },
+   "lookalike_readonly": {
+    "tasks": 4,
+    "student_passed": 4,
+    "teacher_demos": 0,
+    "misuse": 0
+   },
+   "read_preserve": {
+    "tasks": 2,
+    "student_passed": 2,
+    "teacher_demos": 0,
+    "misuse": 0
+   }
+  }
+ },
+ "collect": {
+  "r3fg0": {
+   "duration_parse": {
+    "attempts": 16,
+    "successes": 10,
+    "yield": 0.625,
+    "samples_kept": 43
+   },
+   "grid_rotate": {
+    "attempts": 16,
+    "successes": 11,
+    "yield": 0.6875,
+    "samples_kept": 47
+   },
+   "spiral_walk": {
+    "attempts": 16,
+    "successes": 10,
+    "yield": 0.625,
+    "samples_kept": 44
+   },
+   "version_sort": {
+    "attempts": 16,
+    "successes": 16,
+    "yield": 1.0,
+    "samples_kept": 67
+   }
+  },
+  "r3fg1": {
+   "duration_parse": {
+    "attempts": 16,
+    "successes": 14,
+    "yield": 0.875,
+    "samples_kept": 60
+   },
+   "grid_rotate": {
+    "attempts": 16,
+    "successes": 10,
+    "yield": 0.625,
+    "samples_kept": 44
+   },
+   "spiral_walk": {
+    "attempts": 16,
+    "successes": 9,
+    "yield": 0.5625,
+    "samples_kept": 37
+   },
+   "version_sort": {
+    "attempts": 16,
+    "successes": 16,
+    "yield": 1.0,
+    "samples_kept": 72
+   }
+  }
+ },
+ "teacher": {
+  "r3fg0": [
+   0.4,
+   0.3484087
+  ],
+  "r3fg1": [
+   0.3695446,
+   0.34168600000000005
+  ],
+  "spent_usd": 0.0583
+ }
+}

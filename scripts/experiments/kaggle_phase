@@ -1,1 +1,1 @@
-r4-probe r3fg0 r3fg1
+r4-probe collect r3fg0 r3fg1 24 4

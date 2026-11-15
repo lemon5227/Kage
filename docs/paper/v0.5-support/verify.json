@@ -1,0 +1,1083 @@
+{
+ "c4_settings_counts": {
+  "V1": "1/18",
+  "V2": "14/18",
+  "V2PK": "14/18",
+  "V2PKST": "17/18"
+ },
+ "c4_v1_v2_settings": {
+  "name": "C4 settings V2 vs V1",
+  "tasks": 6,
+  "mean_diff": 0.722,
+  "improved": 6,
+  "worse": 0,
+  "tied": 0,
+  "p_exact": 0.03125,
+  "p_fraction": "1/32",
+  "boot95": [
+   0.5,
+   0.944
+  ],
+  "per_task": {
+   "stream-v1-web_prefs-11000": "1",
+   "stream-v1-web_prefs-11001": "1/3",
+   "stream-v1-web_prefs-11002": "1/3",
+   "stream-v1-web_prefs-11003": "2/3",
+   "stream-v1-web_prefs-11004": "1",
+   "stream-v1-web_prefs-11005": "1"
+  }
+ },
+ "c4_v2_v2pkst_settings": {
+  "name": "C4 settings V2PKST vs V2",
+  "tasks": 6,
+  "mean_diff": 0.167,
+  "improved": 2,
+  "worse": 1,
+  "tied": 3,
+  "p_exact": 0.5,
+  "p_fraction": "1/2",
+  "boot95": [
+   -0.111,
+   0.444
+  ],
+  "per_task": {
+   "stream-v1-web_prefs-11000": "0",
+   "stream-v1-web_prefs-11001": "2/3",
+   "stream-v1-web_prefs-11002": "2/3",
+   "stream-v1-web_prefs-11003": "0",
+   "stream-v1-web_prefs-11004": "0",
+   "stream-v1-web_prefs-11005": "-1/3"
+  }
+ },
+ "c4b_counts": {
+  "V2PKTSTCK": {
+   "all": "41/90",
+   "invoice": "0/18"
+  },
+  "R3EV2PKTSTCK": {
+   "all": "47/90",
+   "invoice": "7/18"
+  }
+ },
+ "c4b_r3e_vs_raw_all": {
+  "name": "C4b R3e vs raw (same interface, all 30)",
+  "tasks": 30,
+  "mean_diff": 0.067,
+  "improved": 3,
+  "worse": 1,
+  "tied": 26,
+  "p_exact": 0.25,
+  "p_fraction": "1/4",
+  "boot95": [
+   -0.011,
+   0.167
+  ],
+  "per_task": {
+   "stream-v1-web_catalog-11000": "0",
+   "stream-v1-web_catalog-11001": "0",
+   "stream-v1-web_catalog-11002": "0",
+   "stream-v1-web_catalog-11003": "0",
+   "stream-v1-web_catalog-11004": "0",
+   "stream-v1-web_catalog-11005": "0",
+   "stream-v1-web_form-11000": "0",
+   "stream-v1-web_form-11001": "0",
+   "stream-v1-web_form-11002": "0",
+   "stream-v1-web_form-11003": "0",
+   "stream-v1-web_form-11004": "0",
+   "stream-v1-web_form-11005": "0",
+   "stream-v1-web_invoice-11000": "0",
+   "stream-v1-web_invoice-11001": "0",
+   "stream-v1-web_invoice-11002": "1",
+   "stream-v1-web_invoice-11003": "0",
+   "stream-v1-web_invoice-11004": "2/3",
+   "stream-v1-web_invoice-11005": "2/3",
+   "stream-v1-web_lookup-11500": "0",
+   "stream-v1-web_lookup-11501": "0",
+   "stream-v1-web_lookup-11502": "0",
+   "stream-v1-web_lookup-11503": "0",
+   "stream-v1-web_lookup-11504": "0",
+   "stream-v1-web_lookup-11505": "0",
+   "stream-v1-web_prefs-11000": "0",
+   "stream-v1-web_prefs-11001": "0",
+   "stream-v1-web_prefs-11002": "0",
+   "stream-v1-web_prefs-11003": "-1/3",
+   "stream-v1-web_prefs-11004": "0",
+   "stream-v1-web_prefs-11005": "0"
+  }
+ },
+ "c4b_r3e_vs_raw_invoice": {
+  "name": "C4b R3e vs raw (invoice)",
+  "tasks": 6,
+  "mean_diff": 0.389,
+  "improved": 3,
+  "worse": 0,
+  "tied": 3,
+  "p_exact": 0.25,
+  "p_fraction": "1/4",
+  "boot95": [
+   0.111,
+   0.722
+  ],
+  "per_task": {
+   "stream-v1-web_invoice-11000": "0",
+   "stream-v1-web_invoice-11001": "0",
+   "stream-v1-web_invoice-11002": "1",
+   "stream-v1-web_invoice-11003": "0",
+   "stream-v1-web_invoice-11004": "2/3",
+   "stream-v1-web_invoice-11005": "2/3"
+  }
+ },
+ "g0_family_counts": {
+  "a0-baseline-v1": {
+   "train-calculator": "10/12",
+   "train-settings": "7/9",
+   "train-textedit": "2/9"
+  },
+  "a0-test-v2": {
+   "test-calculator": "1/6",
+   "test-textedit": "2/9"
+  },
+  "a0-test-v2-lessons": {
+   "test-calculator": "1/6",
+   "test-textedit": "2/9"
+  },
+  "a0-test-v2-planonly": {
+   "test-calculator": "4/6",
+   "test-textedit": "2/9"
+  },
+  "a0-test-v2-plan": {
+   "test-calculator": "5/6",
+   "test-textedit": "5/9"
+  },
+  "a0-te-v3": {
+   "test-textedit": "4/9",
+   "train-textedit": "4/9"
+  },
+  "a0-te-v4": {
+   "test-textedit": "9/9",
+   "train-textedit": "8/9"
+  },
+  "a0-final-v4-plan": {
+   "test-calculator": "5/6",
+   "test-textedit": "7/9",
+   "train-calculator": "12/12",
+   "train-settings": "9/9",
+   "train-textedit": "8/9"
+  }
+ },
+ "g0_plan_vs_none": {
+  "name": "G0 lessons beside task + plan vs none",
+  "tasks": 5,
+  "mean_diff": 0.467,
+  "improved": 3,
+  "worse": 0,
+  "tied": 2,
+  "p_exact": 0.25,
+  "p_fraction": "1/4",
+  "boot95": [
+   0.133,
+   0.8
+  ],
+  "per_task": {
+   "calc_chain2": "2/3",
+   "calc_chain3": "2/3",
+   "te_append2": "0",
+   "te_fix2": "1",
+   "te_write2": "0"
+  }
+ },
+ "g0_planonly_vs_none": {
+  "name": "G0 plan only vs none",
+  "tasks": 5,
+  "mean_diff": 0.2,
+  "improved": 2,
+  "worse": 0,
+  "tied": 3,
+  "p_exact": 0.5,
+  "p_fraction": "1/2",
+  "boot95": [
+   0.0,
+   0.467
+  ],
+  "per_task": {
+   "calc_chain2": "1/3",
+   "calc_chain3": "2/3",
+   "te_append2": "0",
+   "te_fix2": "0",
+   "te_write2": "0"
+  }
+ },
+ "g0_system_vs_none": {
+  "name": "G0 lessons in system prompt vs none",
+  "tasks": 5,
+  "mean_diff": 0.0,
+  "improved": 1,
+  "worse": 1,
+  "tied": 3,
+  "p_exact": 1.0,
+  "p_fraction": "1/1",
+  "boot95": [
+   -0.2,
+   0.2
+  ],
+  "per_task": {
+   "calc_chain2": "0",
+   "calc_chain3": "0",
+   "te_append2": "-1/3",
+   "te_fix2": "1/3",
+   "te_write2": "0"
+  }
+ },
+ "g0_plan_vs_planonly": {
+  "name": "G0 lessons beside task + plan vs plan only",
+  "tasks": 5,
+  "mean_diff": 0.267,
+  "improved": 2,
+  "worse": 0,
+  "tied": 3,
+  "p_exact": 0.5,
+  "p_fraction": "1/2",
+  "boot95": [
+   0.0,
+   0.667
+  ],
+  "per_task": {
+   "calc_chain2": "1/3",
+   "calc_chain3": "0",
+   "te_append2": "0",
+   "te_fix2": "1",
+   "te_write2": "0"
+  }
+ },
+ "te_v4_vs_fill": {
+  "name": "TextEdit v4 vs whole-text fill (v1 train + v2 variants)",
+  "tasks": 6,
+  "mean_diff": 0.722,
+  "improved": 6,
+  "worse": 0,
+  "tied": 0,
+  "p_exact": 0.03125,
+  "p_fraction": "1/32",
+  "boot95": [
+   0.5,
+   0.944
+  ],
+  "per_task": {
+   "te_append": "1/3",
+   "te_append2": "1/3",
+   "te_fix": "1",
+   "te_fix2": "1",
+   "te_write": "2/3",
+   "te_write2": "1"
+  }
+ },
+ "te_v4_vs_v3": {
+  "name": "TextEdit v4 vs v3",
+  "tasks": 6,
+  "mean_diff": 0.5,
+  "improved": 4,
+  "worse": 0,
+  "tied": 2,
+  "p_exact": 0.125,
+  "p_fraction": "1/8",
+  "boot95": [
+   0.167,
+   0.833
+  ],
+  "per_task": {
+   "te_append": "1/3",
+   "te_append2": "2/3",
+   "te_fix": "0",
+   "te_fix2": "0",
+   "te_write": "1",
+   "te_write2": "1"
+  }
+ },
+ "te_final_vs_v4": {
+  "name": "TextEdit final (v4 + lessons + plan) vs v4 without lessons",
+  "tasks": 6,
+  "mean_diff": -0.111,
+  "improved": 0,
+  "worse": 2,
+  "tied": 4,
+  "p_exact": 0.5,
+  "p_fraction": "1/2",
+  "boot95": [
+   -0.222,
+   0.0
+  ],
+  "per_task": {
+   "te_append": "0",
+   "te_append2": "-1/3",
+   "te_fix": "0",
+   "te_fix2": "-1/3",
+   "te_write": "0",
+   "te_write2": "0"
+  }
+ },
+ "g0_train_final_vs_baseline": {
+  "name": "G0 training tasks: final (v4 + lessons + plan) vs baseline v1",
+  "tasks": 10,
+  "mean_diff": 0.333,
+  "improved": 6,
+  "worse": 0,
+  "tied": 4,
+  "p_exact": 0.03125,
+  "p_fraction": "1/32",
+  "boot95": [
+   0.133,
+   0.533
+  ],
+  "per_task": {
+   "calc_add": "0",
+   "calc_chain": "2/3",
+   "calc_div": "0",
+   "calc_mul": "0",
+   "set_icon_size": "1/3",
+   "set_nav_tint": "1/3",
+   "set_scrollbars": "0",
+   "te_append": "1/3",
+   "te_fix": "1",
+   "te_write": "2/3"
+  }
+ },
+ "g0_lessons_source": [
+  "te_fix",
+  "te_append",
+  "calc_chain",
+  "te_write"
+ ],
+ "e1_A3_vs_A0": {
+  "name": "E-1 memory vs raw (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.583,
+  "improved": 17,
+  "worse": 1,
+  "tied": 6,
+  "p_exact": 0.00019073486328125,
+  "p_fraction": "25/131072",
+  "boot95": [
+   0.354,
+   0.792
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "1/2",
+   "stream-v1-csv_transform-10001": "1",
+   "stream-v1-csv_transform-10002": "1",
+   "stream-v1-csv_transform-10003": "1",
+   "stream-v1-csv_transform-10004": "-1",
+   "stream-v1-csv_transform-10005": "1",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "0",
+   "stream-v1-interval_merge-10002": "1/2",
+   "stream-v1-interval_merge-10003": "0",
+   "stream-v1-interval_merge-10004": "0",
+   "stream-v1-interval_merge-10005": "1",
+   "stream-v1-log_aggregation-10000": "1",
+   "stream-v1-log_aggregation-10001": "1",
+   "stream-v1-log_aggregation-10002": "0",
+   "stream-v1-log_aggregation-10003": "1",
+   "stream-v1-log_aggregation-10004": "0",
+   "stream-v1-log_aggregation-10005": "1",
+   "stream-v1-subset_selection-10000": "1",
+   "stream-v1-subset_selection-10001": "1/2",
+   "stream-v1-subset_selection-10002": "1/2",
+   "stream-v1-subset_selection-10003": "1",
+   "stream-v1-subset_selection-10004": "1",
+   "stream-v1-subset_selection-10005": "1"
+  }
+ },
+ "e1_A4_vs_A0": {
+  "name": "E-1 skills vs raw (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.521,
+  "improved": 14,
+  "worse": 0,
+  "tied": 10,
+  "p_exact": 0.0001220703125,
+  "p_fraction": "1/8192",
+  "boot95": [
+   0.333,
+   0.708
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "1",
+   "stream-v1-csv_transform-10001": "1",
+   "stream-v1-csv_transform-10002": "1",
+   "stream-v1-csv_transform-10003": "1",
+   "stream-v1-csv_transform-10004": "0",
+   "stream-v1-csv_transform-10005": "1/2",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "0",
+   "stream-v1-interval_merge-10002": "1",
+   "stream-v1-interval_merge-10003": "0",
+   "stream-v1-interval_merge-10004": "0",
+   "stream-v1-interval_merge-10005": "1",
+   "stream-v1-log_aggregation-10000": "1/2",
+   "stream-v1-log_aggregation-10001": "0",
+   "stream-v1-log_aggregation-10002": "0",
+   "stream-v1-log_aggregation-10003": "0",
+   "stream-v1-log_aggregation-10004": "0",
+   "stream-v1-log_aggregation-10005": "0",
+   "stream-v1-subset_selection-10000": "1",
+   "stream-v1-subset_selection-10001": "1",
+   "stream-v1-subset_selection-10002": "1/2",
+   "stream-v1-subset_selection-10003": "1",
+   "stream-v1-subset_selection-10004": "1",
+   "stream-v1-subset_selection-10005": "1"
+  }
+ },
+ "e1_A3_vs_A4": {
+  "name": "E-1 memory vs skills (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.062,
+  "improved": 5,
+  "worse": 4,
+  "tied": 15,
+  "p_exact": 0.671875,
+  "p_fraction": "43/64",
+  "boot95": [
+   -0.125,
+   0.25
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "-1/2",
+   "stream-v1-csv_transform-10001": "0",
+   "stream-v1-csv_transform-10002": "0",
+   "stream-v1-csv_transform-10003": "0",
+   "stream-v1-csv_transform-10004": "-1",
+   "stream-v1-csv_transform-10005": "1/2",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "0",
+   "stream-v1-interval_merge-10002": "-1/2",
+   "stream-v1-interval_merge-10003": "0",
+   "stream-v1-interval_merge-10004": "0",
+   "stream-v1-interval_merge-10005": "0",
+   "stream-v1-log_aggregation-10000": "1/2",
+   "stream-v1-log_aggregation-10001": "1",
+   "stream-v1-log_aggregation-10002": "0",
+   "stream-v1-log_aggregation-10003": "1",
+   "stream-v1-log_aggregation-10004": "0",
+   "stream-v1-log_aggregation-10005": "1",
+   "stream-v1-subset_selection-10000": "0",
+   "stream-v1-subset_selection-10001": "-1/2",
+   "stream-v1-subset_selection-10002": "0",
+   "stream-v1-subset_selection-10003": "0",
+   "stream-v1-subset_selection-10004": "0",
+   "stream-v1-subset_selection-10005": "0"
+  }
+ },
+ "e1_A3_vs_A0_held": {
+  "name": "E-1 memory vs raw (held-out)",
+  "tasks": 12,
+  "mean_diff": -0.167,
+  "improved": 2,
+  "worse": 4,
+  "tied": 6,
+  "p_exact": 0.5,
+  "p_fraction": "1/2",
+  "boot95": [
+   -0.5,
+   0.167
+  ],
+  "per_task": {
+   "stream-v1-config_migrate-10000": "-1",
+   "stream-v1-config_migrate-10001": "0",
+   "stream-v1-config_migrate-10002": "0",
+   "stream-v1-config_migrate-10003": "0",
+   "stream-v1-config_migrate-10004": "1",
+   "stream-v1-config_migrate-10005": "1/2",
+   "stream-v1-text_normalize-10000": "-1",
+   "stream-v1-text_normalize-10001": "0",
+   "stream-v1-text_normalize-10002": "0",
+   "stream-v1-text_normalize-10003": "-1",
+   "stream-v1-text_normalize-10004": "-1/2",
+   "stream-v1-text_normalize-10005": "0"
+  }
+ },
+ "R3_vs_anchor_in": {
+  "name": "R3 vs its session anchor (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.472,
+  "improved": 14,
+  "worse": 2,
+  "tied": 8,
+  "p_exact": 0.000335693359375,
+  "p_fraction": "11/32768",
+  "boot95": [
+   0.278,
+   0.667
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "1",
+   "stream-v1-csv_transform-10001": "1",
+   "stream-v1-csv_transform-10002": "2/3",
+   "stream-v1-csv_transform-10003": "1/3",
+   "stream-v1-csv_transform-10004": "0",
+   "stream-v1-csv_transform-10005": "1",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "-1/3",
+   "stream-v1-interval_merge-10002": "0",
+   "stream-v1-interval_merge-10003": "0",
+   "stream-v1-interval_merge-10004": "0",
+   "stream-v1-interval_merge-10005": "0",
+   "stream-v1-log_aggregation-10000": "0",
+   "stream-v1-log_aggregation-10001": "-1/3",
+   "stream-v1-log_aggregation-10002": "0",
+   "stream-v1-log_aggregation-10003": "2/3",
+   "stream-v1-log_aggregation-10004": "2/3",
+   "stream-v1-log_aggregation-10005": "2/3",
+   "stream-v1-subset_selection-10000": "1",
+   "stream-v1-subset_selection-10001": "1",
+   "stream-v1-subset_selection-10002": "1",
+   "stream-v1-subset_selection-10003": "1",
+   "stream-v1-subset_selection-10004": "1",
+   "stream-v1-subset_selection-10005": "1"
+  }
+ },
+ "R3_vs_anchor_held": {
+  "name": "R3 vs its session anchor (held-out)",
+  "tasks": 12,
+  "mean_diff": -0.389,
+  "improved": 1,
+  "worse": 6,
+  "tied": 5,
+  "p_exact": 0.046875,
+  "p_fraction": "3/64",
+  "boot95": [
+   -0.667,
+   -0.111
+  ],
+  "per_task": {
+   "stream-v1-config_migrate-10000": "0",
+   "stream-v1-config_migrate-10001": "-1",
+   "stream-v1-config_migrate-10002": "1/3",
+   "stream-v1-config_migrate-10003": "-1",
+   "stream-v1-config_migrate-10004": "0",
+   "stream-v1-config_migrate-10005": "0",
+   "stream-v1-text_normalize-10000": "0",
+   "stream-v1-text_normalize-10001": "-1",
+   "stream-v1-text_normalize-10002": "0",
+   "stream-v1-text_normalize-10003": "-2/3",
+   "stream-v1-text_normalize-10004": "-1",
+   "stream-v1-text_normalize-10005": "-1/3"
+  }
+ },
+ "R3b_vs_anchor_in": {
+  "name": "R3b vs its session anchor (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.056,
+  "improved": 5,
+  "worse": 4,
+  "tied": 15,
+  "p_exact": 0.70703125,
+  "p_fraction": "181/256",
+  "boot95": [
+   -0.167,
+   0.278
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "-1",
+   "stream-v1-csv_transform-10001": "1",
+   "stream-v1-csv_transform-10002": "0",
+   "stream-v1-csv_transform-10003": "1",
+   "stream-v1-csv_transform-10004": "-2/3",
+   "stream-v1-csv_transform-10005": "0",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "-1",
+   "stream-v1-interval_merge-10002": "0",
+   "stream-v1-interval_merge-10003": "0",
+   "stream-v1-interval_merge-10004": "1",
+   "stream-v1-interval_merge-10005": "0",
+   "stream-v1-log_aggregation-10000": "0",
+   "stream-v1-log_aggregation-10001": "0",
+   "stream-v1-log_aggregation-10002": "-2/3",
+   "stream-v1-log_aggregation-10003": "0",
+   "stream-v1-log_aggregation-10004": "0",
+   "stream-v1-log_aggregation-10005": "0",
+   "stream-v1-subset_selection-10000": "1",
+   "stream-v1-subset_selection-10001": "0",
+   "stream-v1-subset_selection-10002": "0",
+   "stream-v1-subset_selection-10003": "2/3",
+   "stream-v1-subset_selection-10004": "0",
+   "stream-v1-subset_selection-10005": "0"
+  }
+ },
+ "R3b_vs_anchor_held": {
+  "name": "R3b vs its session anchor (held-out)",
+  "tasks": 12,
+  "mean_diff": -0.167,
+  "improved": 3,
+  "worse": 6,
+  "tied": 3,
+  "p_exact": 0.51171875,
+  "p_fraction": "131/256",
+  "boot95": [
+   -0.528,
+   0.222
+  ],
+  "per_task": {
+   "stream-v1-config_migrate-10000": "-1/3",
+   "stream-v1-config_migrate-10001": "-2/3",
+   "stream-v1-config_migrate-10002": "1",
+   "stream-v1-config_migrate-10003": "-1/3",
+   "stream-v1-config_migrate-10004": "1",
+   "stream-v1-config_migrate-10005": "0",
+   "stream-v1-text_normalize-10000": "-1",
+   "stream-v1-text_normalize-10001": "-1",
+   "stream-v1-text_normalize-10002": "0",
+   "stream-v1-text_normalize-10003": "-1",
+   "stream-v1-text_normalize-10004": "0",
+   "stream-v1-text_normalize-10005": "1/3"
+  }
+ },
+ "R3c_vs_anchor_in": {
+  "name": "R3c vs its session anchor (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.014,
+  "improved": 6,
+  "worse": 7,
+  "tied": 11,
+  "p_exact": 1.0,
+  "p_fraction": "1/1",
+  "boot95": [
+   -0.222,
+   0.264
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "0",
+   "stream-v1-csv_transform-10001": "1",
+   "stream-v1-csv_transform-10002": "-2/3",
+   "stream-v1-csv_transform-10003": "-2/3",
+   "stream-v1-csv_transform-10004": "0",
+   "stream-v1-csv_transform-10005": "1/3",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "0",
+   "stream-v1-interval_merge-10002": "-2/3",
+   "stream-v1-interval_merge-10003": "-2/3",
+   "stream-v1-interval_merge-10004": "1",
+   "stream-v1-interval_merge-10005": "-1",
+   "stream-v1-log_aggregation-10000": "0",
+   "stream-v1-log_aggregation-10001": "0",
+   "stream-v1-log_aggregation-10002": "-2/3",
+   "stream-v1-log_aggregation-10003": "-2/3",
+   "stream-v1-log_aggregation-10004": "1",
+   "stream-v1-log_aggregation-10005": "0",
+   "stream-v1-subset_selection-10000": "0",
+   "stream-v1-subset_selection-10001": "0",
+   "stream-v1-subset_selection-10002": "0",
+   "stream-v1-subset_selection-10003": "1",
+   "stream-v1-subset_selection-10004": "0",
+   "stream-v1-subset_selection-10005": "1"
+  }
+ },
+ "R3c_vs_anchor_held": {
+  "name": "R3c vs its session anchor (held-out)",
+  "tasks": 12,
+  "mean_diff": -0.528,
+  "improved": 1,
+  "worse": 7,
+  "tied": 4,
+  "p_exact": 0.015625,
+  "p_fraction": "1/64",
+  "boot95": [
+   -0.833,
+   -0.194
+  ],
+  "per_task": {
+   "stream-v1-config_migrate-10000": "0",
+   "stream-v1-config_migrate-10001": "-1",
+   "stream-v1-config_migrate-10002": "2/3",
+   "stream-v1-config_migrate-10003": "-1",
+   "stream-v1-config_migrate-10004": "-1",
+   "stream-v1-config_migrate-10005": "0",
+   "stream-v1-text_normalize-10000": "-1",
+   "stream-v1-text_normalize-10001": "-1",
+   "stream-v1-text_normalize-10002": "0",
+   "stream-v1-text_normalize-10003": "0",
+   "stream-v1-text_normalize-10004": "-1",
+   "stream-v1-text_normalize-10005": "-1"
+  }
+ },
+ "R3d_vs_anchor_in": {
+  "name": "R3d vs its session anchor (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.611,
+  "improved": 16,
+  "worse": 0,
+  "tied": 8,
+  "p_exact": 3.0517578125e-05,
+  "p_fraction": "1/32768",
+  "boot95": [
+   0.431,
+   0.792
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "1",
+   "stream-v1-csv_transform-10001": "1",
+   "stream-v1-csv_transform-10002": "1",
+   "stream-v1-csv_transform-10003": "1",
+   "stream-v1-csv_transform-10004": "0",
+   "stream-v1-csv_transform-10005": "1",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "0",
+   "stream-v1-interval_merge-10002": "0",
+   "stream-v1-interval_merge-10003": "0",
+   "stream-v1-interval_merge-10004": "1",
+   "stream-v1-interval_merge-10005": "0",
+   "stream-v1-log_aggregation-10000": "0",
+   "stream-v1-log_aggregation-10001": "1",
+   "stream-v1-log_aggregation-10002": "0",
+   "stream-v1-log_aggregation-10003": "1",
+   "stream-v1-log_aggregation-10004": "1",
+   "stream-v1-log_aggregation-10005": "1/3",
+   "stream-v1-subset_selection-10000": "1",
+   "stream-v1-subset_selection-10001": "1",
+   "stream-v1-subset_selection-10002": "1",
+   "stream-v1-subset_selection-10003": "2/3",
+   "stream-v1-subset_selection-10004": "1",
+   "stream-v1-subset_selection-10005": "2/3"
+  }
+ },
+ "R3d_vs_anchor_held": {
+  "name": "R3d vs its session anchor (held-out)",
+  "tasks": 12,
+  "mean_diff": -0.25,
+  "improved": 3,
+  "worse": 5,
+  "tied": 4,
+  "p_exact": 0.2578125,
+  "p_fraction": "33/128",
+  "boot95": [
+   -0.611,
+   0.111
+  ],
+  "per_task": {
+   "stream-v1-config_migrate-10000": "1",
+   "stream-v1-config_migrate-10001": "-2/3",
+   "stream-v1-config_migrate-10002": "0",
+   "stream-v1-config_migrate-10003": "-1",
+   "stream-v1-config_migrate-10004": "1/3",
+   "stream-v1-config_migrate-10005": "0",
+   "stream-v1-text_normalize-10000": "-1",
+   "stream-v1-text_normalize-10001": "-1",
+   "stream-v1-text_normalize-10002": "1/3",
+   "stream-v1-text_normalize-10003": "0",
+   "stream-v1-text_normalize-10004": "0",
+   "stream-v1-text_normalize-10005": "-1"
+  }
+ },
+ "R3e_vs_anchor_in": {
+  "name": "R3e vs its session anchor (in-family)",
+  "tasks": 24,
+  "mean_diff": 0.444,
+  "improved": 12,
+  "worse": 1,
+  "tied": 11,
+  "p_exact": 0.000732421875,
+  "p_fraction": "3/4096",
+  "boot95": [
+   0.25,
+   0.653
+  ],
+  "per_task": {
+   "stream-v1-csv_transform-10000": "0",
+   "stream-v1-csv_transform-10001": "0",
+   "stream-v1-csv_transform-10002": "0",
+   "stream-v1-csv_transform-10003": "1",
+   "stream-v1-csv_transform-10004": "-1/3",
+   "stream-v1-csv_transform-10005": "1",
+   "stream-v1-interval_merge-10000": "0",
+   "stream-v1-interval_merge-10001": "0",
+   "stream-v1-interval_merge-10002": "0",
+   "stream-v1-interval_merge-10003": "1",
+   "stream-v1-interval_merge-10004": "1",
+   "stream-v1-interval_merge-10005": "0",
+   "stream-v1-log_aggregation-10000": "1/3",
+   "stream-v1-log_aggregation-10001": "0",
+   "stream-v1-log_aggregation-10002": "0",
+   "stream-v1-log_aggregation-10003": "1",
+   "stream-v1-log_aggregation-10004": "0",
+   "stream-v1-log_aggregation-10005": "1",
+   "stream-v1-subset_selection-10000": "1",
+   "stream-v1-subset_selection-10001": "1",
+   "stream-v1-subset_selection-10002": "1",
+   "stream-v1-subset_selection-10003": "0",
+   "stream-v1-subset_selection-10004": "2/3",
+   "stream-v1-subset_selection-10005": "1"
+  }
+ },
+ "R3e_vs_anchor_held": {
+  "name": "R3e vs its session anchor (held-out)",
+  "tasks": 12,
+  "mean_diff": -0.556,
+  "improved": 1,
+  "worse": 7,
+  "tied": 4,
+  "p_exact": 0.015625,
+  "p_fraction": "1/64",
+  "boot95": [
+   -0.833,
+   -0.25
+  ],
+  "per_task": {
+   "stream-v1-config_migrate-10000": "0",
+   "stream-v1-config_migrate-10001": "-1",
+   "stream-v1-config_migrate-10002": "0",
+   "stream-v1-config_migrate-10003": "-1",
+   "stream-v1-config_migrate-10004": "1/3",
+   "stream-v1-config_migrate-10005": "0",
+   "stream-v1-text_normalize-10000": "-1",
+   "stream-v1-text_normalize-10001": "-1",
+   "stream-v1-text_normalize-10002": "-1",
+   "stream-v1-text_normalize-10003": "-1",
+   "stream-v1-text_normalize-10004": "-1",
+   "stream-v1-text_normalize-10005": "0"
+  }
+ },
+ "r3_web_counts": {
+  "base": "10/54",
+  "R3": "21/54"
+ },
+ "R3_vs_anchor_web": {
+  "name": "R3 vs its session anchor (learned web)",
+  "tasks": 18,
+  "mean_diff": 0.204,
+  "improved": 7,
+  "worse": 2,
+  "tied": 9,
+  "p_exact": 0.109375,
+  "p_fraction": "7/64",
+  "boot95": [
+   0.0,
+   0.407
+  ],
+  "per_task": {
+   "stream-v1-web_catalog-11000": "0",
+   "stream-v1-web_catalog-11001": "1/3",
+   "stream-v1-web_catalog-11002": "0",
+   "stream-v1-web_catalog-11003": "0",
+   "stream-v1-web_catalog-11004": "1/3",
+   "stream-v1-web_catalog-11005": "-1/3",
+   "stream-v1-web_invoice-11000": "0",
+   "stream-v1-web_invoice-11001": "1",
+   "stream-v1-web_invoice-11002": "1",
+   "stream-v1-web_invoice-11003": "0",
+   "stream-v1-web_invoice-11004": "2/3",
+   "stream-v1-web_invoice-11005": "0",
+   "stream-v1-web_prefs-11000": "0",
+   "stream-v1-web_prefs-11001": "0",
+   "stream-v1-web_prefs-11002": "1/3",
+   "stream-v1-web_prefs-11003": "1",
+   "stream-v1-web_prefs-11004": "0",
+   "stream-v1-web_prefs-11005": "-2/3"
+  }
+ },
+ "r3_summary": {
+  "Base (v26, 3 runs)": {
+   "in": "30/72",
+   "held": "15/36"
+  },
+  "R3": {
+   "in": "64/72",
+   "held": "1/36",
+   "anchor_in": "30/72",
+   "anchor_held": "15/36"
+  },
+  "R3b": {
+   "in": "34/72",
+   "held": "15/36",
+   "anchor_in": "10/24",
+   "anchor_held": "7/12"
+  },
+  "R3c": {
+   "in": "34/72",
+   "held": "2/36",
+   "anchor_in": "11/24",
+   "anchor_held": "7/12"
+  },
+  "R3d": {
+   "in": "62/72",
+   "held": "6/36",
+   "anchor_in": "6/24",
+   "anchor_held": "5/12"
+  },
+  "R3e": {
+   "in": "65/72",
+   "held": "1/36",
+   "anchor_in": "11/24",
+   "anchor_held": "7/12"
+  }
+ },
+ "negative_skill_misuse": {
+  "R3": {
+   "executions": "2/36",
+   "tasks": [
+    "stream-v1-lookalike_readonly-10502"
+   ],
+   "families": {
+    "lookalike_readonly": 2
+   },
+   "failed_negative": 2
+  },
+  "R3b": {
+   "executions": "0/36",
+   "tasks": [],
+   "families": {},
+   "failed_negative": 0
+  },
+  "R3c": {
+   "executions": "0/36",
+   "tasks": [],
+   "families": {},
+   "failed_negative": 0
+  },
+  "R3d": {
+   "executions": "0/36",
+   "tasks": [],
+   "families": {},
+   "failed_negative": 0
+  },
+  "R3e": {
+   "executions": "0/36",
+   "tasks": [],
+   "families": {},
+   "failed_negative": 0
+  },
+  "Base (v26)": {
+   "executions": "0/36"
+  }
+ },
+ "negative_counts": {
+  "negative_tasks": 12,
+  "lookalike_tasks": 4
+ },
+ "nemotron_counts": {
+  "a0-train-v2": {
+   "total": "3/30",
+   "setup_errors": 0,
+   "train-calculator": "0/12",
+   "train-settings": "3/9",
+   "train-textedit": "0/9"
+  },
+  "a0-test-v2": {
+   "total": "0/15",
+   "setup_errors": 0,
+   "test-calculator": "0/6",
+   "test-textedit": "0/9"
+  },
+  "a0-test-v2-lessons": {
+   "total": "1/15",
+   "setup_errors": 0,
+   "test-calculator": "1/6",
+   "test-textedit": "0/9"
+  },
+  "a0-test-v2-planonly": {
+   "total": "0/15",
+   "setup_errors": 0,
+   "test-calculator": "0/6",
+   "test-textedit": "0/9"
+  },
+  "a0-test-v2-plan": {
+   "total": "0/15",
+   "setup_errors": 0,
+   "test-calculator": "0/6",
+   "test-textedit": "0/9"
+  },
+  "a0-te-v4": {
+   "total": "16/18",
+   "setup_errors": 0,
+   "test-textedit": "7/9",
+   "train-textedit": "9/9"
+  },
+  "a0-final-v4-plan": {
+   "total": "18/44",
+   "setup_errors": 1,
+   "test-calculator": "0/6",
+   "test-textedit": "7/9",
+   "train-calculator": "0/12",
+   "train-settings": "4/9",
+   "train-textedit": "7/8"
+  },
+  "a0-calc-v5": {
+   "total": "0/18",
+   "setup_errors": 0,
+   "test-calculator": "0/6",
+   "train-calculator": "0/12"
+  },
+  "a0-final-v5-plan": {
+   "total": "14/45",
+   "setup_errors": 0,
+   "test-calculator": "0/6",
+   "test-textedit": "6/9",
+   "train-calculator": "0/12",
+   "train-settings": "3/9",
+   "train-textedit": "5/9"
+  }
+ },
+ "nemo_te_v4_vs_fill": {
+  "name": "Nemotron TextEdit v4 vs whole-text fill (both v2 sessions)",
+  "tasks": 6,
+  "mean_diff": 0.889,
+  "improved": 6,
+  "worse": 0,
+  "tied": 0,
+  "p_exact": 0.03125,
+  "p_fraction": "1/32",
+  "boot95": [
+   0.667,
+   1.0
+  ],
+  "per_task": {
+   "te_append": "1",
+   "te_append2": "1/3",
+   "te_fix": "1",
+   "te_fix2": "1",
+   "te_write": "1",
+   "te_write2": "1"
+  }
+ },
+ "nemo_plan_vs_none": {
+  "name": "Nemotron lessons beside task + plan vs none",
+  "tasks": 5,
+  "mean_diff": 0.0,
+  "improved": 0,
+  "worse": 0,
+  "tied": 5,
+  "p_exact": 1.0,
+  "p_fraction": "1/1",
+  "boot95": [
+   0.0,
+   0.0
+  ],
+  "per_task": {
+   "calc_chain2": "0",
+   "calc_chain3": "0",
+   "te_append2": "0",
+   "te_fix2": "0",
+   "te_write2": "0"
+  }
+ },
+ "nemo_te_final_vs_v4": {
+  "name": "Nemotron TextEdit final vs v4 without lessons (common tasks)",
+  "tasks": 6,
+  "mean_diff": -0.056,
+  "improved": 0,
+  "worse": 1,
+  "tied": 5,
+  "p_exact": 1.0,
+  "p_fraction": "1/1",
+  "boot95": [
+   -0.167,
+   0.0
+  ],
+  "per_task": {
+   "te_append": "-1/3",
+   "te_append2": "0",
+   "te_fix": "0",
+   "te_fix2": "0",
+   "te_write": "0",
+   "te_write2": "0"
+  }
+ }
+}

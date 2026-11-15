@@ -1,0 +1,1663 @@
+{
+ "c4_prefs": {
+  "V1": {
+   "stream-v1-web_prefs-11000": 0.0,
+   "stream-v1-web_prefs-11001": 0.0,
+   "stream-v1-web_prefs-11002": 0.0,
+   "stream-v1-web_prefs-11003": 0.3333,
+   "stream-v1-web_prefs-11004": 0.0,
+   "stream-v1-web_prefs-11005": 0.0
+  },
+  "V2": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 0.3333,
+   "stream-v1-web_prefs-11002": 0.3333,
+   "stream-v1-web_prefs-11003": 1.0,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 1.0
+  },
+  "V2PK": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 0.0,
+   "stream-v1-web_prefs-11002": 0.6667,
+   "stream-v1-web_prefs-11003": 1.0,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 1.0
+  },
+  "V2PKST": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 1.0,
+   "stream-v1-web_prefs-11002": 1.0,
+   "stream-v1-web_prefs-11003": 1.0,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 0.6667
+  }
+ },
+ "c4_v1_v2": {
+  "name": "C4 settings V1->V2",
+  "n_tasks": 6,
+  "mean_diff": 0.7222,
+  "p_signflip": 0.03125,
+  "ci95_task_boot": [
+   0.5,
+   0.9444
+  ],
+  "positive": 6,
+  "negative": 0,
+  "tie": 0,
+  "diffs": [
+   1.0,
+   0.3333,
+   0.3333,
+   0.6667,
+   1.0,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-web_prefs-11000",
+   "stream-v1-web_prefs-11001",
+   "stream-v1-web_prefs-11002",
+   "stream-v1-web_prefs-11003",
+   "stream-v1-web_prefs-11004",
+   "stream-v1-web_prefs-11005"
+  ]
+ },
+ "c4_v1_v2pkst": {
+  "name": "C4 settings V1->V2PKST",
+  "n_tasks": 6,
+  "mean_diff": 0.8889,
+  "p_signflip": 0.03125,
+  "ci95_task_boot": [
+   0.7778,
+   1.0
+  ],
+  "positive": 6,
+  "negative": 0,
+  "tie": 0,
+  "diffs": [
+   1.0,
+   1.0,
+   1.0,
+   0.6667,
+   1.0,
+   0.6667
+  ],
+  "tasks": [
+   "stream-v1-web_prefs-11000",
+   "stream-v1-web_prefs-11001",
+   "stream-v1-web_prefs-11002",
+   "stream-v1-web_prefs-11003",
+   "stream-v1-web_prefs-11004",
+   "stream-v1-web_prefs-11005"
+  ]
+ },
+ "c4_v2_v2pkst": {
+  "name": "C4 settings V2->V2PKST",
+  "n_tasks": 6,
+  "mean_diff": 0.1667,
+  "p_signflip": 0.5,
+  "ci95_task_boot": [
+   -0.1111,
+   0.4444
+  ],
+  "positive": 2,
+  "negative": 1,
+  "tie": 3,
+  "diffs": [
+   0.0,
+   0.6667,
+   0.6667,
+   0.0,
+   0.0,
+   -0.3333
+  ],
+  "tasks": [
+   "stream-v1-web_prefs-11000",
+   "stream-v1-web_prefs-11001",
+   "stream-v1-web_prefs-11002",
+   "stream-v1-web_prefs-11003",
+   "stream-v1-web_prefs-11004",
+   "stream-v1-web_prefs-11005"
+  ]
+ },
+ "c4_all_v1_v2": {
+  "name": "C4 all 30 V1->V2",
+  "n_tasks": 30,
+  "mean_diff": 0.1333,
+  "p_signflip": 0.07995,
+  "ci95_task_boot": [
+   0.0111,
+   0.2667
+  ],
+  "positive": 7,
+  "negative": 3,
+  "tie": 20,
+  "diffs": [
+   0.0,
+   0.0,
+   0.0,
+   -0.3333,
+   -0.3333,
+   0.0,
+   0.0,
+   -0.3333,
+   0.6667,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.3333,
+   0.3333,
+   0.6667,
+   1.0,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-web_catalog-11000",
+   "stream-v1-web_catalog-11001",
+   "stream-v1-web_catalog-11002",
+   "stream-v1-web_catalog-11003",
+   "stream-v1-web_catalog-11004",
+   "stream-v1-web_catalog-11005",
+   "stream-v1-web_form-11000",
+   "stream-v1-web_form-11001",
+   "stream-v1-web_form-11002",
+   "stream-v1-web_form-11003",
+   "stream-v1-web_form-11004",
+   "stream-v1-web_form-11005",
+   "stream-v1-web_invoice-11000",
+   "stream-v1-web_invoice-11001",
+   "stream-v1-web_invoice-11002",
+   "stream-v1-web_invoice-11003",
+   "stream-v1-web_invoice-11004",
+   "stream-v1-web_invoice-11005",
+   "stream-v1-web_lookup-11500",
+   "stream-v1-web_lookup-11501",
+   "stream-v1-web_lookup-11502",
+   "stream-v1-web_lookup-11503",
+   "stream-v1-web_lookup-11504",
+   "stream-v1-web_lookup-11505",
+   "stream-v1-web_prefs-11000",
+   "stream-v1-web_prefs-11001",
+   "stream-v1-web_prefs-11002",
+   "stream-v1-web_prefs-11003",
+   "stream-v1-web_prefs-11004",
+   "stream-v1-web_prefs-11005"
+  ]
+ },
+ "c4b_prefs": {
+  "V2PKST": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 1.0,
+   "stream-v1-web_prefs-11002": 1.0,
+   "stream-v1-web_prefs-11003": 1.0,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 1.0
+  },
+  "V2PKTST": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 1.0,
+   "stream-v1-web_prefs-11002": 1.0,
+   "stream-v1-web_prefs-11003": 1.0,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 1.0
+  },
+  "V2PKTSTCK": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 1.0,
+   "stream-v1-web_prefs-11002": 1.0,
+   "stream-v1-web_prefs-11003": 1.0,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 1.0
+  },
+  "R3EV2PKTSTCK": {
+   "stream-v1-web_prefs-11000": 1.0,
+   "stream-v1-web_prefs-11001": 1.0,
+   "stream-v1-web_prefs-11002": 1.0,
+   "stream-v1-web_prefs-11003": 0.6667,
+   "stream-v1-web_prefs-11004": 1.0,
+   "stream-v1-web_prefs-11005": 1.0
+  }
+ },
+ "c4b_r3e_invoice": {
+  "name": "C4b R3e vs raw winsorized (invoice)",
+  "n_tasks": 6,
+  "mean_diff": 0.3889,
+  "p_signflip": 0.25,
+  "ci95_task_boot": [
+   0.1111,
+   0.7222
+  ],
+  "positive": 3,
+  "negative": 0,
+  "tie": 3,
+  "diffs": [
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.6667,
+   0.6667
+  ],
+  "tasks": [
+   "stream-v1-web_invoice-11000",
+   "stream-v1-web_invoice-11001",
+   "stream-v1-web_invoice-11002",
+   "stream-v1-web_invoice-11003",
+   "stream-v1-web_invoice-11004",
+   "stream-v1-web_invoice-11005"
+  ]
+ },
+ "c4b_r3e_all": {
+  "name": "C4b R3e vs raw (all 30)",
+  "n_tasks": 30,
+  "mean_diff": 0.0667,
+  "p_signflip": 0.24958,
+  "ci95_task_boot": [
+   -0.0111,
+   0.1667
+  ],
+  "positive": 3,
+  "negative": 1,
+  "tie": 26,
+  "diffs": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.6667,
+   0.6667,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   -0.3333,
+   0.0,
+   0.0
+  ],
+  "tasks": [
+   "stream-v1-web_catalog-11000",
+   "stream-v1-web_catalog-11001",
+   "stream-v1-web_catalog-11002",
+   "stream-v1-web_catalog-11003",
+   "stream-v1-web_catalog-11004",
+   "stream-v1-web_catalog-11005",
+   "stream-v1-web_form-11000",
+   "stream-v1-web_form-11001",
+   "stream-v1-web_form-11002",
+   "stream-v1-web_form-11003",
+   "stream-v1-web_form-11004",
+   "stream-v1-web_form-11005",
+   "stream-v1-web_invoice-11000",
+   "stream-v1-web_invoice-11001",
+   "stream-v1-web_invoice-11002",
+   "stream-v1-web_invoice-11003",
+   "stream-v1-web_invoice-11004",
+   "stream-v1-web_invoice-11005",
+   "stream-v1-web_lookup-11500",
+   "stream-v1-web_lookup-11501",
+   "stream-v1-web_lookup-11502",
+   "stream-v1-web_lookup-11503",
+   "stream-v1-web_lookup-11504",
+   "stream-v1-web_lookup-11505",
+   "stream-v1-web_prefs-11000",
+   "stream-v1-web_prefs-11001",
+   "stream-v1-web_prefs-11002",
+   "stream-v1-web_prefs-11003",
+   "stream-v1-web_prefs-11004",
+   "stream-v1-web_prefs-11005"
+  ]
+ },
+ "g0_arms": {
+  "a0-test-v2": {
+   "calc_chain2": 0.3333333333333333,
+   "calc_chain3": 0.0,
+   "te_append2": 0.6666666666666666,
+   "te_fix2": 0.0,
+   "te_write2": 0.0
+  },
+  "a0-test-v2-lessons": {
+   "calc_chain2": 0.3333333333333333,
+   "calc_chain3": 0.0,
+   "te_append2": 0.3333333333333333,
+   "te_fix2": 0.3333333333333333,
+   "te_write2": 0.0
+  },
+  "a0-test-v2-planonly": {
+   "calc_chain2": 0.6666666666666666,
+   "calc_chain3": 0.6666666666666666,
+   "te_append2": 0.6666666666666666,
+   "te_fix2": 0.0,
+   "te_write2": 0.0
+  },
+  "a0-test-v2-plan": {
+   "calc_chain2": 1.0,
+   "calc_chain3": 0.6666666666666666,
+   "te_append2": 0.6666666666666666,
+   "te_fix2": 1.0,
+   "te_write2": 0.0
+  },
+  "a0-final-v4-plan": {
+   "calc_add": 1.0,
+   "calc_chain": 1.0,
+   "calc_chain2": 1.0,
+   "calc_chain3": 0.6666666666666666,
+   "calc_div": 1.0,
+   "calc_mul": 1.0,
+   "set_icon_size": 1.0,
+   "set_nav_tint": 1.0,
+   "set_scrollbars": 1.0,
+   "te_append": 0.6666666666666666,
+   "te_append2": 0.6666666666666666,
+   "te_fix": 1.0,
+   "te_fix2": 0.6666666666666666,
+   "te_write": 1.0,
+   "te_write2": 1.0
+  },
+  "a0-baseline-v1": {
+   "calc_add": 1.0,
+   "calc_chain": 0.3333333333333333,
+   "calc_div": 1.0,
+   "calc_mul": 1.0,
+   "set_icon_size": 0.6666666666666666,
+   "set_nav_tint": 0.6666666666666666,
+   "set_scrollbars": 1.0,
+   "te_append": 0.3333333333333333,
+   "te_fix": 0.0,
+   "te_write": 0.3333333333333333
+  }
+ },
+ "g0_plan_vs_none": {
+  "name": "G0 plan+adjacent vs none",
+  "n_tasks": 5,
+  "mean_diff": 0.4667,
+  "p_signflip": 0.25,
+  "ci95_task_boot": [
+   0.1333,
+   0.8
+  ],
+  "positive": 3,
+  "negative": 0,
+  "tie": 2,
+  "diffs": [
+   0.6667,
+   0.6667,
+   0.0,
+   1.0,
+   0.0
+  ],
+  "tasks": [
+   "calc_chain2",
+   "calc_chain3",
+   "te_append2",
+   "te_fix2",
+   "te_write2"
+  ]
+ },
+ "g0_planonly_vs_none": {
+  "name": "G0 plan-only vs none",
+  "n_tasks": 5,
+  "mean_diff": 0.2,
+  "p_signflip": 0.5,
+  "ci95_task_boot": [
+   0.0,
+   0.4667
+  ],
+  "positive": 2,
+  "negative": 0,
+  "tie": 3,
+  "diffs": [
+   0.3333,
+   0.6667,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "tasks": [
+   "calc_chain2",
+   "calc_chain3",
+   "te_append2",
+   "te_fix2",
+   "te_write2"
+  ]
+ },
+ "g0_lessons_vs_none": {
+  "name": "G0 system lessons vs none",
+  "n_tasks": 5,
+  "mean_diff": 0.0,
+  "p_signflip": 1.0,
+  "ci95_task_boot": [
+   -0.2,
+   0.2
+  ],
+  "positive": 1,
+  "negative": 1,
+  "tie": 3,
+  "diffs": [
+   0.0,
+   0.0,
+   -0.3333,
+   0.3333,
+   0.0
+  ],
+  "tasks": [
+   "calc_chain2",
+   "calc_chain3",
+   "te_append2",
+   "te_fix2",
+   "te_write2"
+  ]
+ },
+ "g0_final_vs_base": {
+  "name": "G0 final vs base (10 train tasks, interfaces differ)",
+  "n_tasks": 10,
+  "mean_diff": 0.3333,
+  "p_signflip": 0.03125,
+  "ci95_task_boot": [
+   0.1333,
+   0.5667
+  ],
+  "positive": 6,
+  "negative": 0,
+  "tie": 4,
+  "diffs": [
+   0.0,
+   0.6667,
+   0.0,
+   0.0,
+   0.3333,
+   0.3333,
+   0.0,
+   0.3333,
+   1.0,
+   0.6667
+  ],
+  "tasks": [
+   "calc_add",
+   "calc_chain",
+   "calc_div",
+   "calc_mul",
+   "set_icon_size",
+   "set_nav_tint",
+   "set_scrollbars",
+   "te_append",
+   "te_fix",
+   "te_write"
+  ]
+ },
+ "g0_final_families": {
+  "calculator": {
+   "tasks": [
+    "calc_add",
+    "calc_mul",
+    "calc_div",
+    "calc_chain",
+    "calc_chain2",
+    "calc_chain3"
+   ],
+   "mean": 0.9444
+  },
+  "textedit": {
+   "tasks": [
+    "te_fix",
+    "te_append",
+    "te_write",
+    "te_fix2",
+    "te_append2",
+    "te_write2"
+   ],
+   "mean": 0.8333
+  },
+  "settings_read": {
+   "tasks": [
+    "set_icon_size",
+    "set_scrollbars",
+    "set_nav_tint"
+   ],
+   "mean": 1.0
+  }
+ },
+ "textedit_fill": {
+  "te_append": 0.3333333333333333,
+  "te_append2": 0.6666666666666666,
+  "te_fix": 0.0,
+  "te_fix2": 0.0,
+  "te_write": 0.3333333333333333,
+  "te_write2": 0.0
+ },
+ "textedit_v3": {
+  "te_append": 0.3333333333333333,
+  "te_append2": 0.3333333333333333,
+  "te_fix": 1.0,
+  "te_fix2": 1.0,
+  "te_write": 0.0,
+  "te_write2": 0.0
+ },
+ "textedit_v4": {
+  "te_append": 0.6666666666666666,
+  "te_append2": 1.0,
+  "te_fix": 1.0,
+  "te_fix2": 1.0,
+  "te_write": 1.0,
+  "te_write2": 1.0
+ },
+ "textedit_v3_vs_fill": {
+  "name": "TextEdit v3 vs fill",
+  "n_tasks": 6,
+  "mean_diff": 0.2222,
+  "p_signflip": 0.5,
+  "ci95_task_boot": [
+   -0.2222,
+   0.6667
+  ],
+  "positive": 2,
+  "negative": 2,
+  "tie": 2,
+  "diffs": [
+   0.0,
+   -0.3333,
+   1.0,
+   1.0,
+   -0.3333,
+   0.0
+  ],
+  "tasks": [
+   "te_append",
+   "te_append2",
+   "te_fix",
+   "te_fix2",
+   "te_write",
+   "te_write2"
+  ]
+ },
+ "textedit_v4_vs_fill": {
+  "name": "TextEdit v4 vs fill",
+  "n_tasks": 6,
+  "mean_diff": 0.7222,
+  "p_signflip": 0.03125,
+  "ci95_task_boot": [
+   0.5,
+   0.9444
+  ],
+  "positive": 6,
+  "negative": 0,
+  "tie": 0,
+  "diffs": [
+   0.3333,
+   0.3333,
+   1.0,
+   1.0,
+   0.6667,
+   1.0
+  ],
+  "tasks": [
+   "te_append",
+   "te_append2",
+   "te_fix",
+   "te_fix2",
+   "te_write",
+   "te_write2"
+  ]
+ },
+ "textedit_v4_vs_v3": {
+  "name": "TextEdit v4 vs v3",
+  "n_tasks": 6,
+  "mean_diff": 0.5,
+  "p_signflip": 0.125,
+  "ci95_task_boot": [
+   0.1667,
+   0.8333
+  ],
+  "positive": 4,
+  "negative": 0,
+  "tie": 2,
+  "diffs": [
+   0.3333,
+   0.6667,
+   0.0,
+   0.0,
+   1.0,
+   1.0
+  ],
+  "tasks": [
+   "te_append",
+   "te_append2",
+   "te_fix",
+   "te_fix2",
+   "te_write",
+   "te_write2"
+  ]
+ },
+ "e1_base": {
+  "in_family": [
+   7.0,
+   24
+  ],
+  "held_out": [
+   8.0,
+   12
+  ]
+ },
+ "e1_A3_vs_A0": {
+  "name": "E-1 A3 vs A0 in-family",
+  "n_tasks": 24,
+  "mean_diff": 0.5833,
+  "p_signflip": 0.000175,
+  "ci95_task_boot": [
+   0.3542,
+   0.7708
+  ],
+  "positive": 17,
+  "negative": 1,
+  "tie": 6,
+  "diffs": [
+   0.5,
+   1.0,
+   1.0,
+   1.0,
+   -1.0,
+   1.0,
+   0.0,
+   0.0,
+   0.5,
+   0.0,
+   0.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0,
+   0.5,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "e1_A4_vs_A0": {
+  "name": "E-1 A4 vs A0 in-family",
+  "n_tasks": 24,
+  "mean_diff": 0.5208,
+  "p_signflip": 0.000105,
+  "ci95_task_boot": [
+   0.3333,
+   0.7083
+  ],
+  "positive": 14,
+  "negative": 0,
+  "tie": 10,
+  "diffs": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   0.5,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   1.0,
+   0.5,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   1.0,
+   0.5,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "e1_A3_vs_A4": {
+  "name": "E-1 A3 vs A4 in-family",
+  "n_tasks": 24,
+  "mean_diff": 0.0625,
+  "p_signflip": 0.671625,
+  "ci95_task_boot": [
+   -0.125,
+   0.25
+  ],
+  "positive": 5,
+  "negative": 4,
+  "tie": 15,
+  "diffs": [
+   -0.5,
+   0.0,
+   0.0,
+   0.0,
+   -1.0,
+   0.5,
+   0.0,
+   0.0,
+   -0.5,
+   0.0,
+   0.0,
+   0.0,
+   0.5,
+   1.0,
+   0.0,
+   1.0,
+   0.0,
+   1.0,
+   0.0,
+   -0.5,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "e1_A3_vs_A0_held": {
+  "name": "E-1 A3 vs A0 held-out",
+  "n_tasks": 12,
+  "mean_diff": -0.1667,
+  "p_signflip": 0.5,
+  "ci95_task_boot": [
+   -0.5,
+   0.1667
+  ],
+  "positive": 2,
+  "negative": 4,
+  "tie": 6,
+  "diffs": [
+   -1.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.5,
+   -1.0,
+   0.0,
+   0.0,
+   -1.0,
+   -0.5,
+   0.0
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3_base": {
+  "in_family": [
+   10.0,
+   24
+  ],
+  "held_out": [
+   5.0,
+   12
+  ],
+  "web": [
+   3.333333333333333,
+   18
+  ]
+ },
+ "r3_adapter": {
+  "in_family": [
+   21.333333333333332,
+   24
+  ],
+  "held_out": [
+   0.3333333333333333,
+   12
+  ],
+  "web": [
+   7.0,
+   18
+  ]
+ },
+ "r3_in": {
+  "name": "R3 in-family",
+  "n_tasks": 24,
+  "mean_diff": 0.4722,
+  "p_signflip": 0.000335,
+  "ci95_task_boot": [
+   0.2778,
+   0.6667
+  ],
+  "positive": 14,
+  "negative": 2,
+  "tie": 8,
+  "diffs": [
+   1.0,
+   1.0,
+   0.6667,
+   0.3333,
+   0.0,
+   1.0,
+   0.0,
+   -0.3333,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   -0.3333,
+   0.0,
+   0.6667,
+   0.6667,
+   0.6667,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "r3_held": {
+  "name": "R3 held-out",
+  "n_tasks": 12,
+  "mean_diff": -0.3889,
+  "p_signflip": 0.046875,
+  "ci95_task_boot": [
+   -0.6667,
+   -0.1111
+  ],
+  "positive": 1,
+  "negative": 6,
+  "tie": 5,
+  "diffs": [
+   0.0,
+   -1.0,
+   0.3333,
+   -1.0,
+   0.0,
+   0.0,
+   0.0,
+   -1.0,
+   0.0,
+   -0.6667,
+   -1.0,
+   -0.3333
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3_web": {
+  "name": "R3 web learned",
+  "n_tasks": 18,
+  "mean_diff": 0.2037,
+  "p_signflip": 0.108625,
+  "ci95_task_boot": [
+   0.0,
+   0.4259
+  ],
+  "positive": 7,
+  "negative": 2,
+  "tie": 9,
+  "diffs": [
+   0.0,
+   0.3333,
+   0.0,
+   0.0,
+   0.3333,
+   -0.3333,
+   0.0,
+   1.0,
+   1.0,
+   0.0,
+   0.6667,
+   0.0,
+   0.0,
+   0.0,
+   0.3333,
+   1.0,
+   0.0,
+   -0.6667
+  ],
+  "tasks": [
+   "stream-v1-web_catalog-11000",
+   "stream-v1-web_catalog-11001",
+   "stream-v1-web_catalog-11002",
+   "stream-v1-web_catalog-11003",
+   "stream-v1-web_catalog-11004",
+   "stream-v1-web_catalog-11005",
+   "stream-v1-web_invoice-11000",
+   "stream-v1-web_invoice-11001",
+   "stream-v1-web_invoice-11002",
+   "stream-v1-web_invoice-11003",
+   "stream-v1-web_invoice-11004",
+   "stream-v1-web_invoice-11005",
+   "stream-v1-web_prefs-11000",
+   "stream-v1-web_prefs-11001",
+   "stream-v1-web_prefs-11002",
+   "stream-v1-web_prefs-11003",
+   "stream-v1-web_prefs-11004",
+   "stream-v1-web_prefs-11005"
+  ]
+ },
+ "r3e_base": {
+  "in_family": [
+   11.0,
+   24
+  ],
+  "held_out": [
+   7.0,
+   12
+  ]
+ },
+ "r3e_in": {
+  "name": "r3e in-family vs same-session anchor",
+  "n_tasks": 24,
+  "mean_diff": 0.4444,
+  "p_signflip": 0.000785,
+  "ci95_task_boot": [
+   0.25,
+   0.6389
+  ],
+  "positive": 12,
+  "negative": 1,
+  "tie": 11,
+  "diffs": [
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   -0.3333,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   1.0,
+   0.0,
+   0.3333,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   0.6667,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "r3e_held": {
+  "name": "r3e held-out vs same-session anchor",
+  "n_tasks": 12,
+  "mean_diff": -0.5556,
+  "p_signflip": 0.015625,
+  "ci95_task_boot": [
+   -0.8333,
+   -0.25
+  ],
+  "positive": 1,
+  "negative": 7,
+  "tie": 4,
+  "diffs": [
+   0.0,
+   -1.0,
+   0.0,
+   -1.0,
+   0.3333,
+   0.0,
+   -1.0,
+   -1.0,
+   -1.0,
+   -1.0,
+   -1.0,
+   0.0
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3d_in": {
+  "name": "r3d in-family vs same-session anchor",
+  "n_tasks": 24,
+  "mean_diff": 0.6111,
+  "p_signflip": 3.5e-05,
+  "ci95_task_boot": [
+   0.4167,
+   0.7917
+  ],
+  "positive": 16,
+  "negative": 0,
+  "tie": 8,
+  "diffs": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   1.0,
+   1.0,
+   0.3333,
+   1.0,
+   1.0,
+   1.0,
+   0.6667,
+   1.0,
+   0.6667
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "r3d_held": {
+  "name": "r3d held-out vs same-session anchor",
+  "n_tasks": 12,
+  "mean_diff": -0.25,
+  "p_signflip": 0.257812,
+  "ci95_task_boot": [
+   -0.6111,
+   0.1118
+  ],
+  "positive": 3,
+  "negative": 5,
+  "tie": 4,
+  "diffs": [
+   1.0,
+   -0.6667,
+   0.0,
+   -1.0,
+   0.3333,
+   0.0,
+   -1.0,
+   -1.0,
+   0.3333,
+   0.0,
+   0.0,
+   -1.0
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3b_in": {
+  "name": "r3b in-family vs same-session anchor",
+  "n_tasks": 24,
+  "mean_diff": 0.0556,
+  "p_signflip": 0.705815,
+  "ci95_task_boot": [
+   -0.1528,
+   0.2778
+  ],
+  "positive": 5,
+  "negative": 4,
+  "tie": 15,
+  "diffs": [
+   -1.0,
+   1.0,
+   0.0,
+   1.0,
+   -0.6667,
+   0.0,
+   0.0,
+   -1.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   -0.6667,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   0.0,
+   0.6667,
+   0.0,
+   0.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "r3b_held": {
+  "name": "r3b held-out vs same-session anchor",
+  "n_tasks": 12,
+  "mean_diff": -0.1667,
+  "p_signflip": 0.511719,
+  "ci95_task_boot": [
+   -0.5278,
+   0.2222
+  ],
+  "positive": 3,
+  "negative": 6,
+  "tie": 3,
+  "diffs": [
+   -0.3333,
+   -0.6667,
+   1.0,
+   -0.3333,
+   1.0,
+   0.0,
+   -1.0,
+   -1.0,
+   0.0,
+   -1.0,
+   0.0,
+   0.3333
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3b_base": {
+  "in_family": [
+   10.0,
+   24
+  ],
+  "held_out": [
+   7.0,
+   12
+  ]
+ },
+ "r3c_in": {
+  "name": "r3c in-family vs same-session anchor",
+  "n_tasks": 24,
+  "mean_diff": 0.0139,
+  "p_signflip": 1.0,
+  "ci95_task_boot": [
+   -0.2222,
+   0.2639
+  ],
+  "positive": 6,
+  "negative": 7,
+  "tie": 11,
+  "diffs": [
+   0.0,
+   1.0,
+   -0.6667,
+   -0.6667,
+   0.0,
+   0.3333,
+   0.0,
+   0.0,
+   -0.6667,
+   -0.6667,
+   1.0,
+   -1.0,
+   0.0,
+   0.0,
+   -0.6667,
+   -0.6667,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.0,
+   1.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ },
+ "r3c_held": {
+  "name": "r3c held-out vs same-session anchor",
+  "n_tasks": 12,
+  "mean_diff": -0.5278,
+  "p_signflip": 0.015625,
+  "ci95_task_boot": [
+   -0.8333,
+   -0.1944
+  ],
+  "positive": 1,
+  "negative": 7,
+  "tie": 4,
+  "diffs": [
+   0.0,
+   -1.0,
+   0.6667,
+   -1.0,
+   -1.0,
+   0.0,
+   -1.0,
+   -1.0,
+   0.0,
+   0.0,
+   -1.0,
+   -1.0
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3c_base": {
+  "in_family": [
+   11.0,
+   24
+  ],
+  "held_out": [
+   7.0,
+   12
+  ]
+ },
+ "r3d_base": {
+  "in_family": [
+   6.0,
+   24
+  ],
+  "held_out": [
+   5.0,
+   12
+  ]
+ },
+ "r3b_vs_r3_held": {
+  "name": "R3b vs R3 held-out (cross-session)",
+  "n_tasks": 12,
+  "mean_diff": 0.3889,
+  "p_signflip": 0.015625,
+  "ci95_task_boot": [
+   0.1667,
+   0.6111
+  ],
+  "positive": 7,
+  "negative": 0,
+  "tie": 5,
+  "diffs": [
+   0.6667,
+   0.3333,
+   0.6667,
+   0.6667,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   1.0,
+   0.3333
+  ],
+  "tasks": [
+   "stream-v1-config_migrate-10000",
+   "stream-v1-config_migrate-10001",
+   "stream-v1-config_migrate-10002",
+   "stream-v1-config_migrate-10003",
+   "stream-v1-config_migrate-10004",
+   "stream-v1-config_migrate-10005",
+   "stream-v1-text_normalize-10000",
+   "stream-v1-text_normalize-10001",
+   "stream-v1-text_normalize-10002",
+   "stream-v1-text_normalize-10003",
+   "stream-v1-text_normalize-10004",
+   "stream-v1-text_normalize-10005"
+  ]
+ },
+ "r3b_vs_r3_in": {
+  "name": "R3b vs R3 in-family (cross-session)",
+  "n_tasks": 24,
+  "mean_diff": -0.4167,
+  "p_signflip": 0.00049,
+  "ci95_task_boot": [
+   -0.5972,
+   -0.2361
+  ],
+  "positive": 0,
+  "negative": 12,
+  "tie": 12,
+  "diffs": [
+   -1.0,
+   0.0,
+   0.0,
+   0.0,
+   -0.6667,
+   -1.0,
+   0.0,
+   -0.6667,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   -0.6667,
+   -0.6667,
+   0.0,
+   -1.0,
+   0.0,
+   -1.0,
+   -1.0,
+   -0.3333,
+   -1.0,
+   -1.0
+  ],
+  "tasks": [
+   "stream-v1-csv_transform-10000",
+   "stream-v1-csv_transform-10001",
+   "stream-v1-csv_transform-10002",
+   "stream-v1-csv_transform-10003",
+   "stream-v1-csv_transform-10004",
+   "stream-v1-csv_transform-10005",
+   "stream-v1-interval_merge-10000",
+   "stream-v1-interval_merge-10001",
+   "stream-v1-interval_merge-10002",
+   "stream-v1-interval_merge-10003",
+   "stream-v1-interval_merge-10004",
+   "stream-v1-interval_merge-10005",
+   "stream-v1-log_aggregation-10000",
+   "stream-v1-log_aggregation-10001",
+   "stream-v1-log_aggregation-10002",
+   "stream-v1-log_aggregation-10003",
+   "stream-v1-log_aggregation-10004",
+   "stream-v1-log_aggregation-10005",
+   "stream-v1-subset_selection-10000",
+   "stream-v1-subset_selection-10001",
+   "stream-v1-subset_selection-10002",
+   "stream-v1-subset_selection-10003",
+   "stream-v1-subset_selection-10004",
+   "stream-v1-subset_selection-10005"
+  ]
+ }
+}

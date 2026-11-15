@@ -1330,7 +1330,7 @@ def main(argv=None):
         # R4-2b (11-15): "r4-probe r3fg0 r3fg1 [<seeds> <k>]" — adapters come from the input (previous version's output)
         # and are copied into this output so the next version still finds them.
         numbers = [int(x) for x in only if x.isdigit()]
-        adapters = input_adapters([x for x in only if not x.isdigit()] or ['r3fg0', 'r3fg1'])
+        adapters = input_adapters([x for x in only if not x.isdigit() and x != 'collect'] or ['r3fg0', 'r3fg1'])
         adapters = {name: path for name, path in adapters.items() if not name.endswith('e1')}
         for name, path in adapters.items():
             kept = OUT / f'{name}-adapter' / 'adapter.gguf'
@@ -1338,7 +1338,20 @@ def main(argv=None):
                 kept.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(path, kept)
         stage1, stage2 = r4_probe_jobs(adapters, **(dict(seeds=numbers[0], k=numbers[1]) if len(numbers) >= 2 else {}))
-        run_jobs(info, stage1, 'r4-probe eval and stream')
+        if 'collect' in only:
+            # "r4-probe collect r3fg0 r3fg1 24 4" (R4-2c): the full collection only, with the demonstrations of the
+            # previous version's streams (carried into this output with the streams' records; no teacher calls).
+            for name in adapters:
+                kept = OUT / 'r4' / 'stream' / name
+                hits = sorted(INPUT.glob(f'**/e1/r4/stream/{name}/memory.jsonl'))
+                if hits and not kept.exists():
+                    kept.mkdir(parents=True)
+                    for item in ('memory.jsonl', 'stream.jsonl', 'checkpoints.jsonl', 'config.json', 'space.json'):
+                        if (hits[0].parent / item).exists():
+                            shutil.copy2(hits[0].parent / item, kept / item)
+                    log('r4 stream memory carried over', name=name, source=str(hits[0]), sha256=sha256(hits[0]))
+        else:
+            run_jobs(info, stage1, 'r4-probe eval and stream')
         ready = [job for job in stage2 if Path(job[1][job[1].index('--memory') + 1]).exists()]
         log('r4-probe collection', jobs=[job[0] for job in ready], skipped=[job[0] for job in stage2 if job not in ready])
         run_jobs(info, ready, 'r4-probe collect')

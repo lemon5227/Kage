@@ -1,0 +1,2329 @@
+{
+  "r2": {
+    "examples": 1900,
+    "unique_tasks": 151,
+    "retained_rollout_keys": 446,
+    "collection_totals": {
+      "attempts": 704,
+      "successes": 472,
+      "samples_kept": 1900
+    }
+  },
+  "training": {
+    "r3": {
+      "examples": 1677,
+      "steps": 420,
+      "seed": 0,
+      "epochs": 2.0,
+      "wall_seconds": 2992.3
+    },
+    "r3b": {
+      "examples": 2781,
+      "steps": 696,
+      "seed": 0,
+      "epochs": 2.0,
+      "wall_seconds": 4637.3
+    },
+    "r3c": {
+      "examples": 2266,
+      "steps": 567,
+      "seed": 0,
+      "epochs": 2.0,
+      "wall_seconds": 3768.3
+    },
+    "r3d": {
+      "examples": 2736,
+      "steps": 684,
+      "seed": 0,
+      "epochs": 2.0,
+      "wall_seconds": 4246.6
+    },
+    "r3e": {
+      "examples": 3251,
+      "steps": 813,
+      "seed": 0,
+      "epochs": 2.0,
+      "wall_seconds": 5103.7
+    }
+  },
+  "training_wall_hours": 5.763388888888889,
+  "g0": {
+    "a0-test-v2": {
+      "by_task": {
+        "calc_chain2": [
+          1,
+          0,
+          0
+        ],
+        "calc_chain3": [
+          0,
+          0,
+          0
+        ],
+        "te_fix2": [
+          0,
+          0,
+          0
+        ],
+        "te_append2": [
+          1,
+          0,
+          1
+        ],
+        "te_write2": [
+          0,
+          0,
+          0
+        ]
+      },
+      "passed": 3,
+      "runs": 15
+    },
+    "a0-test-v2-lessons": {
+      "by_task": {
+        "calc_chain2": [
+          0,
+          0,
+          1
+        ],
+        "calc_chain3": [
+          0,
+          0,
+          0
+        ],
+        "te_fix2": [
+          0,
+          0,
+          1
+        ],
+        "te_append2": [
+          1,
+          0,
+          0
+        ],
+        "te_write2": [
+          0,
+          0,
+          0
+        ]
+      },
+      "passed": 3,
+      "runs": 15
+    },
+    "a0-test-v2-planonly": {
+      "by_task": {
+        "calc_chain2": [
+          0,
+          1,
+          1
+        ],
+        "calc_chain3": [
+          0,
+          1,
+          1
+        ],
+        "te_fix2": [
+          0,
+          0,
+          0
+        ],
+        "te_append2": [
+          1,
+          0,
+          1
+        ],
+        "te_write2": [
+          0,
+          0,
+          0
+        ]
+      },
+      "passed": 6,
+      "runs": 15
+    },
+    "a0-test-v2-plan": {
+      "by_task": {
+        "calc_chain2": [
+          1,
+          1,
+          1
+        ],
+        "calc_chain3": [
+          0,
+          1,
+          1
+        ],
+        "te_fix2": [
+          1,
+          1,
+          1
+        ],
+        "te_append2": [
+          0,
+          1,
+          1
+        ],
+        "te_write2": [
+          0,
+          0,
+          0
+        ]
+      },
+      "passed": 10,
+      "runs": 15
+    },
+    "a0-final-v4-plan": {
+      "by_task": {
+        "calc_add": [
+          1,
+          1,
+          1
+        ],
+        "calc_mul": [
+          1,
+          1,
+          1
+        ],
+        "calc_div": [
+          1,
+          1,
+          1
+        ],
+        "calc_chain": [
+          1,
+          1,
+          1
+        ],
+        "te_fix": [
+          1,
+          1,
+          1
+        ],
+        "te_append": [
+          0,
+          1,
+          1
+        ],
+        "te_write": [
+          1,
+          1,
+          1
+        ],
+        "set_icon_size": [
+          1,
+          1,
+          1
+        ],
+        "set_scrollbars": [
+          1,
+          1,
+          1
+        ],
+        "set_nav_tint": [
+          1,
+          1,
+          1
+        ],
+        "calc_chain2": [
+          1,
+          1,
+          1
+        ],
+        "calc_chain3": [
+          1,
+          0,
+          1
+        ],
+        "te_fix2": [
+          0,
+          1,
+          1
+        ],
+        "te_append2": [
+          1,
+          1,
+          0
+        ],
+        "te_write2": [
+          1,
+          1,
+          1
+        ]
+      },
+      "passed": 41,
+      "runs": 45
+    }
+  },
+  "g0_sign_flip": {
+    "task_order": [
+      "calc_chain2",
+      "calc_chain3",
+      "te_fix2",
+      "te_append2",
+      "te_write2"
+    ],
+    "mean_differences": [
+      0.6666666666666667,
+      0.6666666666666666,
+      1.0,
+      0.0,
+      0.0
+    ],
+    "two_sided_p": 0.25,
+    "assumption": "task-level sign symmetry; exploratory sensitivity analysis"
+  },
+  "d7": {
+    "heldout.json": {
+      "n": 30,
+      "legacy": 15,
+      "clef": 30,
+      "combined": 30
+    },
+    "v2-heldout2.json": {
+      "n": 30,
+      "legacy": 16,
+      "clef": 30,
+      "combined": 28
+    }
+  },
+  "raw_checkpoints": {
+    "26": {
+      "e1/r3/file/A0-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 9,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/r3/file/A0-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 12,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/r3/file/A0-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 9,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/r3/file/L3-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 22,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/r3/file/L3-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 22,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 3,
+          "total": 4
+        }
+      },
+      "e1/r3/file/L3-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 20,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 3,
+          "total": 4
+        }
+      },
+      "e1/r3/web/A0-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/r3/web/A0-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/r3/web/A0-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/r3/web/L3-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/r3/web/L3-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/r3/web/L3-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    },
+    "28": {
+      "e1/c4/V1-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V1-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V1-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2PK-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2PK-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2PK-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2PKST-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2PKST-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4/V2PKST-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    },
+    "29": {
+      "e1/ae/file/A0-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 10,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 7,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3b-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 11,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3b-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 11,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3b-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 12,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3be1-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 16,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 2,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3be1-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 12,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 3,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3be1-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 13,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 4,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/web/A0-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3b-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3b-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3b-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3be1-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3be1-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3be1-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    },
+    "30": {
+      "e1/ae/file/A0-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 11,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 7,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3c-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 10,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3c-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 10,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3c-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 14,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3ce1-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 16,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 7,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3ce1-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 12,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 6,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3ce1-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 12,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 3,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/web/A0-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3c-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3c-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3c-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3ce1-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3ce1-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3ce1-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    },
+    "31": {
+      "e1/ae/file/A0-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 6,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 5,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3d-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 20,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3d-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 21,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 2,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3d-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 21,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 3,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3de1-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 21,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 2,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3de1-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 20,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 2,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3de1-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 20,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/web/A0-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3d-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3d-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3d-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3de1-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3de1-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3de1-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    },
+    "32": {
+      "e1/ae/file/A0-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 11,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 7,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3e-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 22,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3e-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 21,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3e-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 22,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3ee1-r1/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 21,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 1,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3ee1-r2/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 19,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/file/r3ee1-r3/checkpoints.jsonl": {
+        "file_learned": {
+          "passed": 21,
+          "total": 24
+        },
+        "file_heldout": {
+          "passed": 0,
+          "total": 12
+        },
+        "read_preserve": {
+          "passed": 4,
+          "total": 4
+        },
+        "inspect_question": {
+          "passed": 4,
+          "total": 4
+        },
+        "lookalike_readonly": {
+          "passed": 4,
+          "total": 4
+        }
+      },
+      "e1/ae/web/A0-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3e-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3e-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3e-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3ee1-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3ee1-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/ae/web/r3ee1-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 4,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    },
+    "33": {
+      "e1/c4b/R3EV2PKTSTCK-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/R3EV2PKTSTCK-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 3,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 5,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/R3EV2PKTSTCK-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKST-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKST-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKST-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKTST-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKTST-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKTST-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKTSTCK-r1/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 1,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKTSTCK-r2/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      },
+      "e1/c4b/V2PKTSTCK-r3/checkpoints.jsonl": {
+        "web_invoice": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_prefs": {
+          "passed": 6,
+          "total": 6
+        },
+        "web_catalog": {
+          "passed": 2,
+          "total": 6
+        },
+        "web_form": {
+          "passed": 0,
+          "total": 6
+        },
+        "web_lookup": {
+          "passed": 6,
+          "total": 6
+        }
+      }
+    }
+  }
+}
